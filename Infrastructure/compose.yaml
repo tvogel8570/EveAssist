@@ -1,0 +1,78 @@
+name: eve-assist-infrastructure
+services:
+  eve-postgres:
+    image: tvogel8570/eveassist
+    secrets:
+      - db-password
+    build:
+      context: ./postgres
+      dockerfile: Dockerfile
+      tags:
+        - "tvogel8570/eveassist:latest"
+    volumes:
+      - type: volume
+        source: postgres-eve-assist
+        target: /var/lib/postgresql/data
+    networks:
+      - eve-assist-network
+    environment:
+      - POSTGRES_PASSWORD_FILE=/run/secrets/db-password
+    container_name: eve-assist-postgres
+    ports:
+      - target: 5432
+        published: 5432
+        protocol: tcp
+        mode: host
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    command: [ " --verbose start-dev" ]
+    secrets:
+      - source: server_crt
+        target: /etc/x509/https/tls.crt
+        uid: '103'
+        gid: '103'
+        mode: 0440
+      - source: server_key
+        target: /etc/x509/https/tls.key
+        uid: '103'
+        gid: '103'
+        mode: 0440
+    volumes:
+      - type: volume
+        source: keycloak-eve-assist
+        target: /opt/keycloak/data
+    ports:
+      - target: 8443 # Keycloak HTTPS port
+        published: 8443
+        protocol: tcp
+        mode: host
+      - target: 8080 # Keycloak HTTP port
+        published: 8442
+        protocol: tcp
+        mode: host
+    networks:
+      - eve-assist-network
+    environment:
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD=admin1
+      - KC_HTTPS_CERTIFICATE_FILE=/etc/x509/https/tls.crt
+      - KC_HTTPS_CERTIFICATE_KEY_FILE=/etc/x509/https/tls.key
+    container_name: eve-assist-keycloak
+
+volumes:
+  postgres-eve-assist:
+    name: postgres-eve-assist
+  keycloak-eve-assist:
+    name: keycloak-eve-assist
+
+secrets:
+  db-password:
+    file: ./postgres/password.txt
+  server_crt:
+    file: keycloak/self_signed.crt
+  server_key:
+    file: keycloak/self_signed_key.pem
+
+networks:
+  eve-assist-network:

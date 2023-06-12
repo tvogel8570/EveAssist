@@ -1,0 +1,1 @@
+pg_restore -U postgres -d sdeyaml /var/lib/postgresql/backup/sde-postgres-latest.dmp
