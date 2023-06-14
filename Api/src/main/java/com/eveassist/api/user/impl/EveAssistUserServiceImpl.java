@@ -2,6 +2,9 @@ package com.eveassist.api.user.impl;
 
 import com.eveassist.api.user.EveAssistUserRepository;
 import com.eveassist.api.user.EveAssistUserService;
+import com.eveassist.api.user.SecurityPrincipal;
+import com.eveassist.api.user.dto.EveAssistPasswordDetails;
+import com.eveassist.api.user.dto.EveAssistUserDto;
 import com.eveassist.api.user.entity.EveAssistUser;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -26,5 +29,20 @@ public class EveAssistUserServiceImpl implements UserDetailsService, EveAssistUs
         if (eveAssistUser == null || eveAssistUser.getAuthorities().size() == 0)
             throw new UsernameNotFoundException(String.format("user with email [%s] not found", username));
         return eveAssistUser;
+    }
+
+    @Override
+    public SecurityPrincipal login(EveAssistPasswordDetails passwordDetails) {
+        return null;
+    }
+
+    @Override
+    public UserDetails registerNewUser(EveAssistUserDto userDto, EveAssistPasswordDetails passwordDetails) {
+        return null;
+    }
+
+    @Override
+    public void forgotPassword(String email) {
+
     }
 }

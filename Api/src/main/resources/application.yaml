@@ -1,7 +1,16 @@
+scheme: http
+origins: ${scheme}://localhost:4200
+permit-all: /public/**
+#keycloak-port: 8442
+#keycloak-issuer: ${scheme}://localhost:${keycloak-port}/realms/master
+keycloak-port: 8443
+keycloak-issuer: https://localhost:${keycloak-port}/realms/master
+
 server:
+  error:
+    include-message: always
   ssl:
     enabled: false
-  port: 8080
 
 spring:
   config:
@@ -12,3 +21,31 @@ spring:
     url: jdbc:postgresql://localhost:5432/eve_assist_user
   flyway:
     enabled: true
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${keycloak-issuer}
+          jwk-set-uri: https://localhost:8443/realms/master/protocol/openid-connect/certs
+
+
+spring-addons:
+  issuers:
+    - uri: ${keycloak-issuer}
+      username-json-path: $.preferred_username
+      claims:
+        - jsonPath: $.realm_access.roles
+        - jsonPath: $.resource_access.*.roles
+
+---
+scheme: https
+keycloak-port: 8443
+
+server:
+  ssl:
+    enabled: true
+
+spring:
+  config:
+    activate:
+      on-profile: ssl
