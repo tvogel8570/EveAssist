@@ -1,10 +1,8 @@
 scheme: http
 origins: ${scheme}://localhost:4200
 permit-all: /public/**
-#keycloak-port: 8442
-#keycloak-issuer: ${scheme}://localhost:${keycloak-port}/realms/master
-keycloak-port: 8443
-keycloak-issuer: https://localhost:${keycloak-port}/realms/master
+keycloak-port: 8442
+keycloak-issuer: ${scheme}://localhost:${keycloak-port}/realms/master
 
 server:
   error:
@@ -26,7 +24,7 @@ spring:
       resourceserver:
         jwt:
           issuer-uri: ${keycloak-issuer}
-          jwk-set-uri: https://localhost:8443/realms/master/protocol/openid-connect/certs
+          jwk-set-uri: ${scheme}://localhost:${keycloak-port}/realms/master/protocol/openid-connect/certs
 
 
 spring-addons:
