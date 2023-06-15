@@ -2,13 +2,15 @@ scheme: http
 origins: ${scheme}://localhost:4200
 permit-all: /public/**
 keycloak-port: 8442
-keycloak-issuer: ${scheme}://localhost:${keycloak-port}/realms/master
+keycloak-realm: EveAssist
+keycloak-issuer: ${scheme}://localhost:${keycloak-port}/realms/${keycloak-realm}
 
 server:
   error:
     include-message: always
   ssl:
     enabled: false
+  port: 8085
 
 spring:
   config:
@@ -24,8 +26,7 @@ spring:
       resourceserver:
         jwt:
           issuer-uri: ${keycloak-issuer}
-          jwk-set-uri: ${scheme}://localhost:${keycloak-port}/realms/master/protocol/openid-connect/certs
-
+          jwk-set-uri: ${scheme}://localhost:${keycloak-port}/realms/${keycloak-realm}/protocol/openid-connect/certs
 
 spring-addons:
   issuers:
@@ -42,6 +43,10 @@ keycloak-port: 8443
 server:
   ssl:
     enabled: true
+    key-store-type: PKCS12
+    key-store: classpath:keystore/self_signed.p12
+    key-store-password: ${self.signed.password}
+    key-alias: ${COMPUTERNAME}
 
 spring:
   config:
