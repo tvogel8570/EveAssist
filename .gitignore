@@ -76,5 +76,7 @@ fabric.properties
 # Android studio 3.1+ serialized cache file
 .idea/caches/build_file_checksums.ser
 
-# env.properties with secrets
+# secrets
 **/env.properties
+**/self_signed*.*
+**/password.txt
