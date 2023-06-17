@@ -1,5 +1,53 @@
+api-host: ${scheme}://localhost:${server.port}
+ui-host: ${api-host}
+rp-initiated-logout-enabled: true
+
+scheme: http
+keycloak-port: 8442
+keycloak-issuer: ${scheme}://localhost:${keycloak-port}/realms/${keycloak.eveassist.id}
+keycloak-secret: ${keycloak.eveassist.secret}
+
+server:
+  port: 7443
+  ssl:
+    enabled: false
+
 spring:
   config:
     import: optional:classpath:env.properties
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
+  security:
+    oauth2:
+      client:
+        provider:
+          keycloak:
+            issuer-uri: ${keycloak-issuer}
+        registration:
+          keycloak-confidential-user:
+            authorization-grant-type: authorization_code
+            client-name: a local Keycloak instance
+            client-id: spring-addons-confidential
+            client-secret: ${keycloak-secret}
+            provider: keycloak
+            scope: openid,profile,email,offline_access
 
+authorities-mapping:
+  issuers:
+    - uri: ${keycloak-issuer}
+      claims:
+        - jsonPath: $.realm_access.roles
+        - jsonPath: $.resource_access.*.roles
 
+---
+scheme: https
+keycloak-port: 8443
+
+server:
+  ssl:
+    enabled: true
+
+spring:
+  config:
+    activate:
+      on-profile: ssl
