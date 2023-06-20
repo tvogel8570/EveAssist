@@ -4,8 +4,8 @@ rp-initiated-logout-enabled: true
 
 scheme: http
 keycloak-port: 8442
-keycloak-issuer: ${scheme}://localhost:${keycloak-port}/realms/${keycloak.eveassist.id}
-keycloak-secret: ${keycloak.eveassist.secret}
+keycloak-realm: EveAssist
+keycloak-issuer: ${scheme}://localhost:${keycloak-port}/realms/${keycloak-realm}
 
 server:
   port: 7443
@@ -17,6 +17,8 @@ spring:
     import: optional:classpath:env.properties
   lifecycle:
     timeout-per-shutdown-phase: 30s
+    jpa:
+      open-in-view: false
   security:
     oauth2:
       client:
@@ -27,8 +29,8 @@ spring:
           keycloak-confidential-user:
             authorization-grant-type: authorization_code
             client-name: a local Keycloak instance
-            client-id: spring-addons-confidential
-            client-secret: ${keycloak-secret}
+            client-id: ${keycloak.eveassist.id}
+            client-secret: ${keycloak.eveassist.password}
             provider: keycloak
             scope: openid,profile,email,offline_access
 
