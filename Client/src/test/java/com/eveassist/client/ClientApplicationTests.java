@@ -1,4 +1,4 @@
-package com.eveassist.Client;
+package com.eveassist.client;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -6,8 +6,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 @SpringBootTest
 class ClientApplicationTests {
 
-	@Test
-	void contextLoads() {
-	}
-
+    @SuppressWarnings("squid:S2699")
+    @Test
+    void contextLoads() {
+    }
 }
