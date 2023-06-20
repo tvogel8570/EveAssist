@@ -46,8 +46,14 @@ scheme: https
 keycloak-port: 8443
 
 server:
+  port: 9443
   ssl:
     enabled: true
+    key-store-type: PKCS12
+    key-store: classpath:keystore/self_signed.p12
+    key-store-password: lJzHTXI54As2BFn
+    key-alias: tim-asus
+
 
 spring:
   config:
