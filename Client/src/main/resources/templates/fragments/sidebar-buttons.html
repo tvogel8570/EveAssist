@@ -20,11 +20,10 @@
 
 <!-- tag::desktop-button[] -->
 <a th:fragment="desktop-button(link, title, menuItem, icon)"
-   th:href="${link}">
-    class="group flex items-center rounded-md px-2 py-2 text-sm font-medium"
-    th:classappend="${activeMenuItem == menuItem}? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50
-    hover:text-gray-900'"
-    >
+   th:href="${link}"
+   class="group flex items-center rounded-md px-2 py-2 text-sm font-medium"
+   th:classappend="${activeMenuItem == menuItem}? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'"
+>
     <div class="mr-3 h-6 w-6 flex-shrink-0"
          th:classappend="${activeMenuItem == menuItem}?'text-gray-500':'text-gray-400 group-hover:text-gray-500'">
         <svg th:replace="~{${icon}}"></svg>
