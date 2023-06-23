@@ -80,3 +80,6 @@ fabric.properties
 **/env.properties
 **/self_signed*.*
 **/password.txt
+
+# log files
+**/*.log
