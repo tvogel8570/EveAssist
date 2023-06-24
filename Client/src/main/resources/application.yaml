@@ -2,6 +2,14 @@ api-host: ${scheme}://localhost:${server.port}
 ui-host: ${api-host}
 rp-initiated-logout-enabled: true
 
+pilot:
+  client_id: 3a15282e67204c63bc0ade63f5ce5111
+  client_secret: ${esi.pilot.client.secret}
+  redirect_uri: https://localhost:9443/pilot/login
+  login_uri: https://login.eveonline.com/v2/oauth/authorize/
+  response_type: code
+
+
 scheme: http
 keycloak-port: 8442
 keycloak-realm: EveAssist

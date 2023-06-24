@@ -1,5 +1,7 @@
 <html xmlns:th="http://www.thymeleaf.org" lang="en">
-<div th:fragment="mobile" class="relative z-40 lg:hidden" role="dialog" aria-modal="true" x-show="isVisible()">
+<div th:fragment="mobile"
+     class="relative z-40 lg:hidden" role="dialog" aria-modal="true"
+     x-show="isVisible()">
     <!--
       Off-canvas menu backdrop, show/hide based on off-canvas menu state.
 
@@ -70,8 +72,8 @@
             <div class="mt-5 h-0 flex-1 overflow-y-auto">
                 <nav class="space-y-1 px-2">
                     <a th:replace="~{fragments/sidebar-buttons :: mobile-button(link='#', title='Dashboard', menuItem='dashboard', icon='dashboard')}"></a>
-                    <a th:replace="~{fragments/sidebar-buttons :: mobile-button(link='#', title='Team', menuItem='team', icon='team')}"></a>
-                    <a th:replace="~{fragments/sidebar-buttons :: mobile-button(link='#', title='Projects', menuItem='projects', icon='projects')}"></a>
+                    <a th:replace="~{fragments/sidebar-buttons :: mobile-button(link=@{/pilot}, title='Pilots', menuItem='pilots', icon='users')}"></a>
+                    <a th:replace="~{fragments/sidebar-buttons :: mobile-button(link=@{/teams}, title='Teams', menuItem='teams', icon='user-group')}"></a>
                     <a th:replace="~{fragments/sidebar-buttons :: mobile-button(link='#', title='Calendar', menuItem='calendar', icon='calendar')}"></a>
                     <a th:replace="~{fragments/sidebar-buttons :: mobile-button(link='#', title='Documents', menuItem='documents', icon='documents')}"></a>
                     <a th:replace="~{fragments/sidebar-buttons :: mobile-button(link='#', title='Reports', menuItem='reports', icon='reports')}"></a>
@@ -84,8 +86,9 @@
         </div>
     </div>
 </div>
-<div th:fragment="desktop" class="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
 
+<div th:fragment="desktop"
+     class="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
     <!-- Sidebar component, swap this element with another sidebar if you like -->
     <div class="flex flex-grow flex-col overflow-y-auto border-r border-gray-200 bg-white pt-5">
         <div class="flex flex-shrink-0 items-center px-4">
@@ -95,16 +98,14 @@
         </div>
         <div class="mt-5 flex flex-grow flex-col">
             <nav class="flex-1 space-y-1 px-2 pb-4">
-                <!-- Current: "bg-gray-100 text-gray-900", Default: "text-gray-600 hover:bg-gray-50 hover:text-gray-900" -->
                 <a th:replace="~{fragments/sidebar-buttons :: desktop-button(link='#', title='Dashboard', menuItem='dashboard', icon='dashboard')}"></a>
-                <a th:replace="~{fragments/sidebar-buttons :: desktop-button(link='#', title='Team', menuItem='team', icon='team')}"></a>
+                <a th:replace="~{fragments/sidebar-buttons :: desktop-button(link=@{/pilot}, title='Pilots', menuItem='pilots', icon='users')}"></a>
+                <a th:replace="~{fragments/sidebar-buttons :: desktop-button(link=@{/teams}, title='Teams', menuItem='teams', icon='user-group')}"></a>
                 <a th:replace="~{fragments/sidebar-buttons :: desktop-button(link='#', title='Calendar', menuItem='calendar', icon='calendar')}"></a>
-                <a th:replace="~{fragments/sidebar-buttons :: desktop-button(link='#', title='Projects', menuItem='projects', icon='projects')}"></a>
                 <a th:replace="~{fragments/sidebar-buttons :: desktop-button(link='#', title='Documents', menuItem='documents', icon='documents')}"></a>
                 <a th:replace="~{fragments/sidebar-buttons :: desktop-button(link='#', title='Reports', menuItem='reports', icon='reports')}"></a>
             </nav>
         </div>
     </div>
 </div>
-
 </html>
