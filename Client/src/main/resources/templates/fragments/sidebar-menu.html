@@ -71,7 +71,7 @@
             </div>
             <div class="mt-5 h-0 flex-1 overflow-y-auto">
                 <nav class="space-y-1 px-2">
-                    <a th:replace="~{fragments/sidebar-buttons :: mobile-button(link='#', title='Dashboard', menuItem='dashboard', icon='dashboard')}"></a>
+                    <a th:replace="~{fragments/sidebar-buttons :: mobile-button(link=@{/dashboard}, title='Dashboard', menuItem='dashboard', icon='dashboard')}"></a>
                     <a th:replace="~{fragments/sidebar-buttons :: mobile-button(link=@{/pilot}, title='Pilots', menuItem='pilots', icon='users')}"></a>
                     <a th:replace="~{fragments/sidebar-buttons :: mobile-button(link=@{/teams}, title='Teams', menuItem='teams', icon='user-group')}"></a>
                     <a th:replace="~{fragments/sidebar-buttons :: mobile-button(link='#', title='Calendar', menuItem='calendar', icon='calendar')}"></a>
@@ -98,7 +98,7 @@
         </div>
         <div class="mt-5 flex flex-grow flex-col">
             <nav class="flex-1 space-y-1 px-2 pb-4">
-                <a th:replace="~{fragments/sidebar-buttons :: desktop-button(link='#', title='Dashboard', menuItem='dashboard', icon='dashboard')}"></a>
+                <a th:replace="~{fragments/sidebar-buttons :: desktop-button(link=@{/dashboard}, title='Dashboard', menuItem='dashboard', icon='dashboard')}"></a>
                 <a th:replace="~{fragments/sidebar-buttons :: desktop-button(link=@{/pilot}, title='Pilots', menuItem='pilots', icon='users')}"></a>
                 <a th:replace="~{fragments/sidebar-buttons :: desktop-button(link=@{/teams}, title='Teams', menuItem='teams', icon='user-group')}"></a>
                 <a th:replace="~{fragments/sidebar-buttons :: desktop-button(link='#', title='Calendar', menuItem='calendar', icon='calendar')}"></a>

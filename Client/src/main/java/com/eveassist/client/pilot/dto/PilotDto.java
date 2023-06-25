@@ -6,6 +6,7 @@ import java.util.List;
 
 @Builder
 public record PilotDto(
+        String ownerHash,
         Long pilotId,
         String pilotName,
         List<String> scope

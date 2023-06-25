@@ -37,6 +37,8 @@ public class PilotController {
     String pilotRedirectUri;
     @Value("${pilot.login_uri}")
     String pilotLoginUri;
+    @Value("${pilot.scope}")
+    String pilotScope;
     @Value("${pilot.response_type}")
     String pilotResponseType;
 
@@ -57,11 +59,12 @@ public class PilotController {
         String state = RandomStringUtils.randomAlphanumeric(10);
         String uri;
 
-        uri = "redirect:%s?response_type=%s&redirect_uri=%s&client_id=%s&state=%s".formatted(
+        uri = "redirect:%s?response_type=%s&redirect_uri=%s&client_id=%s&scope=%s&state=%s".formatted(
                 pilotLoginUri,
                 pilotResponseType,
                 URLEncoder.encode(pilotRedirectUri, StandardCharsets.UTF_8),
                 pilotClientId,
+                URLEncoder.encode(pilotScope, StandardCharsets.UTF_8),
                 state);
         this.pilotService.linkState(principal.getName(), state);
         return new ModelAndView(uri, model);

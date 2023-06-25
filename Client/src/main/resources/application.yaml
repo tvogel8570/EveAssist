@@ -3,12 +3,12 @@ ui-host: ${api-host}
 rp-initiated-logout-enabled: true
 
 pilot:
-  client_id: 3a15282e67204c63bc0ade63f5ce5111
+  client_id: ${esi.pilot.client.id}
   client_secret: ${esi.pilot.client.secret}
   redirect_uri: https://localhost:9443/pilot/login
   login_uri: https://login.eveonline.com/v2/oauth/authorize/
   response_type: code
-
+  scope: esi-characters.read_notifications.v1 esi-killmails.read_killmails.v1 esi-skills.read_skills.v1 esi-skills.read_skillqueue.v1
 
 scheme: http
 keycloak-port: 8442

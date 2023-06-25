@@ -21,9 +21,9 @@ public class PilotServiceImpl implements PilotService {
 
     public PilotServiceImpl(ObjectMapper mapper) {
         this.mapper = mapper;
-        pilots.add(PilotDto.builder().pilotId(1L).pilotName("Cass").build());
-        pilots.add(PilotDto.builder().pilotId(2L).pilotName("Michi").build());
-        pilots.add(PilotDto.builder().pilotId(3L).pilotName("Dnai").build());
+        pilots.add(PilotDto.builder().pilotId(1L).pilotName("Cass").ownerHash("1").build());
+        pilots.add(PilotDto.builder().pilotId(2L).pilotName("Michi").ownerHash("1").build());
+        pilots.add(PilotDto.builder().pilotId(3L).pilotName("Dnai").ownerHash("1").build());
     }
 
     @Override
@@ -38,7 +38,7 @@ public class PilotServiceImpl implements PilotService {
         try {
             PilotAuthPayload pilotAuthPayload = mapper.readValue(payload, PilotAuthPayload.class);
             String[] subject = pilotAuthPayload.sub.split(":");
-            PilotDto newPilot = PilotDto.builder().pilotName(pilotAuthPayload.name).pilotId(Long.parseLong(subject[2])).build();
+            PilotDto newPilot = PilotDto.builder().pilotName(pilotAuthPayload.name).pilotId(Long.parseLong(subject[2])).ownerHash(pilotAuthPayload.owner()).build();
             this.pilots.add(newPilot);
             return newPilot;
         } catch (JsonProcessingException e) {
