@@ -31,6 +31,10 @@ spring:
     enabled: true
   jpa:
     open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
   thymeleaf:
     template-resolver-order: 0
   lifecycle:
