@@ -12,6 +12,7 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -38,6 +39,7 @@ public class EsiApiController {
 
     @GetMapping("/character/{pilotId}/public")
     public PilotPublicDto getPilotPublicData(@PathVariable Long pilotId) {
+        log.debug("pilotId [{}]", pilotId);
         try {
             URL publicData = UriComponentsBuilder.fromHttpUrl(esiBasePath)
                     .queryParam("datasource", datasource)
@@ -67,13 +69,32 @@ public class EsiApiController {
             CharactersAffiliationDto[] affiliationDto = esiTemplate
                     .postForObject(affiliationData.toString(), List.of(pilotId), CharactersAffiliationDto[].class);
             UniverseNamesDto[] universeNamesDto = esiTemplate
-                    .postForObject(namesData.toString(), this.validAffiliationIds(affiliationDto), UniverseNamesDto[].class);
+                    .postForObject(namesData.toString(), this.validAffiliationIds(affiliationDto),
+                            UniverseNamesDto[].class);
 
             if (affiliationDto == null || affiliationDto.length != 1)
                 throw new RuntimeException("Unable to retrieve affiliation data from ESI");
 
             return mapper
                     .from(charactersDto, portraitDto, affiliationDto[0], this.lookupAffiliationDesc(universeNamesDto));
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @GetMapping("/character/{pilotId}/notifications")
+    public CharactersNotificationsDto[] getNotifications(@PathVariable Long pilotId, @RequestParam String accessToken) {
+        log.debug("accessToken [{}]", accessToken);
+        log.debug("pilotId [{}]", pilotId);
+        try {
+            URL notificationData = UriComponentsBuilder.fromHttpUrl(esiBasePath)
+                    .queryParam("datasource", datasource)
+                    .path("/characters/%d/notifications".formatted(pilotId))
+                    .build().toUri().toURL();
+            log.debug("getNotifications url: [{}]", notificationData);
+            HttpEntity<MultiValueMap<String, String>> request = buildBaseRequestWithOauth2(accessToken);
+            return esiTemplate.exchange(notificationData.toString(), HttpMethod.GET, request,
+                    CharactersNotificationsDto[].class).getBody();
         } catch (MalformedURLException e) {
             throw new RuntimeException(e);
         }
@@ -97,7 +118,7 @@ public class EsiApiController {
     private List<Integer> validAffiliationIds(@NotNull CharactersAffiliationDto[] affiliationDto) {
         if (affiliationDto != null && affiliationDto.length == 1) {
             CharactersAffiliationDto match = affiliationDto[0];
-            return Stream.of(match.alliance_id(), match.corporation_id(), match.faction_id(), match.character_id())
+            return Stream.of(match.allianceId(), match.corporationId(), match.factionId(), match.characterId())
                     .filter(Objects::nonNull)
                     .toList();
         }
@@ -111,6 +132,17 @@ public class EsiApiController {
         headers.setAccept(List.of(MediaType.valueOf(MediaType.APPLICATION_JSON_VALUE)));
         headers.setCacheControl("no-cache");
         headers.add(HttpHeaders.USER_AGENT, "EveAssist/0.1 Where Am I");
+
+        return new HttpEntity<>(map, headers);
+    }
+
+    private HttpEntity<MultiValueMap<String, String>> buildBaseRequestWithOauth2(String token) {
+        MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setAccept(List.of(MediaType.valueOf(MediaType.APPLICATION_JSON_VALUE)));
+        headers.setCacheControl("no-cache");
+        headers.add(HttpHeaders.USER_AGENT, "EveAssist/0.1 Where Am I");
+        headers.setBearerAuth(token);
 
         return new HttpEntity<>(map, headers);
     }
