@@ -1,5 +1,6 @@
 package com.eveassist.client.pilot.impl;
 
+import com.eveassist.client.exception.EsiParsingException;
 import com.eveassist.client.pilot.PilotService;
 import com.eveassist.client.pilot.dto.PilotAuthDto;
 import com.eveassist.client.pilot.dto.PilotDto;
@@ -38,11 +39,12 @@ public class PilotServiceImpl implements PilotService {
         try {
             PilotAuthPayload pilotAuthPayload = mapper.readValue(payload, PilotAuthPayload.class);
             String[] subject = pilotAuthPayload.sub.split(":");
-            PilotDto newPilot = PilotDto.builder().pilotName(pilotAuthPayload.name).pilotId(Long.parseLong(subject[2])).ownerHash(pilotAuthPayload.owner()).build();
+            PilotDto newPilot =
+                    PilotDto.builder().pilotName(pilotAuthPayload.name).pilotId(Long.parseLong(subject[2])).ownerHash(pilotAuthPayload.owner()).build();
             this.pilots.add(newPilot);
             return newPilot;
         } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
+            throw new EsiParsingException(e, "savePilot", "PilotAuthPayload");
         }
     }
 

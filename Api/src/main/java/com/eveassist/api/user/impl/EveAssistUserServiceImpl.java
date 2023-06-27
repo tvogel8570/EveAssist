@@ -20,13 +20,14 @@ public class EveAssistUserServiceImpl implements UserDetailsService, EveAssistUs
     }
 
     /**
-     * @param username - user's email is default username. the username identifying the user whose data is required.  Case-insensitive search
+     * @param username - user's email is default username. the username identifying the user whose data is required.
+     *                 Case-insensitive search
      * @return fully populated user record (never null)
      * @throws UsernameNotFoundException – if the user could not be found or the user has no GrantedAuthorities
      */
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         EveAssistUser eveAssistUser = userRepository.findByEmailIgnoreCase(username);
-        if (eveAssistUser == null || eveAssistUser.getAuthorities().size() == 0)
+        if (eveAssistUser == null || eveAssistUser.getAuthorities().isEmpty())
             throw new UsernameNotFoundException(String.format("user with email [%s] not found", username));
         return eveAssistUser;
     }
@@ -43,6 +44,6 @@ public class EveAssistUserServiceImpl implements UserDetailsService, EveAssistUs
 
     @Override
     public void forgotPassword(String email) {
-
+        // TODO implement if needed
     }
 }

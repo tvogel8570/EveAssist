@@ -1,6 +1,8 @@
 package com.eveassist.api.esi;
 
 import com.eveassist.api.esi.dto.PilotPublicDto;
+import com.eveassist.api.esi.exception.EsiParameterException;
+import com.eveassist.api.esi.exception.InvalidUrlException;
 import com.eveassist.api.esi.response.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
@@ -29,8 +31,8 @@ import java.util.stream.Stream;
 public class EsiApiController {
     private final RestTemplate esiTemplate;
     private final CharactersMapper mapper;
-    private final String esiBasePath = "https://esi.evetech.net/latest";
-    private final String datasource = "tranquility";
+    private static final String ESI_BASE_PATH = "https://esi.evetech.net/latest";
+    private static final String DATASOURCE = "tranquility";
 
     public EsiApiController(RestTemplate esiTemplate, CharactersMapper mapper) {
         this.esiTemplate = esiTemplate;
@@ -39,25 +41,26 @@ public class EsiApiController {
 
     @GetMapping("/character/{pilotId}/public")
     public PilotPublicDto getPilotPublicData(@PathVariable Long pilotId) {
+        final String METHOD_NAME = "getPilotPublicData";
         log.debug("pilotId [{}]", pilotId);
         try {
-            URL publicData = UriComponentsBuilder.fromHttpUrl(esiBasePath)
-                    .queryParam("datasource", datasource)
+            URL publicData = UriComponentsBuilder.fromHttpUrl(ESI_BASE_PATH)
+                    .queryParam("datasource", DATASOURCE)
                     .path("/characters/%d/".formatted(pilotId))
                     .build().toUri().toURL();
             log.debug("getPilotPublicData url: [{}]", publicData);
-            URL portraitData = UriComponentsBuilder.fromHttpUrl(esiBasePath)
-                    .queryParam("datasource", datasource)
+            URL portraitData = UriComponentsBuilder.fromHttpUrl(ESI_BASE_PATH)
+                    .queryParam("datasource", DATASOURCE)
                     .path("/characters/%d/portrait".formatted(pilotId))
                     .build().toUri().toURL();
             log.debug("getPilotPublicData url: [{}]", portraitData);
-            URL affiliationData = UriComponentsBuilder.fromHttpUrl(esiBasePath)
-                    .queryParam("datasource", datasource)
+            URL affiliationData = UriComponentsBuilder.fromHttpUrl(ESI_BASE_PATH)
+                    .queryParam("datasource", DATASOURCE)
                     .path("/characters/affiliation")
                     .build().toUri().toURL();
             log.debug("getPilotPublicData url: [{}]", affiliationData);
-            URL namesData = UriComponentsBuilder.fromHttpUrl(esiBasePath)
-                    .queryParam("datasource", datasource)
+            URL namesData = UriComponentsBuilder.fromHttpUrl(ESI_BASE_PATH)
+                    .queryParam("datasource", DATASOURCE)
                     .path("/universe/names")
                     .build().toUri().toURL();
             log.debug("getPilotPublicData url: [{}]", namesData);
@@ -73,22 +76,23 @@ public class EsiApiController {
                             UniverseNamesDto[].class);
 
             if (affiliationDto == null || affiliationDto.length != 1)
-                throw new RuntimeException("Unable to retrieve affiliation data from ESI");
+                throw new EsiParameterException("Unable to retrieve affiliation data from ESI");
 
             return mapper
                     .from(charactersDto, portraitDto, affiliationDto[0], this.lookupAffiliationDesc(universeNamesDto));
         } catch (MalformedURLException e) {
-            throw new RuntimeException(e);
+            throw new InvalidUrlException(e, METHOD_NAME, "multiple URLs");
         }
     }
 
     @GetMapping("/character/{pilotId}/notifications")
     public CharactersNotificationsDto[] getNotifications(@PathVariable Long pilotId, @RequestParam String accessToken) {
+        final String METHOD_NAME = "getNotifications";
         log.debug("accessToken [{}]", accessToken);
         log.debug("pilotId [{}]", pilotId);
         try {
-            URL notificationData = UriComponentsBuilder.fromHttpUrl(esiBasePath)
-                    .queryParam("datasource", datasource)
+            URL notificationData = UriComponentsBuilder.fromHttpUrl(ESI_BASE_PATH)
+                    .queryParam("datasource", DATASOURCE)
                     .path("/characters/%d/notifications".formatted(pilotId))
                     .build().toUri().toURL();
             log.debug("getNotifications url: [{}]", notificationData);
@@ -96,7 +100,7 @@ public class EsiApiController {
             return esiTemplate.exchange(notificationData.toString(), HttpMethod.GET, request,
                     CharactersNotificationsDto[].class).getBody();
         } catch (MalformedURLException e) {
-            throw new RuntimeException(e);
+            throw new InvalidUrlException(e, METHOD_NAME, "/characters/%d/notifications".formatted(pilotId));
         }
     }
 
@@ -108,8 +112,8 @@ public class EsiApiController {
                 case "corporation" -> rtn.setCorporationDesc(universeNamesDto.name());
                 case "faction" -> rtn.setFactionDesc(universeNamesDto.name());
                 case "character" -> rtn.setCharacterDesc(universeNamesDto.name());
-                default -> {
-                }
+                default ->
+                        throw new EsiParameterException("new constant in affiliation %s".formatted(universeNamesDto.category()));
             }
         }
         return rtn;

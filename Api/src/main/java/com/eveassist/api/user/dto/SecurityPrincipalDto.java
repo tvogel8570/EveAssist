@@ -3,10 +3,16 @@ package com.eveassist.api.user.dto;
 import com.eveassist.api.user.SecurityPrincipal;
 import org.springframework.security.core.GrantedAuthority;
 
+import java.io.Serial;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 
 public class SecurityPrincipalDto implements SecurityPrincipal {
+    @Serial
+    private static final long serialVersionUID = 3012394447166068545L;
+
     @Override
     public String getName() {
         return null;
@@ -14,12 +20,12 @@ public class SecurityPrincipalDto implements SecurityPrincipal {
 
     @Override
     public Map<String, Object> getAttributes() {
-        return null;
+        return new HashMap<>();
     }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return null;
+        return new ArrayList<>();
     }
 
     @Override

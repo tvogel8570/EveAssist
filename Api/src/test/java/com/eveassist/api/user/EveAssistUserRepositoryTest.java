@@ -54,15 +54,13 @@ class EveAssistUserRepositoryTest {
     @Test
     void shouldReturnListOfAllUsers() {
         List<EveAssistUserListDto> allUserInfo = cut.getAllUsersList();
-        assertThat(allUserInfo).isNotNull();
-        assertThat(allUserInfo.size()).isEqualTo(2);
+        assertThat(allUserInfo).isNotNull().hasSize(2);
     }
 
     @Test
     void shouldReturnUserDto() {
         List<EveAssistUserListDto> userInfo = cut.getAllUsersList();
-        assertThat(userInfo).isNotNull();
-        assertThat(userInfo.size()).isEqualTo(2);
+        assertThat(userInfo).isNotNull().hasSize(2);
     }
 
 

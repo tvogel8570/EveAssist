@@ -79,7 +79,8 @@ public class WebSecurityConfig {
 
         // Return 401 (unauthorized) instead of 302 (redirect to login) when
         // authorization is missing or invalid
-        http.exceptionHandling(exceptionHandling -> exceptionHandling.authenticationEntryPoint((request, response, authException) -> {
+        http.exceptionHandling(exceptionHandling -> exceptionHandling.authenticationEntryPoint((request, response,
+                                                                                                authException) -> {
             response.addHeader(HttpHeaders.WWW_AUTHENTICATE, "Basic realm=\"Restricted Content\"");
             response.sendError(HttpStatus.UNAUTHORIZED.value(), HttpStatus.UNAUTHORIZED.getReasonPhrase());
         }));
@@ -131,7 +132,7 @@ public class WebSecurityConfig {
                 private CaseProcessing caseProcessing = CaseProcessing.UNCHANGED;
                 private String prefix = "";
 
-                static enum CaseProcessing {
+                enum CaseProcessing {
                     UNCHANGED, TO_LOWER, TO_UPPER
                 }
             }
@@ -139,7 +140,7 @@ public class WebSecurityConfig {
 
         public IssuerProperties get(URL issuerUri) throws MisconfigurationException {
             final var issuerProperties = Stream.of(issuers).filter(iss -> issuerUri.equals(iss.getUri())).toList();
-            if (issuerProperties.size() == 0) {
+            if (issuerProperties.isEmpty()) {
                 throw new MisconfigurationException("Missing authorities mapping properties for %s".formatted(issuerUri.toString()));
             }
             if (issuerProperties.size() > 1) {
@@ -215,14 +216,17 @@ public class WebSecurityConfig {
 
     @Bean
     AuthenticationManagerResolver<HttpServletRequest>
-    authenticationManagerResolver(SpringAddonsProperties addonsProperties, SpringAddonsJwtAuthenticationConverter authenticationConverter) {
+    authenticationManagerResolver(SpringAddonsProperties addonsProperties,
+                                  SpringAddonsJwtAuthenticationConverter authenticationConverter) {
         final Map<String, AuthenticationManager> authenticationProviders =
                 Stream.of(addonsProperties.getIssuers()).map(SpringAddonsProperties.IssuerProperties::getUri).map(URL::toString)
-                        .collect(Collectors.toMap(issuer -> issuer, issuer -> authenticationProvider(issuer, authenticationConverter)::authenticate));
-        return new JwtIssuerAuthenticationManagerResolver((AuthenticationManagerResolver<String>) authenticationProviders::get);
+                        .collect(Collectors.toMap(issuer -> issuer, issuer -> authenticationProvider(issuer,
+                                authenticationConverter)::authenticate));
+        return new JwtIssuerAuthenticationManagerResolver(authenticationProviders::get);
     }
 
-    JwtAuthenticationProvider authenticationProvider(String issuer, SpringAddonsJwtAuthenticationConverter authenticationConverter) {
+    JwtAuthenticationProvider authenticationProvider(String issuer,
+                                                     SpringAddonsJwtAuthenticationConverter authenticationConverter) {
         JwtDecoder decoder = JwtDecoders.fromIssuerLocation(issuer);
         var provider = new JwtAuthenticationProvider(decoder);
         provider.setJwtAuthenticationConverter(authenticationConverter);

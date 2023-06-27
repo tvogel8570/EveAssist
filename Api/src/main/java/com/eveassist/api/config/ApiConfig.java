@@ -13,8 +13,8 @@ import java.time.format.DateTimeFormatter;
 
 @Configuration
 public class ApiConfig {
-    public static final String DATETIME_FORMAT = "MM-dd-yyyy HH:mm";
-    public static LocalDateTimeSerializer LOCAL_DATETIME_SERIALIZER =
+    private static final String DATETIME_FORMAT = "MM-dd-yyyy HH:mm";
+    private static final LocalDateTimeSerializer LOCAL_DATETIME_SERIALIZER =
             new LocalDateTimeSerializer(DateTimeFormatter.ofPattern(DATETIME_FORMAT));
 
     @Bean
