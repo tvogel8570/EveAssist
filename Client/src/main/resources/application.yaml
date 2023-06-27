@@ -15,6 +15,11 @@ keycloak-port: 8442
 keycloak-realm: EveAssist
 keycloak-issuer: ${scheme}://localhost:${keycloak-port}/realms/${keycloak-realm}
 
+logging:
+  level:
+    root: warn
+    com.eveassist.client: debug
+
 server:
   port: 7443
   ssl:
