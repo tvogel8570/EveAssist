@@ -10,13 +10,17 @@ import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public interface CharactersMapper {
-
-    @Mapping(source = "affiliationData.alliance_id", target = "alliance_id")
-    @Mapping(source = "affiliationData.corporation_id", target = "corporation_id")
-    @Mapping(source = "affiliationData.faction_id", target = "faction_id")
-    @Mapping(source = "descDto.allianceDesc", target = "alliance_desc")
-    @Mapping(source = "descDto.corporationDesc", target = "corporation_desc")
-    @Mapping(source = "descDto.factionDesc", target = "faction_desc")
+    // @formatter:off
+    @Mapping(target = "allianceId",
+            expression = "java(publicData.allianceId()!=null?publicData.allianceId():affiliationData!=null?affiliationData.allianceId():null)")
+    @Mapping(target = "corporationId",
+            expression = "java(publicData.corporationId()!=null?publicData.corporationId():affiliationData!=null?affiliationData.corporationId():null)")
+    @Mapping(target = "factionId",
+            expression = "java(publicData.factionId()!=null?publicData.factionId():affiliationData!=null?affiliationData.factionId():null)")
+    @Mapping(source = "descDto.allianceDesc", target = "allianceDesc")
+    @Mapping(source = "descDto.corporationDesc", target = "corporationDesc")
+    @Mapping(source = "descDto.factionDesc", target = "factionDesc")
+    // @formatter:on
     PilotPublicDto from(CharactersDto publicData, CharactersPortraitDto portraitData,
                         CharactersAffiliationDto affiliationData, AffiliationDescDto descDto);
 }

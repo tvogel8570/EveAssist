@@ -1,0 +1,2496 @@
+[
+  {
+    "notification_id": 1794469972,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: 99009163\naggressorCorpID: 98723201\naggressorID: 1163780656\nplanetID: 40409143\nplanetTypeID: 2016\nreinforceExitTime: 133321966780000000\nsolarSystemID: 31001119\ntypeID: 2233\n",
+    "timestamp": "2023-06-24T12:16:00Z",
+    "type": "OrbitalReinforced"
+  },
+  {
+    "notification_id": 1794469649,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: 99009163\naggressorCorpID: 98723201\naggressorID: 2119006610\nplanetID: 40409143\nplanetTypeID: 2016\nshieldLevel: 0.26010856319958897\nsolarSystemID: 31001119\ntypeID: 2233\n",
+    "timestamp": "2023-06-24T12:16:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "notification_id": 1794462432,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: 99009163\naggressorCorpID: 98723201\naggressorID: 2119006610\nplanetID: 40409141\nplanetTypeID: 2016\nshieldLevel: 0.07387083678268756\nsolarSystemID: 31001119\ntypeID: 2233\n",
+    "timestamp": "2023-06-24T11:55:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "notification_id": 1794461774,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: 99009163\naggressorCorpID: 98723201\naggressorID: 1533779747\nplanetID: 40409140\nplanetTypeID: 2016\nreinforceExitTime: 133321964220000000\nsolarSystemID: 31001119\ntypeID: 2233\n",
+    "timestamp": "2023-06-24T11:54:00Z",
+    "type": "OrbitalReinforced"
+  },
+  {
+    "notification_id": 1794453694,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: 99009163\naggressorCorpID: 98723201\naggressorID: 2119006610\nplanetID: 40409140\nplanetTypeID: 2016\nshieldLevel: 0.8943430587019179\nsolarSystemID: 31001119\ntypeID: 2233\n",
+    "timestamp": "2023-06-24T11:27:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "notification_id": 1794419752,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: 99009163\naggressorCorpID: 98723201\naggressorID: 1163780656\nplanetID: 40409140\nplanetTypeID: 2016\nshieldLevel: 0.9898037169832358\nsolarSystemID: 31001119\ntypeID: 2233\n",
+    "timestamp": "2023-06-24T09:30:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "notification_id": 1793842026,
+    "sender_id": 1000137,
+    "sender_type": "corporation",
+    "text": "assetSafetyDurationFull: 17280000000000\nassetSafetyDurationMinimum: 4320000000000\nassetSafetyFullTimestamp: 133336966101643189\nassetSafetyMinimumTimestamp: 133324006101643189\nisCorpOwned: false\nnewStationID: 60000358\nsolarsystemID: 30000144\nstructureID: &id001 1028858195912\nstructureLink: <a href=\"showinfo:35834//1028858195912\">Perimeter - Tranquility Trading\n  Tower</a>\nstructureShowInfoData:\n- showinfo\n- 35834\n- *id001\nstructureTypeID: 35834\n",
+    "timestamp": "2023-06-23T04:37:00Z",
+    "type": "StructureItemsMovedToSafety"
+  },
+  {
+    "notification_id": 1793666079,
+    "sender_id": 1000137,
+    "sender_type": "corporation",
+    "text": "daysUntilAbandon: 2\nisCorpOwned: false\nsolarsystemID: 30000144\nstructureID: &id001 1028858195912\nstructureLink: <a href=\"showinfo:35834//1028858195912\">Perimeter - Tranquility Trading\n  Tower</a>\nstructureShowInfoData:\n- showinfo\n- 35834\n- *id001\nstructureTypeID: 35834\n",
+    "timestamp": "2023-06-22T22:06:00Z",
+    "type": "StructureImpendingAbandonmentAssetsAtRisk"
+  },
+  {
+    "notification_id": 1792081677,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -4.375e-05\n  - -1.0\n  - 1.0\n  - -1.1793270122399928\n",
+    "timestamp": "2023-06-19T16:31:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1791430292,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -6.874999999999999e-05\n  - -1.0\n  - 1.0\n  - -1.178720549277756\n",
+    "timestamp": "2023-06-18T12:10:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1791417599,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "{}\n",
+    "timestamp": "2023-06-18T11:39:00Z",
+    "type": "GameTimeAdded"
+  },
+  {
+    "notification_id": 1790895602,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -8.125e-05\n  - -1.0\n  - 1.0\n  - -1.1781140446183234\n",
+    "timestamp": "2023-06-17T13:03:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1790894163,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -6.874999999999999e-05\n  - -1.0\n  - 1.0\n  - -1.1773972081414847\n",
+    "timestamp": "2023-06-17T13:00:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1790365737,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -4.375e-05\n  - -1.0\n  - 1.0\n  - -1.177011202381589\n",
+    "timestamp": "2023-06-16T13:13:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1788410081,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -3.125e-05\n  - -1.0\n  - 1.0\n  - -1.1767354753651942\n",
+    "timestamp": "2023-06-12T14:52:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1786446413,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -3.125e-05\n  - -1.0\n  - 1.0\n  - -1.1764597397320606\n",
+    "timestamp": "2023-06-08T15:01:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1785529129,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -3.125e-05\n  - -1.0\n  - 1.0\n  - -1.1761839954819195\n",
+    "timestamp": "2023-06-06T15:08:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1784976425,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -3.125e-05\n  - -1.0\n  - 1.0\n  - -1.175908242614501\n",
+    "timestamp": "2023-06-05T11:59:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1784527604,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -4.375e-05\n  - -1.0\n  - 1.0\n  - -1.1755221717095135\n",
+    "timestamp": "2023-06-04T13:56:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1783417915,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -4.375e-05\n  - -1.0\n  - 1.0\n  - -1.1751360839131846\n",
+    "timestamp": "2023-06-02T11:37:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1783099624,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -3.125e-05\n  - -1.0\n  - 1.0\n  - -1.1748602982975065\n",
+    "timestamp": "2023-06-01T17:36:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1782300913,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -2.5e-05\n  - -1.0\n  - 1.0\n  - -1.1746396642891137\n",
+    "timestamp": "2023-05-31T00:28:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1780381316,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -8.125e-05\n  - -1.0\n  - 1.0\n  - -1.1739225454959352\n",
+    "timestamp": "2023-05-27T13:21:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1778872377,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -5.625e-05\n  - -1.0\n  - 1.0\n  - -1.1734260507112877\n",
+    "timestamp": "2023-05-24T14:12:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1778619075,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -3.125e-05\n  - -1.0\n  - 1.0\n  - -1.173150211655402\n",
+    "timestamp": "2023-05-24T00:29:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1777894588,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -8.125e-05\n  - -1.0\n  - 1.0\n  - -1.1724329718343633\n",
+    "timestamp": "2023-05-22T15:08:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1777890355,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -4.375e-05\n  - -1.0\n  - 1.0\n  - -1.1724329718343633\n",
+    "timestamp": "2023-05-22T14:59:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1777291476,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -4.375e-05\n  - -1.0\n  - 1.0\n  - -1.171660509026897\n",
+    "timestamp": "2023-05-21T12:48:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1776415765,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -3.7500000000000003e-05\n  - -1.0\n  - 1.0\n  - -1.1713294338806675\n",
+    "timestamp": "2023-05-19T22:38:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1774778202,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -2.5e-05\n  - -1.0\n  - 1.0\n  - -1.1711087115984573\n",
+    "timestamp": "2023-05-16T19:10:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1774365731,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: 937872513\naggressorCorpID: 917701062\naggressorID: 95438163\nplanetID: 40365527\nplanetTypeID: 13\nshieldLevel: 0.8943298758164607\nsolarSystemID: 31000282\ntypeID: 2233\n",
+    "timestamp": "2023-05-15T23:42:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "notification_id": 1774357306,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: 937872513\naggressorCorpID: 917701062\naggressorID: 95438163\nplanetID: 40365527\nplanetTypeID: 13\nshieldLevel: 0.9898879864943388\nsolarSystemID: 31000282\ntypeID: 2233\n",
+    "timestamp": "2023-05-15T23:12:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "notification_id": 1771116656,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -3.7500000000000003e-05\n  - -1.0\n  - 1.0\n  - -1.1707776157590484\n",
+    "timestamp": "2023-05-09T16:26:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1770720921,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -3.7500000000000003e-05\n  - -1.0\n  - 1.0\n  - -1.1707776157590484\n",
+    "timestamp": "2023-05-08T22:15:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1769327040,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98473302\naggressorID: 341271911\nplanetID: 40367352\nplanetTypeID: 13\nshieldLevel: 0.6540896394681344\nsolarSystemID: 31000318\ntypeID: 2233\n",
+    "timestamp": "2023-05-06T16:02:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "notification_id": 1769307517,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98473302\naggressorID: 209131602\nplanetID: 40367352\nplanetTypeID: 13\nshieldLevel: 0.7428607058831035\nsolarSystemID: 31000318\ntypeID: 2233\n",
+    "timestamp": "2023-05-06T15:25:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "notification_id": 1769284131,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98473302\naggressorID: 341271911\nplanetID: 40367352\nplanetTypeID: 13\nshieldLevel: 0.989947158724319\nsolarSystemID: 31000318\ntypeID: 2233\n",
+    "timestamp": "2023-05-06T14:44:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "notification_id": 1769204210,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -0.03\n  - -1.0\n  - 1.0\n  - -0.8973675335083298\n",
+    "timestamp": "2023-05-06T12:19:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1768906345,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -0.03\n  - -1.0\n  - 1.0\n  - -0.6158428180498244\n",
+    "timestamp": "2023-05-05T21:53:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1768409454,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -2.5e-05\n  - -1.0\n  - 1.0\n  - -0.6156082082550308\n",
+    "timestamp": "2023-05-04T23:32:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1767153324,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -3.7500000000000003e-05\n  - -1.0\n  - 1.0\n  - -0.6152562803655446\n",
+    "timestamp": "2023-05-02T12:38:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1766302292,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -3.125e-05\n  - -1.0\n  - 1.0\n  - -0.6149629979592307\n",
+    "timestamp": "2023-04-30T17:59:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1765721789,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -2.5e-05\n  - -1.0\n  - 1.0\n  - -0.6147283661683849\n",
+    "timestamp": "2023-04-29T15:48:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1765120405,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -4.375e-05\n  - -1.0\n  - 1.0\n  - -0.6143177425696223\n",
+    "timestamp": "2023-04-28T11:30:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1764293065,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -3.125e-05\n  - -1.0\n  - 1.0\n  - -0.6140244308330859\n",
+    "timestamp": "2023-04-26T14:07:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1763391975,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -3.125e-05\n  - -1.0\n  - 1.0\n  - -0.6137311099302712\n",
+    "timestamp": "2023-04-24T15:02:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1761072327,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -4.375e-05\n  - -1.0\n  - 1.0\n  - -0.6133204426996393\n",
+    "timestamp": "2023-04-19T20:24:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1760518060,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -2.5e-05\n  - -1.0\n  - 1.0\n  - -0.6130857698438854\n",
+    "timestamp": "2023-04-18T16:31:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1759485068,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -4.375e-05\n  - -1.0\n  - 1.0\n  - -0.6123230210893489\n",
+    "timestamp": "2023-04-16T13:39:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1759483449,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -8.125e-05\n  - -1.0\n  - 1.0\n  - -0.611912292252135\n",
+    "timestamp": "2023-04-16T13:36:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1758537052,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -6.874999999999999e-05\n  - -1.0\n  - 1.0\n  - -0.6112668168457931\n",
+    "timestamp": "2023-04-14T17:32:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1757588053,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 1541365482\naggressorID: 857135374\nplanetID: 40374632\nplanetTypeID: 12\nshieldLevel: 0.9896122879897876\nsolarSystemID: 31000460\ntypeID: 2233\n",
+    "timestamp": "2023-04-12T15:54:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "notification_id": 1757530342,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -3.125e-05\n  - -1.0\n  - 1.0\n  - -0.6112668168457931\n",
+    "timestamp": "2023-04-12T13:38:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1756757472,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -8.125e-05\n  - -1.0\n  - 1.0\n  - -0.6102104893671093\n",
+    "timestamp": "2023-04-10T19:36:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1755261631,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -3.125e-05\n  - -1.0\n  - 1.0\n  - -0.6099170492748992\n",
+    "timestamp": "2023-04-07T23:18:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1754036516,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -3.7500000000000003e-05\n  - -1.0\n  - 1.0\n  - -0.6095649079589476\n",
+    "timestamp": "2023-04-05T11:21:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1753245480,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 1541365482\naggressorID: 857135374\nplanetID: 40374632\nplanetTypeID: 12\nshieldLevel: 0.9899053242491072\nsolarSystemID: 31000460\ntypeID: 2233\n",
+    "timestamp": "2023-04-03T17:36:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "notification_id": 1753240011,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 1541365482\naggressorID: 458639815\nplanetID: 40374613\nplanetTypeID: 13\nshieldLevel: 0.989824020721146\nsolarSystemID: 31000460\ntypeID: 2233\n",
+    "timestamp": "2023-04-03T17:23:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "notification_id": 1752816805,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -6.874999999999999e-05\n  - -1.0\n  - 1.0\n  - -0.6089192711588398\n",
+    "timestamp": "2023-04-02T19:25:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1752253999,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -8.125e-05\n  - -1.0\n  - 1.0\n  - -0.6089192711588398\n",
+    "timestamp": "2023-04-01T19:05:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1752246575,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -8.125e-05\n  - -1.0\n  - 1.0\n  - -0.6081561838487775\n",
+    "timestamp": "2023-04-01T18:49:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1752241103,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -8.125e-05\n  - -1.0\n  - 1.0\n  - -0.6073930345328333\n",
+    "timestamp": "2023-04-01T18:37:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1752235587,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -6.874999999999999e-05\n  - -1.0\n  - 1.0\n  - -0.6066298232059688\n",
+    "timestamp": "2023-04-01T18:25:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1752232544,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -8.125e-05\n  - -1.0\n  - 1.0\n  - -0.6059839846049104\n",
+    "timestamp": "2023-04-01T18:18:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1752044805,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 1541365482\naggressorID: 458639815\nplanetID: 40374613\nplanetTypeID: 13\nshieldLevel: 0.9897043621784719\nsolarSystemID: 31000460\ntypeID: 2233\n",
+    "timestamp": "2023-04-01T11:50:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "notification_id": 1752032897,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 1541365482\naggressorID: 458639815\nplanetID: 40374613\nplanetTypeID: 13\nshieldLevel: 0.9895197379903597\nsolarSystemID: 31000460\ntypeID: 2233\n",
+    "timestamp": "2023-04-01T11:12:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1750967274,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 1541365482\naggressorID: 458639815\nplanetID: 40374613\nplanetTypeID: 13\nshieldLevel: 0.9896568485092957\nsolarSystemID: 31000460\ntypeID: 2233\n",
+    "timestamp": "2023-03-30T00:42:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "notification_id": 1749976717,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 1541365482\naggressorID: 458639815\nplanetID: 40374613\nplanetTypeID: 13\nshieldLevel: 0.9896674549295487\nsolarSystemID: 31000460\ntypeID: 2233\n",
+    "timestamp": "2023-03-27T18:07:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "notification_id": 1749790163,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 1541365482\naggressorID: 458639815\nplanetID: 40374613\nplanetTypeID: 13\nshieldLevel: 0.987466022574351\nsolarSystemID: 31000460\ntypeID: 2233\n",
+    "timestamp": "2023-03-27T09:25:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "notification_id": 1749775652,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 1541365482\naggressorID: 458639815\nplanetID: 40374613\nplanetTypeID: 13\nshieldLevel: 0.9897548852495799\nsolarSystemID: 31000460\ntypeID: 2233\n",
+    "timestamp": "2023-03-27T08:38:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "notification_id": 1748791350,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 1541365482\naggressorID: 394441570\nplanetID: 40374613\nplanetTypeID: 13\nshieldLevel: 0.9898161905736482\nsolarSystemID: 31000460\ntypeID: 2233\n",
+    "timestamp": "2023-03-25T10:46:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "notification_id": 1748658462,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -3.125e-05\n  - -1.0\n  - 1.0\n  - -0.6049270627541476\n",
+    "timestamp": "2023-03-25T04:15:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1748652087,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 1541365482\naggressorID: 857135374\nplanetID: 40374613\nplanetTypeID: 13\nshieldLevel: 0.9896467666144398\nsolarSystemID: 31000460\ntypeID: 2233\n",
+    "timestamp": "2023-03-25T03:54:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "notification_id": 1748143984,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -3.125e-05\n  - -1.0\n  - 1.0\n  - -0.604633457549696\n",
+    "timestamp": "2023-03-24T03:05:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1747677589,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -3.7500000000000003e-05\n  - -1.0\n  - 1.0\n  - -0.6042811180916244\n",
+    "timestamp": "2023-03-23T01:51:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1746212623,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "charID: 1548392405\nnewOwnerCorpID: 786410886\noldOwnerCorpID: 1541365482\nsolarSystemID: 31000460\nstructureID: 1041313810118\nstructureName: Customs Office (J100640 VIII)\nstructureTypeID: 2233\n",
+    "timestamp": "2023-03-19T20:33:00Z",
+    "type": "OwnershipTransferred"
+  },
+  {
+    "notification_id": 1746212546,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "charID: 1548392405\nnewOwnerCorpID: 786410886\noldOwnerCorpID: 1541365482\nsolarSystemID: 31000460\nstructureID: 1041312627256\nstructureName: Customs Office (J100640 III)\nstructureTypeID: 2233\n",
+    "timestamp": "2023-03-19T20:33:00Z",
+    "type": "OwnershipTransferred"
+  },
+  {
+    "notification_id": 1746212512,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "charID: 1548392405\nnewOwnerCorpID: 786410886\noldOwnerCorpID: 1541365482\nsolarSystemID: 31000460\nstructureID: 1041312586017\nstructureName: Customs Office (J100640 I)\nstructureTypeID: 2233\n",
+    "timestamp": "2023-03-19T20:33:00Z",
+    "type": "OwnershipTransferred"
+  },
+  {
+    "notification_id": 1746212438,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "charID: 1548392405\nnewOwnerCorpID: 786410886\noldOwnerCorpID: 1541365482\nsolarSystemID: 31000460\nstructureID: 1041312608887\nstructureName: Customs Office (J100640 II)\nstructureTypeID: 2233\n",
+    "timestamp": "2023-03-19T20:32:00Z",
+    "type": "OwnershipTransferred"
+  },
+  {
+    "notification_id": 1743293255,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -5.625e-05\n  - -1.0\n  - 1.0\n  - -0.603752579174203\n",
+    "timestamp": "2023-03-13T16:35:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1742675381,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -5.0e-05\n  - -1.0\n  - 1.0\n  - -0.6031652770040157\n",
+    "timestamp": "2023-03-12T12:40:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1742673776,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -6.25e-05\n  - -1.0\n  - 1.0\n  - -0.6026954117746044\n",
+    "timestamp": "2023-03-12T12:37:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1742123803,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -8.125e-05\n  - -1.0\n  - 1.0\n  - -0.6019318187348767\n",
+    "timestamp": "2023-03-11T13:42:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1737053438,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98614836\naggressorID: 96756190\nplanetID: 40391598\nplanetTypeID: 2016\nreinforceExitTime: 133221765470000000\nsolarSystemID: 31000779\ntypeID: 2233\n",
+    "timestamp": "2023-02-28T16:18:00Z",
+    "type": "OrbitalReinforced"
+  },
+  {
+    "notification_id": 1737053437,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98614836\naggressorID: 96756190\nplanetID: 40391598\nplanetTypeID: 2016\nreinforceExitTime: 133221765470000000\nsolarSystemID: 31000779\ntypeID: 2233\n",
+    "timestamp": "2023-02-28T16:18:00Z",
+    "type": "OrbitalReinforced"
+  },
+  {
+    "notification_id": 1737053436,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98614836\naggressorID: 96756190\nplanetID: 40391598\nplanetTypeID: 2016\nreinforceExitTime: 133221765470000000\nsolarSystemID: 31000779\ntypeID: 2233\n",
+    "timestamp": "2023-02-28T16:18:00Z",
+    "type": "OrbitalReinforced"
+  },
+  {
+    "notification_id": 1737045278,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98614836\naggressorID: 96756190\nplanetID: 40391598\nplanetTypeID: 2016\nshieldLevel: 0.3361318286893036\nsolarSystemID: 31000779\ntypeID: 2233\n",
+    "timestamp": "2023-02-28T15:57:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "notification_id": 1737033297,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98614836\naggressorID: 96756190\nplanetID: 40391598\nplanetTypeID: 2016\nshieldLevel: 0.37868762287408736\nsolarSystemID: 31000779\ntypeID: 2233\n",
+    "timestamp": "2023-02-28T15:27:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "notification_id": 1737014163,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98614836\naggressorID: 96756190\nplanetID: 40391598\nplanetTypeID: 2016\nshieldLevel: 0.4468566934027292\nsolarSystemID: 31000779\ntypeID: 2233\n",
+    "timestamp": "2023-02-28T14:41:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "notification_id": 1737001526,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98614836\naggressorID: 96756190\nplanetID: 40391598\nplanetTypeID: 2016\nshieldLevel: 0.7050793321097342\nsolarSystemID: 31000779\ntypeID: 2233\n",
+    "timestamp": "2023-02-28T14:11:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "notification_id": 1736989185,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98614836\naggressorID: 96756190\nplanetID: 40391598\nplanetTypeID: 2016\nshieldLevel: 0.9899197100788295\nsolarSystemID: 31000779\ntypeID: 2233\n",
+    "timestamp": "2023-02-28T13:41:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "notification_id": 1735980641,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -3.125e-05\n  - -1.0\n  - 1.0\n  - -0.6016381199261244\n",
+    "timestamp": "2023-02-26T13:08:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1735372204,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -2.5e-05\n  - -1.0\n  - 1.0\n  - -0.6014031550049994\n",
+    "timestamp": "2023-02-25T11:19:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1735102748,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: 99009511\naggressorCorpID: 98380820\naggressorID: 2113538483\nplanetID: 40374607\nplanetTypeID: 2016\nshieldLevel: 0.01136253959665868\nsolarSystemID: 31000460\ntypeID: 2233\n",
+    "timestamp": "2023-02-24T21:00:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "notification_id": 1735083229,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: 99009202\naggressorCorpID: 98603079\naggressorID: 2119783331\nplanetID: 40374574\nplanetTypeID: 2016\nshieldLevel: 0.0\nsolarSystemID: 31000460\ntypeID: 2233\n",
+    "timestamp": "2023-02-24T20:12:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "notification_id": 1735081580,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: 99009202\naggressorCorpID: 98504903\naggressorID: 2118767278\nplanetID: 40374580\nplanetTypeID: 13\nreinforceExitTime: 133219128020000000\nsolarSystemID: 31000460\ntypeID: 2233\n",
+    "timestamp": "2023-02-24T20:08:00Z",
+    "type": "OrbitalReinforced"
+  },
+  {
+    "notification_id": 1735079329,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: 99009511\naggressorCorpID: 98380820\naggressorID: 951688281\nplanetID: 40374580\nplanetTypeID: 13\nshieldLevel: 0.9899893331749388\nsolarSystemID: 31000460\ntypeID: 2233\n",
+    "timestamp": "2023-02-24T20:03:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "notification_id": 1735077535,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: 99009511\naggressorCorpID: 98380820\naggressorID: 92248620\nplanetID: 40374576\nplanetTypeID: 2016\nshieldLevel: 0.0\nsolarSystemID: 31000460\ntypeID: 2233\n",
+    "timestamp": "2023-02-24T19:58:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "notification_id": 1735075831,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: 99009202\naggressorCorpID: 98642338\naggressorID: 2113103788\nplanetID: 40374578\nplanetTypeID: 2016\nreinforceExitTime: 133218314110000000\nsolarSystemID: 31000460\ntypeID: 2233\n",
+    "timestamp": "2023-02-24T19:54:00Z",
+    "type": "OrbitalReinforced"
+  },
+  {
+    "notification_id": 1735071250,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: 99009202\naggressorCorpID: 98642338\naggressorID: 2113103788\nplanetID: 40374578\nplanetTypeID: 2016\nshieldLevel: 0.9898267763403188\nsolarSystemID: 31000460\ntypeID: 2233\n",
+    "timestamp": "2023-02-24T19:43:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "notification_id": 1735068998,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: 99009511\naggressorCorpID: 98380820\naggressorID: 2118980004\nplanetID: 40374575\nplanetTypeID: 2063\nshieldLevel: 0.0\nsolarSystemID: 31000460\ntypeID: 2233\n",
+    "timestamp": "2023-02-24T19:38:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "notification_id": 1734509836,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: 99009511\naggressorCorpID: 98380820\naggressorID: 92797285\nplanetID: 40374576\nplanetTypeID: 2016\nreinforceExitTime: 133217422850000000\nsolarSystemID: 31000460\ntypeID: 2233\n",
+    "timestamp": "2023-02-23T16:37:00Z",
+    "type": "OrbitalReinforced"
+  },
+  {
+    "notification_id": 1734502340,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: 99010930\naggressorCorpID: 98299084\naggressorID: 2119263082\nplanetID: 40374576\nplanetTypeID: 2016\nshieldLevel: 0.989673254447871\nsolarSystemID: 31000460\ntypeID: 2233\n",
+    "timestamp": "2023-02-23T16:19:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "notification_id": 1734501809,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: 99009511\naggressorCorpID: 98380820\naggressorID: 95120863\nplanetID: 40374575\nplanetTypeID: 2063\nreinforceExitTime: 133217410960000000\nsolarSystemID: 31000460\ntypeID: 2233\n",
+    "timestamp": "2023-02-23T16:17:00Z",
+    "type": "OrbitalReinforced"
+  },
+  {
+    "notification_id": 1734499624,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98701346\naggressorID: 2120225178\nplanetID: 40374600\nplanetTypeID: 2015\nshieldLevel: 0.9896820898017846\nsolarSystemID: 31000460\ntypeID: 2233\n",
+    "timestamp": "2023-02-23T16:12:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "notification_id": 1734498751,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: 99009202\naggressorCorpID: 98603079\naggressorID: 97046405\nplanetID: 40374607\nplanetTypeID: 2016\nreinforceExitTime: 133217448360000000\nsolarSystemID: 31000460\ntypeID: 2233\n",
+    "timestamp": "2023-02-23T16:09:00Z",
+    "type": "OrbitalReinforced"
+  },
+  {
+    "notification_id": 1734496252,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: 99009511\naggressorCorpID: 98380820\naggressorID: 91481420\nplanetID: 40374575\nplanetTypeID: 2063\nshieldLevel: 0.9897438877173554\nsolarSystemID: 31000460\ntypeID: 2233\n",
+    "timestamp": "2023-02-23T16:03:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "notification_id": 1734495516,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: 99009511\naggressorCorpID: 98380820\naggressorID: 91036298\nplanetID: 40374574\nplanetTypeID: 2016\nreinforceExitTime: 133217431330000000\nsolarSystemID: 31000460\ntypeID: 2233\n",
+    "timestamp": "2023-02-23T16:01:00Z",
+    "type": "OrbitalReinforced"
+  },
+  {
+    "notification_id": 1734491710,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: 99009202\naggressorCorpID: 98618929\naggressorID: 92126855\nplanetID: 40374607\nplanetTypeID: 2016\nshieldLevel: 0.9899995981331684\nsolarSystemID: 31000460\ntypeID: 2233\n",
+    "timestamp": "2023-02-23T15:52:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "notification_id": 1734488828,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: 99010930\naggressorCorpID: 98299084\naggressorID: 2119263082\nplanetID: 40374574\nplanetTypeID: 2016\nshieldLevel: 0.9897506065256094\nsolarSystemID: 31000460\ntypeID: 2233\n",
+    "timestamp": "2023-02-23T15:45:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "notification_id": 1734400683,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -4.375e-05\n  - -1.0\n  - 1.0\n  - -0.6009919484027421\n",
+    "timestamp": "2023-02-23T12:18:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1733961178,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -3.125e-05\n  - -1.0\n  - 1.0\n  - -0.600698220222124\n",
+    "timestamp": "2023-02-22T13:58:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1732984983,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -4.375e-05\n  - -1.0\n  - 1.0\n  - -0.6002869827776205\n",
+    "timestamp": "2023-02-20T13:07:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1731893782,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -2.5e-05\n  - -1.0\n  - 1.0\n  - -0.6002869827776205\n",
+    "timestamp": "2023-02-18T12:53:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1731763515,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "charID: 1611069559\nnewOwnerCorpID: 786410886\noldOwnerCorpID: 1541365482\nsolarSystemID: 31000807\nstructureID: 1041106655629\nstructureName: Customs Office (J105311 XI)\nstructureTypeID: 2233\n",
+    "timestamp": "2023-02-18T06:43:00Z",
+    "type": "OwnershipTransferred"
+  },
+  {
+    "notification_id": 1731763332,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "charID: 1611069559\nnewOwnerCorpID: 786410886\noldOwnerCorpID: 1541365482\nsolarSystemID: 31000807\nstructureID: 1041106644198\nstructureName: Customs Office (J105311 X)\nstructureTypeID: 2233\n",
+    "timestamp": "2023-02-18T06:42:00Z",
+    "type": "OwnershipTransferred"
+  },
+  {
+    "notification_id": 1731763258,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "charID: 1611069559\nnewOwnerCorpID: 786410886\noldOwnerCorpID: 1541365482\nsolarSystemID: 31000807\nstructureID: 1041106630115\nstructureName: Customs Office (J105311 IX)\nstructureTypeID: 2233\n",
+    "timestamp": "2023-02-18T06:42:00Z",
+    "type": "OwnershipTransferred"
+  },
+  {
+    "notification_id": 1731763222,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "charID: 1611069559\nnewOwnerCorpID: 786410886\noldOwnerCorpID: 1541365482\nsolarSystemID: 31000807\nstructureID: 1041106609841\nstructureName: Customs Office (J105311 VIII)\nstructureTypeID: 2233\n",
+    "timestamp": "2023-02-18T06:42:00Z",
+    "type": "OwnershipTransferred"
+  },
+  {
+    "notification_id": 1731763098,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "charID: 1611069559\nnewOwnerCorpID: 786410886\noldOwnerCorpID: 1541365482\nsolarSystemID: 31000807\nstructureID: 1041106597173\nstructureName: Customs Office (J105311 VII)\nstructureTypeID: 2233\n",
+    "timestamp": "2023-02-18T06:41:00Z",
+    "type": "OwnershipTransferred"
+  },
+  {
+    "notification_id": 1731762996,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "charID: 1611069559\nnewOwnerCorpID: 786410886\noldOwnerCorpID: 1541365482\nsolarSystemID: 31000807\nstructureID: 1041106580150\nstructureName: Customs Office (J105311 VI)\nstructureTypeID: 2233\n",
+    "timestamp": "2023-02-18T06:41:00Z",
+    "type": "OwnershipTransferred"
+  },
+  {
+    "notification_id": 1731762906,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "charID: 1611069559\nnewOwnerCorpID: 786410886\noldOwnerCorpID: 1541365482\nsolarSystemID: 31000807\nstructureID: 1041106565364\nstructureName: Customs Office (J105311 V)\nstructureTypeID: 2233\n",
+    "timestamp": "2023-02-18T06:41:00Z",
+    "type": "OwnershipTransferred"
+  },
+  {
+    "notification_id": 1731762838,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "charID: 1611069559\nnewOwnerCorpID: 786410886\noldOwnerCorpID: 1541365482\nsolarSystemID: 31000807\nstructureID: 1041106350134\nstructureName: Customs Office (J105311 IV)\nstructureTypeID: 2233\n",
+    "timestamp": "2023-02-18T06:41:00Z",
+    "type": "OwnershipTransferred"
+  },
+  {
+    "notification_id": 1731762682,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "charID: 1611069559\nnewOwnerCorpID: 786410886\noldOwnerCorpID: 1541365482\nsolarSystemID: 31000807\nstructureID: 1041106486753\nstructureName: Customs Office (J105311 III)\nstructureTypeID: 2233\n",
+    "timestamp": "2023-02-18T06:40:00Z",
+    "type": "OwnershipTransferred"
+  },
+  {
+    "notification_id": 1731762588,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "charID: 1611069559\nnewOwnerCorpID: 786410886\noldOwnerCorpID: 1541365482\nsolarSystemID: 31000807\nstructureID: 1041106445699\nstructureName: Customs Office (J105311 II)\nstructureTypeID: 2233\n",
+    "timestamp": "2023-02-18T06:40:00Z",
+    "type": "OwnershipTransferred"
+  },
+  {
+    "notification_id": 1731762504,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "charID: 1611069559\nnewOwnerCorpID: 786410886\noldOwnerCorpID: 1541365482\nsolarSystemID: 31000807\nstructureID: 1041106392875\nstructureName: Customs Office (J105311 I)\nstructureTypeID: 2233\n",
+    "timestamp": "2023-02-18T06:40:00Z",
+    "type": "OwnershipTransferred"
+  },
+  {
+    "notification_id": 1730924636,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -4.375e-05\n  - -1.0\n  - 1.0\n  - -0.5996407183586506\n",
+    "timestamp": "2023-02-16T12:53:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1730547056,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -3.125e-05\n  - -1.0\n  - 1.0\n  - -0.5993469479507741\n",
+    "timestamp": "2023-02-15T15:52:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1730072125,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -2.5e-05\n  - -1.0\n  - 1.0\n  - -0.5991119257489178\n",
+    "timestamp": "2023-02-14T14:22:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1729582921,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -3.7500000000000003e-05\n  - -1.0\n  - 1.0\n  - -0.5987593792256387\n",
+    "timestamp": "2023-02-13T13:43:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1729076249,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -4.375e-05\n  - -1.0\n  - 1.0\n  - -0.5983480569531305\n",
+    "timestamp": "2023-02-12T14:00:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1728466978,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -2.5e-05\n  - -1.0\n  - 1.0\n  - -0.598113009778375\n",
+    "timestamp": "2023-02-11T12:53:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1727962336,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -3.7500000000000003e-05\n  - -1.0\n  - 1.0\n  - -0.5977604257943423\n",
+    "timestamp": "2023-02-10T13:23:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1727506809,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -3.7500000000000003e-05\n  - -1.0\n  - 1.0\n  - -0.5974078285879143\n",
+    "timestamp": "2023-02-09T14:09:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1727051474,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -2.5e-05\n  - -1.0\n  - 1.0\n  - -0.5971727579068619\n",
+    "timestamp": "2023-02-08T14:41:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1726587107,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -4.375e-05\n  - -1.0\n  - 1.0\n  - -0.5967613662166339\n",
+    "timestamp": "2023-02-07T15:19:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1726021490,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -2.5e-05\n  - -1.0\n  - 1.0\n  - -0.5965262793736182\n",
+    "timestamp": "2023-02-06T12:48:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1725443703,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -2.5e-05\n  - -1.0\n  - 1.0\n  - -0.5962911866532845\n",
+    "timestamp": "2023-02-05T12:07:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1724888030,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -3.7500000000000003e-05\n  - -1.0\n  - 1.0\n  - -0.5959385343483227\n",
+    "timestamp": "2023-02-04T12:45:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1724601347,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98614836\naggressorID: 2115603084\nplanetID: 40391664\nplanetTypeID: 13\nshieldLevel: 0.9899813978120223\nsolarSystemID: 31000779\ntypeID: 2233\n",
+    "timestamp": "2023-02-03T22:39:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "notification_id": 1722873186,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -8.125e-05\n  - -1.0\n  - 1.0\n  - -0.5951743922676943\n",
+    "timestamp": "2023-01-31T13:01:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1722825793,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98701603\naggressorID: 93179995\nplanetID: 40366138\nplanetTypeID: 2016\nshieldLevel: 0.6731660937818047\nsolarSystemID: 31000294\ntypeID: 2233\n",
+    "timestamp": "2023-01-31T10:16:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "notification_id": 1722816941,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98701603\naggressorID: 93179995\nplanetID: 40366138\nplanetTypeID: 2016\nshieldLevel: 0.9898652630627675\nsolarSystemID: 31000294\ntypeID: 2233\n",
+    "timestamp": "2023-01-31T09:46:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "notification_id": 1722464797,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -0.03\n  - -1.0\n  - 1.0\n  - -0.30430349718319005\n",
+    "timestamp": "2023-01-30T15:49:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1721862903,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -3.125e-05\n  - -1.0\n  - 1.0\n  - -0.3040004971987275\n",
+    "timestamp": "2023-01-29T12:31:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1721310995,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -3.125e-05\n  - -1.0\n  - 1.0\n  - -0.3036974877452196\n",
+    "timestamp": "2023-01-28T12:27:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1719473110,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 1036338138\naggressorID: 1442855173\nplanetID: 40368500\nplanetTypeID: 2017\nshieldLevel: 0.9899404297997972\nsolarSystemID: 31000341\ntypeID: 2233\n",
+    "timestamp": "2023-01-24T15:28:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "notification_id": 1719446667,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -5.0e-05\n  - -1.0\n  - 1.0\n  - -0.3036974877452196\n",
+    "timestamp": "2023-01-24T14:21:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1718963453,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -3.7500000000000003e-05\n  - -1.0\n  - 1.0\n  - -0.3028490052153341\n",
+    "timestamp": "2023-01-23T13:23:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1718464153,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -4.375e-05\n  - -1.0\n  - 1.0\n  - -0.30242473629754707\n",
+    "timestamp": "2023-01-22T13:27:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1717427235,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -3.125e-05\n  - -1.0\n  - 1.0\n  - -0.3021216775999721\n",
+    "timestamp": "2023-01-20T12:42:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1716082722,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -3.125e-05\n  - -1.0\n  - 1.0\n  - -0.30181860943151684\n",
+    "timestamp": "2023-01-17T13:12:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1713642666,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -0.03\n  - -1.0\n  - 1.0\n  - -0.0018748550840379519\n",
+    "timestamp": "2023-01-12T13:49:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1713131664,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -2.5e-05\n  - -1.0\n  - 1.0\n  - -0.0016248957064306125\n",
+    "timestamp": "2023-01-11T11:27:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1712710297,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -3.7500000000000003e-05\n  - -1.0\n  - 1.0\n  - -0.0012499425792773353\n",
+    "timestamp": "2023-01-10T12:57:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "notification_id": 1712256266,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -2.5e-05\n  - -1.0\n  - 1.0\n  - -0.0009999675784667969\n",
+    "timestamp": "2023-01-09T13:55:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1711809240,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -3.125e-05\n  - -1.0\n  - 1.0\n  - -0.0006874890625\n",
+    "timestamp": "2023-01-08T16:23:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1710624033,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -2.5e-05\n  - -1.0\n  - 1.0\n  - -0.0004375\n",
+    "timestamp": "2023-01-06T12:25:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1709755599,
+    "sender_id": 500019,
+    "sender_type": "faction",
+    "text": "- - 500019\n  - 2119321911\n  - -4.375e-05\n  - -1.0\n  - 1.0\n  - 0.0\n",
+    "timestamp": "2023-01-04T16:27:00Z",
+    "type": "NPCStandingsLost"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1705135753,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98571848\naggressorID: 249676933\nplanetID: 40360737\nplanetTypeID: 13\nreinforceExitTime: 133166435060000000\nsolarSystemID: 31000193\ntypeID: 2233\n",
+    "timestamp": "2022-12-26T19:01:00Z",
+    "type": "OrbitalReinforced"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1705134699,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98571848\naggressorID: 2113787970\nplanetID: 40360737\nplanetTypeID: 13\nshieldLevel: 0.26264527443204505\nsolarSystemID: 31000193\ntypeID: 2233\n",
+    "timestamp": "2022-12-26T18:59:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1705121623,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98571848\naggressorID: 249676933\nplanetID: 40360737\nplanetTypeID: 13\nshieldLevel: 0.4157252312373549\nsolarSystemID: 31000193\ntypeID: 2233\n",
+    "timestamp": "2022-12-26T18:29:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1705108355,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98571848\naggressorID: 2113787970\nplanetID: 40360737\nplanetTypeID: 13\nshieldLevel: 0.5856473888166432\nsolarSystemID: 31000193\ntypeID: 2233\n",
+    "timestamp": "2022-12-26T17:59:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1705095100,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98571848\naggressorID: 249676933\nplanetID: 40360737\nplanetTypeID: 13\nshieldLevel: 0.776224636647305\nsolarSystemID: 31000193\ntypeID: 2233\n",
+    "timestamp": "2022-12-26T17:29:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1705081626,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98571848\naggressorID: 249676933\nplanetID: 40360737\nplanetTypeID: 13\nshieldLevel: 0.9899960721214699\nsolarSystemID: 31000193\ntypeID: 2233\n",
+    "timestamp": "2022-12-26T16:59:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1692988156,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98347529\naggressorID: 96343731\nplanetID: 40397219\nplanetTypeID: 2015\nshieldLevel: 0.04321050726798854\nsolarSystemID: 31000885\ntypeID: 2233\n",
+    "timestamp": "2022-12-03T20:20:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1692464107,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98347529\naggressorID: 96343731\nplanetID: 40397222\nplanetTypeID: 2015\nreinforceExitTime: 133146595640000000\nsolarSystemID: 31000885\ntypeID: 2233\n",
+    "timestamp": "2022-12-02T21:20:00Z",
+    "type": "OrbitalReinforced"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1692464106,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98347529\naggressorID: 96343731\nplanetID: 40397222\nplanetTypeID: 2015\nreinforceExitTime: 133146595640000000\nsolarSystemID: 31000885\ntypeID: 2233\n",
+    "timestamp": "2022-12-02T21:20:00Z",
+    "type": "OrbitalReinforced"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1692460694,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98347529\naggressorID: 96343731\nplanetID: 40397222\nplanetTypeID: 2015\nshieldLevel: 0.3158871363340878\nsolarSystemID: 31000885\ntypeID: 2233\n",
+    "timestamp": "2022-12-02T21:12:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1692448622,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98347529\naggressorID: 96343731\nplanetID: 40397222\nplanetTypeID: 2015\nshieldLevel: 0.4394374156595871\nsolarSystemID: 31000885\ntypeID: 2233\n",
+    "timestamp": "2022-12-02T20:42:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1692436669,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98347529\naggressorID: 96343731\nplanetID: 40397222\nplanetTypeID: 2015\nshieldLevel: 0.6955533406672177\nsolarSystemID: 31000885\ntypeID: 2233\n",
+    "timestamp": "2022-12-02T20:12:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1692423900,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98347529\naggressorID: 96343731\nplanetID: 40397222\nplanetTypeID: 2015\nshieldLevel: 0.9897512842213169\nsolarSystemID: 31000885\ntypeID: 2233\n",
+    "timestamp": "2022-12-02T19:42:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1692422273,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98347529\naggressorID: 96343731\nplanetID: 40397219\nplanetTypeID: 2015\nreinforceExitTime: 133145700280000000\nsolarSystemID: 31000885\ntypeID: 2233\n",
+    "timestamp": "2022-12-02T19:38:00Z",
+    "type": "OrbitalReinforced"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1692417559,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98347529\naggressorID: 2118065054\nplanetID: 40397219\nplanetTypeID: 2015\nshieldLevel: 0.33871646953231344\nsolarSystemID: 31000885\ntypeID: 2233\n",
+    "timestamp": "2022-12-02T19:26:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1692400777,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98347529\naggressorID: 96343731\nplanetID: 40397219\nplanetTypeID: 2015\nshieldLevel: 0.5711528451108328\nsolarSystemID: 31000885\ntypeID: 2233\n",
+    "timestamp": "2022-12-02T18:56:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1692387830,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98347529\naggressorID: 96343731\nplanetID: 40397219\nplanetTypeID: 2015\nshieldLevel: 0.7549780284436328\nsolarSystemID: 31000885\ntypeID: 2233\n",
+    "timestamp": "2022-12-02T18:26:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1692375163,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98347529\naggressorID: 96343731\nplanetID: 40397219\nplanetTypeID: 2015\nshieldLevel: 0.9897775318547336\nsolarSystemID: 31000885\ntypeID: 2233\n",
+    "timestamp": "2022-12-02T17:56:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1687826420,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: 99003581\naggressorCorpID: 98672852\naggressorID: 2117780536\nplanetID: 40408424\nplanetTypeID: 12\nreinforceExitTime: 133138826380000000\nsolarSystemID: 31001105\ntypeID: 2233\n",
+    "timestamp": "2022-11-23T20:25:00Z",
+    "type": "OrbitalReinforced"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1687823305,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: 99003581\naggressorCorpID: 98672852\naggressorID: 95267170\nplanetID: 40408424\nplanetTypeID: 12\nshieldLevel: 0.3849372014535323\nsolarSystemID: 31001105\ntypeID: 2233\n",
+    "timestamp": "2022-11-23T20:19:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1687809649,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: 99003581\naggressorCorpID: 98672852\naggressorID: 2117780536\nplanetID: 40408424\nplanetTypeID: 12\nshieldLevel: 0.9896979653304534\nsolarSystemID: 31001105\ntypeID: 2233\n",
+    "timestamp": "2022-11-23T19:49:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1667144003,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98254950\naggressorID: 90758290\nplanetID: 40364643\nplanetTypeID: 2015\nreinforceExitTime: 133101620250000000\nsolarSystemID: 31000265\ntypeID: 2233\n",
+    "timestamp": "2022-10-12T12:05:00Z",
+    "type": "OrbitalReinforced"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1667143396,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98254950\naggressorID: 90758290\nplanetID: 40364643\nplanetTypeID: 2015\nshieldLevel: 0.29976898357834914\nsolarSystemID: 31000265\ntypeID: 2233\n",
+    "timestamp": "2022-10-12T12:02:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1667135328,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98254950\naggressorID: 90758290\nplanetID: 40364643\nplanetTypeID: 2015\nshieldLevel: 0.9898513429129101\nsolarSystemID: 31000265\ntypeID: 2233\n",
+    "timestamp": "2022-10-12T11:32:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1667134927,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98254950\naggressorID: 90758290\nplanetID: 40364642\nplanetTypeID: 2063\nreinforceExitTime: 133101622610000000\nsolarSystemID: 31000265\ntypeID: 2233\n",
+    "timestamp": "2022-10-12T11:30:00Z",
+    "type": "OrbitalReinforced"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1667132271,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98254950\naggressorID: 90758290\nplanetID: 40364642\nplanetTypeID: 2063\nshieldLevel: 0.6562596869017895\nsolarSystemID: 31000265\ntypeID: 2233\n",
+    "timestamp": "2022-10-12T11:10:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1667124847,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98254950\naggressorID: 90758290\nplanetID: 40364642\nplanetTypeID: 2063\nshieldLevel: 0.9896215540212459\nsolarSystemID: 31000265\ntypeID: 2233\n",
+    "timestamp": "2022-10-12T10:45:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1667124191,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98254950\naggressorID: 90758290\nplanetID: 40364640\nplanetTypeID: 2016\nreinforceExitTime: 133101637270000000\nsolarSystemID: 31000265\ntypeID: 2233\n",
+    "timestamp": "2022-10-12T10:43:00Z",
+    "type": "OrbitalReinforced"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1667123205,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98254950\naggressorID: 90758290\nplanetID: 40364640\nplanetTypeID: 2016\nshieldLevel: 0.33875353480760556\nsolarSystemID: 31000265\ntypeID: 2233\n",
+    "timestamp": "2022-10-12T10:38:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1667115371,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98254950\naggressorID: 90758290\nplanetID: 40364640\nplanetTypeID: 2016\nshieldLevel: 0.9899448994696997\nsolarSystemID: 31000265\ntypeID: 2233\n",
+    "timestamp": "2022-10-12T10:08:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1648824743,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98669687\naggressorID: 91876464\nplanetID: 40395128\nplanetTypeID: 2016\nshieldLevel: 0.9899779747416043\nsolarSystemID: 31000845\ntypeID: 2233\n",
+    "timestamp": "2022-08-29T19:56:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1641548758,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98644541\naggressorID: 2113063902\nplanetID: 40391600\nplanetTypeID: 2016\nshieldLevel: 0.40603082964327225\nsolarSystemID: 31000779\ntypeID: 2233\n",
+    "timestamp": "2022-08-13T02:49:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1641536266,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98644541\naggressorID: 2113063902\nplanetID: 40391600\nplanetTypeID: 2016\nshieldLevel: 0.5203171527407807\nsolarSystemID: 31000779\ntypeID: 2233\n",
+    "timestamp": "2022-08-13T01:52:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1641530013,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98644541\naggressorID: 2115920897\nplanetID: 40391600\nplanetTypeID: 2016\nshieldLevel: 0.9893887892441539\nsolarSystemID: 31000779\ntypeID: 2233\n",
+    "timestamp": "2022-08-13T01:22:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1595131439,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98396009\naggressorID: 91007248\nplanetID: 40409702\nplanetTypeID: 2015\nshieldLevel: 0.7247000793874714\nsolarSystemID: 31001133\ntypeID: 2233\n",
+    "timestamp": "2022-05-01T12:31:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1595113080,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98396009\naggressorID: 92834137\nplanetID: 40409702\nplanetTypeID: 2015\nshieldLevel: 0.9895613371481086\nsolarSystemID: 31001133\ntypeID: 2233\n",
+    "timestamp": "2022-05-01T11:40:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1569424558,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 1000168\naggressorID: 2117319364\nplanetID: 40365527\nplanetTypeID: 13\nshieldLevel: 0.00016080812361376866\nsolarSystemID: 31000282\ntypeID: 2233\n",
+    "timestamp": "2022-03-06T19:19:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1568523689,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 1000168\naggressorID: 2117319364\nplanetID: 40365527\nplanetTypeID: 13\nreinforceExitTime: 132910677840000000\nsolarSystemID: 31000282\ntypeID: 2233\n",
+    "timestamp": "2022-03-04T22:45:00Z",
+    "type": "OrbitalReinforced"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1568516056,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 1000168\naggressorID: 2117319364\nplanetID: 40365527\nplanetTypeID: 13\nshieldLevel: 0.4822475150880449\nsolarSystemID: 31000282\ntypeID: 2233\n",
+    "timestamp": "2022-03-04T22:19:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1568507269,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 1000168\naggressorID: 2117319364\nplanetID: 40365527\nplanetTypeID: 13\nshieldLevel: 0.7565851032451445\nsolarSystemID: 31000282\ntypeID: 2233\n",
+    "timestamp": "2022-03-04T21:49:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1568497655,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 1000168\naggressorID: 2117319364\nplanetID: 40365527\nplanetTypeID: 13\nshieldLevel: 0.7507901547769753\nsolarSystemID: 31000282\ntypeID: 2233\n",
+    "timestamp": "2022-03-04T21:18:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1568487898,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 1000168\naggressorID: 2117319364\nplanetID: 40365527\nplanetTypeID: 13\nshieldLevel: 0.7434580820679909\nsolarSystemID: 31000282\ntypeID: 2233\n",
+    "timestamp": "2022-03-04T20:48:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1568477734,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 1000168\naggressorID: 2117319364\nplanetID: 40365527\nplanetTypeID: 13\nshieldLevel: 0.7466655358939949\nsolarSystemID: 31000282\ntypeID: 2233\n",
+    "timestamp": "2022-03-04T20:18:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1568467943,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 1000168\naggressorID: 2117319364\nplanetID: 40365527\nplanetTypeID: 13\nshieldLevel: 0.7505363594938346\nsolarSystemID: 31000282\ntypeID: 2233\n",
+    "timestamp": "2022-03-04T19:48:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1568457525,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 1000168\naggressorID: 2117319364\nplanetID: 40365527\nplanetTypeID: 13\nshieldLevel: 0.7451069413924932\nsolarSystemID: 31000282\ntypeID: 2233\n",
+    "timestamp": "2022-03-04T19:18:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1568443283,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 1000168\naggressorID: 2117319364\nplanetID: 40365527\nplanetTypeID: 13\nshieldLevel: 0.7492918316269526\nsolarSystemID: 31000282\ntypeID: 2233\n",
+    "timestamp": "2022-03-04T18:48:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1568433115,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 1000168\naggressorID: 2117319364\nplanetID: 40365527\nplanetTypeID: 13\nshieldLevel: 0.7533217737976577\nsolarSystemID: 31000282\ntypeID: 2233\n",
+    "timestamp": "2022-03-04T18:17:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1568422021,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 1000168\naggressorID: 2117319364\nplanetID: 40365527\nplanetTypeID: 13\nshieldLevel: 0.758049096256842\nsolarSystemID: 31000282\ntypeID: 2233\n",
+    "timestamp": "2022-03-04T17:47:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1568411538,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 1000168\naggressorID: 2117319364\nplanetID: 40365527\nplanetTypeID: 13\nshieldLevel: 0.7636114368127488\nsolarSystemID: 31000282\ntypeID: 2233\n",
+    "timestamp": "2022-03-04T17:17:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1568401054,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 1000168\naggressorID: 2117319364\nplanetID: 40365527\nplanetTypeID: 13\nshieldLevel: 0.7704531476530088\nsolarSystemID: 31000282\ntypeID: 2233\n",
+    "timestamp": "2022-03-04T16:47:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1568390167,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 1000168\naggressorID: 2117319364\nplanetID: 40365527\nplanetTypeID: 13\nshieldLevel: 0.7784280734898676\nsolarSystemID: 31000282\ntypeID: 2233\n",
+    "timestamp": "2022-03-04T16:17:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1568378936,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 1000168\naggressorID: 2117319364\nplanetID: 40365527\nplanetTypeID: 13\nshieldLevel: 0.7876292403578473\nsolarSystemID: 31000282\ntypeID: 2233\n",
+    "timestamp": "2022-03-04T15:47:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1568368284,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 1000168\naggressorID: 2117319364\nplanetID: 40365527\nplanetTypeID: 13\nshieldLevel: 0.7984600088294657\nsolarSystemID: 31000282\ntypeID: 2233\n",
+    "timestamp": "2022-03-04T15:17:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1568353069,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 1000168\naggressorID: 2117319364\nplanetID: 40365527\nplanetTypeID: 13\nshieldLevel: 0.8111610350468605\nsolarSystemID: 31000282\ntypeID: 2233\n",
+    "timestamp": "2022-03-04T14:47:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1568341867,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 1000168\naggressorID: 2117319364\nplanetID: 40365527\nplanetTypeID: 13\nshieldLevel: 0.8258472224827352\nsolarSystemID: 31000282\ntypeID: 2233\n",
+    "timestamp": "2022-03-04T14:17:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1568330216,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 1000168\naggressorID: 2117319364\nplanetID: 40365527\nplanetTypeID: 13\nshieldLevel: 0.8433231351290706\nsolarSystemID: 31000282\ntypeID: 2233\n",
+    "timestamp": "2022-03-04T13:47:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1568319335,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 1000168\naggressorID: 2117319364\nplanetID: 40365527\nplanetTypeID: 13\nshieldLevel: 0.8639105073751909\nsolarSystemID: 31000282\ntypeID: 2233\n",
+    "timestamp": "2022-03-04T13:17:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1568307986,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 1000168\naggressorID: 2117319364\nplanetID: 40365527\nplanetTypeID: 13\nshieldLevel: 0.8877517781550437\nsolarSystemID: 31000282\ntypeID: 2233\n",
+    "timestamp": "2022-03-04T12:47:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1568297234,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 1000168\naggressorID: 2117319364\nplanetID: 40365527\nplanetTypeID: 13\nshieldLevel: 0.9162745294077425\nsolarSystemID: 31000282\ntypeID: 2233\n",
+    "timestamp": "2022-03-04T12:17:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1568287079,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 1000168\naggressorID: 2117319364\nplanetID: 40365527\nplanetTypeID: 13\nshieldLevel: 0.9496208706860525\nsolarSystemID: 31000282\ntypeID: 2233\n",
+    "timestamp": "2022-03-04T11:47:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1568280394,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 1000168\naggressorID: 2117319364\nplanetID: 40365527\nplanetTypeID: 13\nshieldLevel: 0.9899835293250758\nsolarSystemID: 31000282\ntypeID: 2233\n",
+    "timestamp": "2022-03-04T11:17:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1562958350,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 1000107\naggressorID: 208235528\nplanetID: 40358317\nplanetTypeID: 2016\nshieldLevel: 0.9653321618651501\nsolarSystemID: 31000145\ntypeID: 2233\n",
+    "timestamp": "2022-02-20T14:51:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1562942307,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 1000107\naggressorID: 208235528\nplanetID: 40358317\nplanetTypeID: 2016\nshieldLevel: 0.9899948530523678\nsolarSystemID: 31000145\ntypeID: 2233\n",
+    "timestamp": "2022-02-20T14:21:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1562666330,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98592414\naggressorID: 2114458190\nplanetID: 40360520\nplanetTypeID: 2015\nreinforceExitTime: 132899500920000000\nsolarSystemID: 31000190\ntypeID: 2233\n",
+    "timestamp": "2022-02-20T01:46:00Z",
+    "type": "OrbitalReinforced"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1562666329,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98592414\naggressorID: 2114458190\nplanetID: 40360520\nplanetTypeID: 2015\nreinforceExitTime: 132899500920000000\nsolarSystemID: 31000190\ntypeID: 2233\n",
+    "timestamp": "2022-02-20T01:46:00Z",
+    "type": "OrbitalReinforced"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1562665246,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98592414\naggressorID: 2114458190\nplanetID: 40360520\nplanetTypeID: 2015\nshieldLevel: 0.33046136693263517\nsolarSystemID: 31000190\ntypeID: 2233\n",
+    "timestamp": "2022-02-20T01:42:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1562657228,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: 99011077\naggressorCorpID: 98636076\naggressorID: 2118989925\nplanetID: 40360520\nplanetTypeID: 2015\nshieldLevel: 0.9896404838279061\nsolarSystemID: 31000190\ntypeID: 2233\n",
+    "timestamp": "2022-02-20T01:12:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1546691291,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "charID: 347922097\nnewOwnerCorpID: 98597991\noldOwnerCorpID: 786410886\nsolarSystemID: 31000090\nstructureID: 1004929785062\nstructureName: Customs Office (J210436 XII)\nstructureTypeID: 2233\n",
+    "timestamp": "2022-01-19T20:32:00Z",
+    "type": "OwnershipTransferred"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1546690963,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "charID: 347922097\nnewOwnerCorpID: 98597991\noldOwnerCorpID: 786410886\nsolarSystemID: 31000090\nstructureID: 1004929759472\nstructureName: Customs Office (J210436 XI)\nstructureTypeID: 2233\n",
+    "timestamp": "2022-01-19T20:32:00Z",
+    "type": "OwnershipTransferred"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1546690737,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "charID: 347922097\nnewOwnerCorpID: 98597991\noldOwnerCorpID: 786410886\nsolarSystemID: 31000090\nstructureID: 1007391711283\nstructureName: Customs Office (J210436 X)\nstructureTypeID: 2233\n",
+    "timestamp": "2022-01-19T20:31:00Z",
+    "type": "OwnershipTransferred"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1546690322,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "charID: 347922097\nnewOwnerCorpID: 98597991\noldOwnerCorpID: 786410886\nsolarSystemID: 31000090\nstructureID: 1004929658031\nstructureName: Customs Office (J210436 VIII)\nstructureTypeID: 2233\n",
+    "timestamp": "2022-01-19T20:30:00Z",
+    "type": "OwnershipTransferred"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1546690232,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "charID: 347922097\nnewOwnerCorpID: 98597991\noldOwnerCorpID: 786410886\nsolarSystemID: 31000090\nstructureID: 1037479216753\nstructureName: Customs Office (J210436 VII)\nstructureTypeID: 2233\n",
+    "timestamp": "2022-01-19T20:30:00Z",
+    "type": "OwnershipTransferred"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1546689956,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "charID: 347922097\nnewOwnerCorpID: 98597991\noldOwnerCorpID: 786410886\nsolarSystemID: 31000090\nstructureID: 1004929576981\nstructureName: Customs Office (J210436 VI)\nstructureTypeID: 2233\n",
+    "timestamp": "2022-01-19T20:30:00Z",
+    "type": "OwnershipTransferred"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1546689824,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "charID: 347922097\nnewOwnerCorpID: 98597991\noldOwnerCorpID: 786410886\nsolarSystemID: 31000090\nstructureID: 1004929526752\nstructureName: Customs Office (J210436 V)\nstructureTypeID: 2233\n",
+    "timestamp": "2022-01-19T20:29:00Z",
+    "type": "OwnershipTransferred"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1546689523,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "charID: 347922097\nnewOwnerCorpID: 98597991\noldOwnerCorpID: 786410886\nsolarSystemID: 31000090\nstructureID: 1007391655525\nstructureName: Customs Office (J210436 IX)\nstructureTypeID: 2233\n",
+    "timestamp": "2022-01-19T20:28:00Z",
+    "type": "OwnershipTransferred"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1546689415,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "charID: 347922097\nnewOwnerCorpID: 98597991\noldOwnerCorpID: 786410886\nsolarSystemID: 31000090\nstructureID: 1007428203232\nstructureName: Customs Office (J210436 IV)\nstructureTypeID: 2233\n",
+    "timestamp": "2022-01-19T20:28:00Z",
+    "type": "OwnershipTransferred"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1546689104,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "charID: 347922097\nnewOwnerCorpID: 98597991\noldOwnerCorpID: 786410886\nsolarSystemID: 31000090\nstructureID: 1007391591676\nstructureName: Customs Office (J210436 III)\nstructureTypeID: 2233\n",
+    "timestamp": "2022-01-19T20:27:00Z",
+    "type": "OwnershipTransferred"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1546688957,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "charID: 347922097\nnewOwnerCorpID: 98597991\noldOwnerCorpID: 786410886\nsolarSystemID: 31000090\nstructureID: 1007411661658\nstructureName: Customs Office (J210436 II)\nstructureTypeID: 2233\n",
+    "timestamp": "2022-01-19T20:27:00Z",
+    "type": "OwnershipTransferred"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1546688550,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "charID: 347922097\nnewOwnerCorpID: 98597991\noldOwnerCorpID: 786410886\nsolarSystemID: 31000090\nstructureID: 1007389827906\nstructureName: Customs Office (J210436 I)\nstructureTypeID: 2233\n",
+    "timestamp": "2022-01-19T20:26:00Z",
+    "type": "OwnershipTransferred"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1546667828,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98550054\naggressorID: 93036476\nplanetID: 40355238\nplanetTypeID: 2014\nshieldLevel: 0.989691064427313\nsolarSystemID: 31000090\ntypeID: 2233\n",
+    "timestamp": "2022-01-19T19:39:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1546664866,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98550054\naggressorID: 2113688070\nplanetID: 40355219\nplanetTypeID: 2015\nshieldLevel: 0.9899627126712948\nsolarSystemID: 31000090\ntypeID: 2233\n",
+    "timestamp": "2022-01-19T19:32:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1545874669,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98702910\naggressorID: 2115185409\nplanetID: 40364645\nplanetTypeID: 13\nreinforceExitTime: 132870926000000000\nsolarSystemID: 31000265\ntypeID: 2233\n",
+    "timestamp": "2022-01-18T06:50:00Z",
+    "type": "OrbitalReinforced"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1545872344,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98702910\naggressorID: 2115185409\nplanetID: 40364645\nplanetTypeID: 13\nshieldLevel: 0.41506212971552753\nsolarSystemID: 31000265\ntypeID: 2233\n",
+    "timestamp": "2022-01-18T06:41:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1545864436,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98702910\naggressorID: 2116533891\nplanetID: 40364645\nplanetTypeID: 13\nshieldLevel: 0.9899596951329708\nsolarSystemID: 31000265\ntypeID: 2233\n",
+    "timestamp": "2022-01-18T06:11:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1545856553,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98702910\naggressorID: 2113021866\nplanetID: 40364672\nplanetTypeID: 13\nreinforceExitTime: 132870941850000000\nsolarSystemID: 31000265\ntypeID: 2233\n",
+    "timestamp": "2022-01-18T05:40:00Z",
+    "type": "OrbitalReinforced"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1545853184,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98702910\naggressorID: 2113021866\nplanetID: 40364672\nplanetTypeID: 13\nshieldLevel: 0.47129084222616346\nsolarSystemID: 31000265\ntypeID: 2233\n",
+    "timestamp": "2022-01-18T05:27:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1545845199,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98702910\naggressorID: 2116533891\nplanetID: 40364672\nplanetTypeID: 13\nshieldLevel: 0.9899234464116254\nsolarSystemID: 31000265\ntypeID: 2233\n",
+    "timestamp": "2022-01-18T04:57:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1545541914,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98550054\naggressorID: 2113688070\nplanetID: 40355216\nplanetTypeID: 2015\nreinforceExitTime: 132870098420000000\nsolarSystemID: 31000090\ntypeID: 2233\n",
+    "timestamp": "2022-01-17T15:10:00Z",
+    "type": "OrbitalReinforced"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1545541913,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98550054\naggressorID: 2113688070\nplanetID: 40355216\nplanetTypeID: 2015\nreinforceExitTime: 132870098420000000\nsolarSystemID: 31000090\ntypeID: 2233\n",
+    "timestamp": "2022-01-17T15:10:00Z",
+    "type": "OrbitalReinforced"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1545541097,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98550054\naggressorID: 2113688070\nplanetID: 40355216\nplanetTypeID: 2015\nshieldLevel: 0.2980462676898664\nsolarSystemID: 31000090\ntypeID: 2233\n",
+    "timestamp": "2022-01-17T15:07:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1545524072,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98550054\naggressorID: 2113688070\nplanetID: 40355216\nplanetTypeID: 2015\nshieldLevel: 0.9899574332535304\nsolarSystemID: 31000090\ntypeID: 2233\n",
+    "timestamp": "2022-01-17T14:37:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1545504888,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98550054\naggressorID: 2113688070\nplanetID: 40355215\nplanetTypeID: 2016\nreinforceExitTime: 132870105880000000\nsolarSystemID: 31000090\ntypeID: 2233\n",
+    "timestamp": "2022-01-17T13:52:00Z",
+    "type": "OrbitalReinforced"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1545504101,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: 99010320\naggressorCorpID: 98533237\naggressorID: 96089484\nplanetID: 40355215\nplanetTypeID: 2016\nshieldLevel: 0.29185773019417227\nsolarSystemID: 31000090\ntypeID: 2233\n",
+    "timestamp": "2022-01-17T13:50:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1545490728,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98550054\naggressorID: 2113688070\nplanetID: 40355215\nplanetTypeID: 2016\nshieldLevel: 0.9899210016937802\nsolarSystemID: 31000090\ntypeID: 2233\n",
+    "timestamp": "2022-01-17T13:20:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1545490300,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: 99010320\naggressorCorpID: 98533237\naggressorID: 96089484\nplanetID: 40355214\nplanetTypeID: 2063\nreinforceExitTime: 132870106960000000\nsolarSystemID: 31000090\ntypeID: 2233\n",
+    "timestamp": "2022-01-17T13:19:00Z",
+    "type": "OrbitalReinforced"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1545478739,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: 99010320\naggressorCorpID: 98684787\naggressorID: 2113694751\nplanetID: 40355214\nplanetTypeID: 2063\nshieldLevel: 0.839991887642929\nsolarSystemID: 31000090\ntypeID: 2233\n",
+    "timestamp": "2022-01-17T12:52:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1540873773,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98597991\naggressorID: 1615606693\nplanetID: 40355238\nplanetTypeID: 2014\nreinforceExitTime: 132862354240000000\nsolarSystemID: 31000090\ntypeID: 2233\n",
+    "timestamp": "2022-01-08T16:42:00Z",
+    "type": "OrbitalReinforced"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1540868581,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98597991\naggressorID: 1615606693\nplanetID: 40355238\nplanetTypeID: 2014\nshieldLevel: 0.3835780167814854\nsolarSystemID: 31000090\ntypeID: 2233\n",
+    "timestamp": "2022-01-08T16:30:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1540854841,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: 99009202\naggressorCorpID: 98641669\naggressorID: 90215243\nplanetID: 40355238\nplanetTypeID: 2014\nshieldLevel: 0.8303767715744461\nsolarSystemID: 31000090\ntypeID: 2233\n",
+    "timestamp": "2022-01-08T16:00:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1540840761,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: 99009202\naggressorCorpID: 98641669\naggressorID: 90215243\nplanetID: 40355238\nplanetTypeID: 2014\nshieldLevel: 0.9898864729033423\nsolarSystemID: 31000090\ntypeID: 2233\n",
+    "timestamp": "2022-01-08T15:30:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1531959763,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "charID: 1611069559\nnewOwnerCorpID: 786410886\noldOwnerCorpID: 1541365482\nsolarSystemID: 31000259\nstructureID: 1023730531023\nstructureName: Customs Office (J102414 IX)\nstructureTypeID: 2233\n",
+    "timestamp": "2021-12-21T21:25:00Z",
+    "type": "OwnershipTransferred"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1531959716,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "charID: 1611069559\nnewOwnerCorpID: 786410886\noldOwnerCorpID: 1541365482\nsolarSystemID: 31000259\nstructureID: 1023131043523\nstructureName: Customs Office (J102414 IV)\nstructureTypeID: 2233\n",
+    "timestamp": "2021-12-21T21:25:00Z",
+    "type": "OwnershipTransferred"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1531959687,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "charID: 1611069559\nnewOwnerCorpID: 786410886\noldOwnerCorpID: 1541365482\nsolarSystemID: 31000259\nstructureID: 1023877107333\nstructureName: Customs Office (J102414 VIII)\nstructureTypeID: 2233\n",
+    "timestamp": "2021-12-21T21:25:00Z",
+    "type": "OwnershipTransferred"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1531959645,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "charID: 1611069559\nnewOwnerCorpID: 786410886\noldOwnerCorpID: 1541365482\nsolarSystemID: 31000259\nstructureID: 1023439666291\nstructureName: Customs Office (J102414 II)\nstructureTypeID: 2233\n",
+    "timestamp": "2021-12-21T21:25:00Z",
+    "type": "OwnershipTransferred"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1531959598,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "charID: 1611069559\nnewOwnerCorpID: 786410886\noldOwnerCorpID: 1541365482\nsolarSystemID: 31000259\nstructureID: 1023656475239\nstructureName: Customs Office (J102414 VI)\nstructureTypeID: 2233\n",
+    "timestamp": "2021-12-21T21:25:00Z",
+    "type": "OwnershipTransferred"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1531959539,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "charID: 1611069559\nnewOwnerCorpID: 786410886\noldOwnerCorpID: 1541365482\nsolarSystemID: 31000259\nstructureID: 1022576076330\nstructureName: Customs Office (J102414 III)\nstructureTypeID: 2233\n",
+    "timestamp": "2021-12-21T21:25:00Z",
+    "type": "OwnershipTransferred"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1531959418,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "charID: 1611069559\nnewOwnerCorpID: 786410886\noldOwnerCorpID: 1541365482\nsolarSystemID: 31000259\nstructureID: 1023837114884\nstructureName: Customs Office (J102414 VII)\nstructureTypeID: 2233\n",
+    "timestamp": "2021-12-21T21:25:00Z",
+    "type": "OwnershipTransferred"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1531959359,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "charID: 1611069559\nnewOwnerCorpID: 786410886\noldOwnerCorpID: 1541365482\nsolarSystemID: 31000259\nstructureID: 1022097462231\nstructureName: Customs Office (J102414 I)\nstructureTypeID: 2233\n",
+    "timestamp": "2021-12-21T21:24:00Z",
+    "type": "OwnershipTransferred"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1531959310,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "charID: 1611069559\nnewOwnerCorpID: 786410886\noldOwnerCorpID: 1541365482\nsolarSystemID: 31000259\nstructureID: 1023657077159\nstructureName: Customs Office (J102414 V)\nstructureTypeID: 2233\n",
+    "timestamp": "2021-12-21T21:24:00Z",
+    "type": "OwnershipTransferred"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1531959268,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "charID: 1611069559\nnewOwnerCorpID: 786410886\noldOwnerCorpID: 1541365482\nsolarSystemID: 31000259\nstructureID: 1023592587667\nstructureName: Customs Office (J102414 X)\nstructureTypeID: 2233\n",
+    "timestamp": "2021-12-21T21:24:00Z",
+    "type": "OwnershipTransferred"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1531959237,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "charID: 1611069559\nnewOwnerCorpID: 786410886\noldOwnerCorpID: 1541365482\nsolarSystemID: 31000259\nstructureID: 1027608768277\nstructureName: Customs Office (J102414 XI)\nstructureTypeID: 2233\n",
+    "timestamp": "2021-12-21T21:24:00Z",
+    "type": "OwnershipTransferred"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1531637809,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 1000170\naggressorID: 2118794113\nplanetID: 40355214\nplanetTypeID: 2063\nshieldLevel: 0.3954053609307291\nsolarSystemID: 31000090\ntypeID: 2233\n",
+    "timestamp": "2021-12-21T07:29:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1531625894,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 1000170\naggressorID: 2118794113\nplanetID: 40355214\nplanetTypeID: 2063\nshieldLevel: 0.43462593335654365\nsolarSystemID: 31000090\ntypeID: 2233\n",
+    "timestamp": "2021-12-21T06:59:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1531618147,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 1000170\naggressorID: 2118794113\nplanetID: 40355214\nplanetTypeID: 2063\nshieldLevel: 0.4784081972997618\nsolarSystemID: 31000090\ntypeID: 2233\n",
+    "timestamp": "2021-12-21T06:29:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1531610276,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 1000170\naggressorID: 2118794113\nplanetID: 40355214\nplanetTypeID: 2063\nshieldLevel: 0.5262263740987839\nsolarSystemID: 31000090\ntypeID: 2233\n",
+    "timestamp": "2021-12-21T05:59:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1531602808,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 1000170\naggressorID: 2118794113\nplanetID: 40355214\nplanetTypeID: 2063\nshieldLevel: 0.5787584838569468\nsolarSystemID: 31000090\ntypeID: 2233\n",
+    "timestamp": "2021-12-21T05:29:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1531594603,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 1000170\naggressorID: 2118794113\nplanetID: 40355214\nplanetTypeID: 2063\nshieldLevel: 0.6387364958023345\nsolarSystemID: 31000090\ntypeID: 2233\n",
+    "timestamp": "2021-12-21T04:59:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1531586616,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 1000170\naggressorID: 2118794113\nplanetID: 40355214\nplanetTypeID: 2063\nshieldLevel: 0.708499790802506\nsolarSystemID: 31000090\ntypeID: 2233\n",
+    "timestamp": "2021-12-21T04:29:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1531578923,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 1000170\naggressorID: 2118794113\nplanetID: 40355214\nplanetTypeID: 2063\nshieldLevel: 0.7867992546500843\nsolarSystemID: 31000090\ntypeID: 2233\n",
+    "timestamp": "2021-12-21T03:59:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1531570467,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 1000170\naggressorID: 2118794113\nplanetID: 40355214\nplanetTypeID: 2063\nshieldLevel: 0.8795148916131577\nsolarSystemID: 31000090\ntypeID: 2233\n",
+    "timestamp": "2021-12-21T03:29:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1531558354,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 1000170\naggressorID: 2118794113\nplanetID: 40355214\nplanetTypeID: 2063\nshieldLevel: 0.9898547978670043\nsolarSystemID: 31000090\ntypeID: 2233\n",
+    "timestamp": "2021-12-21T02:59:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1527618033,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98685422\naggressorID: 2116937659\nplanetID: 40360521\nplanetTypeID: 2016\nshieldLevel: 0.9899226643701431\nsolarSystemID: 31000190\ntypeID: 2233\n",
+    "timestamp": "2021-12-13T17:14:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1526681000,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: 495729389\naggressorCorpID: 98077439\naggressorID: 2115677745\nplanetID: 40360520\nplanetTypeID: 2015\nreinforceExitTime: 132839016290000000\nsolarSystemID: 31000190\ntypeID: 2233\n",
+    "timestamp": "2021-12-12T02:24:00Z",
+    "type": "OrbitalReinforced"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1526680999,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: 495729389\naggressorCorpID: 98077439\naggressorID: 2115677745\nplanetID: 40360520\nplanetTypeID: 2015\nreinforceExitTime: 132839016290000000\nsolarSystemID: 31000190\ntypeID: 2233\n",
+    "timestamp": "2021-12-12T02:24:00Z",
+    "type": "OrbitalReinforced"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1526677852,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: 495729389\naggressorCorpID: 98077439\naggressorID: 2115677745\nplanetID: 40360520\nplanetTypeID: 2015\nshieldLevel: 0.4193451823304462\nsolarSystemID: 31000190\ntypeID: 2233\n",
+    "timestamp": "2021-12-12T02:14:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1526667980,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: 495729389\naggressorCorpID: 98077439\naggressorID: 2115677745\nplanetID: 40360520\nplanetTypeID: 2015\nshieldLevel: 0.9897677998509754\nsolarSystemID: 31000190\ntypeID: 2233\n",
+    "timestamp": "2021-12-12T01:44:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1512887082,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "charID: 2117528985\nnewOwnerCorpID: 786410886\noldOwnerCorpID: 98627675\nsolarSystemID: 31000090\nstructureID: 1037479216753\nstructureName: Customs Office (J210436 VII)\nstructureTypeID: 2233\n",
+    "timestamp": "2021-11-13T10:16:00Z",
+    "type": "OwnershipTransferred"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1511716656,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98446536\naggressorID: 92258022\nplanetID: 40367047\nplanetTypeID: 2063\nreinforceExitTime: 132812269950000000\nsolarSystemID: 31000311\ntypeID: 2233\n",
+    "timestamp": "2021-11-10T21:00:00Z",
+    "type": "OrbitalReinforced"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1511708707,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98446536\naggressorID: 92258022\nplanetID: 40367047\nplanetTypeID: 2063\nshieldLevel: 0.5555290527677416\nsolarSystemID: 31000311\ntypeID: 2233\n",
+    "timestamp": "2021-11-10T20:39:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1511697030,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98687587\naggressorID: 2113641272\nplanetID: 40367047\nplanetTypeID: 2063\nshieldLevel: 0.9898520736974145\nsolarSystemID: 31000311\ntypeID: 2233\n",
+    "timestamp": "2021-11-10T20:09:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1509797222,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 1000171\naggressorID: 2117199590\nplanetID: 40395976\nplanetTypeID: 2016\nshieldLevel: 0.8375197794224087\nsolarSystemID: 31000860\ntypeID: 2233\n",
+    "timestamp": "2021-11-06T20:12:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1509785036,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 1000171\naggressorID: 2117199590\nplanetID: 40395976\nplanetTypeID: 2016\nshieldLevel: 0.9830320400029864\nsolarSystemID: 31000860\ntypeID: 2233\n",
+    "timestamp": "2021-11-06T19:42:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1509758672,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "aggressorAllianceID: null\naggressorCorpID: 98688495\naggressorID: 2116427641\nplanetID: 40395976\nplanetTypeID: 2016\nshieldLevel: 0.9899921160679629\nsolarSystemID: 31000860\ntypeID: 2233\n",
+    "timestamp": "2021-11-06T18:47:00Z",
+    "type": "OrbitalAttacked"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1508690962,
+    "sender_id": 136772629,
+    "sender_type": "character",
+    "text": "applicationText: Cass\ncharID: 2119321911\ncorpID: 786410886\n",
+    "timestamp": "2021-11-04T15:53:00Z",
+    "type": "CorpAppAcceptMsg"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1508656859,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "killMailHash: 762d8d92869517af54d70a9b602fd42c12ab6c86\nkillMailID: 96414354\nvictimShipTypeID: 670\n",
+    "timestamp": "2021-11-04T14:41:00Z",
+    "type": "KillReportVictim"
+  },
+  {
+    "is_read": true,
+    "notification_id": 1508656296,
+    "sender_id": 1000125,
+    "sender_type": "corporation",
+    "text": "killMailHash: 148bf7efbe168ad1d26f095d1fe105cb41038c6d\nkillMailID: 96414319\nvictimShipTypeID: 58745\n",
+    "timestamp": "2021-11-04T14:40:00Z",
+    "type": "KillReportVictim"
+  }
+]
