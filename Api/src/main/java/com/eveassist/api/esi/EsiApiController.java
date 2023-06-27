@@ -92,7 +92,7 @@ public class EsiApiController {
                     .path("/characters/%d/notifications".formatted(pilotId))
                     .build().toUri().toURL();
             log.debug("getNotifications url: [{}]", notificationData);
-            HttpEntity<MultiValueMap<String, String>> request = buildBaseRequestWithOauth2(accessToken);
+            HttpEntity<MultiValueMap<String, String>> request = buildBaseRequestWithBearerHeader(accessToken);
             return esiTemplate.exchange(notificationData.toString(), HttpMethod.GET, request,
                     CharactersNotificationsDto[].class).getBody();
         } catch (MalformedURLException e) {
@@ -136,14 +136,12 @@ public class EsiApiController {
         return new HttpEntity<>(map, headers);
     }
 
-    private HttpEntity<MultiValueMap<String, String>> buildBaseRequestWithOauth2(String token) {
-        MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
+    private HttpEntity<MultiValueMap<String, String>> buildBaseRequestWithBearerHeader(String token) {
+        HttpEntity<MultiValueMap<String, String>> baseRequest = this.buildBaseRequest();
         HttpHeaders headers = new HttpHeaders();
-        headers.setAccept(List.of(MediaType.valueOf(MediaType.APPLICATION_JSON_VALUE)));
-        headers.setCacheControl("no-cache");
-        headers.add(HttpHeaders.USER_AGENT, "EveAssist/0.1 Where Am I");
+        headers.addAll(baseRequest.getHeaders());
         headers.setBearerAuth(token);
 
-        return new HttpEntity<>(map, headers);
+        return new HttpEntity<>(baseRequest.getBody(), headers);
     }
 }
