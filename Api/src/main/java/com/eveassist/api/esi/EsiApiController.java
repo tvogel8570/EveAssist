@@ -25,13 +25,13 @@ import java.util.stream.Stream;
 
 @Slf4j
 @RestController
-public class EsiApi {
+public class EsiApiController {
     private final RestTemplate esiTemplate;
     private final CharactersMapper mapper;
     private final String esiBasePath = "https://esi.evetech.net/latest";
     private final String datasource = "tranquility";
 
-    public EsiApi(RestTemplate esiTemplate, CharactersMapper mapper) {
+    public EsiApiController(RestTemplate esiTemplate, CharactersMapper mapper) {
         this.esiTemplate = esiTemplate;
         this.mapper = mapper;
     }
@@ -43,20 +43,22 @@ public class EsiApi {
                     .queryParam("datasource", datasource)
                     .path("/characters/%d/".formatted(pilotId))
                     .build().toUri().toURL();
+            log.debug("getPilotPublicData url: [{}]", publicData);
             URL portraitData = UriComponentsBuilder.fromHttpUrl(esiBasePath)
                     .queryParam("datasource", datasource)
                     .path("/characters/%d/portrait".formatted(pilotId))
                     .build().toUri().toURL();
+            log.debug("getPilotPublicData url: [{}]", portraitData);
             URL affiliationData = UriComponentsBuilder.fromHttpUrl(esiBasePath)
                     .queryParam("datasource", datasource)
                     .path("/characters/affiliation")
                     .build().toUri().toURL();
+            log.debug("getPilotPublicData url: [{}]", affiliationData);
             URL namesData = UriComponentsBuilder.fromHttpUrl(esiBasePath)
                     .queryParam("datasource", datasource)
                     .path("/universe/names")
                     .build().toUri().toURL();
-            log.debug("getPilotPublicData url: [{}]", publicData);
-            log.debug("getPilotPublicData url: [{}]", portraitData);
+            log.debug("getPilotPublicData url: [{}]", namesData);
             HttpEntity<MultiValueMap<String, String>> request = buildBaseRequest();
             CharactersDto charactersDto = esiTemplate
                     .exchange(publicData.toString(), HttpMethod.GET, request, CharactersDto.class).getBody();

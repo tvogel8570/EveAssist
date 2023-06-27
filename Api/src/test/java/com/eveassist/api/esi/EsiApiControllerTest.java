@@ -32,9 +32,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest({EsiApi.class})
+@WebMvcTest({EsiApiController.class})
 @Import({WebSecurityConfig.class, CharactersMapperImpl.class})
-class EsiApiTest {
+class EsiApiControllerTest {
     static final ObjectMapper mapper = new ObjectMapper();
 
     @Autowired
