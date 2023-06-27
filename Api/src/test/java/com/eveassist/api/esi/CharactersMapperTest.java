@@ -36,8 +36,8 @@ class CharactersMapperTest {
         Throwable thrown = catchThrowable(() -> {
             PilotPublicDto dto = charactersMapper.from(charactersDto, portraitDto, null, null);
             assertThat(dto.name()).isEqualTo(charactersDto.name());
-            assertThat(dto.alliance_id()).isEqualTo(charactersDto.alliance_id());
-            assertThat(dto.corporation_id()).isEqualTo(charactersDto.corporation_id());
+            assertThat(dto.allianceId()).isEqualTo(charactersDto.allianceId());
+            assertThat(dto.corporationId()).isEqualTo(charactersDto.corporationId());
             assertThat(dto.px64x64()).isEqualTo(portraitDto.px64x64());
 
         });
