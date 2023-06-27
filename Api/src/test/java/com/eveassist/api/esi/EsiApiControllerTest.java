@@ -40,6 +40,9 @@ class EsiApiControllerTest {
     @Autowired
     MockMvc mvc;
 
+    @Autowired
+    CharactersMapper charactersMapper;
+
     @MockBean
     RestTemplate restTemplate;
 

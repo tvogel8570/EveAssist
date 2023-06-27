@@ -10,10 +10,9 @@ import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public interface CharactersMapper {
-
-    @Mapping(source = "affiliationData.alliance_id", target = "alliance_id")
-    @Mapping(source = "affiliationData.corporation_id", target = "corporation_id")
-    @Mapping(source = "affiliationData.faction_id", target = "faction_id")
+    @Mapping(target = "alliance_id", expression = "java(publicData.alliance_id()!=null?publicData.alliance_id():affiliationData!=null?affiliationData.alliance_id():null)")
+    @Mapping(target = "corporation_id", expression = "java(publicData.corporation_id()!=null?publicData.corporation_id():affiliationData!=null?affiliationData.corporation_id():null)")
+    @Mapping(target = "faction_id", expression = "java(publicData.faction_id()!=null?publicData.faction_id():affiliationData!=null?affiliationData.faction_id():null)")
     @Mapping(source = "descDto.allianceDesc", target = "alliance_desc")
     @Mapping(source = "descDto.corporationDesc", target = "corporation_desc")
     @Mapping(source = "descDto.factionDesc", target = "faction_desc")
