@@ -1,0 +1,27 @@
+[
+  {
+    "category": "alliance",
+    "id": 99011978,
+    "name": "Minmatar Fleet Alliance"
+  },
+  {
+    "category": "corporation",
+    "id": 98726945,
+    "name": "Rage and Ruin"
+  },
+  {
+    "category": "faction",
+    "id": 500002,
+    "name": "Minmatar Republic"
+  },
+  {
+    "category": "character",
+    "id": 1272304578,
+    "name": "Kim Huang"
+  },
+  {
+    "category": "inventory_type",
+    "id": 11,
+    "name": "Planet (Temperate)"
+  }
+]

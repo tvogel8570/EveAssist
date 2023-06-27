@@ -20,13 +20,18 @@ spring:
     password: ${postgres.password}
     url: jdbc:postgresql://localhost:5432/eve_assist_user
   flyway:
-    enabled: true
+    enabled: false
   security:
     oauth2:
       resourceserver:
         jwt:
           issuer-uri: ${keycloak-issuer}
           jwk-set-uri: ${scheme}://localhost:${keycloak-port}/realms/${keycloak-realm}/protocol/openid-connect/certs
+
+logging:
+  level:
+    root: warn
+    com.eveassist.api.esi: debug
 
 spring-addons:
   issuers:
@@ -41,6 +46,7 @@ scheme: https
 keycloak-port: 8443
 
 server:
+  port: 8043
   ssl:
     enabled: true
     key-store-type: PKCS12
