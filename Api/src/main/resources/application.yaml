@@ -15,12 +15,6 @@ server:
 spring:
   config:
     import: optional:classpath:env.properties
-  datasource:
-    username: postgres
-    password: ${postgres.password}
-    url: jdbc:postgresql://localhost:5432/eve_assist_user
-  flyway:
-    enabled: false
   security:
     oauth2:
       resourceserver:
