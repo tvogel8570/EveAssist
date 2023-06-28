@@ -1,4 +1,4 @@
-package com.eveassist.client.user.controller;
+package com.eveassist.api.esi.controller;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
