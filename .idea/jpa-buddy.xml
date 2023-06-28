@@ -4,7 +4,7 @@
     <option name="defaultUnitInitialized" value="true" />
     <option name="renamerInitialized" value="true" />
     <option name="isSnapshotDb" value="false" />
-    <option name="snapshotModelValue" value="Default" />
+    <option name="snapshotModelValue" value="Client" />
     <option name="newEntityIdType" value="Long" />
     <option name="newEntitySequenceItemName" value="&lt;Generate exclusively for entity&gt;" />
   </component>
