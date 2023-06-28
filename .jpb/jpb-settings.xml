@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DatabaseMigrationSettings" flywayVersionPattern="#increment(1, 1, &quot;0000&quot;)" flywayMigrationDescription="" />
-  <component name="JpaPluginProjectSettings">
+  <component name="JpaPluginProjectSettings" dtoSerializableType="1">
     <option name="entityNameTemplate" />
     <option name="generateSerialVersionUID" value="true" />
     <option name="isLombokBuilder" value="true" />
