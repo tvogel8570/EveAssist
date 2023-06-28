@@ -1,4 +1,4 @@
-package com.eveassist.api.user.entity;
+package com.eveassist.client.user.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;

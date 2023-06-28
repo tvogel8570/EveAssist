@@ -1,4 +1,4 @@
-package com.eveassist.api.user.dto;
+package com.eveassist.client.user.dto;
 
 public record EveAssistPasswordDetails(
         String email,

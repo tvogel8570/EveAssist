@@ -1,4 +1,4 @@
-package com.eveassist.api.user.controller;
+package com.eveassist.client.user.controller;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -21,5 +21,5 @@ public class GreetingController {
 
     static record MessageDto(String body) {
     }
-    
+
 }

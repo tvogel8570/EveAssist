@@ -1,7 +1,7 @@
-package com.eveassist.api.user;
+package com.eveassist.client.user;
 
-import com.eveassist.api.user.dto.EveAssistPasswordDetails;
-import com.eveassist.api.user.dto.EveAssistUserDto;
+import com.eveassist.client.user.dto.EveAssistPasswordDetails;
+import com.eveassist.client.user.dto.EveAssistUserDto;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;

@@ -1,6 +1,6 @@
-package com.eveassist.api.user.dto;
+package com.eveassist.client.user.dto;
 
-import com.eveassist.api.user.SecurityPrincipal;
+import com.eveassist.client.user.SecurityPrincipal;
 import org.springframework.security.core.GrantedAuthority;
 
 import java.io.Serial;

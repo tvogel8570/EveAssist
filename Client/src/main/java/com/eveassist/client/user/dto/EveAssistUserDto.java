@@ -1,12 +1,13 @@
-package com.eveassist.api.user.dto;
+package com.eveassist.client.user.dto;
 
+import com.eveassist.client.user.entity.EveAssistUser;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.Builder;
 import org.hibernate.validator.constraints.Length;
 
 /**
- * A Projection for the {@link com.eveassist.api.user.entity.EveAssistUser} entity
+ * A Projection for the {@link EveAssistUser} entity
  */
 @Builder
 public record EveAssistUserDto(

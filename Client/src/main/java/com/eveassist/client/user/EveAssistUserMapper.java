@@ -1,8 +1,8 @@
-package com.eveassist.api.user;
+package com.eveassist.client.user;
 
-import com.eveassist.api.user.dto.EveAssistUserDto;
-import com.eveassist.api.user.dto.EveAssistUserListDto;
-import com.eveassist.api.user.entity.EveAssistUser;
+import com.eveassist.client.user.dto.EveAssistUserDto;
+import com.eveassist.client.user.dto.EveAssistUserListDto;
+import com.eveassist.client.user.entity.EveAssistUser;
 import org.mapstruct.*;
 
 @Mapper(unmappedTargetPolicy = ReportingPolicy.WARN, componentModel = MappingConstants.ComponentModel.SPRING)

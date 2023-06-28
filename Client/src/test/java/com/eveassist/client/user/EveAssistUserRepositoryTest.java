@@ -1,7 +1,7 @@
-package com.eveassist.api.user;
+package com.eveassist.client.user;
 
-import com.eveassist.api.user.dto.EveAssistUserListDto;
-import com.eveassist.api.user.entity.EveAssistUser;
+import com.eveassist.client.user.dto.EveAssistUserListDto;
+import com.eveassist.client.user.entity.EveAssistUser;
 import jakarta.validation.constraints.NotEmpty;
 import org.hibernate.validator.constraints.Length;
 import org.junit.jupiter.api.Test;

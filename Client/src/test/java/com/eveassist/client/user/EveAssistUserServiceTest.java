@@ -1,6 +1,6 @@
-package com.eveassist.api.user;
+package com.eveassist.client.user;
 
-import com.eveassist.api.user.impl.EveAssistUserServiceImpl;
+import com.eveassist.client.user.impl.EveAssistUserServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -23,7 +23,7 @@ class EveAssistUserServiceTest {
     private EveAssistUserRepository repo;
     @Autowired
     private EveAssistUserServiceImpl cut;
-    
+
     @Test
     void whenUserNotFound_thenThrowUsernameNotFoundException() {
         when(repo.findByEmailIgnoreCase(anyString())).thenReturn(null);
