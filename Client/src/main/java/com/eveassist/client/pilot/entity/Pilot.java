@@ -9,7 +9,9 @@ import org.springframework.data.annotation.LastModifiedDate;
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.LinkedHashSet;
 import java.util.Objects;
+import java.util.Set;
 
 @Builder
 @AllArgsConstructor
@@ -23,7 +25,7 @@ public class Pilot implements Serializable {
     private static final long serialVersionUID = 8223189717393563426L;
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "pilot_seq")
-    @SequenceGenerator(name = "pilot_seq", allocationSize = 1)
+    @SequenceGenerator(name = "pilot_seq", allocationSize = 1, initialValue = 100)
     @Column(name = "id", nullable = false)
     private Long id;
     @Version
@@ -65,12 +67,18 @@ public class Pilot implements Serializable {
     @CreatedDate
     private LocalDateTime created;
 
+    @OneToMany(mappedBy = "pilot", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<Token> token = new LinkedHashSet<>();
+
+    @SuppressWarnings("java:S2097")
     @Override
     public final boolean equals(Object o) {
         if (this == o) return true;
         if (o == null) return false;
-        Class<?> oEffectiveClass = o instanceof HibernateProxy ? ((HibernateProxy) o).getHibernateLazyInitializer().getPersistentClass() : o.getClass();
-        Class<?> thisEffectiveClass = this instanceof HibernateProxy ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass() : this.getClass();
+        Class<?> oEffectiveClass = o instanceof HibernateProxy otherProxy ?
+                otherProxy.getHibernateLazyInitializer().getPersistentClass() : o.getClass();
+        Class<?> thisEffectiveClass = this instanceof HibernateProxy thisProxy ?
+                thisProxy.getHibernateLazyInitializer().getPersistentClass() : this.getClass();
         if (thisEffectiveClass != oEffectiveClass) return false;
         Pilot pilot = (Pilot) o;
         return getId() != null && Objects.equals(getId(), pilot.getId());
