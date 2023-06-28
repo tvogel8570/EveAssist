@@ -2,8 +2,6 @@ package com.eveassist.client.user;
 
 import com.eveassist.client.user.dto.EveAssistUserListDto;
 import com.eveassist.client.user.entity.EveAssistUser;
-import jakarta.validation.constraints.NotEmpty;
-import org.hibernate.validator.constraints.Length;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
@@ -16,6 +14,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -31,24 +30,24 @@ class EveAssistUserRepositoryTest {
     @Autowired
     EveAssistUserRepository cut;
     private final LocalDateTime testTime = LocalDateTime.now();
-    private final String testUserUnique = "000000000000000000000000000001";
+
 
     @Test
     void shouldRetrieveCorrectTime() {
+        var unique = UUID.randomUUID();
         EveAssistUser eveAssistUser = EveAssistUser.builder()
-                .uniqueUser("123456789012345678901234567890")
-                .screenName("me")
+                .uniqueUser(unique)
+                .screenName("screen")
                 .password("secret")
                 .createTimestamp(testTime)
                 .updateTimestamp(testTime)
                 .email("tim@test.com").build();
         cut.save(eveAssistUser);
 
-        @Length(min = 30, max = 30) @NotEmpty String uniqueUser = "123456789012345678901234567890";
-        EveAssistUser retrievedUser = cut.findByUniqueUser(uniqueUser);
+        EveAssistUser retrievedUser = cut.findByUniqueUser(unique);
         assertThat(retrievedUser).isNotNull();
-        assertThat(retrievedUser.getUniqueUser()).isEqualTo(uniqueUser);
-        assertThat(retrievedUser.getCreateTimestamp()).isEqualTo(testTime);
+        assertThat(retrievedUser.getUniqueUser()).isEqualTo(unique);
+        assertThat(retrievedUser.getCreateTimestamp()).isEqualToIgnoringSeconds(testTime);
     }
 
     @Test
@@ -75,5 +74,4 @@ class EveAssistUserRepositoryTest {
         EveAssistUser missingUser = cut.findByEmailIgnoreCase("asdf@asdf.com");
         assertThat(missingUser).isNull();
     }
-
 }

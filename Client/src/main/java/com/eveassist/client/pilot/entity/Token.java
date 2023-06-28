@@ -21,25 +21,19 @@ public class Token implements Serializable {
     @Serial
     private static final long serialVersionUID = -4828404462323353250L;
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "token_seq")
-    @SequenceGenerator(name = "token_seq", allocationSize = 1, initialValue = 100)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "token_id_seq")
+    @SequenceGenerator(name = "token_id_seq", allocationSize = 1, initialValue = 100)
     @Column(name = "id", nullable = false)
     private Long id;
-
-    @Version
-    @Column(name = "version")
-    private Integer version;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "pilot_id")
     private Pilot pilot;
 
-    @Lob
-    @Column(name = "access_token", nullable = false)
+    @Column(name = "access_token", nullable = false, columnDefinition = "BYTEA")
     private String accessToken;
 
-    @Lob
-    @Column(name = "refresh_token", nullable = false)
+    @Column(name = "refresh_token", nullable = false, columnDefinition = "BYTEA")
     private String refreshToken;
 
     @OneToMany(mappedBy = "token", cascade = CascadeType.ALL, orphanRemoval = true)

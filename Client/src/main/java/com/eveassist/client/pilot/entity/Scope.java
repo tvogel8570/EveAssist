@@ -19,18 +19,14 @@ public class Scope implements Serializable {
     @Serial
     private static final long serialVersionUID = -571025616263281700L;
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "scope_seq")
-    @SequenceGenerator(name = "scope_seq", allocationSize = 1, initialValue = 100)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "scope_id_seq")
+    @SequenceGenerator(name = "scope_id_seq", allocationSize = 1, initialValue = 100)
     @Column(name = "id", nullable = false)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "token_id")
     private Token token;
-
-    @Version
-    @Column(name = "version")
-    private Integer version;
 
     @Column(name = "privilege", nullable = false)
     private String privilege;

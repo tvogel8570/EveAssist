@@ -19,13 +19,14 @@ import java.util.Set;
 @Getter
 @Setter
 @Entity
-@Table(name = "pilot", uniqueConstraints = {@UniqueConstraint(columnNames = {"owner_hash", "pilot_id"})})
+@Table(name = "pilot", uniqueConstraints = {@UniqueConstraint(name = "pilot_business_key", columnNames = {"owner_hash"
+        , "pilot_id"})})
 public class Pilot implements Serializable {
     @Serial
     private static final long serialVersionUID = 8223189717393563426L;
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "pilot_seq")
-    @SequenceGenerator(name = "pilot_seq", allocationSize = 1, initialValue = 100)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "pilot_id_seq")
+    @SequenceGenerator(name = "pilot_id_seq", allocationSize = 1, initialValue = 100)
     @Column(name = "id", nullable = false)
     private Long id;
     @Version
@@ -55,7 +56,7 @@ public class Pilot implements Serializable {
     @Column(name = "faction_id")
     private String factionId;
 
-    @Column(name = "gender", length = 15)
+    @Column(name = "gender")
     private String gender;
     @Column(name = "birthdate")
     private LocalDateTime birthdate;
