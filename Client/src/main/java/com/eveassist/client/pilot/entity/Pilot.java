@@ -1,5 +1,6 @@
 package com.eveassist.client.pilot.entity;
 
+import com.eveassist.client.user.entity.EveAssistUser;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.proxy.HibernateProxy;
@@ -20,7 +21,7 @@ import java.util.Set;
 @Setter
 @Entity
 @Table(name = "pilot", uniqueConstraints = {@UniqueConstraint(name = "pilot_business_key", columnNames = {"owner_hash"
-        , "pilot_id"})})
+        , "eve_pilot_id"})})
 public class Pilot implements Serializable {
     @Serial
     private static final long serialVersionUID = 8223189717393563426L;
@@ -34,8 +35,8 @@ public class Pilot implements Serializable {
 
     @Column(name = "owner_hash", nullable = false)
     String ownerHash;
-    @Column(name = "pilot_id", nullable = false)
-    Long pilotId;
+    @Column(name = "eve_pilot_id", nullable = false)
+    Long evePilotId;
 
     @Column(name = "name", nullable = false)
     private String name;
@@ -59,7 +60,7 @@ public class Pilot implements Serializable {
     @Column(name = "gender")
     private String gender;
     @Column(name = "birthdate")
-    private LocalDateTime birthdate;
+    private LocalDateTime birthday;
 
     @Column(name = "modified")
     @LastModifiedDate
@@ -70,6 +71,10 @@ public class Pilot implements Serializable {
 
     @OneToMany(mappedBy = "pilot", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Token> token = new LinkedHashSet<>();
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "eve_assist_user_id")
+    private EveAssistUser eveAssistUser;
 
     @SuppressWarnings("java:S2097")
     @Override

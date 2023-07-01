@@ -28,7 +28,7 @@ CREATE TABLE pilot
     id                  BIGINT       NOT NULL,
     version             INTEGER,
     owner_hash          VARCHAR(255) NOT NULL,
-    pilot_id            BIGINT       NOT NULL,
+    eve_pilot_id        BIGINT       NOT NULL,
     name                VARCHAR(255) NOT NULL,
     portrait_url_tiny   VARCHAR(255),
     portrait_url_small  VARCHAR(255),
@@ -41,6 +41,7 @@ CREATE TABLE pilot
     birthdate           TIMESTAMP WITHOUT TIME ZONE,
     modified            TIMESTAMP WITHOUT TIME ZONE,
     created             TIMESTAMP WITHOUT TIME ZONE,
+    eve_assist_user_id  BIGINT,
     CONSTRAINT pk_pilot PRIMARY KEY (id)
 );
 
@@ -71,7 +72,10 @@ ALTER TABLE eve_assist_user
     ADD CONSTRAINT eve_assist_user_screen_name_key UNIQUE (screen_name);
 
 ALTER TABLE pilot
-    ADD CONSTRAINT pilot_business_key UNIQUE (owner_hash, pilot_id);
+    ADD CONSTRAINT pilot_business_key UNIQUE (owner_hash, eve_pilot_id);
+
+ALTER TABLE pilot
+    ADD CONSTRAINT FK_PILOT_ON_EVE_ASSIST_USER FOREIGN KEY (eve_assist_user_id) REFERENCES eve_assist_user (id);
 
 ALTER TABLE scope
     ADD CONSTRAINT FK_SCOPE_ON_TOKEN FOREIGN KEY (token_id) REFERENCES token (id);
