@@ -1,5 +1,6 @@
 package com.eveassist.client.user.entity;
 
+import com.eveassist.client.pilot.entity.Pilot;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotEmpty;
@@ -18,10 +19,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
-import java.util.Collection;
-import java.util.Objects;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 @Builder
 @AllArgsConstructor
@@ -87,7 +85,10 @@ public class EveAssistUser implements Serializable, UserDetails {
     boolean credentialsNonExpired = true;
 
     @Column(name = "enabled", nullable = false)
-    boolean enabled = false;    // users are disabled by defaults
+    boolean enabled = false;    // users are disabled by default
+
+    @OneToMany(mappedBy = "eveAssistUser", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<Pilot> pilots = new LinkedHashSet<>();
 
     // TODO hardcoded to have USER
     @Override
