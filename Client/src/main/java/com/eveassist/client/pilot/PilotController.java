@@ -1,12 +1,17 @@
 package com.eveassist.client.pilot;
 
 import com.eveassist.client.pilot.dto.PilotAuthDto;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
+import org.springframework.security.oauth2.client.web.OAuth2AuthorizedClientRepository;
 import org.springframework.security.oauth2.core.OAuth2AuthenticatedPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -14,6 +19,7 @@ import org.springframework.ui.ModelMap;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.client.RestTemplate;
@@ -22,13 +28,16 @@ import org.springframework.web.servlet.ModelAndView;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.UUID;
 
+@Slf4j
 @Controller
 @RequestMapping("/pilot")
-@Slf4j
 public class PilotController {
     private final RestTemplate restTemplate;
     private final PilotService pilotService;
+    private final OAuth2AuthorizedClientRepository clientRepository;
+
     @Value("${pilot.client_id}")
     String pilotClientId;
     @Value("${pilot.client_secret}")
@@ -43,14 +52,27 @@ public class PilotController {
     String pilotResponseType;
 
 
-    public PilotController(RestTemplate restTemplate, PilotService pilotService) {
+    public PilotController(RestTemplate restTemplate, PilotService pilotService,
+                           OAuth2AuthorizedClientRepository clientRepository) {
         this.restTemplate = restTemplate;
         this.pilotService = pilotService;
+        this.clientRepository = clientRepository;
     }
 
     @GetMapping("")
-    public String index(Model model) {
-        model.addAttribute("pilots", pilotService.getAllPilots());
+    @PreAuthorize("isAuthenticated()")
+    public String index(@AuthenticationPrincipal OAuth2AuthenticatedPrincipal principal,
+                        Authentication auth,
+                        HttpServletRequest servletRequest,
+                        Model model) {
+        OAuth2AuthorizedClient accessToken = clientRepository.loadAuthorizedClient("keycloak-confidential-user",
+                auth, servletRequest);
+
+        String token = accessToken == null ? "null" : accessToken.getAccessToken().getTokenValue();
+        log.debug("accessToken is null [{}]", accessToken == null);
+        model.addAttribute("pilots",
+                pilotService.getPilotsWithDetailsForUser(UUID.fromString(principal.getName()),
+                        token));
         return "pilot/list";
     }
 
@@ -92,5 +114,13 @@ public class PilotController {
         pilotService.savePilot(response.getBody());
 
         return "redirect:/pilot";
+    }
+
+    @GetMapping("/{pilotId}/details")
+    public String pilotDetails(@PathVariable Integer pilotId, Model model) {
+        log.debug("pilotDetails pilotId[{}]", pilotId);
+
+
+        return "pilot/details";
     }
 }

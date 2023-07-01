@@ -1,30 +1,42 @@
 package com.eveassist.client.pilot.impl;
 
 import com.eveassist.client.exception.EsiParsingException;
+import com.eveassist.client.pilot.PilotMapper;
+import com.eveassist.client.pilot.PilotRepository;
 import com.eveassist.client.pilot.PilotService;
 import com.eveassist.client.pilot.dto.PilotAuthDto;
 import com.eveassist.client.pilot.dto.PilotDto;
+import com.eveassist.client.pilot.dto.PilotListInfo;
+import com.eveassist.client.pilot.dto.PilotPublicDto;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
-import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
-@Service
 @Slf4j
+@Service
 public class PilotServiceImpl implements PilotService {
     private final ObjectMapper mapper;
-    private final List<PilotDto> pilots = new ArrayList<>();
+    private final PilotRepository pilotRepository;
+    private final RestTemplate restTemplate;
+    private final PilotMapper pilotMapper;
 
-    public PilotServiceImpl(ObjectMapper mapper) {
+    public PilotServiceImpl(ObjectMapper mapper, PilotRepository pilotRepository, RestTemplate restTemplate,
+                            PilotMapper pilotMapper) {
         this.mapper = mapper;
-        pilots.add(PilotDto.builder().pilotId(1L).pilotName("Cass").ownerHash("1").build());
-        pilots.add(PilotDto.builder().pilotId(2L).pilotName("Michi").ownerHash("1").build());
-        pilots.add(PilotDto.builder().pilotId(3L).pilotName("Dnai").ownerHash("1").build());
+        this.pilotRepository = pilotRepository;
+        this.restTemplate = restTemplate;
+        this.pilotMapper = pilotMapper;
     }
 
     @Override
@@ -41,7 +53,7 @@ public class PilotServiceImpl implements PilotService {
             String[] subject = pilotAuthPayload.sub.split(":");
             PilotDto newPilot =
                     PilotDto.builder().pilotName(pilotAuthPayload.name).pilotId(Long.parseLong(subject[2])).ownerHash(pilotAuthPayload.owner()).build();
-            this.pilots.add(newPilot);
+            // TODO call the repository to save the pilot
             return newPilot;
         } catch (JsonProcessingException e) {
             throw new EsiParsingException(e, "savePilot", "PilotAuthPayload");
@@ -49,7 +61,21 @@ public class PilotServiceImpl implements PilotService {
     }
 
     @Override
-    public List<PilotDto> getAllPilots() {
+    public List<PilotListInfo> getPilotsWithDetailsForUser(UUID userId, String token) {
+        List<PilotListInfo> pilots = pilotRepository.findByEveAssistUser_UniqueUserOrderByNameAsc(userId,
+                Pageable.ofSize(10));
+
+        if (token != null) {
+            HttpHeaders header = new HttpHeaders();
+            header.setBearerAuth(token);
+
+            for (PilotListInfo pilot : pilots) {
+                PilotPublicDto publicData = restTemplate.exchange(
+                        "https://localhost:8043/character/%s/public".formatted(pilot.getEvePilotId()),
+                        HttpMethod.GET, new HttpEntity<>(header), PilotPublicDto.class).getBody();
+                pilotMapper.partialUpdateDetails(publicData, pilot);
+            }
+        }
         return pilots;
     }
 
