@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html
+        xmlns:th="http://www.thymeleaf.org"
+        xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+        layout:decorate="~{layout/layout}"
+        th:with="activeMenuItem='pilots'" lang="en">
+<head>
+    <title>Pilot detail</title>
+</head>
+<body>
+<div layout:fragment="page-content">
+    just some random text
+    <div th:text="${pilotId}">1234</div>
+</div>
+</body>

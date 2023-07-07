@@ -7,7 +7,6 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
@@ -39,18 +38,17 @@ public class PilotController {
     private final OAuth2AuthorizedClientRepository clientRepository;
 
     @Value("${pilot.client_id}")
-    String pilotClientId;
+    private static String pilotClientId;
     @Value("${pilot.client_secret}")
-    String pilotClientSecret;
+    private static String pilotClientSecret;
     @Value("${pilot.redirect_uri}")
-    String pilotRedirectUri;
+    private static String pilotRedirectUri;
     @Value("${pilot.login_uri}")
-    String pilotLoginUri;
+    private static String pilotLoginUri;
     @Value("${pilot.scope}")
-    String pilotScope;
+    private static String pilotScope;
     @Value("${pilot.response_type}")
-    String pilotResponseType;
-
+    private static String pilotResponseType;
 
     public PilotController(RestTemplate restTemplate, PilotService pilotService,
                            OAuth2AuthorizedClientRepository clientRepository) {
@@ -60,7 +58,6 @@ public class PilotController {
     }
 
     @GetMapping("")
-    @PreAuthorize("isAuthenticated()")
     public String index(@AuthenticationPrincipal OAuth2AuthenticatedPrincipal principal,
                         Authentication auth,
                         HttpServletRequest servletRequest,
@@ -119,6 +116,9 @@ public class PilotController {
     @GetMapping("/{pilotId}/details")
     public String pilotDetails(@PathVariable Integer pilotId, Model model) {
         log.debug("pilotDetails pilotId[{}]", pilotId);
+
+
+        model.addAttribute("pilotId", pilotId);
 
 
         return "pilot/details";

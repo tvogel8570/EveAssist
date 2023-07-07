@@ -2,6 +2,8 @@ package com.eveassist.client.pilot.entity;
 
 import com.eveassist.client.user.entity.EveAssistUser;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.*;
 import org.hibernate.proxy.HibernateProxy;
 import org.springframework.data.annotation.CreatedDate;
@@ -33,13 +35,17 @@ public class Pilot implements Serializable {
     @Version
     private Integer version;
 
-    @Column(name = "owner_hash", nullable = false)
+    @Column(name = "owner_hash", nullable = false, unique = true)
     String ownerHash;
     @Column(name = "eve_pilot_id", nullable = false)
     Long evePilotId;
 
-    @Column(name = "name", nullable = false)
+    @Column(name = "name", nullable = false, unique = true)
     private String name;
+    @Column(name = "gender")
+    private String gender;
+    @Column(name = "birthdate")
+    private LocalDateTime birthday;
 
     @Column(name = "portrait_url_tiny")
     private String portraitUrlTiny;
@@ -50,17 +56,35 @@ public class Pilot implements Serializable {
     @Column(name = "portrait_url_large")
     private String portraitUrlLarge;
 
-    @Column(name = "corporation_id")
-    private String corporationId;
-    @Column(name = "alliance_id")
-    private String allianceId;
-    @Column(name = "faction_id")
-    private String factionId;
+    @Min(-10)
+    @Max(10)
+    @Column(name = "security_status")
+    private Double securityStatus;
+    @Column(name = "title")
+    private String title;
+    @Column(name = "description")
+    private String description;
 
-    @Column(name = "gender")
-    private String gender;
-    @Column(name = "birthdate")
-    private LocalDateTime birthday;
+    @Column(name = "alliance_id")
+    private Integer allianceId;
+    @Column(name = "alliance_desc")
+    private String allianceDesc;
+    @Column(name = "faction_id")
+    private Integer factionId;
+    @Column(name = "faction_desc")
+    private String factionDesc;
+    @Column(name = "corporation_id")
+    private Integer corporationId;
+    @Column(name = "corporation_desc")
+    private String corporationDesc;
+    @Column(name = "race_id")
+    private Integer raceId;
+    @Column(name = "race_desc")
+    private String raceDesc;
+    @Column(name = "bloodline_id")
+    private Integer bloodlineId;
+    @Column(name = "bloodline_desc")
+    private String bloodlineDesc;
 
     @Column(name = "modified")
     @LastModifiedDate
@@ -75,6 +99,7 @@ public class Pilot implements Serializable {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "eve_assist_user_id")
     private EveAssistUser eveAssistUser;
+
 
     @SuppressWarnings("java:S2097")
     @Override

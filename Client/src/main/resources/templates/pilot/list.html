@@ -28,11 +28,20 @@
                             Currently linked pilots
                             <tbody>
                             <tr class="bg-white" th:each="pilot :${pilots}">
-                                <td th:src="${pilot.getPx64x64}"></td>
-                                <td th:replace="~{fragments/pilot-table::data(contents=${pilot.getName()},primary=true)}"></td>
-                                <td th:replace="~{fragments/pilot-table::data(contents=${pilot.getEvePilotId()},hideOnMobile=true)}"></td>
-                                <td th:replace="~{fragments/pilot-table::data(contents=${pilot.getOwnerHash()},hideOnMobile=true)}"></td>
-                                <td th:replace="~{fragments/pilot-table:: dataWithLink('Details', @{pilot/{id}/details(id=${pilot.getEvePilotId()})})}"></td>
+                                <td class="w-auto"><img src="/static/image/cass-portrait.jpg"
+                                                        th:src="${pilot.getPx64x64}" alt=""></td>
+                                <td th:replace="~{fragments/pilot-table::data(contents=${pilot.getName},primary=true)}">
+                                    Cass
+                                </td>
+                                <td th:replace="~{fragments/pilot-table::data(contents=${pilot.getEvePilotId()},hideOnMobile=true)}">
+                                    123
+                                </td>
+                                <td th:replace="~{fragments/pilot-table::data(contents=${pilot.getOwnerHash()},hideOnMobile=true)}">
+                                    A4MBK4L24#
+                                </td>
+                                <td th:replace="~{fragments/pilot-table:: dataWithLink('Details', @{pilot/{id}/details(id=${pilot.getEvePilotId()})})}">
+                                    Details
+                                </td>
                             </tr>
                             </tbody>
                         </table>

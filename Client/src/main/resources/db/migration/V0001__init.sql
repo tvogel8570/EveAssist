@@ -30,15 +30,25 @@ CREATE TABLE pilot
     owner_hash          VARCHAR(255) NOT NULL,
     eve_pilot_id        BIGINT       NOT NULL,
     name                VARCHAR(255) NOT NULL,
+    gender              VARCHAR(255),
+    birthdate           TIMESTAMP WITHOUT TIME ZONE,
     portrait_url_tiny   VARCHAR(255),
     portrait_url_small  VARCHAR(255),
     portrait_url_medium VARCHAR(255),
     portrait_url_large  VARCHAR(255),
-    corporation_id      VARCHAR(255),
-    alliance_id         VARCHAR(255),
-    faction_id          VARCHAR(255),
-    gender              VARCHAR(255),
-    birthdate           TIMESTAMP WITHOUT TIME ZONE,
+    security_status     DOUBLE PRECISION,
+    title               VARCHAR(255),
+    description         VARCHAR(255),
+    alliance_id         INTEGER,
+    alliance_desc       VARCHAR(255),
+    faction_id          INTEGER,
+    faction_desc        VARCHAR(255),
+    corporation_id      INTEGER,
+    corporation_desc    VARCHAR(255),
+    race_id             INTEGER,
+    race_desc           VARCHAR(255),
+    bloodline_id        INTEGER,
+    bloodline_desc      VARCHAR(255),
     modified            TIMESTAMP WITHOUT TIME ZONE,
     created             TIMESTAMP WITHOUT TIME ZONE,
     eve_assist_user_id  BIGINT,
@@ -73,6 +83,12 @@ ALTER TABLE eve_assist_user
 
 ALTER TABLE pilot
     ADD CONSTRAINT pilot_business_key UNIQUE (owner_hash, eve_pilot_id);
+
+ALTER TABLE pilot
+    ADD CONSTRAINT uc_pilot_name UNIQUE (name);
+
+ALTER TABLE pilot
+    ADD CONSTRAINT uc_pilot_owner_hash UNIQUE (owner_hash);
 
 ALTER TABLE pilot
     ADD CONSTRAINT FK_PILOT_ON_EVE_ASSIST_USER FOREIGN KEY (eve_assist_user_id) REFERENCES eve_assist_user (id);
