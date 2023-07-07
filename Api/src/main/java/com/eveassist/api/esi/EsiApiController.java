@@ -4,6 +4,7 @@ import com.eveassist.api.esi.dto.PilotPublicDto;
 import com.eveassist.api.esi.exception.EsiParameterException;
 import com.eveassist.api.esi.exception.InvalidUrlException;
 import com.eveassist.api.esi.response.*;
+import com.eveassist.api.sde.chr.ChrLookup;
 import jakarta.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpEntity;
@@ -29,14 +30,16 @@ import java.util.stream.Stream;
 @Slf4j
 @RestController
 public class EsiApiController {
-    private final RestTemplate esiTemplate;
-    private final CharactersMapper mapper;
     private static final String ESI_BASE_PATH = "https://esi.evetech.net/latest";
     private static final String DATASOURCE = "tranquility";
+    private final RestTemplate esiTemplate;
+    private final CharactersMapper mapper;
+    private final ChrLookup chrLookup;
 
-    public EsiApiController(RestTemplate esiTemplate, CharactersMapper mapper) {
+    public EsiApiController(RestTemplate esiTemplate, CharactersMapper mapper, ChrLookup chrLookup) {
         this.esiTemplate = esiTemplate;
         this.mapper = mapper;
+        this.chrLookup = chrLookup;
     }
 
     @GetMapping("/character/{pilotId}/public")
@@ -78,8 +81,10 @@ public class EsiApiController {
             if (affiliationDto == null || affiliationDto.length != 1)
                 throw new EsiParameterException("Unable to retrieve affiliation data from ESI");
 
-            return mapper
+            PilotPublicDto dto = mapper
                     .from(charactersDto, portraitDto, affiliationDto[0], this.lookupAffiliationDesc(universeNamesDto));
+
+            return null;
         } catch (MalformedURLException e) {
             throw new InvalidUrlException(e, METHOD_NAME, "multiple URLs");
         }
@@ -112,8 +117,8 @@ public class EsiApiController {
                 case "corporation" -> rtn.setCorporationDesc(universeNamesDto.name());
                 case "faction" -> rtn.setFactionDesc(universeNamesDto.name());
                 case "character" -> rtn.setCharacterDesc(universeNamesDto.name());
-                default ->
-                        throw new EsiParameterException("new constant in affiliation %s".formatted(universeNamesDto.category()));
+                default -> throw new EsiParameterException("new constant in affiliation %s - %s"
+                        .formatted(universeNamesDto.category(), universeNamesDto.name()));
             }
         }
         return rtn;

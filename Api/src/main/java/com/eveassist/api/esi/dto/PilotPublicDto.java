@@ -23,6 +23,8 @@ public record PilotPublicDto(
         String px512x512,
         String allianceDesc,
         String corporationDesc,
-        String factionDesc
+        String factionDesc,
+        String raceDesc,
+        String bloodlineDesc
 ) {
 }

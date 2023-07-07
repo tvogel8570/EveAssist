@@ -17,4 +17,7 @@ public class AffiliationDescDto {
     private String corporationDesc;
     private String factionDesc;
     private String characterDesc;
+    private String raceDesc;
+    private String bloodlineDesc;
+
 }
