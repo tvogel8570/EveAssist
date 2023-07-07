@@ -15,6 +15,18 @@ server:
 spring:
   config:
     import: optional:classpath:env.properties
+  datasource:
+    username: postgres
+    password: ${postgres.password}
+    url: jdbc:postgresql://localhost:5432/sdeyaml
+  flyway:
+    enabled: true
+  jpa:
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
   security:
     oauth2:
       resourceserver:
