@@ -38,17 +38,17 @@ public class PilotController {
     private final OAuth2AuthorizedClientRepository clientRepository;
 
     @Value("${pilot.client_id}")
-    private static String pilotClientId;
+    private String pilotClientId;
     @Value("${pilot.client_secret}")
-    private static String pilotClientSecret;
+    private String pilotClientSecret;
     @Value("${pilot.redirect_uri}")
-    private static String pilotRedirectUri;
+    private String pilotRedirectUri;
     @Value("${pilot.login_uri}")
-    private static String pilotLoginUri;
+    private String pilotLoginUri;
     @Value("${pilot.scope}")
-    private static String pilotScope;
+    private String pilotScope;
     @Value("${pilot.response_type}")
-    private static String pilotResponseType;
+    private String pilotResponseType;
 
     public PilotController(RestTemplate restTemplate, PilotService pilotService,
                            OAuth2AuthorizedClientRepository clientRepository) {
@@ -91,7 +91,7 @@ public class PilotController {
 
     @GetMapping("/login")
     public String handleCcpLogin(@RequestParam String code, @RequestParam String state) {
-        log.info("In handleCcpGetResponse code [{}] state [{}]", code, state);
+        log.info("In handleCcpLogin code [{}] state [{}]", code, state);
         this.pilotService.getUserFromState(state);
         String credentials = new String(Base64.encodeBase64((pilotClientId + ":" + pilotClientSecret).getBytes()));
         URI uri = URI.create("https://login.eveonline.com/v2/oauth/token");
