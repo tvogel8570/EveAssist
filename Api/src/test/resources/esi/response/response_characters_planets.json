@@ -1,0 +1,56 @@
+[
+  {
+    "last_update": "2023-08-08T14:36:39Z",
+    "num_pins": 12,
+    "owner_id": 2112109565,
+    "planet_id": 40392141,
+    "planet_type": "barren",
+    "solar_system_id": 31000788,
+    "upgrade_level": 5
+  },
+  {
+    "last_update": "2023-08-07T12:00:37Z",
+    "num_pins": 26,
+    "owner_id": 2112109565,
+    "planet_id": 40392143,
+    "planet_type": "lava",
+    "solar_system_id": 31000788,
+    "upgrade_level": 5
+  },
+  {
+    "last_update": "2023-08-07T12:01:07Z",
+    "num_pins": 26,
+    "owner_id": 2112109565,
+    "planet_id": 40392144,
+    "planet_type": "storm",
+    "solar_system_id": 31000788,
+    "upgrade_level": 5
+  },
+  {
+    "last_update": "2023-08-07T12:01:34Z",
+    "num_pins": 26,
+    "owner_id": 2112109565,
+    "planet_id": 40392146,
+    "planet_type": "barren",
+    "solar_system_id": 31000788,
+    "upgrade_level": 5
+  },
+  {
+    "last_update": "2023-08-07T12:01:57Z",
+    "num_pins": 26,
+    "owner_id": 2112109565,
+    "planet_id": 40392184,
+    "planet_type": "temperate",
+    "solar_system_id": 31000788,
+    "upgrade_level": 5
+  },
+  {
+    "last_update": "2023-08-07T12:06:54Z",
+    "num_pins": 26,
+    "owner_id": 2112109565,
+    "planet_id": 40392187,
+    "planet_type": "ice",
+    "solar_system_id": 31000788,
+    "upgrade_level": 5
+  }
+]
