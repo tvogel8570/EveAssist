@@ -5,6 +5,10 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
 import java.io.Serializable;
 
+/*
+    CCP defined response object for /characters/{character_id}/portrait/
+ */
+
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public record CharactersPortraitDto(
         String px64x64,

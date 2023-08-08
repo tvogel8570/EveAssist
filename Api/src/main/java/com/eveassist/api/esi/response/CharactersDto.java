@@ -6,6 +6,9 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
+/*
+    CCP defined response object for /characters/{character_id}/
+ */
 
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public record CharactersDto(
