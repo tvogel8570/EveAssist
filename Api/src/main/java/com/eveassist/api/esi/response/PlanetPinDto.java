@@ -16,7 +16,7 @@ public record PlanetPinDto(
         Integer type_id,
         // optional Extractor planet
         LocalDateTime expiry_time,
-        PlanetExtractor extractor_details,
+        PlanetExtractorDto extractor_details,
         LocalDateTime install_time
 ) {
 }
