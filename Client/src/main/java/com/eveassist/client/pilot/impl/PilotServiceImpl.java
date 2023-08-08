@@ -8,6 +8,7 @@ import com.eveassist.client.pilot.dto.PilotAuthDto;
 import com.eveassist.client.pilot.dto.PilotDto;
 import com.eveassist.client.pilot.dto.PilotListInfo;
 import com.eveassist.client.pilot.dto.PilotPublicDto;
+import com.eveassist.client.pilot.entity.Pilot;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -51,13 +52,14 @@ public class PilotServiceImpl implements PilotService {
         try {
             PilotAuthPayload pilotAuthPayload = mapper.readValue(payload, PilotAuthPayload.class);
             String[] subject = pilotAuthPayload.sub.split(":");
-            PilotDto newPilot = PilotDto.builder()
-                    .pilotName(pilotAuthPayload.name)
-                    .pilotId(Long.parseLong(subject[2]))
+            Pilot newPilot = Pilot.builder()
+                    .name(pilotAuthPayload.name)
+                    .evePilotId(Long.parseLong(subject[2]))
                     .ownerHash(pilotAuthPayload.owner())
                     .build();
             // TODO call the repository to save the pilot
-            return newPilot;
+            pilotRepository.save(newPilot);
+            return pilotMapper.toDto(newPilot);
         } catch (JsonProcessingException e) {
             throw new EsiParsingException(e, "savePilot", "PilotAuthPayload");
         }
