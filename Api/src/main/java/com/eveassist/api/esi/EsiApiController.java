@@ -4,7 +4,6 @@ import com.eveassist.api.esi.dto.PilotPublicDto;
 import com.eveassist.api.esi.exception.EsiParameterException;
 import com.eveassist.api.esi.exception.InvalidUrlException;
 import com.eveassist.api.esi.response.*;
-import com.eveassist.api.sde.chr.ChrLookup;
 import jakarta.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpEntity;
@@ -34,12 +33,11 @@ public class EsiApiController {
     private static final String DATASOURCE = "tranquility";
     private final RestTemplate esiTemplate;
     private final CharactersMapper mapper;
-    private final ChrLookup chrLookup;
 
-    public EsiApiController(RestTemplate esiTemplate, CharactersMapper mapper, ChrLookup chrLookup) {
+
+    public EsiApiController(RestTemplate esiTemplate, CharactersMapper mapper) {
         this.esiTemplate = esiTemplate;
         this.mapper = mapper;
-        this.chrLookup = chrLookup;
     }
 
     @GetMapping("/character/{pilotId}/public")

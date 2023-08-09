@@ -2,12 +2,10 @@ package com.eveassist.api.esi;
 
 import com.eveassist.api.config.WebSecurityConfig;
 import com.eveassist.api.esi.response.*;
-import com.eveassist.api.sde.chr.ChrLookup;
 import com.eveassist.api.util.ReadFile;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import jakarta.servlet.http.HttpServletRequest;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,8 +38,6 @@ class EsiApiControllerTest {
     @Autowired
     CharactersMapper charactersMapper;
 
-    @MockBean
-    ChrLookup chrLookup;
 
     @MockBean
     RestTemplate restTemplate;
@@ -54,10 +50,6 @@ class EsiApiControllerTest {
         mapper.registerModule(new JavaTimeModule());
     }
 
-    @Test
-    void contextLoads() {
-        Assertions.assertThat(chrLookup).isNotNull();
-    }
 
     @Test
     void givenValidPilotId_shouldReturnAllPublicData() throws Exception {
