@@ -2,6 +2,9 @@ package com.eveassist.api.esi;
 
 import com.eveassist.api.config.WebSecurityConfig;
 import com.eveassist.api.esi.response.*;
+import com.eveassist.api.sde.chr.ChrDao;
+import com.eveassist.api.sde.chr.entity.ChrBloodline;
+import com.eveassist.api.sde.chr.entity.ChrRace;
 import com.eveassist.api.util.ReadFile;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -38,6 +41,8 @@ class EsiApiControllerTest {
     @Autowired
     CharactersMapper charactersMapper;
 
+    @MockBean
+    ChrDao chrDao;
 
     @MockBean
     RestTemplate restTemplate;
@@ -65,6 +70,8 @@ class EsiApiControllerTest {
         UniverseNamesDto[] namesDto = mapper.readValue(
                 ReadFile.readFromFileToString("/esi/response/response_universal_names.json"),
                 UniverseNamesDto[].class);
+        ChrRace chrRace = ChrRace.builder().id(1).raceName("customRace").build();
+        ChrBloodline chrBloodline = ChrBloodline.builder().id(1).bloodlineName("customBloodline").build();
 
         when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(CharactersDto.class)))
                 .thenReturn(ResponseEntity.of(Optional.of(charactersDto)));
@@ -73,6 +80,8 @@ class EsiApiControllerTest {
         when(restTemplate.postForObject(anyString(), anyList(), eq(CharactersAffiliationDto[].class)))
                 .thenReturn(affiliationDto);
         when(restTemplate.postForObject(anyString(), anyList(), eq(UniverseNamesDto[].class))).thenReturn(namesDto);
+        when(chrDao.getRace(anyInt())).thenReturn(chrRace);
+        when(chrDao.getBloodline(anyInt())).thenReturn(chrBloodline);
         mvc.perform(get("/character/1/public")
                         .with(SecurityMockMvcRequestPostProcessors.jwt().authorities())
                         .header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON))
@@ -82,7 +91,9 @@ class EsiApiControllerTest {
                         jsonPath("$.factionId", is(500002)),
                         jsonPath("$.corporationDesc", is("Rage and Ruin")),
                         jsonPath("$.allianceDesc", is("Minmatar Fleet Alliance")),
-                        jsonPath("$.factionDesc", is("Minmatar Republic")));
+                        jsonPath("$.factionDesc", is("Minmatar Republic")),
+                        jsonPath("$.raceDesc", is("customRace")),
+                        jsonPath("$.bloodlineDesc", is("customBloodline")));
     }
 
 /*
