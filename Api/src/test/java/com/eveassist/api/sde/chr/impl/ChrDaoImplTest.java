@@ -23,35 +23,35 @@ class ChrDaoImplTest {
 
     @Test
     void givenValidId_thenAncestryReturned() {
-        ChrAncestry chrAncestry = cut.getAncestry(1L);
+        ChrAncestry chrAncestry = cut.getAncestry(1);
         assertThat(chrAncestry).isNotNull();
         assertThat(chrAncestry.getAncestryName()).isEqualTo("Liberal Holders");
     }
 
     @Test
     void givenValidId_thenAttributeReturned() {
-        ChrAttribute chrAttribute = cut.getAttribute(2L);
+        ChrAttribute chrAttribute = cut.getAttribute(2);
         assertThat(chrAttribute).isNotNull();
         assertThat(chrAttribute.getAttributeName()).isEqualTo("Charisma");
     }
 
     @Test
     void givenValidId_thenBloodlineReturned() {
-        ChrBloodline chrBloodline = cut.getBloodline(3L);
+        ChrBloodline chrBloodline = cut.getBloodline(3);
         assertThat(chrBloodline).isNotNull();
         assertThat(chrBloodline.getBloodlineName()).isEqualTo("Sebiestor");
     }
 
     @Test
     void givenValidId_thenFactionReturned() {
-        ChrFaction chrFaction = cut.getFaction(500004L);
+        ChrFaction chrFaction = cut.getFaction(500004);
         assertThat(chrFaction).isNotNull();
         assertThat(chrFaction.getFactionName()).isEqualTo("Gallente Federation");
     }
 
     @Test
     void givenValidId_thenRaceReturned() {
-        ChrRace chrRace = cut.getRace(16L);
+        ChrRace chrRace = cut.getRace(16);
         assertThat(chrRace).isNotNull();
         assertThat(chrRace.getRaceName()).isEqualTo("Jove");
     }

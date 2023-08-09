@@ -4,13 +4,13 @@ import com.eveassist.api.sde.chr.entity.*;
 
 public interface ChrDao {
 
-    ChrAncestry getAncestry(Long id);
+    ChrAncestry getAncestry(Integer id);
 
-    ChrAttribute getAttribute(Long id);
+    ChrAttribute getAttribute(Integer id);
 
-    ChrBloodline getBloodline(Long id);
+    ChrBloodline getBloodline(Integer id);
 
-    ChrFaction getFaction(Long id);
+    ChrFaction getFaction(Integer id);
 
-    ChrRace getRace(Long id);
+    ChrRace getRace(Integer id);
 }

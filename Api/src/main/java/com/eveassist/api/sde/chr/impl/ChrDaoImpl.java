@@ -18,7 +18,7 @@ public class ChrDaoImpl implements ChrDao {
     }
 
     @Override
-    public ChrAncestry getAncestry(Long id) {
+    public ChrAncestry getAncestry(Integer id) {
         SqlParameterSource namedParameters = new MapSqlParameterSource().addValue("id", id);
         return template.queryForObject(
                 "select * from evesde.\"chrAncestries\" where \"ancestryID\" = :id", namedParameters,
@@ -26,7 +26,7 @@ public class ChrDaoImpl implements ChrDao {
     }
 
     @Override
-    public ChrAttribute getAttribute(Long id) {
+    public ChrAttribute getAttribute(Integer id) {
         SqlParameterSource namedParameters = new MapSqlParameterSource().addValue("id", id);
         return template.queryForObject(
                 "select * from evesde.\"chrAttributes\" where \"attributeID\" = :id", namedParameters,
@@ -34,7 +34,7 @@ public class ChrDaoImpl implements ChrDao {
     }
 
     @Override
-    public ChrBloodline getBloodline(Long id) {
+    public ChrBloodline getBloodline(Integer id) {
         SqlParameterSource namedParameters = new MapSqlParameterSource().addValue("id", id);
         return template.queryForObject(
                 "select * from evesde.\"chrBloodlines\" where \"bloodlineID\" = :id", namedParameters,
@@ -42,7 +42,7 @@ public class ChrDaoImpl implements ChrDao {
     }
 
     @Override
-    public ChrFaction getFaction(Long id) {
+    public ChrFaction getFaction(Integer id) {
         SqlParameterSource namedParameters = new MapSqlParameterSource().addValue("id", id);
         return template.queryForObject(
                 "select * from evesde.\"chrFactions\" where \"factionID\" = :id", namedParameters,
@@ -50,7 +50,7 @@ public class ChrDaoImpl implements ChrDao {
     }
 
     @Override
-    public ChrRace getRace(Long id) {
+    public ChrRace getRace(Integer id) {
         SqlParameterSource namedParameters = new MapSqlParameterSource().addValue("id", id);
         return template.queryForObject(
                 "select * from evesde.\"chrRaces\" where \"raceID\" = :id", namedParameters,
