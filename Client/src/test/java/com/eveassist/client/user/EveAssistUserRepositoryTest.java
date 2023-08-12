@@ -38,7 +38,6 @@ class EveAssistUserRepositoryTest {
         EveAssistUser eveAssistUser = EveAssistUser.builder()
                 .uniqueUser(unique)
                 .screenName("screen")
-                .password("secret")
                 .createTimestamp(testTime)
                 .updateTimestamp(testTime)
                 .email("tim@test.com").build();

@@ -12,14 +12,14 @@ import org.hibernate.annotations.NaturalId;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.proxy.HibernateProxy;
 import org.hibernate.validator.constraints.Length;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
 
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.LinkedHashSet;
+import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
 
 @Builder
 @AllArgsConstructor
@@ -32,7 +32,7 @@ import java.util.*;
         @UniqueConstraint(name = "eve_assist_user_email_key", columnNames = {"email"}),
         @UniqueConstraint(name = "eve_assist_user_screen_name_key", columnNames = {"screen_name"})
 })
-public class EveAssistUser implements Serializable, UserDetails {
+public class EveAssistUser implements Serializable {
     @Serial
     private static final long serialVersionUID = 4756246154027625809L;
     @Id
@@ -46,6 +46,7 @@ public class EveAssistUser implements Serializable, UserDetails {
     @Column(name = "version")
     Integer version;
 
+    // link to keycloak
     @NaturalId
     @Column(name = "unique_user", nullable = false, unique = true)
     private UUID uniqueUser;
@@ -60,9 +61,6 @@ public class EveAssistUser implements Serializable, UserDetails {
     @Column(name = "screen_name", nullable = false, unique = true, length = 50)
     private String screenName;
 
-    @Column(name = "password")
-    private String password;
-
     @PastOrPresent
     @NotNull
     @CreationTimestamp
@@ -75,14 +73,6 @@ public class EveAssistUser implements Serializable, UserDetails {
     @Column(name = "update_timestamp", nullable = false)
     private LocalDateTime updateTimestamp;
 
-    @Column(name = "account_non_expired", nullable = false)
-    boolean accountNonExpired = true;
-
-    @Column(name = "account_non_locked", nullable = false)
-    boolean accountNonLocked = true;
-
-    @Column(name = "credentials_non_expired", nullable = false)
-    boolean credentialsNonExpired = true;
 
     @Column(name = "enabled", nullable = false)
     boolean enabled = false;    // users are disabled by default
@@ -90,34 +80,10 @@ public class EveAssistUser implements Serializable, UserDetails {
     @OneToMany(mappedBy = "eveAssistUser", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Pilot> pilots = new LinkedHashSet<>();
 
-    // TODO hardcoded to have USER
-    @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        GrantedAuthority authority = new SimpleGrantedAuthority("USER");
-        return Set.of(authority);
-    }
-
-    @Override
     public String getUsername() {
         return this.email;
     }
 
-    @Override
-    public boolean isAccountNonExpired() {
-        return false;
-    }
-
-    @Override
-    public boolean isAccountNonLocked() {
-        return false;
-    }
-
-    @Override
-    public boolean isCredentialsNonExpired() {
-        return false;
-    }
-
-    @Override
     public boolean isEnabled() {
         return false;
     }
