@@ -1,5 +1,8 @@
 package com.eveassist.api.esi.response;
 
+/*
+    CCP defined notification strings used in /characters/{character_id}/notifications/
+ */
 @SuppressWarnings("squid:S115")
 public enum NotificationType {
     // https://stackoverflow.com/questions/25625702/enum-design-with-lots-of-fields

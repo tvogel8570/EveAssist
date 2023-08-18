@@ -4,7 +4,7 @@ import com.eveassist.api.esi.dto.PilotPublicDto;
 import com.eveassist.api.esi.exception.EsiParameterException;
 import com.eveassist.api.esi.exception.InvalidUrlException;
 import com.eveassist.api.esi.response.*;
-import com.eveassist.api.sde.chr.ChrLookup;
+import com.eveassist.api.sde.chr.ChrDao;
 import jakarta.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpEntity;
@@ -34,12 +34,13 @@ public class EsiApiController {
     private static final String DATASOURCE = "tranquility";
     private final RestTemplate esiTemplate;
     private final CharactersMapper mapper;
-    private final ChrLookup chrLookup;
+    private final ChrDao chrDao;
 
-    public EsiApiController(RestTemplate esiTemplate, CharactersMapper mapper, ChrLookup chrLookup) {
+
+    public EsiApiController(RestTemplate esiTemplate, CharactersMapper mapper, ChrDao chrDao) {
         this.esiTemplate = esiTemplate;
         this.mapper = mapper;
-        this.chrLookup = chrLookup;
+        this.chrDao = chrDao;
     }
 
     @GetMapping("/character/{pilotId}/public")
@@ -81,10 +82,8 @@ public class EsiApiController {
             if (affiliationDto == null || affiliationDto.length != 1)
                 throw new EsiParameterException("Unable to retrieve affiliation data from ESI");
 
-            PilotPublicDto dto = mapper
-                    .from(charactersDto, portraitDto, affiliationDto[0], this.lookupAffiliationDesc(universeNamesDto));
-
-            return null;
+            return mapper.from(charactersDto, portraitDto, affiliationDto[0],
+                    this.lookupAffiliationDesc(universeNamesDto, charactersDto));
         } catch (MalformedURLException e) {
             throw new InvalidUrlException(e, METHOD_NAME, "multiple URLs");
         }
@@ -109,7 +108,8 @@ public class EsiApiController {
         }
     }
 
-    private AffiliationDescDto lookupAffiliationDesc(@NotNull UniverseNamesDto[] namesDto) {
+    private AffiliationDescDto lookupAffiliationDesc(@NotNull UniverseNamesDto[] namesDto,
+                                                     @NotNull CharactersDto charactersDto) {
         AffiliationDescDto rtn = new AffiliationDescDto();
         for (UniverseNamesDto universeNamesDto : namesDto) {
             switch (universeNamesDto.category()) {
@@ -120,6 +120,8 @@ public class EsiApiController {
                 default -> throw new EsiParameterException("new constant in affiliation %s - %s"
                         .formatted(universeNamesDto.category(), universeNamesDto.name()));
             }
+            rtn.setRaceDesc(chrDao.getRace(charactersDto.raceId()).getRaceName());
+            rtn.setBloodlineDesc(chrDao.getBloodline(charactersDto.bloodlineId()).getBloodlineName());
         }
         return rtn;
     }

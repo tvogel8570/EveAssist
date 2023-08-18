@@ -19,8 +19,6 @@ spring:
     username: postgres
     password: ${postgres.password}
     url: jdbc:postgresql://localhost:5432/sdeyaml
-  flyway:
-    enabled: true
   jpa:
     open-in-view: false
     properties:

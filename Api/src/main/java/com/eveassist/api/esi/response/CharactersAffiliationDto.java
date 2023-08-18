@@ -5,6 +5,10 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
 import java.io.Serializable;
 
+/*
+    CCP defined response object for /characters/affiliation/
+ */
+
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public record CharactersAffiliationDto(
         Integer allianceId,

@@ -4,12 +4,13 @@ import com.eveassist.client.pilot.dto.PilotListInfo;
 import com.eveassist.client.pilot.entity.Pilot;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.ListPagingAndSortingRepository;
 
 import java.util.List;
 import java.util.UUID;
 
-public interface PilotRepository extends ListPagingAndSortingRepository<Pilot, Long> {
+public interface PilotRepository extends ListPagingAndSortingRepository<Pilot, Long>, CrudRepository<Pilot, Long> {
 
     @Query("""
             select new com.eveassist.client.pilot.dto.PilotListInfo(p.ownerHash, p.evePilotId, p.name, p
