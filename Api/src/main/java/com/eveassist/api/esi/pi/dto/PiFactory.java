@@ -1,17 +1,13 @@
 package com.eveassist.api.esi.pi.dto;
 
+import java.util.List;
+
 public record PiFactory(
         Integer schematicId,
         String schematicName,
         Integer cycleTime,
         Integer pinTypeId,
         String factoryType,
-        Integer inputTypeId,
-        String inputName,
-        Integer inputQty,
-        Integer outputTypeId,
-        String outputName,
-        Integer outputQty
-) {
-
+        List<PiFactoryProduct> inputs,
+        PiFactoryProduct output) {
 }

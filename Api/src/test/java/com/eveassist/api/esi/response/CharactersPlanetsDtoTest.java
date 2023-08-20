@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 //@Import({CharactersPlanetsDto.class})
-public class CharactersPlanetsDtoTest {
+class CharactersPlanetsDtoTest {
     static final ObjectMapper mapper = new ObjectMapper();
 
     @BeforeAll

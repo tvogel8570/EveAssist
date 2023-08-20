@@ -7,6 +7,8 @@ import java.util.List;
 
 @Builder
 public record PiStorage(
+        String name,
+        Integer capacity,
         Boolean isLaunchpad,
         LocalDateTime lastCycleStart,
         List<PiProduct> products
