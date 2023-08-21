@@ -28,6 +28,8 @@ server:
 spring:
   config:
     import: optional:classpath:env.properties
+  messages:
+    basename: i18n/messages
   datasource:
     username: postgres
     password: ${postgres.password}
