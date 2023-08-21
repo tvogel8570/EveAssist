@@ -10,4 +10,18 @@
     <option name="useLazyOnToOneAssociations" value="true" />
     <option name="scaffoldingLanguage" />
   </component>
+  <component name="PersistenceUnitSettings">
+    <persistence-units>
+      <persistence-unit name="Client">
+        <packages>
+          <package value="com.eveassist.client" />
+        </packages>
+      </persistence-unit>
+      <persistence-unit name="Default">
+        <packages>
+          <package value="com.eveassist.api" />
+        </packages>
+      </persistence-unit>
+    </persistence-units>
+  </component>
 </project>
