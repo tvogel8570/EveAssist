@@ -1,4 +1,4 @@
-api-host: ${scheme}://localhost:${server.port}
+xapi-host: ${scheme}://localhost:${server.port}
 ui-host: ${api-host}
 rp-initiated-logout-enabled: true
 
@@ -19,6 +19,8 @@ logging:
   level:
     root: warn
     com.eveassist.client: debug
+    org.springframework.web: debug
+    org.springframework.web.servlet.mvc.annotation.RequestMappingHandlerMapping: trace
 
 server:
   port: 7443
@@ -62,6 +64,7 @@ spring:
             client-secret: ${keycloak.eveassist.password}
             provider: keycloak
             scope: openid,profile,email,offline_access
+
 
 authorities-mapping:
   issuers:

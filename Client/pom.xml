@@ -23,6 +23,7 @@
         <webjars-locator.version>0.46</webjars-locator.version>
         <alpinejs.version>3.12.1</alpinejs.version>
         <jjwt.version>0.9.1</jjwt.version>
+        <thymeleaf-layout-dialect.version>3.2.1</thymeleaf-layout-dialect.version>
     </properties>
     <dependencies>
         <dependency>
@@ -46,6 +47,7 @@
         <dependency>
             <groupId>nz.net.ultraq.thymeleaf</groupId>
             <artifactId>thymeleaf-layout-dialect</artifactId>
+            <version>${thymeleaf-layout-dialect.version}</version>
         </dependency>
         <dependency>
             <groupId>org.webjars</groupId>
