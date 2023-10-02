@@ -5,6 +5,7 @@ import com.eveassist.client.pilot.PilotMapper;
 import com.eveassist.client.pilot.PilotRepository;
 import com.eveassist.client.pilot.dto.PilotListInfo;
 import com.eveassist.client.pilot.dto.PilotPublicDto;
+import com.eveassist.client.user.EveAssistUserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -42,11 +43,14 @@ class PilotServiceImplTest {
     @Mock
     PilotRepository repository;
 
+    @Mock
+    EveAssistUserRepository eveAssistUserRepository;
+
     PilotServiceImpl cut;
 
     @BeforeEach
     void setup() {
-        cut = new PilotServiceImpl(mapper, repository, restTemplate, pilotMapper);
+        cut = new PilotServiceImpl(mapper, repository, restTemplate, pilotMapper, eveAssistUserRepository);
     }
 
     @Test

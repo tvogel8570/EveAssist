@@ -9,6 +9,10 @@ import com.eveassist.client.pilot.dto.PilotDto;
 import com.eveassist.client.pilot.dto.PilotListInfo;
 import com.eveassist.client.pilot.dto.PilotPublicDto;
 import com.eveassist.client.pilot.entity.Pilot;
+import com.eveassist.client.pilot.entity.Scope;
+import com.eveassist.client.pilot.entity.Token;
+import com.eveassist.client.user.EveAssistUserRepository;
+import com.eveassist.client.user.entity.EveAssistUser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -19,10 +23,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.Base64;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -31,17 +32,19 @@ public class PilotServiceImpl implements PilotService {
     private final PilotRepository pilotRepository;
     private final RestTemplate restTemplate;
     private final PilotMapper pilotMapper;
+    private final EveAssistUserRepository eveAssistUserRepository;
 
     public PilotServiceImpl(ObjectMapper mapper, PilotRepository pilotRepository, RestTemplate restTemplate,
-                            PilotMapper pilotMapper) {
+                            PilotMapper pilotMapper, EveAssistUserRepository eveAssistUserRepository) {
         this.mapper = mapper;
         this.pilotRepository = pilotRepository;
         this.restTemplate = restTemplate;
         this.pilotMapper = pilotMapper;
+        this.eveAssistUserRepository = eveAssistUserRepository;
     }
 
     @Override
-    public PilotDto savePilot(PilotAuthDto pilotAuth) {
+    public PilotDto savePilot(String eveAssistUserId, PilotAuthDto pilotAuth) {
         String[] chunks = pilotAuth.accessToken().split("\\.");
 
         // TODO verify signature
@@ -52,11 +55,21 @@ public class PilotServiceImpl implements PilotService {
         try {
             PilotAuthPayload pilotAuthPayload = mapper.readValue(payload, PilotAuthPayload.class);
             String[] subject = pilotAuthPayload.sub().split(":");
+            EveAssistUser eau = eveAssistUserRepository.findByUniqueUser(UUID.fromString(eveAssistUserId));
             Pilot newPilot = Pilot.builder()
                     .name(pilotAuthPayload.name())
                     .evePilotId(Long.parseLong(subject[2]))
                     .ownerHash(pilotAuthPayload.owner())
+                    .eveAssistUser(eau)
                     .build();
+            Token token = Token.builder()
+                    .pilot(newPilot)
+                    .accessToken(pilotAuth.accessToken().getBytes())
+                    .refreshToken(pilotAuth.refreshToken().getBytes())
+                    .build();
+            Scope scope = Scope.builder().token(token).privilege("test").build();
+            token.setScopes(Set.of(scope));
+            newPilot.setToken(Set.of(token));
             pilotRepository.save(newPilot);
             return pilotMapper.toDto(newPilot);
         } catch (JsonProcessingException e) {
