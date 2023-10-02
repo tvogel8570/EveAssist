@@ -51,13 +51,12 @@ public class PilotServiceImpl implements PilotService {
 
         try {
             PilotAuthPayload pilotAuthPayload = mapper.readValue(payload, PilotAuthPayload.class);
-            String[] subject = pilotAuthPayload.sub.split(":");
+            String[] subject = pilotAuthPayload.sub().split(":");
             Pilot newPilot = Pilot.builder()
-                    .name(pilotAuthPayload.name)
+                    .name(pilotAuthPayload.name())
                     .evePilotId(Long.parseLong(subject[2]))
                     .ownerHash(pilotAuthPayload.owner())
                     .build();
-            // TODO call the repository to save the pilot
             pilotRepository.save(newPilot);
             return pilotMapper.toDto(newPilot);
         } catch (JsonProcessingException e) {
@@ -84,10 +83,6 @@ public class PilotServiceImpl implements PilotService {
         return pilots;
     }
 
-//    private getPilotDetails(Integer evePilotId, String accessToken) {
-//
-//    }
-
     @Override
     public void linkState(String name, String state) {
         log.info("name: [%s] state: [%s]".formatted(name, state));
@@ -98,20 +93,4 @@ public class PilotServiceImpl implements PilotService {
         return Optional.empty();
     }
 
-    record PilotAuthPayload(
-            String jti,
-            String kid,
-            String sub,
-            String azp,
-            String tenant,
-            String tier,
-            String region,
-            String aud,
-            String name,
-            String owner,
-            Long exp,
-            Long iat,
-            String iss
-    ) {
-    }
 }
