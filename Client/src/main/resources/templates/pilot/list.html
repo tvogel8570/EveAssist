@@ -20,8 +20,8 @@
                             <tr>
                                 <th th:replace="~{fragments/pilot-table::header('image')}"></th>
                                 <th th:replace="~{fragments/pilot-table::header('Name')}"></th>
-                                <th th:replace="~{fragments/pilot-table::header(title='ID', hideOnMobile=true)}"></th>
-                                <th th:replace="~{fragments/pilot-table::header(title='OwnerHash', hideOnMobile=true)}"></th>
+                                <th th:replace="~{fragments/pilot-table::header(title='Corporation', hideOnMobile=true)}"></th>
+                                <th th:replace="~{fragments/pilot-table::header(title='Alliance', hideOnMobile=true)}"></th>
                                 <th class="px-6 py-3 border-b border-gray-200 bg-gray-50"></th>
                             </tr>
                             </thead>
@@ -33,10 +33,10 @@
                                 <td th:replace="~{fragments/pilot-table::data(contents=${pilot.getName},primary=true)}">
                                     Cass
                                 </td>
-                                <td th:replace="~{fragments/pilot-table::data(contents=${pilot.getEvePilotId()},hideOnMobile=true)}">
+                                <td th:replace="~{fragments/pilot-table::data(contents=${pilot.getCorporationDesc()},hideOnMobile=true)}">
                                     123
                                 </td>
-                                <td th:replace="~{fragments/pilot-table::data(contents=${pilot.getOwnerHash()},hideOnMobile=true)}">
+                                <td th:replace="~{fragments/pilot-table::data(contents=${pilot.getAllianceDesc()},hideOnMobile=true)}">
                                     A4MBK4L24#
                                 </td>
                                 <td th:replace="~{fragments/pilot-table:: dataWithLink('Details', @{pilot/{id}/details(id=${pilot.getEvePilotId()})})}">
