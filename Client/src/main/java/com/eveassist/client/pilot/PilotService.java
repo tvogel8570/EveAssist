@@ -9,7 +9,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface PilotService {
-    PilotDto savePilot(PilotAuthDto pilotAuth);
+    PilotDto savePilot(String eveUserId, PilotAuthDto pilotAuth);
 
     List<PilotListInfo> getPilotsWithDetailsForUser(UUID userId, String token);
 

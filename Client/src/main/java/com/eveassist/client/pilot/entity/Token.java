@@ -31,10 +31,10 @@ public class Token implements Serializable {
     private Pilot pilot;
 
     @Column(name = "access_token", nullable = false, columnDefinition = "BYTEA")
-    private String accessToken;
+    private byte[] accessToken;
 
     @Column(name = "refresh_token", nullable = false, columnDefinition = "BYTEA")
-    private String refreshToken;
+    private byte[] refreshToken;
 
     @OneToMany(mappedBy = "token", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Scope> scopes = new LinkedHashSet<>();

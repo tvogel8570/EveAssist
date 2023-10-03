@@ -90,7 +90,8 @@ public class PilotController {
     }
 
     @GetMapping("/login")
-    public String handleCcpLogin(@RequestParam String code, @RequestParam String state) {
+    public String handleCcpLogin(@AuthenticationPrincipal OAuth2AuthenticatedPrincipal principal,
+                                 @RequestParam String code, @RequestParam String state) {
         log.info("In handleCcpLogin code [{}] state [{}]", code, state);
         this.pilotService.getUserFromState(state);
         String credentials = new String(Base64.encodeBase64((pilotClientId + ":" + pilotClientSecret).getBytes()));
@@ -108,7 +109,7 @@ public class PilotController {
         ResponseEntity<PilotAuthDto> response = restTemplate.exchange(uri, HttpMethod.POST,
                 request, PilotAuthDto.class);
 
-        pilotService.savePilot(response.getBody());
+        pilotService.savePilot(principal.getName(), response.getBody());
 
         return "redirect:/pilot";
     }

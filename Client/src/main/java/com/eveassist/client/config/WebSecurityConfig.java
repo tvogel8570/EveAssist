@@ -21,9 +21,9 @@ public class WebSecurityConfig {
         http.logout(withDefaults());
         // @formatter:off
         http.authorizeHttpRequests(ex -> ex
-                .requestMatchers("/", "/login/**", "/oauth2/**").permitAll()
-                .requestMatchers("/nice.html").hasAuthority("NICE")
-                .anyRequest().authenticated());
+                .requestMatchers("/", "/login/**", "/oauth2/**",
+                        "/user/login","/user/doLogin","/user/create", "/user/register", "/user/confirmEmail").permitAll()
+                .anyRequest().permitAll());
         // @formatter:on
         return http.build();
     }
