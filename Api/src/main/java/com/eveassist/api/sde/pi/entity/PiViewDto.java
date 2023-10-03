@@ -21,6 +21,6 @@ public class PiViewDto implements Serializable {
     private Integer productTypeId;
     private String productName;
     private Boolean isInput;
-    private Integer quantity;
+    private Long quantity;
     private String factoryType;
 }

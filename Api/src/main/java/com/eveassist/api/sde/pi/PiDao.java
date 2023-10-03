@@ -1,9 +1,18 @@
 package com.eveassist.api.sde.pi;
 
+import com.eveassist.api.sde.pi.entity.PiPinDto;
 import com.eveassist.api.sde.pi.entity.PiViewDto;
 
-public interface PiDao {
-    PiViewDto piDetailsBySchematicId(Integer schematicId);
+import java.util.List;
 
-    PiViewDto piDetailsBySchematicIdAndFactoryId(Integer schematicId, Integer factoryId);
+public interface PiDao {
+    List<PiViewDto> piDetailsBySchematicId(Integer schematicId);
+
+    List<PiViewDto> piDetailsBySchematicIdAndFactoryId(Integer schematicId, Integer factoryId);
+
+    PiPinDto piPinByType(Integer pinType);
+
+    String typeNameByTypeId(Integer typeId);
+
+    String celestialNameById(Integer id);
 }

@@ -13,6 +13,7 @@ public record PiExtractor(
         Integer numHeads,
         Integer productTypeId,
         String productName,
-        Integer qtyPerCycle
+        Integer qtyPerCycle,
+        Double headRadius
 ) {
 }
