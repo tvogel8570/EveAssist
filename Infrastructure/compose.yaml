@@ -26,7 +26,7 @@ services:
 
   keycloak:
     image: quay.io/keycloak/keycloak:latest
-    command: [ " --verbose start-dev" ]
+    command: [ "start-dev" ]
     secrets:
       - source: server_crt
         target: /etc/x509/https/tls.crt
