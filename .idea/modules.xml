@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/Api.iml" filepath="$PROJECT_DIR$/Api.iml" />
+      <module fileurl="file://$PROJECT_DIR$/Client/Client.iml" filepath="$PROJECT_DIR$/Client/Client.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/EveAssist.iml" filepath="$PROJECT_DIR$/.idea/EveAssist.iml" />
     </modules>
   </component>
