@@ -46,6 +46,11 @@ spring-addons:
         - jsonPath: $.resource_access.*.roles
 
 ---
+spring:
+  config:
+    activate:
+      on-profile: ssl
+
 scheme: https
 keycloak-port: 8443
 
@@ -58,7 +63,3 @@ server:
     key-store-password: ${self.signed.password}
     key-alias: ${COMPUTERNAME}
 
-spring:
-  config:
-    activate:
-      on-profile: ssl
