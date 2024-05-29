@@ -17,7 +17,7 @@ keycloak-issuer: ${scheme}://localhost:${keycloak-port}/realms/${keycloak-realm}
 
 logging:
   level:
-    root: warn
+    root: info
     com.eveassist.client: debug
     org.springframework.web: debug
     org.springframework.web.servlet.mvc.annotation.RequestMappingHandlerMapping: trace
@@ -74,6 +74,11 @@ authorities-mapping:
         - jsonPath: $.resource_access.*.roles
 
 ---
+spring:
+  config:
+    activate:
+      on-profile: ssl
+
 scheme: https
 keycloak-port: 8443
 
@@ -84,9 +89,4 @@ server:
     key-store-type: PKCS12
     key-store: classpath:keystore/self_signed.p12
     key-store-password: ${self.signed.password}
-    key-alias: ${hostname}
-
-spring:
-  config:
-    activate:
-      on-profile: ssl
+    key-alias: ${COMPUTERNAME}
