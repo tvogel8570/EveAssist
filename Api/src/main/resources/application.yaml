@@ -34,7 +34,7 @@ spring:
 
 logging:
   level:
-    root: warn
+    root: info
     com.eveassist.api.esi: debug
 
 spring-addons:
