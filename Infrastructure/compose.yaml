@@ -30,14 +30,8 @@ services:
     secrets:
       - source: server_crt
         target: /etc/x509/https/tls.crt
-        uid: '103'
-        gid: '103'
-        mode: 0440
       - source: server_key
         target: /etc/x509/https/tls.key
-        uid: '103'
-        gid: '103'
-        mode: 0440
     volumes:
       - type: volume
         source: keycloak-eve-assist
