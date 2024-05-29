@@ -22,7 +22,8 @@ public class WebSecurityConfig {
         // @formatter:off
         http.authorizeHttpRequests(ex -> ex
                 .requestMatchers("/", "/login/**", "/oauth2/**",
-                        "/user/login","/user/doLogin","/user/create", "/user/register", "/user/confirmEmail").permitAll()
+                        "/user/login","/user/doLogin","/user/create",
+                        "/user/register", "/user/confirmEmail").permitAll()
                 .anyRequest().permitAll());
         // @formatter:on
         return http.build();

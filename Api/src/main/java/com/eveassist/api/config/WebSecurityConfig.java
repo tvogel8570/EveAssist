@@ -77,13 +77,12 @@ public class WebSecurityConfig {
         // Disable CSRF because of state-less session-management
         http.csrf(AbstractHttpConfigurer::disable);
 
-        // Return 401 (unauthorized) instead of 302 (redirect to login) when
-        // authorization is missing or invalid
-        http.exceptionHandling(exceptionHandling -> exceptionHandling.authenticationEntryPoint((request, response,
-                                                                                                authException) -> {
-            response.addHeader(HttpHeaders.WWW_AUTHENTICATE, "Basic realm=\"Restricted Content\"");
-            response.sendError(HttpStatus.UNAUTHORIZED.value(), HttpStatus.UNAUTHORIZED.getReasonPhrase());
-        }));
+        // Return 401 (unauthorized) instead of 302 (redirect to login) when authorization is missing or invalid
+        http.exceptionHandling(exceptionHandling ->
+                exceptionHandling.authenticationEntryPoint((request, response, authException) -> {
+                    response.addHeader(HttpHeaders.WWW_AUTHENTICATE, "Basic realm=\"Restricted Content\"");
+                    response.sendError(HttpStatus.UNAUTHORIZED.value(), HttpStatus.UNAUTHORIZED.getReasonPhrase());
+                }));
 
         // If SSL enabled, disable http (https only)
         if (serverProperties.getSsl() != null && serverProperties.getSsl().isEnabled()) {
@@ -141,10 +140,12 @@ public class WebSecurityConfig {
         public IssuerProperties get(URL issuerUri) throws MisconfigurationException {
             final var issuerProperties = Stream.of(issuers).filter(iss -> issuerUri.equals(iss.getUri())).toList();
             if (issuerProperties.isEmpty()) {
-                throw new MisconfigurationException("Missing authorities mapping properties for %s".formatted(issuerUri.toString()));
+                throw new MisconfigurationException(
+                        "Missing authorities mapping properties for %s".formatted(issuerUri.toString()));
             }
             if (issuerProperties.size() > 1) {
-                throw new MisconfigurationException("Too many authorities mapping properties for %s".formatted(issuerUri.toString()));
+                throw new MisconfigurationException(
+                        "Too many authorities mapping properties for %s".formatted(issuerUri.toString()));
             }
             return issuerProperties.get(0);
         }
@@ -192,7 +193,8 @@ public class WebSecurityConfig {
                         return (Stream<String>) ((Collection) claim).stream();
                     }
                     if (Collection.class.isAssignableFrom(firstItem.getClass())) {
-                        return (Stream<String>) ((Collection) claim).stream().flatMap(colItem -> ((Collection) colItem).stream()).map(String.class::cast);
+                        return (Stream<String>) ((Collection) claim).stream().flatMap(
+                                colItem -> ((Collection) colItem).stream()).map(String.class::cast);
                     }
                 }
                 return Stream.empty();
@@ -219,7 +221,8 @@ public class WebSecurityConfig {
     authenticationManagerResolver(SpringAddonsProperties addonsProperties,
                                   SpringAddonsJwtAuthenticationConverter authenticationConverter) {
         final Map<String, AuthenticationManager> authenticationProviders =
-                Stream.of(addonsProperties.getIssuers()).map(SpringAddonsProperties.IssuerProperties::getUri).map(URL::toString)
+                Stream.of(addonsProperties.getIssuers()).map(
+                                SpringAddonsProperties.IssuerProperties::getUri).map(URL::toString)
                         .collect(Collectors.toMap(issuer -> issuer, issuer -> authenticationProvider(issuer,
                                 authenticationConverter)::authenticate));
         return new JwtIssuerAuthenticationManagerResolver(authenticationProviders::get);
