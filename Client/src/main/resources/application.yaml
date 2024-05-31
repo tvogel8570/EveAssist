@@ -1,4 +1,4 @@
-xapi-host: ${scheme}://localhost:${server.port}
+api-host: ${scheme}://localhost:${server.port}
 ui-host: ${api-host}
 rp-initiated-logout-enabled: true
 
@@ -49,8 +49,7 @@ spring:
     template-resolver-order: 0
   lifecycle:
     timeout-per-shutdown-phase: 30s
-    jpa:
-      open-in-view: false
+
   security:
     oauth2:
       client:
