@@ -24,7 +24,7 @@ public class WebSecurityConfig {
                 .requestMatchers("/", "/login/**", "/oauth2/**",
                         "/user/login","/user/doLogin","/user/create",
                         "/user/register", "/user/confirmEmail").permitAll()
-                .anyRequest().permitAll());
+                .anyRequest().authenticated());
         // @formatter:on
         return http.build();
     }
