@@ -55,13 +55,13 @@ services:
         condition: service_healthy
     environment:
       - KEYCLOAK_ADMIN=admin
-      - KEYCLOAK_ADMIN_PASSWORD=admin1
+      - KEYCLOAK_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD}  # reference .env file in same directory as compose.yaml
       - KC_HTTPS_CERTIFICATE_FILE=/etc/x509/https/tls.crt
       - KC_HTTPS_CERTIFICATE_KEY_FILE=/etc/x509/https/tls.key
       - KC_DB=postgres
       - KC_DB_URL=jdbc:postgresql://eve-postgres:5432/keycloak
       - KC_DB_USERNAME=localdevuser
-      - KC_DB_PASSWORD=password1
+      - KC_DB_PASSWORD=${KC_DB_PASSWORD} # reference .env file in same directory as compose.yaml
       - KC_DB_SCHEMA=public
     container_name: eve-assist-keycloak
 
