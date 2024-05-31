@@ -30,7 +30,7 @@ spring:
       resourceserver:
         jwt:
           issuer-uri: ${keycloak-issuer}
-          jwk-set-uri: ${scheme}://localhost:${keycloak-port}/realms/${keycloak-realm}/protocol/openid-connect/certs
+          jwk-set-uri: ${keycloak-issuer}/protocol/openid-connect/certs
 
 logging:
   level:
