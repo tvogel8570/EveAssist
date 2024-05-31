@@ -78,6 +78,7 @@ fabric.properties
 
 # secrets
 **/env.properties
+**/.env
 **/self_signed*.*
 **/password.txt
 
