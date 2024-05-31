@@ -13,8 +13,8 @@ pilot:
 scheme: http
 keycloak-port: 8442
 keycloak-realm: EveAssist
-keycloak-issuer: ${scheme}://localhost:${keycloak-port}/realms/${keycloak-realm}
-keycloak-base-url: ${scheme}://localhost:${keycloak-port}/auth
+keycloak-base-url: ${scheme}://localhost:${keycloak-port}
+keycloak-issuer: ${keycloak-base-url}/realms/${keycloak-realm}
 
 logging:
   level:
