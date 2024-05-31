@@ -12,11 +12,13 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
 
 @DataJpaTest
 @Testcontainers
@@ -29,7 +31,6 @@ class EveAssistUserRepositoryTest {
 
     @Autowired
     EveAssistUserRepository cut;
-    private final LocalDateTime testTime = LocalDateTime.now();
 
 
     @Test
@@ -38,15 +39,14 @@ class EveAssistUserRepositoryTest {
         EveAssistUser eveAssistUser = EveAssistUser.builder()
                 .uniqueUser(unique)
                 .screenName("screen")
-                .createTimestamp(testTime)
-                .updateTimestamp(testTime)
                 .email("tim@test.com").build();
+        Instant testTime = Instant.now();
         cut.save(eveAssistUser);
 
         EveAssistUser retrievedUser = cut.findByUniqueUser(unique);
         assertThat(retrievedUser).isNotNull();
         assertThat(retrievedUser.getUniqueUser()).isEqualTo(unique);
-        assertThat(retrievedUser.getCreateTimestamp()).isEqualToIgnoringSeconds(testTime);
+        assertThat(retrievedUser.getCreateTimestamp()).isCloseTo(testTime, within(1, ChronoUnit.SECONDS));
     }
 
     @Test

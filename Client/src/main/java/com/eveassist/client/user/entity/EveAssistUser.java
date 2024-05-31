@@ -4,7 +4,6 @@ import com.eveassist.client.pilot.entity.Pilot;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PastOrPresent;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -15,7 +14,7 @@ import org.hibernate.validator.constraints.Length;
 
 import java.io.Serial;
 import java.io.Serializable;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -62,20 +61,25 @@ public class EveAssistUser implements Serializable {
     private String screenName;
 
     @PastOrPresent
-    @NotNull
     @CreationTimestamp
     @Column(name = "create_timestamp", nullable = false)
-    private LocalDateTime createTimestamp;
+    private Instant createTimestamp;
 
     @PastOrPresent
-    @NotNull
     @UpdateTimestamp
     @Column(name = "update_timestamp", nullable = false)
-    private LocalDateTime updateTimestamp;
+    private Instant updateTimestamp;
 
 
     @Column(name = "enabled", nullable = false)
     boolean enabled = false;    // users are disabled by default
+    @Column(name = "account_non_expired", nullable = false)
+    boolean account_non_expired = true;
+    @Column(name = "account_non_locked", nullable = false)
+    boolean account_non_locked = true;
+    @Column(name = "credentials_non_expired", nullable = false)
+    boolean credentials_non_expired = true;
+
 
     @OneToMany(mappedBy = "eveAssistUser", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Pilot> pilots = new LinkedHashSet<>();

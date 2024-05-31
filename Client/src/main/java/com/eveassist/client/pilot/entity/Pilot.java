@@ -11,6 +11,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.LinkedHashSet;
 import java.util.Objects;
@@ -22,8 +23,8 @@ import java.util.Set;
 @Getter
 @Setter
 @Entity
-@Table(name = "pilot", uniqueConstraints = {@UniqueConstraint(name = "pilot_business_key", columnNames = {"owner_hash"
-        , "eve_pilot_id"})})
+@Table(name = "pilot", uniqueConstraints = {@UniqueConstraint(
+        name = "pilot_business_key", columnNames = {"owner_hash", "eve_pilot_id"})})
 public class Pilot implements Serializable {
     @Serial
     private static final long serialVersionUID = 8223189717393563426L;
@@ -88,16 +89,16 @@ public class Pilot implements Serializable {
 
     @Column(name = "modified")
     @LastModifiedDate
-    private LocalDateTime modified;
+    private Instant modified;
     @Column(name = "created")
     @CreatedDate
-    private LocalDateTime created;
+    private Instant created;
 
     @OneToMany(mappedBy = "pilot", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Token> token = new LinkedHashSet<>();
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "eve_assist_user_id")
+    @JoinColumn(name = "eve_assist_user_id", nullable = false)
     private EveAssistUser eveAssistUser;
 
 
