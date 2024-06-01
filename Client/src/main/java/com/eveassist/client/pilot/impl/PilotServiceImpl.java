@@ -56,18 +56,18 @@ public class PilotServiceImpl implements PilotService {
             PilotAuthPayload pilotAuthPayload = mapper.readValue(payload, PilotAuthPayload.class);
             String[] subject = pilotAuthPayload.sub().split(":");
             EveAssistUser eau = eveAssistUserRepository.findByUniqueUser(UUID.fromString(eveAssistUserId));
-            Pilot newPilot = Pilot.builder()
-                    .name(pilotAuthPayload.name())
-                    .evePilotId(Long.parseLong(subject[2]))
-                    .ownerHash(pilotAuthPayload.owner())
-                    .eveAssistUser(eau)
+            Pilot newPilot = Pilot.PilotBuilder.aPilot()
+                    .withName(pilotAuthPayload.name())
+                    .withEvePilotId(Long.parseLong(subject[2]))
+                    .withOwnerHash(pilotAuthPayload.owner())
+                    .withEveAssistUser(eau)
                     .build();
-            Token token = Token.builder()
-                    .pilot(newPilot)
-                    .accessToken(pilotAuth.accessToken().getBytes())
-                    .refreshToken(pilotAuth.refreshToken().getBytes())
+            Token token = Token.TokenBuilder.aToken()
+                    .withPilot(newPilot)
+                    .withAccessToken(pilotAuth.accessToken().getBytes())
+                    .withRefreshToken(pilotAuth.refreshToken().getBytes())
                     .build();
-            Scope scope = Scope.builder().token(token).privilege("test").build();
+            Scope scope = Scope.ScopeBuilder.aScope().withToken(token).withPrivilege("test").build();
             token.setScopes(Set.of(scope));
             newPilot.setToken(Set.of(token));
             pilotRepository.save(newPilot);

@@ -36,10 +36,10 @@ class EveAssistUserRepositoryTest {
     @Test
     void shouldRetrieveCorrectTime() {
         var unique = UUID.randomUUID();
-        EveAssistUser eveAssistUser = EveAssistUser.builder()
-                .uniqueUser(unique)
-                .screenName("screen")
-                .email("tim@test.com").build();
+        EveAssistUser eveAssistUser = EveAssistUser.EveAssistUserBuilder.anEveAssistUser()
+                .withUniqueUser(unique)
+                .withScreenName("screen")
+                .withEmail("tim@test.com").build();
         Instant testTime = Instant.now();
         cut.save(eveAssistUser);
 

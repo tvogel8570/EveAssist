@@ -5,7 +5,10 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.PastOrPresent;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.NaturalId;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -20,7 +23,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
-@Builder
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
@@ -34,6 +36,7 @@ import java.util.UUID;
 public class EveAssistUser implements Serializable {
     @Serial
     private static final long serialVersionUID = 4756246154027625809L;
+
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "eve_assist_user_gen")
     @SequenceGenerator(name = "eve_assist_user_gen", sequenceName = "eve_assist_user_id_seq",
@@ -84,30 +87,127 @@ public class EveAssistUser implements Serializable {
     @OneToMany(mappedBy = "eveAssistUser", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Pilot> pilots = new LinkedHashSet<>();
 
-    public String getUsername() {
-        return this.email;
-    }
-
     public boolean isEnabled() {
         return false;
     }
-
-    @SuppressWarnings("java:S2097")
+    
     @Override
     public final boolean equals(Object o) {
         if (this == o) return true;
         if (o == null) return false;
-        Class<?> oEffectiveClass = o instanceof HibernateProxy otherProxy ?
-                otherProxy.getHibernateLazyInitializer().getPersistentClass() : o.getClass();
-        Class<?> thisEffectiveClass = this instanceof HibernateProxy thisProxy ?
-                thisProxy.getHibernateLazyInitializer().getPersistentClass() : this.getClass();
+        Class<?> oEffectiveClass = o instanceof HibernateProxy ?
+                ((HibernateProxy) o).getHibernateLazyInitializer().getPersistentClass() : o.getClass();
+        Class<?> thisEffectiveClass = this instanceof HibernateProxy ?
+                ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass() : this.getClass();
         if (thisEffectiveClass != oEffectiveClass) return false;
         EveAssistUser that = (EveAssistUser) o;
-        return getId() != null && Objects.equals(getId(), that.getId());
+        return getUniqueUser() != null && Objects.equals(getUniqueUser(), that.getUniqueUser());
     }
 
     @Override
     public final int hashCode() {
-        return getClass().hashCode();
+        return Objects.hash(uniqueUser);
+    }
+
+    @SuppressWarnings("unused")
+    public static final class EveAssistUserBuilder {
+        private Long id;
+        private Integer version;
+        private UUID uniqueUser;
+        private @NotEmpty
+        @Email(message = "You must enter a valid email") String email;
+        private @NotEmpty
+        @Length(min = 5, max = 50) String screenName;
+        private @PastOrPresent Instant createTimestamp;
+        private @PastOrPresent Instant updateTimestamp;
+        private boolean enabled;
+        private boolean account_non_expired;
+        private boolean account_non_locked;
+        private boolean credentials_non_expired;
+        private Set<Pilot> pilots;
+
+        private EveAssistUserBuilder() {
+        }
+
+        public static EveAssistUserBuilder anEveAssistUser() {
+            return new EveAssistUserBuilder();
+        }
+
+        public EveAssistUserBuilder withId(Long id) {
+            this.id = id;
+            return this;
+        }
+
+        public EveAssistUserBuilder withVersion(Integer version) {
+            this.version = version;
+            return this;
+        }
+
+        public EveAssistUserBuilder withUniqueUser(UUID uniqueUser) {
+            this.uniqueUser = uniqueUser;
+            return this;
+        }
+
+        public EveAssistUserBuilder withEmail(String email) {
+            this.email = email;
+            return this;
+        }
+
+        public EveAssistUserBuilder withScreenName(String screenName) {
+            this.screenName = screenName;
+            return this;
+        }
+
+        public EveAssistUserBuilder withCreateTimestamp(Instant createTimestamp) {
+            this.createTimestamp = createTimestamp;
+            return this;
+        }
+
+        public EveAssistUserBuilder withUpdateTimestamp(Instant updateTimestamp) {
+            this.updateTimestamp = updateTimestamp;
+            return this;
+        }
+
+        public EveAssistUserBuilder withEnabled(boolean enabled) {
+            this.enabled = enabled;
+            return this;
+        }
+
+        public EveAssistUserBuilder withAccount_non_expired(boolean account_non_expired) {
+            this.account_non_expired = account_non_expired;
+            return this;
+        }
+
+        public EveAssistUserBuilder withAccount_non_locked(boolean account_non_locked) {
+            this.account_non_locked = account_non_locked;
+            return this;
+        }
+
+        public EveAssistUserBuilder withCredentials_non_expired(boolean credentials_non_expired) {
+            this.credentials_non_expired = credentials_non_expired;
+            return this;
+        }
+
+        public EveAssistUserBuilder withPilots(Set<Pilot> pilots) {
+            this.pilots = pilots;
+            return this;
+        }
+
+        public EveAssistUser build() {
+            EveAssistUser eveAssistUser = new EveAssistUser();
+            eveAssistUser.setId(id);
+            eveAssistUser.setVersion(version);
+            eveAssistUser.setUniqueUser(uniqueUser);
+            eveAssistUser.setEmail(email);
+            eveAssistUser.setScreenName(screenName);
+            eveAssistUser.setCreateTimestamp(createTimestamp);
+            eveAssistUser.setUpdateTimestamp(updateTimestamp);
+            eveAssistUser.setEnabled(enabled);
+            eveAssistUser.setAccount_non_expired(account_non_expired);
+            eveAssistUser.setAccount_non_locked(account_non_locked);
+            eveAssistUser.setCredentials_non_expired(credentials_non_expired);
+            eveAssistUser.setPilots(pilots);
+            return eveAssistUser;
+        }
     }
 }
