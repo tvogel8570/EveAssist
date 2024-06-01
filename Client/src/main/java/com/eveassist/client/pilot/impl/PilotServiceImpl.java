@@ -15,8 +15,9 @@ import com.eveassist.client.user.EveAssistUserRepository;
 import com.eveassist.client.user.entity.EveAssistUser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.annotation.Resource;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -25,28 +26,17 @@ import org.springframework.web.client.RestClient;
 import java.util.*;
 
 @Slf4j
+@RequiredArgsConstructor
 @Service
 public class PilotServiceImpl implements PilotService {
     public static final String ESI_CHAR_PUBLIC = "/character/%s/public";
 
     private final ObjectMapper mapper;
     private final PilotRepository pilotRepository;
+    @Resource(name = "eaApiRestClient")
     private final RestClient eaApiRestClient;
     private final PilotMapper pilotMapper;
     private final EveAssistUserRepository eveAssistUserRepository;
-
-    public PilotServiceImpl(
-            ObjectMapper mapper,
-            PilotRepository pilotRepository,
-            @Qualifier("EveAssistApi") RestClient restClient,
-            PilotMapper pilotMapper,
-            EveAssistUserRepository eveAssistUserRepository) {
-        this.mapper = mapper;
-        this.pilotRepository = pilotRepository;
-        this.eaApiRestClient = restClient;
-        this.pilotMapper = pilotMapper;
-        this.eveAssistUserRepository = eveAssistUserRepository;
-    }
 
     @Override
     public PilotDto savePilot(String eveAssistUserId, PilotAuthDto pilotAuth) {

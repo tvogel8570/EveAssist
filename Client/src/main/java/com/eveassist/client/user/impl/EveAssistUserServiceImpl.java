@@ -6,16 +6,16 @@ import com.eveassist.client.user.dto.EveAssistPasswordDetails;
 import com.eveassist.client.user.dto.EveAssistUserDto;
 import com.eveassist.client.user.response.LoginFormResponse;
 import com.eveassist.client.user.response.RegistrationFormResponse;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
+@Slf4j
+@RequiredArgsConstructor
 @Service
 public class EveAssistUserServiceImpl implements EveAssistUserService {
     private final EveAssistUserRepository userRepository;
-
-    public EveAssistUserServiceImpl(EveAssistUserRepository userRepository) {
-        this.userRepository = userRepository;
-    }
 
     @Override
     public UserDetails registerNewUser(EveAssistUserDto userDto, EveAssistPasswordDetails passwordDetails) {
