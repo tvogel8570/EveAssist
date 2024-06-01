@@ -1,5 +1,3 @@
-api-host: ${scheme}://localhost:${server.port}
-ui-host: ${api-host}
 rp-initiated-logout-enabled: true
 
 pilot:
@@ -7,10 +5,14 @@ pilot:
   client_secret: ${esi.pilot.client.secret}
   redirect_uri: https://localhost:9443/pilot/login
   login_uri: https://login.eveonline.com/v2/oauth/authorize/
+  token_uri: https://login.eveonline.com/v2/oauth/token
   response_type: code
   scope: esi-characters.read_notifications.v1 esi-killmails.read_killmails.v1 esi-skills.read_skills.v1 esi-skills.read_skillqueue.v1
 
 scheme: http
+ea-api.port: 8085
+api-host: ${scheme}://localhost:${ea-api.port}
+ui-host: ${scheme}://localhost:${server.port}
 keycloak-port: 8442
 keycloak-realm: EveAssist
 keycloak-base-url: ${scheme}://localhost:${keycloak-port}
@@ -81,6 +83,7 @@ spring:
 
 scheme: https
 keycloak-port: 8443
+ea-api.port: 8043
 
 server:
   port: 9443
