@@ -18,5 +18,5 @@ public record EveAssistUserListDto(
         @Email(message = "You must enter a valid email")
         String email,
         @NotEmpty
-        String screenName) {
+        String userName) {
 }

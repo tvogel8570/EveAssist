@@ -38,7 +38,7 @@ class EveAssistUserRepositoryTest {
         var unique = UUID.randomUUID();
         EveAssistUser eveAssistUser = EveAssistUser.EveAssistUserBuilder.anEveAssistUser()
                 .withUniqueUser(unique)
-                .withScreenName("screen")
+                .withUserName("user")
                 .withEmail("tim@test.com").build();
         Instant testTime = Instant.now();
         cut.save(eveAssistUser);

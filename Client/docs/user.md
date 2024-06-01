@@ -9,7 +9,7 @@ Key points
 - EAUser is locally defined, i.e. JPA Entity backed by Postgres
     - Primary attributes
         - Unique Id
-        - Screen name
+        - user name
         - email
         - createTimestamp
         - updateTimestamp

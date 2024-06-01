@@ -31,7 +31,7 @@ import java.util.UUID;
 @Table(name = "eve_assist_user", uniqueConstraints = {
         @UniqueConstraint(name = "eve_assist_user_business_key", columnNames = {"unique_user"}),
         @UniqueConstraint(name = "eve_assist_user_email_key", columnNames = {"email"}),
-        @UniqueConstraint(name = "eve_assist_user_screen_name_key", columnNames = {"screen_name"})
+        @UniqueConstraint(name = "eve_assist_user_user_name_key", columnNames = {"user_name"})
 })
 public class EveAssistUser implements Serializable {
     @Serial
@@ -60,8 +60,8 @@ public class EveAssistUser implements Serializable {
 
     @NotEmpty
     @Length(min = 5, max = 50)
-    @Column(name = "screen_name", nullable = false, unique = true, length = 50)
-    private String screenName;
+    @Column(name = "user_name", nullable = false, unique = true, length = 50)
+    private String userName;
 
     @PastOrPresent
     @CreationTimestamp
@@ -73,24 +73,9 @@ public class EveAssistUser implements Serializable {
     @Column(name = "update_timestamp", nullable = false)
     private Instant updateTimestamp;
 
-
-    @Column(name = "enabled", nullable = false)
-    boolean enabled = false;    // users are disabled by default
-    @Column(name = "account_non_expired", nullable = false)
-    boolean account_non_expired = true;
-    @Column(name = "account_non_locked", nullable = false)
-    boolean account_non_locked = true;
-    @Column(name = "credentials_non_expired", nullable = false)
-    boolean credentials_non_expired = true;
-
-
     @OneToMany(mappedBy = "eveAssistUser", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Pilot> pilots = new LinkedHashSet<>();
 
-    public boolean isEnabled() {
-        return false;
-    }
-    
     @Override
     public final boolean equals(Object o) {
         if (this == o) return true;
@@ -117,13 +102,9 @@ public class EveAssistUser implements Serializable {
         private @NotEmpty
         @Email(message = "You must enter a valid email") String email;
         private @NotEmpty
-        @Length(min = 5, max = 50) String screenName;
+        @Length(min = 5, max = 50) String userName;
         private @PastOrPresent Instant createTimestamp;
         private @PastOrPresent Instant updateTimestamp;
-        private boolean enabled;
-        private boolean account_non_expired;
-        private boolean account_non_locked;
-        private boolean credentials_non_expired;
         private Set<Pilot> pilots;
 
         private EveAssistUserBuilder() {
@@ -153,8 +134,8 @@ public class EveAssistUser implements Serializable {
             return this;
         }
 
-        public EveAssistUserBuilder withScreenName(String screenName) {
-            this.screenName = screenName;
+        public EveAssistUserBuilder withUserName(String userName) {
+            this.userName = userName;
             return this;
         }
 
@@ -165,26 +146,6 @@ public class EveAssistUser implements Serializable {
 
         public EveAssistUserBuilder withUpdateTimestamp(Instant updateTimestamp) {
             this.updateTimestamp = updateTimestamp;
-            return this;
-        }
-
-        public EveAssistUserBuilder withEnabled(boolean enabled) {
-            this.enabled = enabled;
-            return this;
-        }
-
-        public EveAssistUserBuilder withAccount_non_expired(boolean account_non_expired) {
-            this.account_non_expired = account_non_expired;
-            return this;
-        }
-
-        public EveAssistUserBuilder withAccount_non_locked(boolean account_non_locked) {
-            this.account_non_locked = account_non_locked;
-            return this;
-        }
-
-        public EveAssistUserBuilder withCredentials_non_expired(boolean credentials_non_expired) {
-            this.credentials_non_expired = credentials_non_expired;
             return this;
         }
 
@@ -199,13 +160,9 @@ public class EveAssistUser implements Serializable {
             eveAssistUser.setVersion(version);
             eveAssistUser.setUniqueUser(uniqueUser);
             eveAssistUser.setEmail(email);
-            eveAssistUser.setScreenName(screenName);
+            eveAssistUser.setUserName(userName);
             eveAssistUser.setCreateTimestamp(createTimestamp);
             eveAssistUser.setUpdateTimestamp(updateTimestamp);
-            eveAssistUser.setEnabled(enabled);
-            eveAssistUser.setAccount_non_expired(account_non_expired);
-            eveAssistUser.setAccount_non_locked(account_non_locked);
-            eveAssistUser.setCredentials_non_expired(credentials_non_expired);
             eveAssistUser.setPilots(pilots);
             return eveAssistUser;
         }

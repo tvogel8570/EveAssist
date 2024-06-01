@@ -15,7 +15,9 @@ public interface EveAssistUserRepository extends JpaRepository<EveAssistUser, Lo
     EveAssistUser findByUniqueUser(UUID uniqueUser);
 
     @Query("""
-            select new com.eveassist.client.user.dto.EveAssistUserListDto(e.uniqueUser, e.email, e.screenName)
+            select new com.eveassist.client.user.dto.EveAssistUserListDto(e.uniqueUser, e.email, e.userName)
             from EveAssistUser e""")
     List<EveAssistUserListDto> getAllUsersList();
+
+    boolean existsByUniqueUser(UUID uniqueUser);
 }

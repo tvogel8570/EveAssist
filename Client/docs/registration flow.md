@@ -3,7 +3,7 @@ Registration flow for EveAssist (EA)
 - User lands on login page for the first time
 - Selects register
 - Enters requested information
-    - Screen name, email address, password
+    - username, email address, password
 - System creates keycloak identity
 - System creates EveAssistUser (EAU)
 - System links EAU and keycloak by storing other system's primary key as attribute
