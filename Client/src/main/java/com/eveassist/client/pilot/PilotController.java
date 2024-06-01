@@ -2,6 +2,7 @@ package com.eveassist.client.pilot;
 
 import com.eveassist.client.pilot.dto.PilotAuthDto;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -11,7 +12,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizedClientRepository;
-import org.springframework.security.oauth2.core.OAuth2AuthenticatedPrincipal;
+import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.ui.ModelMap;
@@ -30,6 +31,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 @Slf4j
+@RequiredArgsConstructor
 @Controller
 @RequestMapping("/pilot")
 public class PilotController {
@@ -50,15 +52,8 @@ public class PilotController {
     @Value("${pilot.response_type}")
     private String pilotResponseType;
 
-    public PilotController(RestTemplate restTemplate, PilotService pilotService,
-                           OAuth2AuthorizedClientRepository clientRepository) {
-        this.restTemplate = restTemplate;
-        this.pilotService = pilotService;
-        this.clientRepository = clientRepository;
-    }
-
     @GetMapping("")
-    public String index(@AuthenticationPrincipal OAuth2AuthenticatedPrincipal principal,
+    public String index(@AuthenticationPrincipal DefaultOidcUser principal,
                         Authentication auth,
                         HttpServletRequest servletRequest,
                         Model model) {
@@ -74,7 +69,7 @@ public class PilotController {
     }
 
     @GetMapping("/create")
-    public ModelAndView create(@AuthenticationPrincipal OAuth2AuthenticatedPrincipal principal, ModelMap model) {
+    public ModelAndView create(@AuthenticationPrincipal DefaultOidcUser principal, ModelMap model) {
         String state = RandomStringUtils.randomAlphanumeric(10);
         String uri;
 
@@ -90,8 +85,10 @@ public class PilotController {
     }
 
     @GetMapping("/login")
-    public String handleCcpLogin(@AuthenticationPrincipal OAuth2AuthenticatedPrincipal principal,
-                                 @RequestParam String code, @RequestParam String state) {
+    public String handleCcpLogin(
+            @AuthenticationPrincipal DefaultOidcUser principal,
+            @RequestParam String code,
+            @RequestParam String state) {
         log.info("In handleCcpLogin code [{}] state [{}]", code, state);
         this.pilotService.getUserFromState(state);
         String credentials = new String(Base64.encodeBase64((pilotClientId + ":" + pilotClientSecret).getBytes()));

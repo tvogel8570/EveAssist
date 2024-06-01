@@ -1,5 +1,6 @@
 package com.eveassist.client.config;
 
+import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -21,6 +22,7 @@ public class WebSecurityConfig {
         http.logout(withDefaults());
         // @formatter:off
         http.authorizeHttpRequests(ex -> ex
+                .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll()
                 .requestMatchers("/", "/login/**", "/oauth2/**",
                         "/user/login","/user/doLogin","/user/create",
                         "/user/register", "/user/confirmEmail").permitAll()
