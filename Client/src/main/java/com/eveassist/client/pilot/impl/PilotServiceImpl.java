@@ -16,29 +16,34 @@ import com.eveassist.client.user.entity.EveAssistUser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestClient;
 
 import java.util.*;
 
 @Slf4j
 @Service
 public class PilotServiceImpl implements PilotService {
+    public static final String ESI_CHAR_PUBLIC = "/character/%s/public";
+
     private final ObjectMapper mapper;
     private final PilotRepository pilotRepository;
-    private final RestTemplate restTemplate;
+    private final RestClient eaApiRestClient;
     private final PilotMapper pilotMapper;
     private final EveAssistUserRepository eveAssistUserRepository;
 
-    public PilotServiceImpl(ObjectMapper mapper, PilotRepository pilotRepository, RestTemplate restTemplate,
-                            PilotMapper pilotMapper, EveAssistUserRepository eveAssistUserRepository) {
+    public PilotServiceImpl(
+            ObjectMapper mapper,
+            PilotRepository pilotRepository,
+            @Qualifier("EveAssistApi") RestClient restClient,
+            PilotMapper pilotMapper,
+            EveAssistUserRepository eveAssistUserRepository) {
         this.mapper = mapper;
         this.pilotRepository = pilotRepository;
-        this.restTemplate = restTemplate;
+        this.eaApiRestClient = restClient;
         this.pilotMapper = pilotMapper;
         this.eveAssistUserRepository = eveAssistUserRepository;
     }
@@ -83,14 +88,17 @@ public class PilotServiceImpl implements PilotService {
                 Pageable.ofSize(10));
 
         if (token != null) {
-            HttpHeaders header = new HttpHeaders();
-            header.setBearerAuth(token);
-
             for (PilotListInfo pilot : pilots) {
-                PilotPublicDto publicData = restTemplate.exchange(
-                        "https://localhost:8043/character/%s/public".formatted(pilot.getEvePilotId()),
-                        HttpMethod.GET, new HttpEntity<>(header), PilotPublicDto.class).getBody();
-                pilotMapper.partialUpdateDetails(publicData, pilot);
+                ResponseEntity<PilotPublicDto> publicData = eaApiRestClient.get()
+                        .uri(ESI_CHAR_PUBLIC.formatted(pilot.getEvePilotId()))
+                        .header("Authorization", "Bearer %s".formatted(token))
+                        .retrieve()
+                        .toEntity(PilotPublicDto.class);
+                if (publicData.getStatusCode().is2xxSuccessful()) {
+                    pilotMapper.partialUpdateDetails(publicData.getBody(), pilot);
+                } else {
+                    log.warn("unable to get public data for pilot with Eve Pilot Id [{}]", pilot.getEvePilotId());
+                }
             }
         }
         return pilots;
