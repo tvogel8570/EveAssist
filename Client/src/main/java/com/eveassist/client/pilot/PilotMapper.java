@@ -17,4 +17,7 @@ public interface PilotMapper {
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     PilotListInfo partialUpdateDetails(PilotPublicDto publicData, @MappingTarget PilotListInfo info);
+
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    PilotListInfo toListDto(Pilot newPilot);
 }

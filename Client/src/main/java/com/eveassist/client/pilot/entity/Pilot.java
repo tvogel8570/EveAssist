@@ -15,7 +15,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.Instant;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -49,7 +49,7 @@ public class Pilot implements Serializable {
     @Column(name = "gender")
     private String gender;
     @Column(name = "birthdate")
-    private LocalDateTime birthday;
+    private LocalDate birthday;
 
     @Column(name = "portrait_url_tiny")
     private String portraitUrlTiny;
@@ -132,7 +132,7 @@ public class Pilot implements Serializable {
         private Long evePilotId;
         private String name;
         private String gender;
-        private LocalDateTime birthday;
+        private LocalDate birthday;
         private String portraitUrlTiny;
         private String portraitUrlSmall;
         private String portraitUrlMedium;
@@ -193,7 +193,7 @@ public class Pilot implements Serializable {
             return this;
         }
 
-        public PilotBuilder withBirthday(LocalDateTime birthday) {
+        public PilotBuilder withBirthday(LocalDate birthday) {
             this.birthday = birthday;
             return this;
         }

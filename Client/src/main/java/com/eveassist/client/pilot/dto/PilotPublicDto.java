@@ -2,10 +2,12 @@ package com.eveassist.client.pilot.dto;
 
 import lombok.Builder;
 
+import java.time.LocalDate;
+
 @Builder
 public record PilotPublicDto(
         Integer allianceId,
-//        LocalDateTime birthday,
+        LocalDate birthday,
         Integer bloodlineId,
         Integer corporationId,
         String description,

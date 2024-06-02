@@ -2,7 +2,7 @@ package com.eveassist.client.pilot.dto;
 
 import lombok.*;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 /**
  * Projection for {@link com.eveassist.client.pilot.entity.Pilot}
@@ -20,7 +20,7 @@ public class PilotListInfo {
     private Long evePilotId;
     @Setter(AccessLevel.NONE)
     private String name;
-    private LocalDateTime birthday;
+    private LocalDate birthday;
     private Integer bloodlineId;
     private String description;
     private String gender;

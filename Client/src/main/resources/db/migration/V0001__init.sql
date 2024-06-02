@@ -26,7 +26,7 @@ CREATE TABLE pilot
     eve_pilot_id        BIGINT       NOT NULL,
     name                VARCHAR(255) NOT NULL,
     gender              VARCHAR(255),
-    birthdate           TIMESTAMP WITHOUT TIME ZONE,
+    birthdate           DATE,
     portrait_url_tiny   VARCHAR(255),
     portrait_url_small  VARCHAR(255),
     portrait_url_medium VARCHAR(255),
