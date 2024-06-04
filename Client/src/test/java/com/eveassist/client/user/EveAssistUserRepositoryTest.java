@@ -43,7 +43,7 @@ class EveAssistUserRepositoryTest {
         Instant testTime = Instant.now();
         cut.save(eveAssistUser);
 
-        EveAssistUser retrievedUser = cut.findByUniqueUser(unique);
+        EveAssistUser retrievedUser = cut.findByUniqueUser(unique).orElse(null);
         assertThat(retrievedUser).isNotNull();
         assertThat(retrievedUser.getUniqueUser()).isEqualTo(unique);
         assertThat(retrievedUser.getCreateTimestamp()).isCloseTo(testTime, within(1, ChronoUnit.SECONDS));
@@ -64,13 +64,13 @@ class EveAssistUserRepositoryTest {
 
     @Test
     void shouldFindEmailCaseInsensitive() {
-        EveAssistUser user = cut.findByEmailIgnoreCase("TEST@TEST.com");
+        EveAssistUser user = cut.findByEmailIgnoreCase("TEST@TEST.com").orElse(null);
         assertThat(user).isNotNull();
     }
 
     @Test
     void shouldThrowUserNotFoundException_whenSearchForEmailFails() {
-        EveAssistUser missingUser = cut.findByEmailIgnoreCase("asdf@asdf.com");
+        EveAssistUser missingUser = cut.findByEmailIgnoreCase("asdf@asdf.com").orElse(null);
         assertThat(missingUser).isNull();
     }
 }
