@@ -78,4 +78,10 @@ public record PilotAuthPayload(
                 iat,
                 iss);
     }
+
+    // "sub":"CHARACTER:EVE:458639815"
+    String pilotId() {
+        String[] split = sub().split(":");
+        return split[2];
+    }
 }
