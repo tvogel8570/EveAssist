@@ -20,13 +20,13 @@ CREATE TABLE eve_assist_user
 
 CREATE TABLE pilot
 (
-    id                  BIGINT       NOT NULL,
+    id                  BIGINT                      NOT NULL,
     version             INTEGER,
-    owner_hash          VARCHAR(255) NOT NULL,
-    eve_pilot_id        BIGINT       NOT NULL,
-    name                VARCHAR(255) NOT NULL,
+    owner_hash          VARCHAR(255)                NOT NULL,
+    eve_pilot_id        BIGINT                      NOT NULL,
+    name                VARCHAR(255)                NOT NULL,
     gender              VARCHAR(255),
-    birthdate           DATE,
+    birthdate           TIMESTAMP WITHOUT TIME ZONE,
     portrait_url_tiny   VARCHAR(255),
     portrait_url_small  VARCHAR(255),
     portrait_url_medium VARCHAR(255),
@@ -44,9 +44,9 @@ CREATE TABLE pilot
     race_desc           VARCHAR(255),
     bloodline_id        INTEGER,
     bloodline_desc      VARCHAR(255),
-    modified            TIMESTAMP WITHOUT TIME ZONE,
-    created             TIMESTAMP WITHOUT TIME ZONE,
-    eve_assist_user_id  BIGINT,
+    create_timestamp    TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+    update_timestamp    TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+    eve_assist_user_id  BIGINT                      NOT NULL,
     CONSTRAINT pk_pilot PRIMARY KEY (id)
 );
 

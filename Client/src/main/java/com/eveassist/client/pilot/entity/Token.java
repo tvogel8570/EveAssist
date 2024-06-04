@@ -42,6 +42,14 @@ public class Token implements Serializable {
     @OneToMany(mappedBy = "token", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Scope> scopes = new LinkedHashSet<>();
 
+    public void addScope(Scope scope) {
+        if (this.scopes == null)
+            this.scopes = new LinkedHashSet<>();
+
+        scopes.add(scope);
+        scope.setToken(this);
+    }
+
     @Override
     public final boolean equals(Object o) {
         if (this == o) return true;

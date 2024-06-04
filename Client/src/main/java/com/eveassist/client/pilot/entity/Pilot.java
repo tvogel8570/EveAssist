@@ -8,14 +8,13 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.proxy.HibernateProxy;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
 
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.Instant;
-import java.time.LocalDate;
 import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -49,7 +48,7 @@ public class Pilot implements Serializable {
     @Column(name = "gender")
     private String gender;
     @Column(name = "birthdate")
-    private LocalDate birthday;
+    private Instant birthday;
 
     @Column(name = "portrait_url_tiny")
     private String portraitUrlTiny;
@@ -90,12 +89,12 @@ public class Pilot implements Serializable {
     @Column(name = "bloodline_desc")
     private String bloodlineDesc;
 
-    @Column(name = "modified")
-    @LastModifiedDate
-    private Instant modified;
-    @Column(name = "created")
-    @CreatedDate
-    private Instant created;
+    @Column(name = "create_timestamp", nullable = false)
+    @CreationTimestamp
+    private Instant updateTimestamp;
+    @Column(name = "update_timestamp", nullable = false)
+    @UpdateTimestamp
+    private Instant createTimestamp;
 
     @OneToMany(mappedBy = "pilot", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Token> token = new LinkedHashSet<>();
@@ -103,6 +102,14 @@ public class Pilot implements Serializable {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "eve_assist_user_id", nullable = false)
     private EveAssistUser eveAssistUser;
+
+    public void addToken(Token token) {
+        if (this.token == null)
+            this.token = new LinkedHashSet<>();
+
+        this.token.add(token);
+        token.setPilot(this);
+    }
 
     @Override
     public final boolean equals(Object o) {
@@ -132,7 +139,7 @@ public class Pilot implements Serializable {
         private Long evePilotId;
         private String name;
         private String gender;
-        private LocalDate birthday;
+        private Instant birthday;
         private String portraitUrlTiny;
         private String portraitUrlSmall;
         private String portraitUrlMedium;
@@ -151,8 +158,8 @@ public class Pilot implements Serializable {
         private String raceDesc;
         private Integer bloodlineId;
         private String bloodlineDesc;
-        private Instant modified;
-        private Instant created;
+        private Instant createTimestamp;
+        private Instant updateTimestamp;
         private Set<Token> token;
         private EveAssistUser eveAssistUser;
 
@@ -193,7 +200,7 @@ public class Pilot implements Serializable {
             return this;
         }
 
-        public PilotBuilder withBirthday(LocalDate birthday) {
+        public PilotBuilder withBirthday(Instant birthday) {
             this.birthday = birthday;
             return this;
         }
@@ -283,13 +290,13 @@ public class Pilot implements Serializable {
             return this;
         }
 
-        public PilotBuilder withModified(Instant modified) {
-            this.modified = modified;
+        public PilotBuilder withCreateTimestamp(Instant createTimestamp) {
+            this.createTimestamp = createTimestamp;
             return this;
         }
 
-        public PilotBuilder withCreated(Instant created) {
-            this.created = created;
+        public PilotBuilder withUpdateTimestamp(Instant updateTimestamp) {
+            this.updateTimestamp = updateTimestamp;
             return this;
         }
 
@@ -329,8 +336,8 @@ public class Pilot implements Serializable {
             pilot.setRaceDesc(raceDesc);
             pilot.setBloodlineId(bloodlineId);
             pilot.setBloodlineDesc(bloodlineDesc);
-            pilot.setModified(modified);
-            pilot.setCreated(created);
+            pilot.setCreateTimestamp(createTimestamp);
+            pilot.setUpdateTimestamp(updateTimestamp);
             pilot.setToken(token);
             pilot.setEveAssistUser(eveAssistUser);
             return pilot;

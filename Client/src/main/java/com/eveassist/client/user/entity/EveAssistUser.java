@@ -63,18 +63,24 @@ public class EveAssistUser implements Serializable {
     @Column(name = "user_name", nullable = false, unique = true, length = 50)
     private String userName;
 
-    @PastOrPresent
     @CreationTimestamp
     @Column(name = "create_timestamp", nullable = false)
     private Instant createTimestamp;
 
-    @PastOrPresent
     @UpdateTimestamp
     @Column(name = "update_timestamp", nullable = false)
     private Instant updateTimestamp;
 
     @OneToMany(mappedBy = "eveAssistUser", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Pilot> pilots = new LinkedHashSet<>();
+
+    public void addPilot(Pilot pilot) {
+        if (pilots == null)
+            pilots = new LinkedHashSet<>();
+
+        this.pilots.add(pilot);
+        pilot.setEveAssistUser(this);
+    }
 
     @Override
     public final boolean equals(Object o) {
