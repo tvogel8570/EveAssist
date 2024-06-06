@@ -3,6 +3,7 @@ package com.eveassist.api.sde.pi.impl;
 import com.eveassist.api.sde.pi.PiDao;
 import com.eveassist.api.sde.pi.entity.PiPinDto;
 import com.eveassist.api.sde.pi.entity.PiViewDto;
+import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -12,12 +13,9 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
+@RequiredArgsConstructor
 public class PiDaoImpl implements PiDao {
     private final NamedParameterJdbcTemplate template;
-
-    public PiDaoImpl(NamedParameterJdbcTemplate template) {
-        this.template = template;
-    }
 
     static final String PI_BASE_SQL = """                    
             SELECT ps."schematicID" AS "schematicId", ps."schematicName", ps."cycleTime", pspm."pinTypeID" AS "factoryTypeId",

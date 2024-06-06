@@ -9,6 +9,7 @@ import com.eveassist.api.esi.response.PlanetPinDto;
 import com.eveassist.api.sde.pi.PiDao;
 import com.eveassist.api.sde.pi.entity.PiPinDto;
 import com.eveassist.api.sde.pi.entity.PiViewDto;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -19,13 +20,10 @@ import java.util.List;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class PlanetaryIndustryServiceImpl implements PlanetaryIndustryService {
     private final PiDao piDao;
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssz");
-
-    public PlanetaryIndustryServiceImpl(PiDao piDao) {
-        this.piDao = piDao;
-    }
 
     @Override
     public PlanetPiDto summarizePlanet(CharactersPlanetsDto planetsDto, CharactersPlanetsDetailDto planetsDetailDto) {
@@ -113,7 +111,6 @@ public class PlanetaryIndustryServiceImpl implements PlanetaryIndustryService {
                 case "Basic" -> max = Math.max(max, 1);
                 case "Advanced" -> max = Math.max(max, 2);
                 case "High-Tech" -> max = 3;
-                default -> max = Math.max(max, -1);
             }
 
         return max;
