@@ -14,7 +14,7 @@ public interface PilotRepository extends ListPagingAndSortingRepository<Pilot, L
 
     @Query("""
             select new com.eveassist.client.pilot.dto.PilotListInfo(p.ownerHash, p.evePilotId, p.name, p
-            .portraitUrlTiny)
+            .portraitUrlTiny, p.allianceDesc, p.corporationDesc, p.factionDesc)
               from Pilot p where p.eveAssistUser.uniqueUser = ?1 order by p.name""")
     List<PilotListInfo> findByEveAssistUser_UniqueUserOrderByNameAsc(UUID uniqueUser, Pageable pageable);
 }

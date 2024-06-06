@@ -1,6 +1,7 @@
 package com.eveassist.client.pilot.impl;
 
 import java.util.Arrays;
+import java.util.Objects;
 
 public record PilotAuthPayload(
         String[] scp,
@@ -18,28 +19,6 @@ public record PilotAuthPayload(
         Long iat,
         String iss
 ) {
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        PilotAuthPayload that = (PilotAuthPayload) o;
-
-        if (!Arrays.equals(scp, that.scp)) return false;
-        if (!jti.equals(that.jti)) return false;
-        if (!kid.equals(that.kid)) return false;
-        if (!sub.equals(that.sub)) return false;
-        if (!azp.equals(that.azp)) return false;
-        if (!tenant.equals(that.tenant)) return false;
-        if (!tier.equals(that.tier)) return false;
-        if (!region.equals(that.region)) return false;
-        if (!Arrays.equals(aud, that.aud)) return false;
-        if (!name.equals(that.name)) return false;
-        if (!owner.equals(that.owner)) return false;
-        if (!exp.equals(that.exp)) return false;
-        if (!iat.equals(that.iat)) return false;
-        return iss.equals(that.iss);
-    }
 
     @Override
     public String toString() {
@@ -62,21 +41,47 @@ public record PilotAuthPayload(
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof PilotAuthPayload that)) return false;
+        return Objects.equals(exp, that.exp) &&
+                Objects.equals(iat, that.iat) &&
+                Objects.equals(jti, that.jti) &&
+                Objects.equals(kid, that.kid) &&
+                Objects.equals(sub, that.sub) &&
+                Objects.equals(azp, that.azp) &&
+                Objects.equals(iss, that.iss) &&
+                Objects.equals(tier, that.tier) &&
+                Objects.equals(name, that.name) &&
+                Objects.deepEquals(scp, that.scp) &&
+                Objects.deepEquals(aud, that.aud) &&
+                Objects.equals(owner, that.owner) &&
+                Objects.equals(tenant, that.tenant) &&
+                Objects.equals(region, that.region);
+    }
+
+    @Override
     public int hashCode() {
-        int result = Arrays.hashCode(scp);
-        result = 31 * result + jti.hashCode();
-        result = 31 * result + kid.hashCode();
-        result = 31 * result + sub.hashCode();
-        result = 31 * result + azp.hashCode();
-        result = 31 * result + tenant.hashCode();
-        result = 31 * result + tier.hashCode();
-        result = 31 * result + region.hashCode();
-        result = 31 * result + Arrays.hashCode(aud);
-        result = 31 * result + name.hashCode();
-        result = 31 * result + owner.hashCode();
-        result = 31 * result + exp.hashCode();
-        result = 31 * result + iat.hashCode();
-        result = 31 * result + iss.hashCode();
-        return result;
+        return Objects.hash(
+                Arrays.hashCode(scp),
+                jti,
+                kid,
+                sub,
+                azp,
+                tenant,
+                tier,
+                region,
+                Arrays.hashCode(aud),
+                name,
+                owner,
+                exp,
+                iat,
+                iss);
+    }
+
+    // "sub":"CHARACTER:EVE:458639815"
+    String pilotId() {
+        String[] split = sub().split(":");
+        return split[2];
     }
 }

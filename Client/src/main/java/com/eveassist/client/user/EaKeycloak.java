@@ -1,7 +1,7 @@
 package com.eveassist.client.user;
 
 
-import com.eveassist.client.core.EaBusinessException;
+import com.eveassist.client.core.exception.EaBusinessException;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;

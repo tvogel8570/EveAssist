@@ -8,28 +8,23 @@ CREATE SEQUENCE IF NOT EXISTS token_id_seq START WITH 100 INCREMENT BY 1;
 
 CREATE TABLE eve_assist_user
 (
-    id                      BIGINT                      NOT NULL,
-    version                 INTEGER,
-    unique_user             UUID                        NOT NULL,
-    email                   VARCHAR(255)                NOT NULL,
-    screen_name             VARCHAR(50)                 NOT NULL,
-    password                VARCHAR(255),
-    create_timestamp        TIMESTAMP WITHOUT TIME ZONE NOT NULL,
-    update_timestamp        TIMESTAMP WITHOUT TIME ZONE NOT NULL,
-    account_non_expired     BOOLEAN                     NOT NULL,
-    account_non_locked      BOOLEAN                     NOT NULL,
-    credentials_non_expired BOOLEAN                     NOT NULL,
-    enabled                 BOOLEAN                     NOT NULL,
+    id               BIGINT                      NOT NULL,
+    version          INTEGER,
+    unique_user      UUID                        NOT NULL,
+    email            VARCHAR(255)                NOT NULL,
+    user_name        VARCHAR(50)                 NOT NULL,
+    create_timestamp TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+    update_timestamp TIMESTAMP WITHOUT TIME ZONE NOT NULL,
     CONSTRAINT pk_eve_assist_user PRIMARY KEY (id)
 );
 
 CREATE TABLE pilot
 (
-    id                  BIGINT       NOT NULL,
+    id                  BIGINT                      NOT NULL,
     version             INTEGER,
-    owner_hash          VARCHAR(255) NOT NULL,
-    eve_pilot_id        BIGINT       NOT NULL,
-    name                VARCHAR(255) NOT NULL,
+    owner_hash          VARCHAR(255)                NOT NULL,
+    eve_pilot_id        BIGINT                      NOT NULL,
+    name                VARCHAR(255)                NOT NULL,
     gender              VARCHAR(255),
     birthdate           TIMESTAMP WITHOUT TIME ZONE,
     portrait_url_tiny   VARCHAR(255),
@@ -49,9 +44,9 @@ CREATE TABLE pilot
     race_desc           VARCHAR(255),
     bloodline_id        INTEGER,
     bloodline_desc      VARCHAR(255),
-    modified            TIMESTAMP WITHOUT TIME ZONE,
-    created             TIMESTAMP WITHOUT TIME ZONE,
-    eve_assist_user_id  BIGINT,
+    create_timestamp    TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+    update_timestamp    TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+    eve_assist_user_id  BIGINT                      NOT NULL,
     CONSTRAINT pk_pilot PRIMARY KEY (id)
 );
 
@@ -79,7 +74,7 @@ ALTER TABLE eve_assist_user
     ADD CONSTRAINT eve_assist_user_email_key UNIQUE (email);
 
 ALTER TABLE eve_assist_user
-    ADD CONSTRAINT eve_assist_user_screen_name_key UNIQUE (screen_name);
+    ADD CONSTRAINT eve_assist_user_user_name_key UNIQUE (user_name);
 
 ALTER TABLE pilot
     ADD CONSTRAINT pilot_business_key UNIQUE (owner_hash, eve_pilot_id);

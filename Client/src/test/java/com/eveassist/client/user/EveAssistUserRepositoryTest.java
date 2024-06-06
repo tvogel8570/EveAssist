@@ -12,11 +12,13 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
 
 @DataJpaTest
 @Testcontainers
@@ -29,24 +31,22 @@ class EveAssistUserRepositoryTest {
 
     @Autowired
     EveAssistUserRepository cut;
-    private final LocalDateTime testTime = LocalDateTime.now();
 
 
     @Test
     void shouldRetrieveCorrectTime() {
         var unique = UUID.randomUUID();
-        EveAssistUser eveAssistUser = EveAssistUser.builder()
-                .uniqueUser(unique)
-                .screenName("screen")
-                .createTimestamp(testTime)
-                .updateTimestamp(testTime)
-                .email("tim@test.com").build();
+        EveAssistUser eveAssistUser = EveAssistUser.EveAssistUserBuilder.anEveAssistUser()
+                .withUniqueUser(unique)
+                .withUserName("user")
+                .withEmail("tim@test.com").build();
+        Instant testTime = Instant.now();
         cut.save(eveAssistUser);
 
-        EveAssistUser retrievedUser = cut.findByUniqueUser(unique);
+        EveAssistUser retrievedUser = cut.findByUniqueUser(unique).orElse(null);
         assertThat(retrievedUser).isNotNull();
         assertThat(retrievedUser.getUniqueUser()).isEqualTo(unique);
-        assertThat(retrievedUser.getCreateTimestamp()).isEqualToIgnoringSeconds(testTime);
+        assertThat(retrievedUser.getCreateTimestamp()).isCloseTo(testTime, within(1, ChronoUnit.SECONDS));
     }
 
     @Test
@@ -64,13 +64,13 @@ class EveAssistUserRepositoryTest {
 
     @Test
     void shouldFindEmailCaseInsensitive() {
-        EveAssistUser user = cut.findByEmailIgnoreCase("TEST@TEST.com");
+        EveAssistUser user = cut.findByEmailIgnoreCase("TEST@TEST.com").orElse(null);
         assertThat(user).isNotNull();
     }
 
     @Test
     void shouldThrowUserNotFoundException_whenSearchForEmailFails() {
-        EveAssistUser missingUser = cut.findByEmailIgnoreCase("asdf@asdf.com");
+        EveAssistUser missingUser = cut.findByEmailIgnoreCase("asdf@asdf.com").orElse(null);
         assertThat(missingUser).isNull();
     }
 }

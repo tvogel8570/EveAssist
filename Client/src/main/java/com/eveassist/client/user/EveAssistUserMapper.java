@@ -9,20 +9,18 @@ import org.mapstruct.*;
 public interface EveAssistUserMapper {
     @Mapping(target = "updateTimestamp", ignore = true)
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "enabled", ignore = true)
-    EveAssistUser toEntityFromDto(EveAssistUserDto eveAssistUserDto);
+    @Mapping(target = "version", ignore = true)
+    @Mapping(target = "createTimestamp", ignore = true)
+    EveAssistUser toEntity(EveAssistUserDto eveAssistUserDto);
 
-    // @formatter:off
-    @Mapping(target = "loginOk",
-            expression = "java(eveAssistUser.isEnabled())")
-    EveAssistUserDto toUserDto(EveAssistUser eveAssistUser);
-    // @formatter:on
+    EveAssistUserDto toDto(EveAssistUser eveAssistUser);
 
     @Mapping(target = "updateTimestamp", ignore = true)
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "enabled", ignore = true)
+    @Mapping(target = "version", ignore = true)
+    @Mapping(target = "createTimestamp", ignore = true)
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    EveAssistUser partialUpdateFromDto(EveAssistUserDto eveAssistUserDto, @MappingTarget EveAssistUser eveAssistUser);
+    EveAssistUser partialUpdate(EveAssistUserDto eveAssistUserDto, @MappingTarget EveAssistUser eveAssistUser);
 
-    EveAssistUserListDto toUserList(EveAssistUser eveAssistUser);
+    EveAssistUserListDto toList(EveAssistUser eveAssistUser);
 }

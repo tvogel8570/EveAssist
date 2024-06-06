@@ -1,4 +1,4 @@
-package com.eveassist.client.core;
+package com.eveassist.client.core.exception;
 
 import java.io.Serial;
 
