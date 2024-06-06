@@ -2,18 +2,21 @@ package com.eveassist.client.pilot;
 
 import com.eveassist.client.config.PilotProps;
 import com.eveassist.client.pilot.dto.PilotAuthDto;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.client.OAuth2AuthorizeRequest;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizedClientRepository;
-import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
+import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.LinkedMultiValueMap;
@@ -29,6 +32,7 @@ import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @SuppressWarnings("SameReturnValue")
@@ -37,28 +41,29 @@ import java.util.UUID;
 @Controller
 @RequestMapping("/pilot")
 public class PilotController {
+    private static final String REGISTRATION_ID = "keycloak-confidential-user";
+
     private final PilotService pilotService;
     private final OAuth2AuthorizedClientRepository clientRepository;
     private final PilotProps pilot;
-    
+    private final OAuth2AuthorizedClientManager authorizedClientManager;
+
     @GetMapping("")
-    public String index(@AuthenticationPrincipal DefaultOidcUser principal,
+    public String index(@AuthenticationPrincipal(expression = "name") String principalName,
                         Model model) {
         model.addAttribute("pilots",
-                pilotService.getPilotListForUser(UUID.fromString(principal.getName())));
+                pilotService.getPilotListForUser(UUID.fromString(principalName)));
         return "pilot/list";
     }
 
     @GetMapping("/refresh")
-    public String refresh(@AuthenticationPrincipal DefaultOidcUser principal,
-                          Authentication auth,
-                          HttpServletRequest servletRequest,
+    public String refresh(@AuthenticationPrincipal(expression = "name") String principalName,
                           @RequestParam(required = false, name = "pilotId") Long pilotId) {
-        String token = getEaToken(auth, servletRequest);
+        String token = this.getBearer(REGISTRATION_ID).orElseThrow();
 
         // get pilots data from ESI
         List<Long> requestedPilotIds = (pilotId == null) ? List.of() : List.of(pilotId);
-        pilotService.updateUserPilotsFromEsi(UUID.fromString(principal.getSubject()), token, requestedPilotIds);
+        pilotService.updateUserPilotsFromEsi(UUID.fromString(principalName), token, requestedPilotIds);
 
         return "redirect:/pilot";
     }
@@ -82,7 +87,7 @@ public class PilotController {
     // redirect endpoint configured in Eve Online pilot client
     @GetMapping("/login")
     public String handleCcpLogin(
-            @AuthenticationPrincipal DefaultOidcUser principal,
+            @AuthenticationPrincipal(expression = "name") String principalName,
             @RequestParam String code,
             @RequestParam String state) {
         log.info("In handleCcpLogin code [{}] state [{}]", code, state);
@@ -100,7 +105,7 @@ public class PilotController {
                 .body(map)
                 .retrieve().toEntity(PilotAuthDto.class);
 
-        pilotService.createPilot(principal.getName(), response.getBody());
+        pilotService.createPilot(principalName, response.getBody());
 
         return "redirect:/pilot/refresh";
     }
@@ -116,17 +121,16 @@ public class PilotController {
         return "pilot/details";
     }
 
-    private String getEaToken(Authentication auth, HttpServletRequest servletRequest) {
-        OAuth2AuthorizedClient authorizedClient = clientRepository.loadAuthorizedClient(
-                "keycloak-confidential-user", auth, servletRequest);
-
-        if (authorizedClient == null) {
-            log.warn("Authorized client could not be loaded\nauth[{}]\nservlet[{}]", auth, servletRequest);
-            return null;
-        }
-
-        String token = authorizedClient.getAccessToken().getTokenValue();
-        log.debug("eaAuthToken is null [{}]", token == null);
-        return token;
+    public Optional<String> getBearer(String registrationId) {
+        final var authentication = Optional.ofNullable(SecurityContextHolder.getContext().getAuthentication()).orElse(
+                new AnonymousAuthenticationToken(
+                        "anonymous",
+                        "anonymous",
+                        List.of(new SimpleGrantedAuthority("ROLE_ANONYMOUS"))));
+        OAuth2AuthorizeRequest authorizeRequest = OAuth2AuthorizeRequest.withClientRegistrationId(registrationId)
+                .principal(authentication).build();
+        final var authorizedClient = Optional.ofNullable(authorizedClientManager.authorize(authorizeRequest));
+        final var token = authorizedClient.map(OAuth2AuthorizedClient::getAccessToken);
+        return token.map(OAuth2AccessToken::getTokenValue);
     }
 }
