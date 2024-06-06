@@ -1,12 +1,12 @@
 package com.eveassist.client.pilot;
 
+import com.eveassist.client.config.PilotProps;
 import com.eveassist.client.pilot.dto.PilotAuthDto;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -39,22 +39,8 @@ import java.util.UUID;
 public class PilotController {
     private final PilotService pilotService;
     private final OAuth2AuthorizedClientRepository clientRepository;
-
-    @Value("${pilot.client_id}")
-    private String pilotClientId;
-    @Value("${pilot.client_secret}")
-    private String pilotClientSecret;
-    @Value("${pilot.redirect_uri}")
-    private String pilotRedirectUri;
-    @Value("${pilot.login_uri}")
-    private String pilotLoginUri;
-    @Value("${pilot.token_uri}")
-    private String pilotTokenUri;
-    @Value("${pilot.scope}")
-    private String pilotScope;
-    @Value("${pilot.response_type}")
-    private String pilotResponseType;
-
+    private final PilotProps pilot;
+    
     @GetMapping("")
     public String index(@AuthenticationPrincipal DefaultOidcUser principal,
                         Model model) {
@@ -82,12 +68,12 @@ public class PilotController {
         String state = RandomStringUtils.randomAlphanumeric(10);
         String uri;
 
-        uri = "redirect:%s?response_type=%s&redirect_uri=%s&client_id=%s&scope=%s&state=%s".formatted(
-                pilotLoginUri,
-                URLEncoder.encode(pilotResponseType, StandardCharsets.UTF_8),
-                URLEncoder.encode(pilotRedirectUri, StandardCharsets.UTF_8),
-                URLEncoder.encode(pilotClientId, StandardCharsets.UTF_8),
-                URLEncoder.encode(pilotScope, StandardCharsets.UTF_8),
+        uri = "redirect:%s?responseType=%s&redirectUri=%s&client_id=%s&scope=%s&state=%s".formatted(
+                pilot.loginUri(),
+                URLEncoder.encode(pilot.responseType(), StandardCharsets.UTF_8),
+                URLEncoder.encode(pilot.redirectUri(), StandardCharsets.UTF_8),
+                URLEncoder.encode(pilot.clientId(), StandardCharsets.UTF_8),
+                URLEncoder.encode(pilot.scopeAsString(), StandardCharsets.UTF_8),
                 URLEncoder.encode(state, StandardCharsets.UTF_8));
 
         return new ModelAndView(uri);
@@ -101,13 +87,13 @@ public class PilotController {
             @RequestParam String state) {
         log.info("In handleCcpLogin code [{}] state [{}]", code, state);
 
-        String credentials = new String(Base64.encodeBase64((pilotClientId + ":" + pilotClientSecret).getBytes()));
+        String credentials = new String(Base64.encodeBase64((pilot.clientId() + ":" + pilot.clientSecret()).getBytes()));
         MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
         map.add("grant_type", "authorization_code");
         map.add("code", code);
 
         ResponseEntity<PilotAuthDto> response = RestClient.create().post()
-                .uri(URI.create(pilotTokenUri))
+                .uri(URI.create(pilot.tokenUri()))
                 .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                 .header("Authorization", "Basic %s".formatted(credentials))
                 .header("Host", "login.eveonline.com")

@@ -1,13 +1,17 @@
-rp-initiated-logout-enabled: true
-
 pilot:
-  client_id: ${esi.pilot.client.id}
-  client_secret: ${esi.pilot.client.secret}
-  redirect_uri: https://localhost:9443/pilot/login
-  login_uri: https://login.eveonline.com/v2/oauth/authorize/
-  token_uri: https://login.eveonline.com/v2/oauth/token
-  response_type: code
-  scope: esi-characters.read_notifications.v1 esi-killmails.read_killmails.v1 esi-skills.read_skills.v1 esi-skills.read_skillqueue.v1
+  clientId: ${esi.pilot.client.id}
+  clientSecret: ${esi.pilot.client.secret}
+  redirectUri: https://localhost:9443/pilot/login
+  loginUri: https://login.eveonline.com/v2/oauth/authorize/
+  tokenUri: https://login.eveonline.com/v2/oauth/token
+  responseType: code
+  scope:
+    - esi-characters.read_notifications.v1
+    - esi-killmails.read_killmails.v1
+    - esi-skills.read_skills.v1
+    - esi-skills.read_skillqueue.v1
+    - esi-planets.read_customs_offices.v1
+    - esi-planets.manage_planets.v1
 
 scheme: http
 ea-api.port: 8085
@@ -66,14 +70,6 @@ spring:
             client-secret: ${keycloak.eveassist.password}
             provider: keycloak
             scope: openid,profile,email,offline_access
-
-
-authorities-mapping:
-  issuers:
-    - uri: ${keycloak-issuer}
-      claims:
-        - jsonPath: $.realm_access.roles
-        - jsonPath: $.resource_access.*.roles
 
 ---
 spring:
