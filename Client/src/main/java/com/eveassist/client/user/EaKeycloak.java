@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.mapping.MappingException;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -17,19 +18,23 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
 
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.*;
 
 @Slf4j
 @Component
 public class EaKeycloak {
-    private final static String KEYCLOAK_AUTH = "%s/realms/%s/protocol/openid-connect/token";
-    private final static String KEYCLOAK_QUERY_USER = "/admin/realms/%s/users/%s";
-    private final static String KEYCLOAK_QUERY_GROUPS = "/admin/realms/%s/groups";
-    private final static String KEYCLOAK_ADD_GROUP = "/admin/realms/%s/users/%s/groups/%s";
-    private final static String KEYCLOAK_DELETE_GROUP = "/admin/realms/%s/users/%s/groups/%s";
-    private final static String KEYCLOAK_ADD_USER = "/admin/realms/%s/users";
-    private final static String KEYCLOAK_DELETE_USER = "/admin/realms/%s/users/%s";
+    private static final String KEYCLOAK_AUTH = "%s/realms/%s/protocol/openid-connect/token";
+    private static final String KEYCLOAK_QUERY_USER = "/admin/realms/%s/users/%s";
+    private static final String KEYCLOAK_QUERY_GROUPS = "/admin/realms/%s/groups";
+    private static final String KEYCLOAK_ADD_GROUP = "/admin/realms/%s/users/%s/groups/%s";
+    private static final String KEYCLOAK_DELETE_GROUP = "/admin/realms/%s/users/%s/groups/%s";
+    private static final String KEYCLOAK_ADD_USER = "/admin/realms/%s/users";
+    private static final String KEYCLOAK_DELETE_USER = "/admin/realms/%s/users/%s";
+    private static final String AUTHORIZATION = "Authorization";
+    private static final String BEARER = "Bearer ";
 
     private final RestClient keycloakRestClient;
     private final Map<String, String> groupIds = new HashMap<>();
@@ -43,14 +48,14 @@ public class EaKeycloak {
     public EaKeycloak(
             @Value("${keycloak-base-url}") String baseUrl,
             @Value("${keycloak-realm}") String realm,
-            @Value("${keycloak.eveassist.id}") String client_id,
-            @Value("${keycloak.eveassist.password}") String client_secret) {
+            @Value("${keycloak.eveassist.id}") String clientId,
+            @Value("${keycloak.eveassist.password}") String clientSecret) {
         this.keycloakRestClient = RestClient.create(baseUrl);
         this.realm = realm;
         this.baseUrl = baseUrl;
         authBody.add("grant_type", "client_credentials");
-        authBody.add("client_id", client_id);
-        authBody.add("client_secret", client_secret);
+        authBody.add("client_id", clientId);
+        authBody.add("client_secret", clientSecret);
         this.queryGroups();
     }
 
@@ -62,8 +67,8 @@ public class EaKeycloak {
         if (!userExists(uniqueUser))
             throw new EaBusinessException("User not found [%s]".formatted(uniqueUser));
         ResponseEntity<String> groupAddResponse = keycloakRestClient.put()
-                .uri(String.format(KEYCLOAK_ADD_GROUP, realm, uniqueUser, groupId))
-                .header("Authorization", "Bearer " + authResponse.access_token)
+                .uri(KEYCLOAK_ADD_GROUP.formatted(realm, uniqueUser, groupId))
+                .header(AUTHORIZATION, BEARER + authResponse.access_token)
                 .retrieve()
                 .toEntity(String.class);
         if (!groupAddResponse.getStatusCode().is2xxSuccessful())
@@ -79,8 +84,8 @@ public class EaKeycloak {
         if (!userExists(uniqueUser))
             throw new EaBusinessException("User not found [%s]".formatted(uniqueUser));
         ResponseEntity<String> groupAddResponse = keycloakRestClient.delete()
-                .uri(String.format(KEYCLOAK_DELETE_GROUP, realm, uniqueUser, groupId))
-                .header("Authorization", "Bearer " + authResponse.access_token)
+                .uri(KEYCLOAK_DELETE_GROUP.formatted(realm, uniqueUser, groupId))
+                .header(AUTHORIZATION, BEARER + authResponse.access_token)
                 .retrieve()
                 .toEntity(String.class);
         if (!groupAddResponse.getStatusCode().is2xxSuccessful())
@@ -97,12 +102,12 @@ public class EaKeycloak {
         try {
             newUser = mapper.writeValueAsString(new CreateUser(userName, email));
         } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
+            throw new MappingException(e.getMessage());
         }
 
         ResponseEntity<String> newUserResponse = keycloakRestClient.post()
-                .uri(String.format(KEYCLOAK_ADD_USER, realm))
-                .header("Authorization", "Bearer " + authResponse.access_token)
+                .uri(KEYCLOAK_ADD_USER.formatted(realm))
+                .header(AUTHORIZATION, BEARER + authResponse.access_token)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(newUser)
                 .retrieve()
@@ -115,11 +120,11 @@ public class EaKeycloak {
         if ((location == null) || (location.size() != 1))
             throw new EaBusinessException("Error getting created user id");
         try {
-            URL locationUrl = new URL(location.get(0));
+            URL locationUrl = new URI(location.get(0)).toURL();
             String path = locationUrl.getPath();
             return UUID.fromString(path.substring(path.lastIndexOf("/") + 1));
-        } catch (MalformedURLException e) {
-            throw new RuntimeException(e);
+        } catch (MalformedURLException | URISyntaxException e) {
+            throw new MappingException(e.getMessage());
         }
     }
 
@@ -129,8 +134,8 @@ public class EaKeycloak {
             throw new EaBusinessException("UUID must not be null");
 
         ResponseEntity<String> deleteUserResponse = keycloakRestClient.delete()
-                .uri(String.format(KEYCLOAK_DELETE_USER, realm, uniqueUser))
-                .header("Authorization", "Bearer " + authResponse.access_token)
+                .uri(KEYCLOAK_DELETE_USER.formatted(realm, uniqueUser))
+                .header(AUTHORIZATION, BEARER + authResponse.access_token)
                 .retrieve()
                 .toEntity(String.class);
         if (!deleteUserResponse.getStatusCode().is2xxSuccessful())
@@ -142,8 +147,8 @@ public class EaKeycloak {
     private boolean userExists(UUID uniqueUser) {
         this.authClient();
         ResponseEntity<String> userResponse = keycloakRestClient.get()
-                .uri(String.format(KEYCLOAK_QUERY_USER, realm, uniqueUser))
-                .header("Authorization", "Bearer " + authResponse.access_token)
+                .uri(KEYCLOAK_QUERY_USER.formatted(realm, uniqueUser))
+                .header(AUTHORIZATION, BEARER + authResponse.access_token)
                 .retrieve()
                 .toEntity(String.class);
         return userResponse.getStatusCode().is2xxSuccessful();
@@ -152,8 +157,8 @@ public class EaKeycloak {
     void queryGroups() {
         this.authClient();
         ResponseEntity<GroupInfo[]> groupInfos = keycloakRestClient.get()
-                .uri(String.format(KEYCLOAK_QUERY_GROUPS, realm))
-                .header("Authorization", "Bearer " + authResponse.access_token)
+                .uri(KEYCLOAK_QUERY_GROUPS.formatted(realm))
+                .header(AUTHORIZATION, BEARER + authResponse.access_token)
                 .retrieve()
                 .toEntity(GroupInfo[].class);
         if (!groupInfos.getStatusCode().is2xxSuccessful()) {
@@ -165,19 +170,19 @@ public class EaKeycloak {
     }
 
     void authClient() {
-        ResponseEntity<AuthResponse> authResponse = keycloakRestClient.post()
-                .uri(String.format(KEYCLOAK_AUTH, baseUrl, realm))
+        ResponseEntity<AuthResponse> response = keycloakRestClient.post()
+                .uri(KEYCLOAK_AUTH.formatted(baseUrl, realm))
                 .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                 .body(authBody)
                 .retrieve()
                 .toEntity(AuthResponse.class);
 
-        if (!authResponse.getStatusCode().is2xxSuccessful()) {
-            String msg = "Keycloak authentication failed [%s]".formatted(authResponse.getStatusCode());
+        if (!response.getStatusCode().is2xxSuccessful()) {
+            String msg = "Keycloak authentication failed [%s]".formatted(response.getStatusCode());
             log.error(msg);
             throw new EaBusinessException(msg);
         }
-        this.authResponse = authResponse.getBody();
+        this.authResponse = response.getBody();
     }
 
     private record AuthResponse(
