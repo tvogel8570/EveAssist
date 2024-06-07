@@ -84,3 +84,4 @@ fabric.properties
 
 # log files
 **/*.log
+/Api/esi-open-api/
