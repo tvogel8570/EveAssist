@@ -5,9 +5,11 @@ import com.eveassist.api.esi.exception.EsiParameterException;
 import com.eveassist.api.esi.exception.InvalidUrlException;
 import com.eveassist.api.esi.response.*;
 import com.eveassist.api.sde.chr.ChrDao;
+import jakarta.annotation.Resource;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -32,12 +35,16 @@ import java.util.stream.Stream;
 @Slf4j
 @RequiredArgsConstructor
 public class EsiApiController {
-    private static final String ESI_BASE_PATH = "https://esi.evetech.net/latest";
-    private static final String DATASOURCE = "tranquility";
+    @Resource(name = "esiRestClient")
+    private final RestClient esiRestClient;
     private final RestTemplate esiTemplate;
     private final CharactersMapper mapper;
     private final ChrDao chrDao;
 
+    @Value("${esi.baseUrl}")
+    private String ESI_BASE_PATH;
+    @Value("${esi.datasource}")
+    private String DATASOURCE;
 
     @GetMapping("/character/{pilotId}/public")
     public PilotPublicDto getPilotPublicData(@PathVariable Long pilotId) {
