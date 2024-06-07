@@ -5,6 +5,10 @@ keycloak-port: 8442
 keycloak-realm: EveAssist
 keycloak-issuer: ${scheme}://localhost:${keycloak-port}/realms/${keycloak-realm}
 
+esi:
+  baseUrl: https://esi.evetech.net/latest
+  datasource: tranquility
+
 server:
   error:
     include-message: always
