@@ -27,7 +27,7 @@ public class ApiConfig {
     public ObjectMapper objectMapper() {
         JavaTimeModule module = new JavaTimeModule();
         module.addSerializer(LOCAL_DATETIME_SERIALIZER);
-        return new ObjectMapper().setSerializationInclusion(JsonInclude.Include.NON_NULL)
+        return new ObjectMapper().setDefaultPropertyInclusion(JsonInclude.Include.NON_NULL)
                 .registerModule(module);
     }
 }

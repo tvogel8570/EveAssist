@@ -48,22 +48,22 @@ public class EsiApiController {
         final String METHOD_NAME = "getPilotPublicData";
         log.debug("pilotId [{}]", pilotId);
         try {
-            URL publicData = UriComponentsBuilder.fromHttpUrl(ESI_BASE_PATH)
+            URL publicData = UriComponentsBuilder.fromUriString(ESI_BASE_PATH)
                     .queryParam("datasource", DATASOURCE)
                     .path("/characters/%d/".formatted(pilotId))
                     .build().toUri().toURL();
             log.debug("getPilotPublicData url: [{}]", publicData);
-            URL portraitData = UriComponentsBuilder.fromHttpUrl(ESI_BASE_PATH)
+            URL portraitData = UriComponentsBuilder.fromUriString(ESI_BASE_PATH)
                     .queryParam("datasource", DATASOURCE)
                     .path("/characters/%d/portrait".formatted(pilotId))
                     .build().toUri().toURL();
             log.debug("getPilotPublicData url: [{}]", portraitData);
-            URL affiliationData = UriComponentsBuilder.fromHttpUrl(ESI_BASE_PATH)
+            URL affiliationData = UriComponentsBuilder.fromUriString(ESI_BASE_PATH)
                     .queryParam("datasource", DATASOURCE)
                     .path("/characters/affiliation")
                     .build().toUri().toURL();
             log.debug("getPilotPublicData url: [{}]", affiliationData);
-            URL namesData = UriComponentsBuilder.fromHttpUrl(ESI_BASE_PATH)
+            URL namesData = UriComponentsBuilder.fromUriString(ESI_BASE_PATH)
                     .queryParam("datasource", DATASOURCE)
                     .path("/universe/names")
                     .build().toUri().toURL();
@@ -95,7 +95,7 @@ public class EsiApiController {
         log.debug("accessToken [{}]", accessToken);
         log.debug("pilotId [{}]", pilotId);
         try {
-            URL notificationData = UriComponentsBuilder.fromHttpUrl(ESI_BASE_PATH)
+            URL notificationData = UriComponentsBuilder.fromUriString(ESI_BASE_PATH)
                     .queryParam("datasource", DATASOURCE)
                     .path("/characters/%d/notifications".formatted(pilotId))
                     .build().toUri().toURL();

@@ -13,11 +13,11 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.*;
 import org.springframework.security.authentication.AuthenticationManagerResolver;
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.client.RestTemplate;
 
@@ -41,13 +41,13 @@ class EsiApiControllerTest {
     @Autowired
     CharactersMapper charactersMapper;
 
-    @MockBean
+    @MockitoBean
     ChrDao chrDao;
 
-    @MockBean
+    @MockitoBean
     RestTemplate restTemplate;
 
-    @MockBean
+    @MockitoBean
     AuthenticationManagerResolver<HttpServletRequest> authenticationManagerResolver;
 
     @BeforeAll
