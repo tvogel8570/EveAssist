@@ -1,21 +1,46 @@
 name: eve-assist-infrastructure
+
+x-common-keycloak: &common-keycloak
+  image: tvogel8570/keycloak-eve-assist:latest
+  environment:
+    - KC_BOOTSTRAP_ADMIN_USERNAME=${KC_BOOTSTRAP_ADMIN_USERNAME}  # reference .env file in same directory as compose.yaml
+    - KC_BOOTSTRAP_ADMIN_PASSWORD=${KC_BOOTSTRAP_ADMIN_PASSWORD} # reference .env file in same directory as compose.yaml
+    - KC_HTTPS_CERTIFICATE_FILE=/etc/x509/https/tls.crt
+    - KC_HTTPS_CERTIFICATE_KEY_FILE=/etc/x509/https/tls.key
+    - KC_DB=postgres
+    - KC_DB_URL=jdbc:postgresql://eve-assist-postgres:5432/keycloak
+    - KC_DB_USERNAME=localdevuser
+    - KC_DB_PASSWORD=${KC_DB_PASSWORD} # reference .env file in same directory as compose.yaml
+    - KC_DB_SCHEMA=public
+    - KC_HEALTH_ENABLED=true
+  volumes:
+    - type: volume
+      source: keycloak-eve-assist
+      target: /opt/keycloak/data/import
+  user: 1000:0
+  networks:
+    - eve-assist-network
+  depends_on:
+    eve-assist-postgres:
+      condition: service_healthy
+
 services:
-  eve-postgres:
-    image: tvogel8570/eveassist
+  eve-assist-postgres:
+    image: tvogel8570/postgres-eve-assist
     secrets:
       - db-password
     build:
       context: ./postgres
       dockerfile: Dockerfile
       tags:
-        - "tvogel8570/eveassist:latest"
+        - "tvogel8570/postgres-eve-assist:latest"
     healthcheck:
       test: [ "CMD", "pg_isready", "-q", "-U", "localdevuser", "-d", "keycloak" ]
       interval: 10s
     volumes:
       - type: volume
         source: postgres-eve-assist
-        target: /var/lib/postgresql/data
+        target: /var/lib/postgresql
     networks:
       - eve-assist-network
     environment:
@@ -25,46 +50,48 @@ services:
       - target: 5432
         published: 5432
         protocol: tcp
-        mode: host
 
-  keycloak:
-    image: quay.io/keycloak/keycloak:latest
-    command: [ "--verbose", "start-dev" ]
+  eve-assist-keycloak:
+    build:
+      context: ./keycloak
+      dockerfile: Dockerfile
+      tags:
+        - "tvogel8570/keycloak-eve-assist:latest"
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -fsk https://localhost:9000/health/live" ]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+    command:
+      - "--verbose"
+      - "start"
+      - "--hostname"
+      - "https://${HOST}:8443"
+      - "--import-realm"
+      - "--optimized"
     secrets:
       - source: server_crt
         target: /etc/x509/https/tls.crt
       - source: server_key
         target: /etc/x509/https/tls.key
-    volumes:
-      - type: volume
-        source: keycloak-eve-assist
-        target: /opt/keycloak/data
     ports:
       - target: 8443 # Keycloak HTTPS port
         published: 8443
         protocol: tcp
-        mode: host
-      - target: 8080 # Keycloak HTTP port
-        published: 8442
-        protocol: tcp
-        mode: host
-    networks:
-      - eve-assist-network
-    depends_on:
-      eve-postgres:
-        condition: service_healthy
-    environment:
-      - KEYCLOAK_ADMIN=admin
-      - KEYCLOAK_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD}  # reference .env file in same directory as compose.yaml
-      - KC_HTTPS_CERTIFICATE_FILE=/etc/x509/https/tls.crt
-      - KC_HTTPS_CERTIFICATE_KEY_FILE=/etc/x509/https/tls.key
-      - KC_DB=postgres
-      - KC_DB_URL=jdbc:postgresql://eve-postgres:5432/keycloak
-      - KC_DB_USERNAME=localdevuser
-      - KC_DB_PASSWORD=${KC_DB_PASSWORD} # reference .env file in same directory as compose.yaml
-      - KC_DB_SCHEMA=public
+    <<: *common-keycloak
     container_name: eve-assist-keycloak
 
+  eve-assist-keycloak-export:
+    <<: *common-keycloak
+    profiles:
+      - iam-export
+    command:
+      - "export"
+      - "--file"
+      - "/opt/keycloak/data/import/EveAssist-realm-export.json"
+      - "--realm"
+      - "SkipperNCrew"
+    container_name: eve-assist-keycloak-export
 
 volumes:
   postgres-eve-assist:
@@ -76,9 +103,9 @@ secrets:
   db-password:
     file: ./postgres/password.txt
   server_crt:
-    file: keycloak/self_signed.crt
+    file: keycloak/${HOST}.crt
   server_key:
-    file: keycloak/self_signed_key.pem
+    file: keycloak/${HOST}.key
 
 networks:
   eve-assist-network:

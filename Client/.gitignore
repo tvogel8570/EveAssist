@@ -14,10 +14,7 @@ target/
 .sts4-cache
 
 ### IntelliJ IDEA ###
-.idea
-*.iws
-*.iml
-*.ipr
+# rules live in the root .gitignore so they apply to every module
 
 ### NetBeans ###
 /nbproject/private/

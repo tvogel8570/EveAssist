@@ -7,10 +7,10 @@ Create postgres and keycloak docker instances
 ### postgres
 
 - ensure `password.txt` exists under `postgres` directory
-- ensure `postgres/sql/backup/postgres-schema-latest.dmp` is the latest sdeyaml export
+- ensure `postgres/backup/latest-postgresschema.pgdump` is the latest sdeyaml export
   from [Fuzzwork](https://www.fuzzwork.co.uk/dump/)
 
 ### keycloak-signed certificate and private key exist and are named properly
 
-    - `keycloak/self_signed.crt`
-    - `keycloak/self_signed_key.pem`
+    - `keycloak/dev.eveassist.com.crt`
+    - `keycloak/dev.eveassist.com.key`
