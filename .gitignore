@@ -1,85 +1,55 @@
-# Covers JetBrains IDEs: IntelliJ, RubyMine, PhpStorm, AppCode, PyCharm, CLion, Android Studio, WebStorm and Rider
+# JetBrains IDEs (IntelliJ IDEA, WebStorm, DataGrip, ...)
 # Reference: https://intellij-support.jetbrains.com/hc/en-us/articles/206544839
+# Shared project settings in .idea stay tracked; only user-specific, generated and sensitive files are ignored.
+# The **/ prefix applies every rule to the root project and to all modules (Api, Client, ...),
+# so module .gitignore files carry no IntelliJ rules of their own.
 
 # User-specific stuff
-.idea/**/workspace.xml
-.idea/**/tasks.xml
-.idea/**/usage.statistics.xml
-.idea/**/dictionaries
-.idea/**/shelf
-
-# AWS User-specific
-.idea/**/aws.xml
-
-# Generated files
-.idea/**/contentModel.xml
-
-# Sensitive or high-churn files
-.idea/**/dataSources/
-.idea/**/dataSources.ids
-.idea/**/dataSources.local.xml
-.idea/**/sqlDataSources.xml
-.idea/**/dynamic.xml
-.idea/**/uiDesigner.xml
-.idea/**/dbnavigator.xml
-
-# Gradle
-.idea/**/gradle.xml
-.idea/**/libraries
-
-# Gradle and Maven with auto-import
-# When using Gradle or Maven with auto-import, you should exclude module files,
-# since they will be recreated, and may cause churn.  Uncomment if using
-# auto-import.
-# .idea/artifacts
-# .idea/compiler.xml
-# .idea/jarRepositories.xml
-# .idea/modules.xml
-# .idea/*.iml
-# .idea/modules
-# *.iml
-# *.ipr
-
-# CMake
-cmake-build-*/
-
-# Mongo Explorer plugin
-.idea/**/mongoSettings.xml
-
-# File-based project format
+**/.idea/**/workspace.xml
+**/.idea/**/tasks.xml
+**/.idea/**/usage.statistics.xml
+**/.idea/**/shelf/
+**/.idea/**/httpRequests/
+**/.idea/**/caches/
 *.iws
 
-# IntelliJ
-out/
+# Spelling dictionaries are shared with the team and always tracked
+!**/.idea/**/dictionaries/
+!**/.idea/**/dictionaries/**
 
-# mpeltonen/sbt-idea plugin
-.idea_modules/
-
-# JIRA plugin
+# Plugin user-specific state (AWS Toolkit, SonarLint, GitHub Copilot, Mongo Explorer, JIRA)
+**/.idea/**/aws.xml
+**/.idea/**/awsToolkit.xml
+**/.idea/**/sonarlint/
+**/.idea/**/copilot*
+**/.idea/**/mongoSettings.xml
 atlassian-ide-plugin.xml
 
-# Cursive Clojure plugin
-.idea/replstate.xml
+# Generated files
+**/.idea/**/contentModel.xml
+**/.idea/**/libraries/
+out/
 
-# SonarLint plugin
-.idea/sonarlint/
+# Sensitive or high-churn files (dataSources.xml is shared, its local credentials and caches are not)
+**/.idea/**/dataSources/
+**/.idea/**/dataSources.ids
+**/.idea/**/dataSources.local.xml
+**/.idea/**/sqlDataSources.xml
+**/.idea/**/dynamic.xml
+**/.idea/**/uiDesigner.xml
+**/.idea/**/dbnavigator.xml
 
-# Crashlytics plugin (for Android Studio and IntelliJ)
-com_crashlytics_export_strings.xml
-crashlytics.properties
-crashlytics-build.properties
-fabric.properties
-
-# Editor-based Rest Client
-.idea/httpRequests
-
-# Android studio 3.1+ serialized cache file
-.idea/caches/build_file_checksums.ser
+# Maven auto-import regenerates module files; uncomment to stop tracking them (also run `git rm --cached` on each)
+# **/.idea/**/compiler.xml
+# **/.idea/**/jarRepositories.xml
+# **/.idea/**/modules.xml
+# *.iml
 
 # secrets
 **/env.properties
 **/.env
-**/self_signed*.*
+**/dev.eveassist.com.crt
+**/dev.eveassist.com.key
 **/password.txt
 
 # log files
