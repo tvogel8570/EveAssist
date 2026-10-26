@@ -17,9 +17,8 @@ scheme: http
 ea-api.port: 8085
 api-host: ${scheme}://localhost:${ea-api.port}
 ui-host: ${scheme}://localhost:${server.port}
-keycloak-port: 8442
+# keycloak-base-url is per environment: application-local.yaml, or KEYCLOAK_BASE_URL elsewhere
 keycloak-realm: EveAssist
-keycloak-base-url: ${scheme}://localhost:${keycloak-port}
 keycloak-issuer: ${keycloak-base-url}/realms/${keycloak-realm}
 
 logging:
@@ -35,6 +34,10 @@ server:
     enabled: false
 
 spring:
+  profiles:
+    default: local
+    group:
+      test-containers-flyway: local
   config:
     import: optional:classpath:env.properties
   messages:
@@ -78,7 +81,6 @@ spring:
       on-profile: ssl
 
 scheme: https
-keycloak-port: 8442
 ea-api.port: 8043
 
 server:

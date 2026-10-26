@@ -1,9 +1,9 @@
 scheme: http
 origins: ${scheme}://localhost:4200
 permit-all: /public/**
-keycloak-port: 8442
+# keycloak-base-url is per environment: application-local.yaml, or KEYCLOAK_BASE_URL elsewhere
 keycloak-realm: EveAssist
-keycloak-issuer: ${scheme}://localhost:${keycloak-port}/realms/${keycloak-realm}
+keycloak-issuer: ${keycloak-base-url}/realms/${keycloak-realm}
 
 server:
   ssl:
@@ -11,6 +11,8 @@ server:
   port: 8085
 
 spring:
+  profiles:
+    default: local
   config:
     import: optional:classpath:env.properties
   web:
@@ -53,7 +55,6 @@ spring:
       on-profile: ssl
 
 scheme: https
-keycloak-port: 8442
 
 server:
   port: 8043
