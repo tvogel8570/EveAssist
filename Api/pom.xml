@@ -17,9 +17,6 @@
         <java.version>25</java.version>
         <mapstruct.version>1.6.3</mapstruct.version>
         <lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version>
-        <!-- Tests tagged esi-live call the real ESI; the esi-live profile runs only those -->
-        <test.groups></test.groups>
-        <test.excludedGroups>esi-live</test.excludedGroups>
     </properties>
 
     <dependencies>
@@ -152,24 +149,7 @@
                     </annotationProcessorPaths>
                 </configuration>
             </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <groups>${test.groups}</groups>
-                    <excludedGroups>${test.excludedGroups}</excludedGroups>
-                </configuration>
-            </plugin>
         </plugins>
     </build>
 
-    <profiles>
-        <profile>
-            <id>esi-live</id>
-            <properties>
-                <test.groups>esi-live</test.groups>
-                <test.excludedGroups></test.excludedGroups>
-            </properties>
-        </profile>
-    </profiles>
 </project>

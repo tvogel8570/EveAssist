@@ -32,8 +32,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Calls the real, public ESI endpoints through the controller's RestClient. Needs network access, so it is excluded
- * from the default build; run it with {@code ./mvnw test -Pesi-live}.
+ * Calls the real, public ESI endpoints through the controller's RestClient, so it needs network access. It runs in
+ * every build; to skip it offline, run {@code ./mvnw verify -DexcludedGroups=esi-live}.
  * <p>
  * Assertions stick to data that can't change for this character (name, birthday, race); corporation and alliance
  * membership can, so only their presence is checked.

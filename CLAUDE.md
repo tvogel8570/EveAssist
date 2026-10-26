@@ -20,8 +20,8 @@ requirements in `documentation/requirements/`. Check with the user before buildi
 ## Build and test
 
 - Client: `./mvnw verify` in `Client/`. Api: `./mvnw verify` in `Api/`. Each module has its own Maven wrapper.
-- Api tests tagged `esi-live` call the real, public ESI and are skipped by default. Run them with
-  `./mvnw test -Pesi-live` in `Api/` (needs network access).
+- Api tests tagged `esi-live` call the real, public ESI, so the Api build needs network access. Offline, skip them
+  with `./mvnw verify -DexcludedGroups=esi-live`.
 - Tests named `*IT` and Testcontainers-based tests need Docker running.
 - Client front end: `npm run build` or `npm run watch` in `Client/`.
 - Infrastructure: `docker compose up -d` in `Infrastructure/` (needs `.env`, `postgres/password.txt` and the
