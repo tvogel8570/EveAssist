@@ -22,10 +22,14 @@ public class ApiConfig {
     /**
      * Client for ESI, built from Spring Boot's {@code RestClient.Builder} so it shares the auto-configured
      * message converters. Every request sends these headers; callers add per-request ones such as the bearer token.
+     * <p>
+     * Bodies are buffered so requests carry a Content-Length: ESI rejects chunked POST bodies (such as
+     * /characters/affiliation) with "too few items", and the JDK HttpClient streams them chunked by default.
      */
     @Bean
     public RestClient esiRestClient(RestClient.Builder builder) {
         return builder
+                .bufferContent((uri, method) -> true)
                 .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
                 .defaultHeader(HttpHeaders.CACHE_CONTROL, "no-cache")
                 .defaultHeader(HttpHeaders.USER_AGENT, "EveAssist/0.1 Where Am I")
