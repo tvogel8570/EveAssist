@@ -2,6 +2,11 @@ name: eve-assist-infrastructure
 
 x-common-keycloak: &common-keycloak
   image: tvogel8570/keycloak-eve-assist:latest
+  build:
+    context: ./keycloak
+    dockerfile: Dockerfile
+    tags:
+      - "tvogel8570/keycloak-eve-assist:latest"
   environment:
     - KC_BOOTSTRAP_ADMIN_USERNAME=${KC_BOOTSTRAP_ADMIN_USERNAME}  # reference .env file in same directory as compose.yaml
     - KC_BOOTSTRAP_ADMIN_PASSWORD=${KC_BOOTSTRAP_ADMIN_PASSWORD} # reference .env file in same directory as compose.yaml
@@ -13,6 +18,8 @@ x-common-keycloak: &common-keycloak
     - KC_DB_PASSWORD=${KC_DB_PASSWORD} # reference .env file in same directory as compose.yaml
     - KC_DB_SCHEMA=public
     - KC_HEALTH_ENABLED=true
+    - KC_HTTPS_PORT=8442 # not 8443, so Keycloaks of other local projects can run alongside
+    - KC_HOSTNAME=https://${HOST}:8442 # the URL browsers and the apps use; also the token issuer
   volumes:
     - type: volume
       source: keycloak-eve-assist
@@ -52,11 +59,6 @@ services:
         protocol: tcp
 
   eve-assist-keycloak:
-    build:
-      context: ./keycloak
-      dockerfile: Dockerfile
-      tags:
-        - "tvogel8570/keycloak-eve-assist:latest"
     healthcheck:
       test: [ "CMD-SHELL", "curl -fsk https://localhost:9000/health/live" ]
       interval: 15s
@@ -65,8 +67,6 @@ services:
     command:
       - "--verbose"
       - "start"
-      - "--hostname"
-      - "https://${HOST}:8443"
       - "--import-realm"
       - "--optimized"
     secrets:
@@ -75,9 +75,12 @@ services:
       - source: server_key
         target: /etc/x509/https/tls.key
     ports:
-      - target: 8443 # Keycloak HTTPS port
-        published: 8443
+      - target: 8442 # Keycloak HTTPS port (KC_HTTPS_PORT)
+        published: 8442
         protocol: tcp
+    # tools inside the container, such as kcadm.sh, reach Keycloak by its public name
+    extra_hosts:
+      - "${HOST}:127.0.0.1"
     <<: *common-keycloak
     container_name: eve-assist-keycloak
 
@@ -90,7 +93,7 @@ services:
       - "--file"
       - "/opt/keycloak/data/import/EveAssist-realm-export.json"
       - "--realm"
-      - "SkipperNCrew"
+      - "EveAssist"
     container_name: eve-assist-keycloak-export
 
 volumes:

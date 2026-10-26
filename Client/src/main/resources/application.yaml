@@ -78,7 +78,7 @@ spring:
       on-profile: ssl
 
 scheme: https
-keycloak-port: 8443
+keycloak-port: 8442
 ea-api.port: 8043
 
 server:

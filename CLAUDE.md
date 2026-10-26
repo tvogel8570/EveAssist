@@ -26,7 +26,7 @@ requirements in `documentation/requirements/`. Check with the user before buildi
 - Infrastructure: `docker compose up -d` in `Infrastructure/` (needs `.env`, `postgres/password.txt` and the
   Keycloak certificate files; see its README).
 
-Local ports with the default profile: Postgres 2345 (5432 inside the compose network), Keycloak 8443, Api 8085 (8043 with TLS),
+Local ports with the default profile: Postgres 2345 (5432 inside the compose network), Keycloak 8442 (HTTPS), Api 8085 (8043 with TLS),
 Client 7443 (9443 with TLS).
 
 ## Secrets

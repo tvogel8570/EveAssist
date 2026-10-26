@@ -53,7 +53,7 @@ spring:
       on-profile: ssl
 
 scheme: https
-keycloak-port: 8443
+keycloak-port: 8442
 
 server:
   port: 8043
