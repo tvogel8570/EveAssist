@@ -42,7 +42,7 @@ spring:
   datasource:
     username: postgres
     password: ${postgres.password}
-    url: jdbc:postgresql://localhost:5432/eve_assist_user
+    url: jdbc:postgresql://localhost:2345/eve_assist_user
   flyway:
     enabled: true
   jpa:

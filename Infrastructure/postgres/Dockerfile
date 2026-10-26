@@ -6,4 +6,4 @@ WORKDIR /var/lib/postgresql
 
 # copy database initialization script and database backup to where it will be automatically executed on FIRST startup only
 COPY sql/init/* /docker-entrypoint-initdb.d/
-COPY backup/latest-postgresschema.pgdump /opt/sde/sde-postgres-latest.dmp
+COPY --chown=postgres:postgres backup/latest-postgresschema.pgdump /opt/sde/sde-postgres-latest.dmp
