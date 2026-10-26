@@ -10,7 +10,7 @@ requirements in `documentation/requirements/`. Check with the user before buildi
 
 | Path | What it is |
 |---|---|
-| `Api/` | Spring Boot 3.2 / Java 17 REST API. Reads the SDE (`sdeyaml` database) with JDBC and calls ESI. OAuth2 resource server. |
+| `Api/` | Spring Boot 4.1 / Java 25 REST API. Reads the SDE (`sdeyaml` database) with JDBC and calls ESI. OAuth2 resource server. |
 | `Client/` | Spring Boot 3.2 / Java 17 web UI: Thymeleaf with the layout dialect, Tailwind CSS (built by npm through `frontend-maven-plugin`), Flyway, JPA. Signs in through Keycloak. |
 | `Infrastructure/` | Docker Compose for Postgres and Keycloak (realm export in `keycloak/`). See `Infrastructure/README.md`. |
 | `documentation/requirements/` | Requirements drafts, gathered by interview. Open questions are listed at the end of each file. |
@@ -19,14 +19,15 @@ requirements in `documentation/requirements/`. Check with the user before buildi
 
 ## Build and test
 
-- Client: `./mvnw verify` in `Client/`. The Maven wrapper lives only in `Client/`. For the Api, run
-  `Client/mvnw -f Api/pom.xml verify` or use a local `mvn`.
+- Client: `./mvnw verify` in `Client/`. Api: `./mvnw verify` in `Api/`. Each module has its own Maven wrapper.
+- Api tests tagged `esi-live` call the real, public ESI, so the Api build needs network access. Offline, skip them
+  with `./mvnw verify -DexcludedGroups=esi-live`.
 - Tests named `*IT` and Testcontainers-based tests need Docker running.
 - Client front end: `npm run build` or `npm run watch` in `Client/`.
 - Infrastructure: `docker compose up -d` in `Infrastructure/` (needs `.env`, `postgres/password.txt` and the
   Keycloak certificate files; see its README).
 
-Local ports with the default profile: Postgres 5432, Keycloak 8443, Api 8085 (8043 with TLS),
+Local ports with the default profile: Postgres 2345 (5432 inside the compose network), Keycloak 8442 (HTTPS), Api 8085 (8043 with TLS),
 Client 7443 (9443 with TLS).
 
 ## Secrets

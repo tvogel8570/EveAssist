@@ -1,24 +1,27 @@
 scheme: http
 origins: ${scheme}://localhost:4200
 permit-all: /public/**
-keycloak-port: 8442
+# keycloak-base-url is per environment: application-local.yaml, or KEYCLOAK_BASE_URL elsewhere
 keycloak-realm: EveAssist
-keycloak-issuer: ${scheme}://localhost:${keycloak-port}/realms/${keycloak-realm}
+keycloak-issuer: ${keycloak-base-url}/realms/${keycloak-realm}
 
 server:
-  error:
-    include-message: always
   ssl:
     enabled: false
   port: 8085
 
 spring:
+  profiles:
+    default: local
   config:
     import: optional:classpath:env.properties
+  web:
+    error:
+      include-message: always
   datasource:
     username: postgres
     password: ${postgres.password}
-    url: jdbc:postgresql://localhost:5432/sdeyaml
+    url: jdbc:postgresql://localhost:2345/sdeyaml
   jpa:
     open-in-view: false
     properties:
@@ -52,7 +55,6 @@ spring:
       on-profile: ssl
 
 scheme: https
-keycloak-port: 8443
 
 server:
   port: 8043

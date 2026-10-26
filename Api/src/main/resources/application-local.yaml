@@ -1,0 +1,2 @@
+# Keycloak serves HTTPS only; this must match KC_HOSTNAME in Infrastructure/compose.yaml
+keycloak-base-url: https://dev.eveassist.com:8442

@@ -4,10 +4,8 @@ import com.eveassist.api.esi.dto.PilotPublicDto;
 import com.eveassist.api.esi.response.CharactersDto;
 import com.eveassist.api.esi.response.CharactersPortraitDto;
 import com.eveassist.api.util.ReadFile;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import org.junit.jupiter.api.BeforeAll;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.json.JsonMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.Import;
 
@@ -16,16 +14,11 @@ import static org.assertj.core.api.Assertions.catchThrowable;
 
 @Import({CharactersMapperImpl.class})
 class CharactersMapperTest {
-    static final ObjectMapper mapper = new ObjectMapper();
+    static final JsonMapper mapper = JsonMapper.builder().build();
     final CharactersMapper charactersMapper = new CharactersMapperImpl();
 
-    @BeforeAll
-    static void setup() {
-        mapper.registerModule(new JavaTimeModule());
-    }
-
     @Test
-    void givenNoAffiliation_shouldAcceptNull() throws JsonProcessingException {
+    void givenNoAffiliation_shouldAcceptNull() throws JacksonException {
         CharactersDto charactersDto = mapper.readValue(
                 ReadFile.readFromFileToString("/esi/response/response_characters_public.json"),
                 CharactersDto.class);

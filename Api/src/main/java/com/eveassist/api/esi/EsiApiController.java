@@ -7,17 +7,11 @@ import com.eveassist.api.esi.response.*;
 import com.eveassist.api.sde.chr.ChrDao;
 import jakarta.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestClient;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.MalformedURLException;
@@ -32,13 +26,13 @@ import java.util.stream.Stream;
 public class EsiApiController {
     private static final String ESI_BASE_PATH = "https://esi.evetech.net/latest";
     private static final String DATASOURCE = "tranquility";
-    private final RestTemplate esiTemplate;
+    private final RestClient esiClient;
     private final CharactersMapper mapper;
     private final ChrDao chrDao;
 
 
-    public EsiApiController(RestTemplate esiTemplate, CharactersMapper mapper, ChrDao chrDao) {
-        this.esiTemplate = esiTemplate;
+    public EsiApiController(RestClient esiClient, CharactersMapper mapper, ChrDao chrDao) {
+        this.esiClient = esiClient;
         this.mapper = mapper;
         this.chrDao = chrDao;
     }
@@ -48,36 +42,36 @@ public class EsiApiController {
         final String METHOD_NAME = "getPilotPublicData";
         log.debug("pilotId [{}]", pilotId);
         try {
-            URL publicData = UriComponentsBuilder.fromHttpUrl(ESI_BASE_PATH)
+            URL publicData = UriComponentsBuilder.fromUriString(ESI_BASE_PATH)
                     .queryParam("datasource", DATASOURCE)
                     .path("/characters/%d/".formatted(pilotId))
                     .build().toUri().toURL();
             log.debug("getPilotPublicData url: [{}]", publicData);
-            URL portraitData = UriComponentsBuilder.fromHttpUrl(ESI_BASE_PATH)
+            URL portraitData = UriComponentsBuilder.fromUriString(ESI_BASE_PATH)
                     .queryParam("datasource", DATASOURCE)
                     .path("/characters/%d/portrait".formatted(pilotId))
                     .build().toUri().toURL();
             log.debug("getPilotPublicData url: [{}]", portraitData);
-            URL affiliationData = UriComponentsBuilder.fromHttpUrl(ESI_BASE_PATH)
+            URL affiliationData = UriComponentsBuilder.fromUriString(ESI_BASE_PATH)
                     .queryParam("datasource", DATASOURCE)
                     .path("/characters/affiliation")
                     .build().toUri().toURL();
             log.debug("getPilotPublicData url: [{}]", affiliationData);
-            URL namesData = UriComponentsBuilder.fromHttpUrl(ESI_BASE_PATH)
+            URL namesData = UriComponentsBuilder.fromUriString(ESI_BASE_PATH)
                     .queryParam("datasource", DATASOURCE)
                     .path("/universe/names")
                     .build().toUri().toURL();
             log.debug("getPilotPublicData url: [{}]", namesData);
-            HttpEntity<MultiValueMap<String, String>> request = buildBaseRequest();
-            CharactersDto charactersDto = esiTemplate
-                    .exchange(publicData.toString(), HttpMethod.GET, request, CharactersDto.class).getBody();
-            CharactersPortraitDto portraitDto = esiTemplate
-                    .exchange(portraitData.toString(), HttpMethod.GET, request, CharactersPortraitDto.class).getBody();
-            CharactersAffiliationDto[] affiliationDto = esiTemplate
-                    .postForObject(affiliationData.toString(), List.of(pilotId), CharactersAffiliationDto[].class);
-            UniverseNamesDto[] universeNamesDto = esiTemplate
-                    .postForObject(namesData.toString(), this.validAffiliationIds(affiliationDto),
-                            UniverseNamesDto[].class);
+            CharactersDto charactersDto = esiClient.get().uri(publicData.toString())
+                    .retrieve().body(CharactersDto.class);
+            CharactersPortraitDto portraitDto = esiClient.get().uri(portraitData.toString())
+                    .retrieve().body(CharactersPortraitDto.class);
+            CharactersAffiliationDto[] affiliationDto = esiClient.post().uri(affiliationData.toString())
+                    .body(List.of(pilotId))
+                    .retrieve().body(CharactersAffiliationDto[].class);
+            UniverseNamesDto[] universeNamesDto = esiClient.post().uri(namesData.toString())
+                    .body(this.validAffiliationIds(affiliationDto))
+                    .retrieve().body(UniverseNamesDto[].class);
 
             if (affiliationDto == null || affiliationDto.length != 1)
                 throw new EsiParameterException("Unable to retrieve affiliation data from ESI");
@@ -95,14 +89,14 @@ public class EsiApiController {
         log.debug("accessToken [{}]", accessToken);
         log.debug("pilotId [{}]", pilotId);
         try {
-            URL notificationData = UriComponentsBuilder.fromHttpUrl(ESI_BASE_PATH)
+            URL notificationData = UriComponentsBuilder.fromUriString(ESI_BASE_PATH)
                     .queryParam("datasource", DATASOURCE)
                     .path("/characters/%d/notifications".formatted(pilotId))
                     .build().toUri().toURL();
             log.debug("getNotifications url: [{}]", notificationData);
-            HttpEntity<MultiValueMap<String, String>> request = buildBaseRequestWithBearerHeader(accessToken);
-            return esiTemplate.exchange(notificationData.toString(), HttpMethod.GET, request,
-                    CharactersNotificationsDto[].class).getBody();
+            return esiClient.get().uri(notificationData.toString())
+                    .headers(headers -> headers.setBearerAuth(accessToken))
+                    .retrieve().body(CharactersNotificationsDto[].class);
         } catch (MalformedURLException e) {
             throw new InvalidUrlException(e, METHOD_NAME, "/characters/%d/notifications".formatted(pilotId));
         }
@@ -135,24 +129,5 @@ public class EsiApiController {
         }
 
         return new ArrayList<>();
-    }
-
-    private HttpEntity<MultiValueMap<String, String>> buildBaseRequest() {
-        MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
-        HttpHeaders headers = new HttpHeaders();
-        headers.setAccept(List.of(MediaType.valueOf(MediaType.APPLICATION_JSON_VALUE)));
-        headers.setCacheControl("no-cache");
-        headers.add(HttpHeaders.USER_AGENT, "EveAssist/0.1 Where Am I");
-
-        return new HttpEntity<>(map, headers);
-    }
-
-    private HttpEntity<MultiValueMap<String, String>> buildBaseRequestWithBearerHeader(String token) {
-        HttpEntity<MultiValueMap<String, String>> baseRequest = this.buildBaseRequest();
-        HttpHeaders headers = new HttpHeaders();
-        headers.addAll(baseRequest.getHeaders());
-        headers.setBearerAuth(token);
-
-        return new HttpEntity<>(baseRequest.getBody(), headers);
     }
 }

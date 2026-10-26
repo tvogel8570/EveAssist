@@ -39,11 +39,11 @@ out/
 **/.idea/**/uiDesigner.xml
 **/.idea/**/dbnavigator.xml
 
-# Maven auto-import regenerates module files; uncomment to stop tracking them (also run `git rm --cached` on each)
-# **/.idea/**/compiler.xml
-# **/.idea/**/jarRepositories.xml
-# **/.idea/**/modules.xml
-# *.iml
+# Maven auto-import regenerates these module files from the poms, so they are not tracked
+**/.idea/**/compiler.xml
+**/.idea/**/jarRepositories.xml
+**/.idea/**/modules.xml
+*.iml
 
 # secrets
 **/env.properties

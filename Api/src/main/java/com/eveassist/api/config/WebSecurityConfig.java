@@ -7,7 +7,6 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.web.ServerProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
 import org.springframework.context.annotation.Bean;
@@ -18,6 +17,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationManagerResolver;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -57,9 +57,9 @@ public class WebSecurityConfig {
     @Bean
     SecurityFilterChain filterChain(
             @NotNull HttpSecurity http,
-            @NotNull ServerProperties serverProperties,
-            @Value("origins") String[] origins,
-            @Value("permit-all") String[] permitAll,
+            @Value("${server.ssl.enabled:false}") boolean sslEnabled,
+            @Value("${origins}") String[] origins,
+            @Value("${permit-all}") String[] permitAll,
             AuthenticationManagerResolver<HttpServletRequest> authenticationManagerResolver)
             throws Exception {
 
@@ -85,8 +85,8 @@ public class WebSecurityConfig {
                 }));
 
         // If SSL enabled, disable http (https only)
-        if (serverProperties.getSsl() != null && serverProperties.getSsl().isEnabled()) {
-            http.requiresChannel(requiresChannel -> requiresChannel.anyRequest().requiresSecure());
+        if (sslEnabled) {
+            http.redirectToHttps(Customizer.withDefaults());
         }
 
         // @formatter:off

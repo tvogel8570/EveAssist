@@ -1,23 +1,16 @@
 package com.eveassist.api.esi.response;
 
 import com.eveassist.api.util.ReadFile;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.json.JsonMapper;
 import org.assertj.core.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 class CharactersPlanetsDetailDtoTest {
-    static final ObjectMapper mapper = new ObjectMapper();
-
-    @BeforeAll
-    static void setup() {
-        mapper.registerModule(new JavaTimeModule());
-    }
+    static final JsonMapper mapper = JsonMapper.builder().build();
 
     @Test
-    void givenValidCcpResponse_successParseExtractor() throws JsonProcessingException {
+    void givenValidCcpResponse_successParseExtractor() throws JacksonException {
         CharactersPlanetsDetailDto charactersPlanetsDetailDto = mapper.readValue(
                 ReadFile.readFromFileToString("/esi/response/response_characters_planets_detail_extractor.json"),
                 CharactersPlanetsDetailDto.class);
@@ -25,7 +18,7 @@ class CharactersPlanetsDetailDtoTest {
     }
 
     @Test
-    void givenValidCcpResponse_successParseFactory() throws JsonProcessingException {
+    void givenValidCcpResponse_successParseFactory() throws JacksonException {
         CharactersPlanetsDetailDto charactersPlanetsDetailDto = mapper.readValue(
                 ReadFile.readFromFileToString("/esi/response/response_characters_planets_detail_factory.json"),
                 CharactersPlanetsDetailDto.class);
