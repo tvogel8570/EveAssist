@@ -4,7 +4,9 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import org.springframework.boot.jackson.autoconfigure.JsonMapperBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.web.client.RestClient;
 import tools.jackson.core.JsonGenerator;
 import tools.jackson.databind.SerializationContext;
 import tools.jackson.databind.ValueSerializer;
@@ -17,9 +19,17 @@ import java.time.format.DateTimeFormatter;
 public class ApiConfig {
     private static final DateTimeFormatter DATETIME_FORMAT = DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm");
 
+    /**
+     * Client for ESI, built from Spring Boot's {@code RestClient.Builder} so it shares the auto-configured
+     * message converters. Every request sends these headers; callers add per-request ones such as the bearer token.
+     */
     @Bean
-    public RestTemplate restTemplate() {
-        return new RestTemplate();
+    public RestClient esiRestClient(RestClient.Builder builder) {
+        return builder
+                .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
+                .defaultHeader(HttpHeaders.CACHE_CONTROL, "no-cache")
+                .defaultHeader(HttpHeaders.USER_AGENT, "EveAssist/0.1 Where Am I")
+                .build();
     }
 
     /**
