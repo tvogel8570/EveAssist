@@ -6,13 +6,11 @@ import com.eveassist.api.sde.chr.ChrDao;
 import com.eveassist.api.sde.chr.entity.ChrBloodline;
 import com.eveassist.api.sde.chr.entity.ChrRace;
 import com.eveassist.api.util.ReadFile;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.databind.json.JsonMapper;
 import jakarta.servlet.http.HttpServletRequest;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.*;
 import org.springframework.security.authentication.AuthenticationManagerResolver;
@@ -33,7 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest({EsiApiController.class})
 @Import({WebSecurityConfig.class, CharactersMapperImpl.class})
 class EsiApiControllerTest {
-    static final ObjectMapper mapper = new ObjectMapper();
+    static final JsonMapper mapper = JsonMapper.builder().build();
 
     @Autowired
     MockMvc mvc;
@@ -49,11 +47,6 @@ class EsiApiControllerTest {
 
     @MockitoBean
     AuthenticationManagerResolver<HttpServletRequest> authenticationManagerResolver;
-
-    @BeforeAll
-    static void setup() {
-        mapper.registerModule(new JavaTimeModule());
-    }
 
 
     @Test

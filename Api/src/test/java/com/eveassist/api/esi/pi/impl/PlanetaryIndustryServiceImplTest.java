@@ -7,15 +7,13 @@ import com.eveassist.api.esi.response.CharactersPlanetsDto;
 import com.eveassist.api.sde.pi.PiDao;
 import com.eveassist.api.sde.pi.impl.PiDaoImpl;
 import com.eveassist.api.util.ReadFile;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import org.junit.jupiter.api.BeforeAll;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.json.JsonMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
-import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
+import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
+import org.springframework.boot.jdbc.test.autoconfigure.JdbcTest;
 import org.springframework.context.annotation.Import;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -28,12 +26,7 @@ class PlanetaryIndustryServiceImplTest {
     PlanetaryIndustryService cut;
     @Autowired
     PiDao piDao;
-    static final ObjectMapper mapper = new ObjectMapper();
-
-    @BeforeAll
-    static void setup() {
-        mapper.registerModule(new JavaTimeModule());
-    }
+    static final JsonMapper mapper = JsonMapper.builder().build();
 
     @BeforeEach
     void init() {
@@ -47,7 +40,7 @@ class PlanetaryIndustryServiceImplTest {
     }
 
     @Test
-    void givenPlanetWithExtractor_whenSummarize_thenCorrectValues() throws JsonProcessingException {
+    void givenPlanetWithExtractor_whenSummarize_thenCorrectValues() throws JacksonException {
         CharactersPlanetsDto[] charactersPlanetsDto = mapper.readValue(
                 ReadFile.readFromFileToString("/esi/response/response_characters_planets.json"),
                 CharactersPlanetsDto[].class);

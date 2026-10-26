@@ -48,7 +48,7 @@ services:
     container_name: eve-assist-postgres
     ports:
       - target: 5432
-        published: 5432
+        published: 2345
         protocol: tcp
 
   eve-assist-keycloak:

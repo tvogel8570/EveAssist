@@ -6,8 +6,6 @@ keycloak-realm: EveAssist
 keycloak-issuer: ${scheme}://localhost:${keycloak-port}/realms/${keycloak-realm}
 
 server:
-  error:
-    include-message: always
   ssl:
     enabled: false
   port: 8085
@@ -15,10 +13,13 @@ server:
 spring:
   config:
     import: optional:classpath:env.properties
+  web:
+    error:
+      include-message: always
   datasource:
     username: postgres
     password: ${postgres.password}
-    url: jdbc:postgresql://localhost:5432/sdeyaml
+    url: jdbc:postgresql://localhost:2345/sdeyaml
   jpa:
     open-in-view: false
     properties:

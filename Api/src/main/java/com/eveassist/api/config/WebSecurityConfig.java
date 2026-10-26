@@ -58,8 +58,8 @@ public class WebSecurityConfig {
     SecurityFilterChain filterChain(
             @NotNull HttpSecurity http,
             @Value("${server.ssl.enabled:false}") boolean sslEnabled,
-            @Value("origins") String[] origins,
-            @Value("permit-all") String[] permitAll,
+            @Value("${origins}") String[] origins,
+            @Value("${permit-all}") String[] permitAll,
             AuthenticationManagerResolver<HttpServletRequest> authenticationManagerResolver)
             throws Exception {
 
