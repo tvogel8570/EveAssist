@@ -54,6 +54,12 @@ needs has to be in git or in a handoff note.
   `<!-- handoff:start -->` and `<!-- handoff:end -->`. On `development` or `main`, or without `gh`, it writes to
   `documentation/ai/hand-off/HANDOFF.md` instead.
 - `/resume-handoff` on the other machine checks out the branch, reads the note and summarizes where things stand.
-- Before marking a draft PR ready for review, remove the handoff section from its description.
+- To read a handoff note without the skill, find the branch's draft PR (`gh pr list --draft --head <branch>`), read
+  its description with `gh pr view <number> --json body`, and take the text between the two markers. If the branch has
+  no draft PR, read `documentation/ai/hand-off/HANDOFF.md`.
+- Before marking a draft PR ready for review, and always before it is merged, remove the handoff section from its
+  description: everything from `<!-- handoff:start -->` through `<!-- handoff:end -->`, markers included. Keep the
+  rest of the description, and update it with `gh pr edit <number> --body-file <file>`. Then check that no marker is
+  left.
 - Lasting project knowledge (conventions, decisions that hold beyond one branch) belongs in this file, not in a
   handoff note.

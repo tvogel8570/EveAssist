@@ -65,4 +65,16 @@ Tell the user, briefly:
 
 Then wait for the user to confirm before starting, unless they asked you to continue straight away.
 
-Leave the handoff section in the PR as it is. The next `/handoff` replaces it.
+## 6. Offer to remove the handoff section
+
+Once the note has been read, ask the user whether to remove the handoff section from the draft PR's description.
+Don't edit the description without their answer.
+
+- **Yes:** save the description to a file in the scratchpad directory (or the system temp directory), with
+  everything from `<!-- handoff:start -->` through `<!-- handoff:end -->` removed, markers included. Keep the rest of
+  the description as it is. Then run `gh pr edit <number> --body-file <file>`, and check with
+  `gh pr view <number> --json body` that no marker is left. The next `/handoff` adds a new section at the end.
+- **No:** leave the section as it is. The next `/handoff` replaces it.
+
+If the note came from `documentation/ai/hand-off/HANDOFF.md`, ask instead whether to delete the file. Deleting it
+needs a commit, so ask before committing.
