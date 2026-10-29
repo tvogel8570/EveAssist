@@ -20,6 +20,10 @@ The tool is built in phases, and later phases must not need a rewrite of earlier
 
 Reactions, planetary industry, mining and reprocessing are out of scope for now.
 
+These features, common in other OOG tools, are also left for later phases: Upwell structure management (fuel and
+timers), appraisal, skill planning, stock levels and restocking, corporation buyback and freight services, fitting,
+killboards, mapping and LP store analysis. Contract tracking is in scope (see [Market and logistics](market-logistics.md#contracts)).
+
 ## Process
 
 The requirements are gathered by interview, one area at a time, and are drafted into the files above as answers come in.
