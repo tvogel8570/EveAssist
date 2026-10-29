@@ -30,6 +30,12 @@ requirements in `documentation/requirements/`. Check with the user before buildi
 Local ports with the default profile: Postgres 2345 (5432 inside the compose network), Keycloak 8442 (HTTPS), Api 8085 (8043 with TLS),
 Client 7443 (9443 with TLS).
 
+## ESI
+
+The EVE developer documentation at https://developers.eveonline.com/docs/ is the authoritative source for how to work
+with ESI (endpoints, scopes, SSO, caching, rate limits and errors). When the code, tests or real ESI responses differ
+from it, tell the user about the difference in the session where it is found. Don't quietly follow either one.
+
 ## Secrets
 
 Real secrets are never committed. Each module has a `template_*` file with empty values to copy:
