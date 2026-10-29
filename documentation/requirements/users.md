@@ -34,6 +34,7 @@ Status: draft, interview in progress.
 - When a character's ESI token stops working (revoked, expired or missing scopes), the character is marked as needing
   re-authorization. Its stored data stays, but it no longer refreshes, and an alert is raised (see
   [Manufacturing and invention](manufacturing-invention.md#alerts)). Re-authorizing through EVE SSO clears the mark.
+- How and when character tokens are used is covered in [ESI access and tokens](esi-access.md).
 
 ## Profile
 
