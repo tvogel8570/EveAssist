@@ -43,6 +43,24 @@ Cost and profit include every fee:
 - **Shopping lists**: export the materials still needed in a format that can be pasted into the in-game multibuy window,
   for one project or for several selected projects added together.
 
+## Contracts
+
+- Only item exchange contracts are tracked. Courier and auction contracts are not needed for now, and corporation
+  contracts come with the group phase.
+- A contract list shows the outstanding and finished contracts of all characters, with status, price and expiry. It is
+  fetched like My orders, when the user opens or refreshes it.
+- **Sales**: when an item exchange contract the user issued is completed, the tool suggests which project it belongs to,
+  as it does for industry jobs. The user confirms or changes the match. Confirmed contract sales count toward the
+  project's actual profit and its units sold, like market sales from wallet transactions.
+- **Purchases**: when a contract the user bought is completed, the tool offers to add its items to the materials on hand
+  at the contract price.
+- **Several items**: when a contract holds several items (for example a ship with its fitting), its price is split
+  between them in proportion to each item's Jita price at the time. The user can change the split when confirming a
+  sale or a purchase.
+- **Alerts**: an alert is raised when a contract is accepted or completed, and when an outstanding contract will expire
+  within a set time, a user setting that defaults to 24 hours. The alerts appear with the other alerts (see
+  [Manufacturing and invention](manufacturing-invention.md#alerts)).
+
 ## Logistics
 
 - **Volume planning**: total m³ of the materials still to buy (inbound) and of the products built (outbound), for one

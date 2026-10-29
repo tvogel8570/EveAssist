@@ -101,9 +101,10 @@ The tool helps with:
   example an inventory window).
 - Materials on hand are one shared pool. Each project reserves what it uses, so the same item is not counted for two
   projects.
-- Each project has one setting for when it ends: when all its units are sold (from wallet transactions), or when the
-  user closes it.
-- Actual profit uses real sales from wallet transactions against the frozen expected material cost. Purchases are not
+- Each project has one setting for when it ends: when all its units are sold (from wallet transactions and confirmed
+  contract sales), or when the user closes it.
+- Actual profit uses real sales (wallet transactions and confirmed contract sales, see
+  [Market and logistics](market-logistics.md#contracts)) against the frozen expected material cost. Purchases are not
   matched to projects.
 
 ## SDE updates
@@ -119,7 +120,7 @@ The tool helps with:
 ## Alerts
 
 - Alerts are raised when a job finishes and when a project is blocked (its next job cannot start because materials or a
-  BPC are missing).
+  BPC are missing). Contract alerts are described in [Market and logistics](market-logistics.md#contracts).
 - Alerts are shown in the web app, on a dashboard and in a notification list.
 - Email, Discord and other channels are not needed for now.
 
