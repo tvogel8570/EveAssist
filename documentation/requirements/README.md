@@ -16,6 +16,7 @@ The tool is built in phases, and later phases must not need a rewrite of earlier
 - [Manufacturing and invention](manufacturing-invention.md)
 - [Market and logistics](market-logistics.md)
 - [Users, accounts and roles](users.md)
+- [ESI access and tokens](esi-access.md)
 
 Reactions, planetary industry, mining and reprocessing are out of scope for now.
 
