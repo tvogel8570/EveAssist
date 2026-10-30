@@ -136,7 +136,5 @@ What the htmx UI must get right, found while building the spikes:
 
 ## Open questions
 
-- **Proposed decisions still to review**: loading the industry SDE data into memory for costing
-  ([Data and ownership](data.md#costing-in-memory)), how Jita prices are fetched and stored
-  ([ESI access](esi.md#jita-prices)), and the shape of the external API ([External REST API](api.md#shape)). They
-  stand unless the developer changes them.
+- **Proposed decisions still to review**: the shape of the external API ([External REST API](api.md#shape)). The
+  developer chose to keep it proposed until the phase that builds the API is decided, and to review it then.

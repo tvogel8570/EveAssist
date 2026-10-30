@@ -101,5 +101,6 @@ What follows for EveAssist:
   not now.
 - Which phase builds the API, and whether personal access tokens come before third-party OAuth. The developer chose
   to decide this later. The phase-1 groundwork above is done either way.
+- The details under [Shape](#shape) stay proposed until that phase is decided, and are reviewed then.
 - Personal access tokens are not a built-in Keycloak feature. Whether the app issues and checks them itself (the
   proposed default), or they are mapped onto Keycloak offline tokens, is to be decided when the API is built.
