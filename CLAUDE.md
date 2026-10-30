@@ -36,6 +36,11 @@ The EVE developer documentation at https://developers.eveonline.com/docs/ is the
 with ESI (endpoints, scopes, SSO, caching, rate limits and errors). When the code, tests or real ESI responses differ
 from it, tell the user about the difference in the session where it is found. Don't quietly follow either one.
 
+The site's source is cloned at `~/git/esi-docs` (https://github.com/esi/esi-docs). Read it there rather than fetching
+the site: the pages are Markdown under `docs/`, for example `docs/services/esi/` and `docs/services/sso/`. Run
+`git pull` in it first so it is current. If another computer has no clone, clone it to the same path. For the exact
+fields of an endpoint, use ESI's OpenAPI spec at https://esi.evetech.net/meta/openapi.json.
+
 ## Secrets
 
 Real secrets are never committed. Each module has a `template_*` file with empty values to copy:
