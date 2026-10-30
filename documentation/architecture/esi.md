@@ -39,6 +39,13 @@ Status: **agreed** (follows from the requirements and the ESI documentation).
 - Fetches run inside the app on virtual threads. A per-instance limit (a semaphore, for example 8 calls at once) keeps
   a sign-in with many characters from flooding ESI. A refresh of one character holds that character's Postgres
   advisory lock, so two fetches of the same character never overlap, also with several instances.
+- The ESI documentation sets no limit on simultaneous calls. It limits calls over time (bucket limits per rate-limit
+  group, and the error limit), says to spread requests rather than burst constantly, and allows an occasional burst.
+  The limit of 8 is EveAssist's own choice, to keep the burst after sign-in polite. It is not an ESI rule.
+- **Checkpoint before deploying a feature that adds or changes ESI calls**: run its fetches in dev with several
+  characters and check, from the response headers, how close each rate-limit group's `X-Ratelimit-Remaining` and the
+  `X-ESI-Error-Limit-Remain` get to zero. Then tune the simultaneous-call limit and how early the client slows down,
+  and record the values chosen and why.
 - A fetch task is one character and one kind of data (jobs, blueprints, skills, implants, orders, wallet transactions,
   contracts, standings and the rest). The client's cache rule decides whether ESI is called at all.
 - After sign-in, if the user's setting is on, the app queues every task for every linked character that is not marked
@@ -116,4 +123,4 @@ Flagged to the developer when the architecture was drafted. The new ESI client a
 ## Open questions
 
 - The concurrency limit per instance (8 is a first guess) and how early the client slows down against a bucket are to
-  be tuned against real responses.
+  be tuned against real responses, at the checkpoint under [Background fetches](#background-fetches).
