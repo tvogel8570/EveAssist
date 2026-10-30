@@ -65,9 +65,9 @@ Roles are app-wide and assigned in Keycloak.
 
 ### Group roles (later phase)
 
-The group and corporation phase will add roles inside each group (for example owner, manager and member) on top of
-the app-wide roles. They are not built yet, but the account and role model must leave room for them so that adding
-groups does not require a rewrite.
+The group and corporation phase adds roles inside each group (owner, manager and member) on top of the app-wide
+roles, as described in [Groups and corporations](groups.md#group-roles). They are not built yet, but the account and
+role model must leave room for them so that adding groups does not require a rewrite.
 
 ## Admin
 
