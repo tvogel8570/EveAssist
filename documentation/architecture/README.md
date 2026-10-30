@@ -98,7 +98,9 @@ so that a JSON API can be added later without a rewrite.
 ## Open questions
 
 - **UI approach and module layout**: Thymeleaf with htmx, a SPA, or a hybrid with the plan editor as a SPA island; and
-  whether the Java side becomes one app. The user wants to discuss this interactively before deciding.
+  whether the Java side becomes one app. The user wants to discuss this interactively before deciding. The same plan
+  editor was built in all three candidate stacks (`spikes/ui/` on branch `ui-spikes`). Vaadin was rejected after the
+  spikes, because it keeps every open browser tab's UI in server memory, which the user does not consider scalable.
 - **Proposed decisions to confirm**: Java 25 and Spring Boot 4.1; Spring Session in Postgres; a separate EVE SSO
   application for character linking; the SDE kept as a schema in the app database; TLS through Caddy on the EC2
   instance rather than a load balancer; deploying images from GitHub Actions. Each is explained in its file.
