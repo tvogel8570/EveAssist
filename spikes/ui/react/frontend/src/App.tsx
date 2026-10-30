@@ -2,8 +2,21 @@ import { useEffect, useState } from 'react'
 import { api, isk, type CostedNode, type CostedPlan, type Decision, type Facility } from './api'
 import JobBoard from './JobBoard'
 
+type Page = 'plan' | 'jobs'
+const pageFromUrl = (): Page => (window.location.pathname === '/jobs' ? 'jobs' : 'plan')
+
 export default function App() {
-  const [page, setPage] = useState<'plan' | 'jobs'>('plan')
+  // The page lives in the URL (/ or /jobs), so links and the browser's back button work.
+  const [page, setPageState] = useState<Page>(pageFromUrl)
+  useEffect(() => {
+    const onPopState = () => setPageState(pageFromUrl())
+    window.addEventListener('popstate', onPopState)
+    return () => window.removeEventListener('popstate', onPopState)
+  }, [])
+  const setPage = (p: Page) => {
+    window.history.pushState(null, '', p === 'jobs' ? '/jobs' : '/')
+    setPageState(p)
+  }
   const [plan, setPlan] = useState<CostedPlan | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
