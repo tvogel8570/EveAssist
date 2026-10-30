@@ -18,6 +18,11 @@ one transaction, and so that queries can join SDE tables to app data when needed
 
 All times are stored as UTC `timestamptz`. Each user's time zone is applied only when a page shows them.
 
+Records that appear in URLs (plans, projects, facilities, alerts and similar) have a UUID as their public id, alongside
+their internal key. Internal keys never appear in URLs, pages or JSON, so that the later
+[REST API](api.md) can use the same ids and nothing can be guessed by counting. Status: **agreed** (part of the API
+groundwork).
+
 ## Ownership
 
 - Every personal row carries the account that owns it, directly (`owner_account_id`) or through its character, which

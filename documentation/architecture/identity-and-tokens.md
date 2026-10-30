@@ -31,6 +31,10 @@ Status: **agreed** (follows from the requirements).
 
 Status: **proposed**.
 
+The pages' security chain covers every path except `/api/**`, which is reserved for the later
+[REST API](api.md) and its own chain for bearer tokens. A session cookie is never accepted on `/api/**`, and a bearer
+token is never accepted on the pages. Status: **agreed** (part of the API groundwork).
+
 ## Linking a character
 
 - Linking goes straight from the app to EVE SSO, separate from sign-in, with the authorization code flow, a random
