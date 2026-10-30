@@ -13,8 +13,10 @@ Covers the requirements in [Users, accounts and roles](../requirements/users.md)
   page adds and removes them through Keycloak's account linking, so accounts are never merged by email.
 - The roles USER and ADMIN come from Keycloak realm roles in the ID token and are mapped to Spring authorities.
   Group roles (phase 2) are stored in the app, per group, not in Keycloak, because they belong to one group each.
-- Disabling, deleting and inviting accounts call the Keycloak admin API with a service account that may manage users
-  only. Each admin action writes an audit log row in the same transaction as the app's change.
+- Disabling and deleting accounts call the Keycloak admin API with a service account that may manage users only.
+  There are no invites. Each admin action writes an audit log row in the same transaction as the app's change.
+- Audit log rows hold the admin, the action, the account id, the account's display name at the time and when. They
+  have no foreign key to the account, so they outlive its deletion, and a daily job deletes rows older than one year.
 - The app does not ask Keycloak for `offline_access`. The prototype asked for it, but nothing runs for a user who is
   signed out, so the app needs no long-lived Keycloak token.
 

@@ -138,6 +138,3 @@ What the htmx UI must get right, found while building the spikes:
   Postgres; a separate EVE SSO application for character linking; the SDE kept as a schema in the app database; TLS
   through Caddy on the EC2 instance rather than a load balancer; deploying images from GitHub Actions. Each is
   explained in its file.
-- **Requirements follow-up**: [ESI access and tokens](../requirements/esi-access.md) asks whether the dashboard waits
-  for the fetch after sign-in. This architecture assumes it does not: the dashboard shows stored data while the fetch
-  runs in the background and shows its progress, as the performance requirements say for long fetches.

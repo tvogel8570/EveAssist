@@ -7,8 +7,9 @@ Status: draft, interview in progress.
 - Users sign in with an EVE Online character (EVE SSO), Facebook, Google or Discord.
 - All authentication goes through Keycloak, which brokers the external identity providers.
 - EveAssist stores no local accounts or passwords. This applies to admins too.
-- Sign-up is open: anyone can create an account by signing in for the first time. Admins can also send invites (see
-  [Admin](#admin)).
+- Sign-up is open: anyone can create an account by signing in for the first time. There are no invites or
+  pre-registered accounts. To bring someone in, an admin or user sends them the site's address. Invites can be added
+  if sign-up is ever closed.
 
 ## Accounts and sign-in methods
 
@@ -44,8 +45,7 @@ An account profile holds:
 - **Main character**, one linked character chosen as the account's face (portrait and name in the header). It is
   optional, since an account can have no characters.
 - **Time zone**, used to show job finish times and alerts.
-- **Email**, taken from the identity provider when it gives one (EVE SSO does not). It is used for contact and
-  invites.
+- **Email**, taken from the identity provider when it gives one (EVE SSO does not). It is used for contact.
 
 ## Deleting an account
 
@@ -80,17 +80,23 @@ role model must leave room for them so that adding groups does not require a rew
 
 Admins can:
 
-- Invite or pre-register someone before their first sign-in.
 - Rename an account (its display name).
 - Disable an account, so its user cannot sign in, and re-enable it. Disabling keeps all data.
 - Unlink a character from an account, for example to settle an ownership dispute or after a character sale. This
   deletes the character's tokens and ESI data, as when the user removes it.
 - Delete an account.
 
-Every admin action is written to an audit log: which admin, what action, which account and when.
+### Audit log
+
+- Every admin action is written to an audit log: which admin, what action, which account and when.
+- Entries are kept for one year, then deleted.
+- When an account is deleted, its entries stay until they expire, so the deletion itself stays on record. They keep
+  the account's id and the display name it had at the time, but no email.
+- Admins read the log in the app, read-only. An audit log page in the admin area lists every entry, newest first, and
+  can be filtered by admin, account, action and date range. Each account's admin page also shows that account's
+  entries.
+- Nobody can change or delete an entry in the app.
 
 ## Open questions
 
-- With open sign-up, what does an invite or pre-registration give the invited person? For example a welcome email
-  with a sign-in link, or a display name and settings set up in advance.
-- How long are audit log entries kept, and can admins read the log in the app?
+None at present.
