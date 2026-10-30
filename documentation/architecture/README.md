@@ -73,7 +73,8 @@ Status: **agreed**.
 EveAssist is one Spring Boot application, started as a new top-level module (proposed name `App/`). It is written from
 scratch: nothing is copied or inherited from the prototype in `Api/` and `Client/`, or from the UI spikes in `spikes/`,
 so that none of their shortcuts carry over. The prototype stays as reference until the new module covers what it
-showed, and is then removed. The spikes are removed once their findings are recorded here.
+showed, and is then removed. The UI spikes were never merged: they are kept for reference on branch `ui-spikes`
+(pushed to `origin`), and their findings are recorded below.
 
 Why one application rather than the prototype's two: both would sign in through Keycloak and both would need the
 database, and the Client would only relay calls to the Api. One deployable is cheaper to run on one EC2 instance and
@@ -106,8 +107,8 @@ receives alerts and fetch progress over SSE. Styling is Tailwind with daisyUI co
 Maven build in place of the spikes' CDN links. UI text stays in `messages.properties`. Small pieces of JavaScript are
 allowed where a screen needs them, such as drag and drop with SortableJS.
 
-How it was chosen: the same plan editor was built in Thymeleaf with htmx, in React and in Vaadin (`spikes/ui/`), and a
-drag-and-drop job board was then added to the htmx and React versions.
+How it was chosen: the same plan editor was built in Thymeleaf with htmx, in React and in Vaadin (`spikes/ui/` on
+branch `ui-spikes`), and a drag-and-drop job board was then added to the htmx and React versions.
 
 - Vaadin was rejected because it keeps the UI of every open browser tab in server memory, which the user does not
   consider scalable. It would also need sticky sessions for a second instance.
