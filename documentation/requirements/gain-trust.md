@@ -36,6 +36,9 @@ The standalone alternative, where tokens never leave the player's computer, is d
 Status: **agreed**. The developer chose scopes per feature over the earlier fixed set.
 
 - Each scope is asked for only when a feature that needs it is turned on, and the page says which feature needs it.
+- Features are turned on for the whole account, not per character. Turning one on asks the user to re-authorize each
+  linked character that lacks its scopes, and a character linked later is asked for the scopes of every feature that
+  is on.
 - A character's page lists the scopes it granted and what each is used for, with a way to drop scopes the user no
   longer wants. Features that need a dropped scope stop for that character, as for a missing scope today
   ([ESI access and tokens](esi-access.md#failures)).
@@ -95,8 +98,6 @@ Corporation spies are a real threat in EVE, so EveAssist must not become a spyin
 
 ## Open questions
 
-- **Where features are turned on**: for the whole account, so every character is asked for the scope, or for each
-  character, so a scope is granted only by the characters that use the feature.
 - **Fetch log retention**: how long fetch log entries are kept.
 - **Incident disclosure time**: what time to commit to, for example 72 hours.
 - **Export and import between hosted and standalone**: depends on whether a standalone build is made.
