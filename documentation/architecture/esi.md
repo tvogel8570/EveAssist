@@ -77,7 +77,10 @@ age.
 - The `market-order` group allows 12,000 tokens per 15 minutes per IP address for all users together, so the shared
   store matters in phase 3. Opening a large plan fetches only the items whose stored orders have expired.
 
-Status: **proposed** (follows from the requirements).
+Why ESI rather than Fuzzwork's market aggregates: the aggregates are fixed at the best 5% of volume, while the
+requirements make the share a user setting, and they would add a third-party service with no uptime promise.
+
+Status: **agreed** (follows from the requirements).
 
 ## Alerts
 

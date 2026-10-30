@@ -88,7 +88,8 @@ Status: **agreed**.
 
 The industry data a plan needs (blueprints, activities, materials, skills, type groups and volumes) is a few megabytes.
 The `sde` module loads it into memory at startup and after each import, so costing a large plan, such as a capital ship
-with every intermediate, walks in-memory structures and stays within a few seconds. Status: **proposed**.
+with every intermediate, walks in-memory structures and stays within a few seconds. The import swaps the in-memory
+copy at the same time as the schema. Status: **agreed**.
 
 ## Open questions
 
