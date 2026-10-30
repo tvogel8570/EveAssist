@@ -1,0 +1,21 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="utf-8">
+    <title th:text="${editor.name}">Plan</title>
+    <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.4/dist/htmx.min.js"></script>
+</head>
+<body>
+<p><a th:href="@{/plans}">All plans</a></p>
+<h1 th:text="${editor.name}">Plan</h1>
+<table>
+    <thead><tr><th>Item</th><th>Quantity</th><th>Unit ISK</th><th>Line ISK</th></tr></thead>
+    <tbody>
+    <th:block th:each="line : ${editor.rows}">
+        <tr th:replace="~{plans/fragments :: planRow(${editor.id}, ${line})}"></tr>
+    </th:block>
+    </tbody>
+</table>
+<p>Total: <strong id="plan-total" th:text="${editor.totalCost}">0</strong> ISK</p>
+</body>
+</html>

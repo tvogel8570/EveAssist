@@ -1,0 +1,22 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<body>
+<table>
+    <tr th:fragment="planRow(planId, line)">
+        <td th:text="${line.itemName}">item</td>
+        <td><input type="number" min="1" name="quantity" th:value="${line.quantity}"
+                   th:hx-post="@{/plans/{p}/lines/{l}/quantity(p=${planId.value},l=${line.lineId})}"
+                   hx-trigger="change" hx-target="closest tr" hx-swap="outerHTML"></td>
+        <td th:text="${line.unitPrice}">0</td>
+        <td th:text="${line.lineCost}">0</td>
+    </tr>
+</table>
+
+<th:block th:fragment="changed">
+    <th:block th:each="line : ${change.changedRows}">
+        <tr th:replace="~{plans/fragments :: planRow(${change.id}, ${line})}"></tr>
+    </th:block>
+    <strong id="plan-total" hx-swap-oob="true" th:text="${change.totalCost}">0</strong>
+</th:block>
+</body>
+</html>
