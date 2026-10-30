@@ -41,8 +41,9 @@ token is never accepted on the pages. Status: **agreed** (part of the API ground
 
 - Linking goes straight from the app to EVE SSO, separate from sign-in, with the authorization code flow, a random
   `state` and PKCE. The redirect comes back to the app.
-- It uses its own EVE developer application, registered with the full scope set, separate from the application that
-  Keycloak uses for "sign in with EVE". Signing in then never asks for scopes, and linking never creates a Keycloak
+- It uses its own EVE developer application, registered with every scope that any feature uses, separate from the
+  application that Keycloak uses for "sign in with EVE". Each authorization request asks only for the scopes of the
+  features that are turned on. Signing in then never asks for scopes, and linking never creates a Keycloak
   identity.
 - After the code exchange, the access token is validated as the EVE SSO documentation says. The JWKS URL is read from
   `https://login.eveonline.com/.well-known/oauth-authorization-server` and cached. `iss` must be
