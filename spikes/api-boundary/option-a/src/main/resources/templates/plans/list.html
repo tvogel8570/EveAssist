@@ -1,0 +1,17 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head><meta charset="utf-8"><title>Plans</title></head>
+<body>
+<h1>Plans</h1>
+<table>
+    <thead><tr><th>Plan</th><th>Lines</th><th>Total ISK</th></tr></thead>
+    <tbody>
+    <tr th:each="row : ${rows}">
+        <td><a th:href="@{/plans/{id}(id=${row.id.value})}" th:text="${row.name}">name</a></td>
+        <td th:text="${row.lineCount}">0</td>
+        <td th:text="${row.totalCost}">0</td>
+    </tr>
+    </tbody>
+</table>
+</body>
+</html>
