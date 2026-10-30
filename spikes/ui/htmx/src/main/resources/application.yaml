@@ -1,2 +1,7 @@
 server:
   port: 8091
+  servlet:
+    session:
+      cookie:
+        # The spikes all run on localhost, so each needs its own cookie or they reset each other.
+        name: SPIKE_A_SESSION
