@@ -70,12 +70,35 @@ These cost little now and would be costly to retrofit:
   exists.
 - **Keycloak as the token issuer** for everything, so third-party clients need no second authorization server.
 
+## CCP license
+
+CCP's [Developer License Agreement](https://developers.eveonline.com/license-agreement) was read on 2026-10-29. Its
+full text is not in the `esi-docs` clone, which only links to it. What it says that bears on the API:
+
+- It licenses Game Data (the data CCP makes available, through ESI among others) to be used, shown and distributed
+  "within an Application used for the Purpose". The purpose is an application that adds to players' enjoyment of EVE
+  and is offered for non-commercial, non-profit use.
+- The license is non-transferable and cannot be assigned without CCP's consent. Products based on EVE data may not be
+  sold or licensed without a separate written agreement.
+- An application may not track a player's information or activity without that player's express knowledge and
+  consent. Privacy and data protection law apply as well.
+- Nothing in it speaks directly of an application passing ESI data on to other applications or developers through an
+  API of its own. CCP decides what falls inside the purpose, and can disable an application without notice when it
+  judges that something does not.
+
+What follows for EveAssist:
+
+- **Personal access tokens** give a user's own scripts that user's own data, much as the data export does. The data
+  stays with the user it belongs to, so this part is the safer one.
+- **Third-party applications** reading a user's data through EveAssist are a grey area. The user's consent covers the
+  tracking rule, but it is not clear that data handed to someone else's application is still used "within" EveAssist.
+- The API is free, like the rest of EveAssist (see [Non-functional requirements](../requirements/non-functional.md#ccp-license)).
+
 ## Open questions
 
-- CCP's [Developer License Agreement](https://developers.eveonline.com/license-agreement) has to be checked for passing
-  ESI-derived character data to third-party applications before the API is built. The full text is not in the
-  `esi-docs` clone. Each user's own consent, through the token they grant, is likely to be what the license needs,
-  but this is not confirmed.
+- How the API meets the license, in particular whether third-party applications are allowed, for example after asking
+  CCP in writing. The user decided that this is settled before the API is built, in whichever phase that is, and not
+  now.
 - Which phase builds the API, and whether personal access tokens come before third-party OAuth.
 - Personal access tokens are not a built-in Keycloak feature. Whether the app issues and checks them itself (the
   proposed default), or they are mapped onto Keycloak offline tokens, is to be decided when the API is built.

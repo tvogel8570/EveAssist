@@ -59,17 +59,21 @@ EveAssist follows CCP's [Developer License Agreement](https://developers.eveonli
 
 - EveAssist is free. It takes no payment, donations or ads. The license allows only ISK payments, donations to cover
   running costs and non-intrusive ads, so any change to this must be checked against it first.
-- CCP's copyright notice is shown, and CCP's logos are not combined with other marks.
-- Character data is read only for characters the user linked through EVE SSO, which is their consent.
-- CCP can disable an application's ESI and SSO access without notice, so the operator's contact email with CCP is kept
-  current. CCP may suspend access when three of its emails in a row go unanswered.
+- CCP's copyright notice is shown in the form that section 7.1 of the license gives: a © line for CCP hf., followed by
+  a sentence saying that "EVE", "EVE Online", "CCP" and the related logos are CCP's trademarks. CCP's logos are not
+  combined with other marks without CCP's written consent.
+- Character data is read only for characters the user linked through EVE SSO, which is their consent. The license
+  forbids tracking a player's information or activity without their express knowledge and consent.
+- CCP can disable an application at once and without notice when it is used outside the license's purpose, so the
+  operator's contact email with CCP is kept current and watched. CCP may suspend access when three of its emails in a
+  row are not answered within 24 hours each, and may end the license when contact is not restored within 30 days.
 
 ## Security
 
 - Secrets are never committed (see `CLAUDE.md`). In prod they come from a secrets store, not from files in the image.
 - All traffic uses TLS.
 - ESI refresh tokens are encrypted at rest (see [ESI access and tokens](esi-access.md)).
-- Admin actions are written to an audit log (see [Users, accounts and roles](users.md#admin)).
+- Admin actions are written to an audit log (see [Users, accounts and roles](users.md#audit-log)).
 
 ## Open questions
 
