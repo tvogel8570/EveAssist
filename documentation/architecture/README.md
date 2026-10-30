@@ -70,6 +70,7 @@ flowchart LR
 | TLS and builds | Caddy on the EC2 instance; GitHub Actions builds images into Amazon ECR | Agreed |
 | Code structure | Spring Modulith enforces module boundaries; hexagonal layering only inside `industry` and `market`; feature modules use the `esi` module's API directly | Proposed |
 | Architecture checks | Modulith, jMolecules and ArchUnit rules in the build from the first commit of `App/` | Agreed |
+| Pages, the API and the facade | Pages call use cases directly, the API and other modules call a small facade, and a plan can only be loaded through a viewer-checking class | Proposed |
 
 ## Module layout
 
@@ -84,7 +85,7 @@ showed, and is then removed. The UI spikes were never merged: they are kept for 
 Why one application rather than the prototype's two: both would sign in through Keycloak and both would need the
 database, and the Client would only relay calls to the Api. One deployable is cheaper to run on one EC2 instance and
 simpler to keep working across several computers. The htmx pages and the later REST API are two sets of controllers
-over the same services.
+over the same use cases (see [Pages, the API and the facade](code-structure.md#pages-the-api-and-the-facade)).
 
 Module boundaries inside the application are enforced (with Spring Modulith, see [Code structure](code-structure.md)):
 
