@@ -23,6 +23,40 @@ and minerals), four facilities, and the costing. Only the UI layer differs. The 
   compared with the rule.
 - Every change is recalculated on the server by `PlanCosting`, in all three spikes.
 
+## The job board (A and B only)
+
+Added after Vaadin was rejected, to test the kind of screen where React should be strongest. Open **Jobs** in the top
+bar.
+
+- Four columns: unassigned jobs, then three characters with their manufacturing slots and their skill time bonus.
+- Drag a job onto a character. Its duration changes with that character's skills, and the slot count goes up.
+- A character with no free slot refuses the job with a message, and the job stays where it was.
+- The server owns the board (`JobBoard` in `plan-core`) and checks every move. Both spikes call it the same way.
+
+What differs is what you see *while* dragging:
+
+| | A. htmx + SortableJS | B. React + dnd-kit |
+|---|---|---|
+| Drop targets light up, a full character in red | Yes | Yes |
+| The dragged card shows its duration for the character under the pointer | No: it shows the old duration until you drop | Yes |
+| The slot badge previews the new count | No | Yes (and turns red past the limit) |
+| After the drop | The server re-renders the board (one round trip before it settles) | The move shows at once; the server confirms it or the job jumps back |
+| Code | 45 Java, 98 template, of which 37 are JavaScript | 46 Java, 164 TypeScript |
+
+Mid-drag, the Magnetometric Sensor Cluster over Main Builder: [htmx](screenshots/jobs-htmx-mid-drag.jpg) and
+[React](screenshots/jobs-react-mid-drag.jpg).
+
+Notes from building and testing it:
+
+- **A**: SortableJS's native drag mode does not react to automated tests, so it runs with `forceFallback`. SortableJS
+  also keeps a card in the last column the pointer crossed, so dropping on a full column first landed the job in its
+  neighbour with no message. The drop now uses the column under the pointer and lets the server decide. Both problems
+  would have reached users without testing in a browser.
+- **B**: the preview needs the duration rule (`base × (1 − bonus)`) and its formatting in TypeScript as well as in
+  Java. The slot rule is also checked twice, in the browser for instant feedback and on the server for real.
+- In both, a drop zone has to cover the whole column, not just its list of cards, or drops on the empty part are
+  ignored.
+
 ## Running
 
 Java 25 is needed. Maven, Node and npm are not: the Maven wrapper downloads Maven, and spike B downloads its own Node

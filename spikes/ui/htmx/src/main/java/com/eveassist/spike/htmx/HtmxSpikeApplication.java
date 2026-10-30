@@ -1,5 +1,6 @@
 package com.eveassist.spike.htmx;
 
+import com.eveassist.spike.plan.JobBoard;
 import com.eveassist.spike.plan.PlanState;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -18,5 +19,12 @@ public class HtmxSpikeApplication {
     @SessionScope
     public PlanState planState() {
         return new PlanState();
+    }
+
+    /** One job board per browser session. */
+    @Bean
+    @SessionScope
+    public JobBoard jobBoard() {
+        return new JobBoard();
     }
 }

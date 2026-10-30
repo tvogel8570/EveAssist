@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { api, isk, type CostedNode, type CostedPlan, type Decision, type Facility } from './api'
+import JobBoard from './JobBoard'
 
 export default function App() {
+  const [page, setPage] = useState<'plan' | 'jobs'>('plan')
   const [plan, setPlan] = useState<CostedPlan | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -28,12 +30,26 @@ export default function App() {
       <div className="navbar bg-base-100 shadow-sm px-4">
         <span className="text-lg font-semibold">EveAssist</span>
         <span className="ml-3 badge badge-outline">Spike B: React</span>
-        {busy && <span className="loading loading-spinner loading-sm ml-auto" />}
+        {busy && <span className="loading loading-spinner loading-sm ml-3" />}
+        <div className="ml-auto join">
+          {(['plan', 'jobs'] as const).map((p) => (
+            <button key={p} className={`btn btn-sm join-item ${page === p ? 'btn-primary' : ''}`}
+                    onClick={() => setPage(p)}>
+              {p === 'plan' ? 'Plan' : 'Jobs'}
+            </button>
+          ))}
+        </div>
       </div>
-      <main className="mx-auto max-w-6xl p-4 space-y-4">
-        {error && <div className="alert alert-error">{error}</div>}
-        {plan && <Editor plan={plan} change={change} />}
-      </main>
+      {page === 'plan' ? (
+        <main className="mx-auto max-w-6xl p-4 space-y-4">
+          {error && <div className="alert alert-error">{error}</div>}
+          {plan && <Editor plan={plan} change={change} />}
+        </main>
+      ) : (
+        <main className="mx-auto max-w-7xl p-4">
+          <JobBoard />
+        </main>
+      )}
     </>
   )
 }

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Job board: Thymeleaf + htmx</title>
+    <!-- Spike only: a real build compiles Tailwind with npm instead of using the browser CDN. -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.3"></script>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@5.7.50/daisyui.css" rel="stylesheet" type="text/css">
+    <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.11/dist/htmx.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.7/Sortable.min.js"></script>
+    <style>
+        /* Drop-target highlights while dragging, in the theme's colours. */
+        .drop-ok { outline: 2px dashed var(--color-primary); }
+        .drop-full { outline: 2px dashed var(--color-error); }
+    </style>
+</head>
+<body class="min-h-screen bg-base-200">
+
+<div th:replace="~{fragments/nav :: nav('jobs')}"></div>
+
+<main class="mx-auto max-w-7xl p-4">
+    <!-- The whole board is one fragment: every move replaces it with what the server rendered. -->
+    <div id="board" th:fragment="board" class="space-y-4">
+        <div class="flex flex-wrap items-center gap-3">
+            <span class="text-sm opacity-70">Drag jobs between columns. Durations change with each character's
+                skills.</span>
+            <button class="btn btn-ghost btn-sm ml-auto" hx-post="/jobs/reset" hx-target="#board"
+                    hx-swap="outerHTML">Reset board</button>
+        </div>
+        <div th:if="${board.message != null}" role="alert" class="alert alert-warning py-2"
+             th:text="${board.message}">Message</div>
+
+        <div class="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+            <div th:each="col : ${board.columns}" class="card bg-base-100 shadow">
+                <div class="card-body p-3 gap-2">
+                    <div class="flex items-baseline justify-between">
+                        <h2 class="font-semibold" th:text="${col.name}">Character</h2>
+                        <span th:if="${col.slots != null}" class="badge badge-sm"
+                              th:classappend="${col.full} ? 'badge-error' : 'badge-ghost'"
+                              th:text="|${col.used} / ${col.slots} slots|">0 / 10 slots</span>
+                    </div>
+                    <div th:if="${col.slots != null}" class="text-xs opacity-60"
+                         th:text="|${#numbers.formatDecimal(col.timeBonus * 100, 1, 0)} % faster from skills|">
+                        20 % faster</div>
+                    <!-- data-pilot is empty for the unassigned column; data-full lets the drag script refuse drops. -->
+                    <ul class="job-list min-h-24 flex-1 space-y-2 rounded-box p-1"
+                        th:attr="data-pilot=${col.pilotId ?: ''},data-full=${col.full}">
+                        <li th:each="job : ${col.jobs}" th:attr="data-job=${job.id}"
+                            class="cursor-grab rounded-box bg-base-200 p-2 text-sm shadow-sm active:cursor-grabbing">
+                            <div class="font-medium" th:text="${job.product}">Product</div>
+                            <div class="flex justify-between text-xs opacity-70">
+                                <span th:text="|${job.runs} runs|">10 runs</span>
+                                <span th:text="${job.duration}">1d 2h</span>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+    // The only hand-written JavaScript in spike A. After every swap, make each column draggable. SortableJS only moves
+    // the card on screen; on drop, the column under the pointer is posted to the server, and the server's re-rendered
+    // board replaces whatever SortableJS did. A refused or pointless drop re-renders the board as it was.
+    htmx.onLoad(function (content) {
+        content.querySelectorAll('.job-list').forEach(function (list) {
+            new Sortable(list, {
+                group: 'jobs',
+                sort: false,
+                // Mouse events instead of the browser's native drag and drop: same look in every browser.
+                forceFallback: true,
+                animation: 150,
+                ghostClass: 'opacity-40',
+                onStart: function () {
+                    document.querySelectorAll('.job-list').forEach(function (l) {
+                        l.classList.add(l.dataset.full === 'true' ? 'drop-full' : 'drop-ok');
+                    });
+                },
+                onEnd: function (event) {
+                    // Use the column under the pointer, not SortableJS's idea of the target: SortableJS keeps the card
+                    // in the last column it passed through, which may not be where the user let go.
+                    var pointer = event.originalEvent;
+                    var card = document.elementFromPoint(pointer.clientX, pointer.clientY);
+                    var target = card && card.closest('.card') && card.closest('.card').querySelector('.job-list');
+                    if (!target || target === event.from) {
+                        htmx.ajax('GET', '/jobs/board', { target: '#board', swap: 'outerHTML' });
+                        return;
+                    }
+                    htmx.ajax('POST', '/jobs/move', {
+                        target: '#board', swap: 'outerHTML',
+                        values: { job: event.item.dataset.job, pilot: target.dataset.pilot }
+                    });
+                }
+            });
+        });
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- The top bar of both pages; `active` is 'plan' or 'jobs'. -->
+<div th:fragment="nav(active)" class="navbar bg-base-100 shadow-sm px-4 gap-2">
+    <span class="text-lg font-semibold">EveAssist</span>
+    <span class="badge badge-outline">Spike A: Thymeleaf + htmx</span>
+    <div class="ml-auto join">
+        <a href="/" class="btn btn-sm join-item" th:classappend="${active == 'plan'} ? 'btn-primary'">Plan</a>
+        <a href="/jobs" class="btn btn-sm join-item" th:classappend="${active == 'jobs'} ? 'btn-primary'">Jobs</a>
+    </div>
+</div>
+</body>
+</html>
