@@ -54,6 +54,11 @@ Shared `.idea` settings are tracked and user-specific ones are ignored (see the 
 Keep tracked `.idea` files free of machine-specific paths and credentials, because the project is opened on several
 computers.
 
+## Worktrees
+
+Use git worktrees only when the user asks for one. Otherwise work in the main checkout, on its current branch. This
+also applies to new Claude sessions: start them without a worktree unless the user asks for one.
+
 ## Working across computers
 
 The user works on this repository from several computers with the same directory layout, connected over Tailscale.
