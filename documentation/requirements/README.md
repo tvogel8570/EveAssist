@@ -19,6 +19,7 @@ The tool is built in phases, and later phases must not need a rewrite of earlier
 - [ESI access and tokens](esi-access.md)
 - [Groups and corporations](groups.md) (phase 2)
 - [Non-functional requirements](non-functional.md)
+- [Gaining players' trust](gain-trust.md)
 
 Reactions, planetary industry, mining and reprocessing are out of scope for now.
 
