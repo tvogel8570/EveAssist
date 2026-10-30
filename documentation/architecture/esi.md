@@ -42,7 +42,8 @@ Status: **agreed** (follows from the requirements and the ESI documentation).
 - A fetch task is one character and one kind of data (jobs, blueprints, skills, implants, orders, wallet transactions,
   contracts, standings and the rest). The client's cache rule decides whether ESI is called at all.
 - After sign-in, if the user's setting is on, the app queues every task for every linked character that is not marked
-  for re-authorization. The dashboard shows stored data at once, and a progress bar over SSE shows the fetch.
+  for re-authorization. The dashboard shows stored data at once and does not wait. Fetch progress is pushed over SSE
+  to a progress bar under the header, and each dashboard card is swapped in by htmx when its data has been fetched.
 - With the setting off, a page queues the tasks it needs, and the freshness page has refresh buttons for one character
   or all of them.
 - Tasks run only for users with a live session. When the session ends, the user's queued tasks are cancelled.

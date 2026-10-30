@@ -28,6 +28,10 @@ identity provider used to sign in) are separate and are covered in [Users, accou
 - By default, all of a user's characters are fetched right after sign-in, within ESI cache times. The user can turn
   this off, for example to sign in faster with many characters. With it off, data is fetched when a page needs it or
   the user asks for a refresh.
+- The dashboard does not wait for the fetch after sign-in. It shows stored data at once, with its age, and the fetch
+  runs in the background. A progress bar under the header shows how many characters are done, and each dashboard card
+  is marked as updating until its data arrives. Then the card updates by itself. On a first sign-in, the cards are
+  empty until the first fetch arrives.
 - At the next sign-in, the stored refresh token of each character is used again, unless the character is marked as
   needing re-authorization.
 - On sign-out, the access tokens the app holds are discarded. Refresh tokens are kept, encrypted, for the next
@@ -57,5 +61,4 @@ identity provider used to sign in) are separate and are covered in [Users, accou
 
 ## Open questions
 
-- Does the fetch after sign-in run in the background while the dashboard shows stored data, or does the dashboard
-  wait for it?
+None at present.
