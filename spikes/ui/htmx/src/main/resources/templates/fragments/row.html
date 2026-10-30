@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- One table row per node, then the rows of its children: the fragment calls itself. -->
+<th:block th:fragment="row(n)">
+    <tr class="hover">
+        <td th:style="|padding-left: ${0.75 + n.depth * 1.5}rem|">
+            <span th:text="${n.name}">Item</span>
+            <span th:if="${n.buyOnly}" class="badge badge-ghost badge-sm ml-1">reaction, buy only</span>
+            <span th:if="${n.overridden}" class="badge badge-warning badge-sm ml-1">override</span>
+        </td>
+        <td class="text-right tabular-nums" th:text="${@isk.quantity(n.quantity)}">1</td>
+        <td>
+            <span th:if="${n.depth == 0}" class="badge badge-primary badge-sm">product</span>
+            <div th:if="${n.depth > 0 and n.buildable}" class="join">
+                <button class="btn btn-xs join-item"
+                        th:classappend="${n.decision.name() == 'BUILD'} ? 'btn-primary'"
+                        th:attr="hx-post=@{/plan/decision(path=${n.path},decision='BUILD')}">Build</button>
+                <button class="btn btn-xs join-item"
+                        th:classappend="${n.decision.name() == 'BUY'} ? 'btn-primary'"
+                        th:attr="hx-post=@{/plan/decision(path=${n.path},decision='BUY')}">Buy</button>
+            </div>
+            <span th:if="${n.depth > 0 and !n.buildable}" class="text-xs opacity-60">buy</span>
+        </td>
+        <td>
+            <select th:if="${n.buildable and n.decision.name() == 'BUILD'}" name="facility"
+                    class="select select-xs select-bordered"
+                    th:attr="hx-post=@{/plan/facility(path=${n.path})}" hx-trigger="change">
+                <option th:each="f : ${plan.facilities}" th:value="${f.id}" th:text="${f.name}"
+                        th:selected="${f.id == n.facilityId}">Facility</option>
+            </select>
+        </td>
+        <td class="text-right tabular-nums hidden md:table-cell"
+            th:classappend="${n.buildCost != null and n.buyCost <= n.buildCost} ? 'text-success'"
+            th:text="${@isk.format(n.buyCost)}">0</td>
+        <td class="text-right tabular-nums hidden md:table-cell"
+            th:classappend="${n.buildCost != null and n.buildCost < n.buyCost} ? 'text-success'"
+            th:text="${n.buildCost != null} ? ${@isk.format(n.buildCost)} : '—'">0</td>
+        <td class="text-right tabular-nums font-semibold">
+            <span th:text="${@isk.format(n.chosenCost)}">0</span>
+            <div th:if="${n.overridden and n.savingVersusOther < 0}" class="text-xs font-normal text-error"
+                 th:text="'+' + ${@isk.format(-n.savingVersusOther)} + ' vs. rule'">+0 vs. rule</div>
+        </td>
+    </tr>
+    <!-- th:replace runs before th:each on one element, so the loop needs its own block. -->
+    <th:block th:each="c : ${n.children}">
+        <th:block th:replace="~{fragments/row :: row(${c})}"/>
+    </th:block>
+</th:block>
+</body>
+</html>

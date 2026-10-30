@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Plan editor: Thymeleaf + htmx</title>
+    <!-- Spike only: a real build compiles Tailwind with npm instead of using the browser CDN. -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.3"></script>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@5.7.50/daisyui.css" rel="stylesheet" type="text/css">
+    <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.11/dist/htmx.min.js"></script>
+</head>
+<!-- Every hx-post below inherits these: replace the whole #editor with the fragment the server returns. -->
+<body class="min-h-screen bg-base-200" hx-target="#editor" hx-swap="outerHTML">
+
+<div class="navbar bg-base-100 shadow-sm px-4">
+    <span class="text-lg font-semibold">EveAssist</span>
+    <span class="ml-3 badge badge-outline">Spike A: Thymeleaf + htmx</span>
+</div>
+
+<main class="mx-auto max-w-6xl p-4">
+    <div id="editor" th:fragment="editor" class="space-y-4">
+
+        <div class="stats stats-vertical sm:stats-horizontal w-full bg-base-100 shadow">
+            <div class="stat">
+                <div class="stat-title">Total cost</div>
+                <div class="stat-value text-2xl" th:text="${@isk.format(plan.totalCost)}">0</div>
+            </div>
+            <div class="stat">
+                <div class="stat-title">Value at Jita sell</div>
+                <div class="stat-value text-2xl" th:text="${@isk.format(plan.productValue)}">0</div>
+            </div>
+            <div class="stat">
+                <div class="stat-title">Profit</div>
+                <div class="stat-value text-2xl"
+                     th:classappend="${plan.profit >= 0} ? 'text-success' : 'text-error'"
+                     th:text="${@isk.format(plan.profit)}">0</div>
+                <div class="stat-desc" th:text="${#numbers.formatDecimal(plan.marginPercent, 1, 1)} + ' % margin'">
+                    0 % margin</div>
+            </div>
+        </div>
+
+        <div class="card bg-base-100 shadow">
+            <div class="card-body gap-4">
+                <div class="flex flex-wrap items-end gap-3">
+                    <label class="form-control">
+                        <span class="label-text mb-1">Ishtars to build</span>
+                        <input type="number" name="quantity" min="1" max="1000" class="input input-bordered w-32"
+                               th:value="${plan.quantity}"
+                               hx-post="/plan/quantity" hx-trigger="change">
+                    </label>
+                    <button class="btn btn-ghost" hx-post="/plan/reset">Reset choices</button>
+                    <span class="text-sm opacity-70">Intermediates follow "build if cheaper" unless you override
+                        them.</span>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="table table-sm">
+                        <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th class="text-right">Quantity</th>
+                            <th>Build or buy</th>
+                            <th>Facility</th>
+                            <th class="text-right hidden md:table-cell">Buy</th>
+                            <th class="text-right hidden md:table-cell">Build</th>
+                            <th class="text-right">Cost</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <th:block th:replace="~{fragments/row :: row(${plan.root})}"/>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+</body>
+</html>

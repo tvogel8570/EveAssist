@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- Throwaway UI spikes: the same plan editor in three UI stacks. Not part of the product. -->
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>4.1.1</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>com.eveassist.spike</groupId>
+    <artifactId>ui-spikes</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
+    <properties>
+        <java.version>25</java.version>
+        <vaadin.version>25.3.4</vaadin.version>
+        <frontend-maven-plugin.version>2.0.2</frontend-maven-plugin.version>
+        <spike.node.version>v24.22.2</spike.node.version>
+    </properties>
+
+    <modules>
+        <module>plan-core</module>
+        <module>htmx</module>
+        <module>react</module>
+        <module>vaadin</module>
+    </modules>
+</project>
