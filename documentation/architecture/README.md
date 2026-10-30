@@ -6,9 +6,9 @@ This describes how EveAssist is built to meet the [requirements](../requirements
 `Client/` is a prototype. It shows which tools work (Spring Boot, Keycloak, Postgres, Thymeleaf with Tailwind and
 Alpine, Spring's `RestClient` against ESI, the Fuzzwork SDE dump), but it is not the architecture described here.
 
-Each decision says what was chosen and why. **Agreed** decisions were made with the user. **Proposed** decisions follow
-from the agreed ones or are technical details. They stand unless the user changes them, and they are listed for review
-under [Open questions](#open-questions).
+Each decision says what was chosen and why. **Agreed** decisions were made with the developer. **Proposed** decisions
+follow from the agreed ones or are technical details. They stand unless the developer changes them, and they are listed
+for review under [Open questions](#open-questions).
 
 ## Files
 
@@ -110,11 +110,11 @@ allowed where a screen needs them, such as drag and drop with SortableJS.
 How it was chosen: the same plan editor was built in Thymeleaf with htmx, in React and in Vaadin (`spikes/ui/` on
 branch `ui-spikes`), and a drag-and-drop job board was then added to the htmx and React versions.
 
-- Vaadin was rejected because it keeps the UI of every open browser tab in server memory, which the user does not
+- Vaadin was rejected because it keeps the UI of every open browser tab in server memory, which the developer does not
   consider scalable. It would also need sticky sessions for a second instance.
 - React showed live previews while dragging (the job's duration and the slot count for the character under the
   pointer) and instant moves. It needed a second toolchain, the API types and rules written again in TypeScript, and
-  routing of its own. The user judged that not worth it for EveAssist's screens.
+  routing of its own. The developer judged that not worth it for EveAssist's screens.
 - htmx did everything the screens need, with the results shown after each click or drop.
 
 What the htmx UI must get right, found while building the spikes:
