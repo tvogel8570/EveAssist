@@ -52,7 +52,8 @@ Status: **agreed**. The developer chose scopes per feature over the earlier fixe
 ## Showing what the server does
 
 - **Fetch log**: each character has a log the user can see, of which ESI endpoints were called for it and when. It
-  shows that nothing is read beyond what the user set up. Entries are kept for a limited time.
+  shows that nothing is read beyond what the user set up. All entries from the last 30 days are kept, and for each
+  endpoint the most recent entry is kept even when it is older. The developer decided this retention.
 - **Admin actions on the user's own account**: the audit log entries for an account are also shown to that account's
   user, read-only.
 - **Data kept to what features use**: only the ESI fields a feature uses are stored, and data that no feature uses any
@@ -78,7 +79,7 @@ Status: **agreed**. The developer chose scopes per feature over the earlier fixe
 - The operator is named on the site. CCP's license already requires a watched contact email
   ([Non-functional requirements](non-functional.md#ccp-license)).
 - The site publishes `security.txt` with a way to report vulnerabilities.
-- Security incidents that affect users' data are disclosed to them within a stated time.
+- Security incidents that affect users' data are disclosed to them within one week. The developer decided this time.
 
 ## Groups (phase 2)
 
@@ -98,6 +99,4 @@ Corporation spies are a real threat in EVE, so EveAssist must not become a spyin
 
 ## Open questions
 
-- **Fetch log retention**: how long fetch log entries are kept.
-- **Incident disclosure time**: what time to commit to, for example 72 hours.
-- **Export and import between hosted and standalone**: depends on whether a standalone build is made.
+- **Export and import between hosted and standalone**: on hold until a standalone build is decided.
