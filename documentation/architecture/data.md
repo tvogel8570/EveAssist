@@ -14,7 +14,7 @@ One Postgres instance holds:
 
 The SDE sits in the app's database, as a schema, so that the import can swap a new version in with a schema rename in
 one transaction, and so that queries can join SDE tables to app data when needed. The prototype keeps it in a separate
-`sdeyaml` database. Status: **proposed**.
+`sdeyaml` database, which the new app does not use. Status: **agreed**.
 
 All times are stored as UTC `timestamptz`. Each user's time zone is applied only when a page shows them.
 
@@ -64,7 +64,9 @@ Status: **agreed**.
 
 The SDE comes from Fuzzwork's Postgres dump, as in the prototype (`Infrastructure/postgres`).
 
-1. An admin starts the import after a game patch (from the admin pages, or a command for dev).
+1. The app checks Fuzzwork once a day for a new dump and, when there is one, shows admins a banner on the admin
+   pages. An admin starts the import (from the admin pages, or a command for dev). The import never starts by itself,
+   so a broken or half-published dump does not reach users unseen.
 2. The dump is restored into a staging schema.
 3. The industry tables (blueprint materials, products, times, invention probabilities, required skills, and the type
    data costing uses) are compared with the live `sde` schema.
@@ -90,5 +92,4 @@ with every intermediate, walks in-memory structures and stays within a few secon
 
 ## Open questions
 
-- Confirm keeping the SDE as a schema in the app's database instead of the separate `sdeyaml` database.
-- Who starts the SDE import after a patch, and whether the app should check Fuzzwork for a new dump and tell the admin.
+None at present.

@@ -36,9 +36,12 @@ flowchart LR
   chosen so that both fit with room to spare (Keycloak needs about 1 GB).
 - Postgres is RDS, single-AZ, holding the `eveassist` and `keycloak` databases.
 - TLS ends at Caddy on the instance, with certificates from Let's Encrypt. That avoids the monthly cost of a load
-  balancer until a second instance is needed. Status: **proposed**.
-- Images are built by GitHub Actions and pushed to a registry. A deploy pulls them on the instance and restarts the
-  stack. Downtime during a deploy is acceptable. Status: **proposed**.
+  balancer until a second instance is needed.
+- GitHub Actions builds and tests each push, builds the image and pushes it to Amazon ECR. A deploy pulls the image on
+  the instance and restarts the stack. Downtime during a deploy is acceptable.
+- ECR was chosen over GitHub's registry because the instance pulls with its IAM role, so no registry credential is kept
+  on it. A lifecycle rule keeps the last few images, which costs about $0.10 a month.
+- Prod runs at `eveassist.net`. The EVE application callback URLs and the Keycloak redirect URIs use it.
 
 Why this shape: it is cheap for a free tool (roughly $30–45 a month), it matches dev, and RDS takes on the backups and
 restores that the requirements ask for.
@@ -50,7 +53,8 @@ Status: **agreed**.
 - RDS automated backups keep seven daily snapshots, with point-in-time recovery in between.
 - An AWS Backup plan takes a weekly snapshot and keeps four.
 - A restore is tested by restoring a snapshot to a new RDS instance, starting the app against it and checking that it
-  signs in and shows data. The steps are written down, and the test is repeated after any change to the backup set-up.
+  signs in and shows data. The steps are written down. The test runs every six months, and again after any change to
+  the backup set-up.
 
 ## Secrets
 
@@ -75,6 +79,4 @@ point a load balancer replaces Caddy and the app may move to ECS. Keycloak can s
 
 ## Open questions
 
-- Confirm Caddy on the instance rather than a load balancer, and GitHub Actions for builds and deploys.
-- Which container registry (ECR or GitHub's) and which domain name prod uses.
-- How often the restore test runs beyond "after any change to the backup set-up".
+None at present.

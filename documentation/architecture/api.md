@@ -99,6 +99,7 @@ What follows for EveAssist:
 - How the API meets the license, in particular whether third-party applications are allowed, for example after asking
   CCP in writing. The developer decided that this is settled before the API is built, in whichever phase that is, and
   not now.
-- Which phase builds the API, and whether personal access tokens come before third-party OAuth.
+- Which phase builds the API, and whether personal access tokens come before third-party OAuth. The developer chose
+  to decide this later. The phase-1 groundwork above is done either way.
 - Personal access tokens are not a built-in Keycloak feature. Whether the app issues and checks them itself (the
   proposed default), or they are mapped onto Keycloak offline tokens, is to be decided when the API is built.

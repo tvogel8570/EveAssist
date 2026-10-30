@@ -31,7 +31,7 @@ Status: **agreed** (follows from the requirements).
 - Sign-out ends the Keycloak session (RP-initiated logout), deletes the app session, drops that user's access tokens
   from memory and cancels their queued fetches.
 
-Status: **proposed**.
+Status: **agreed**.
 
 The pages' security chain covers every path except `/api/**`, which is reserved for the later
 [REST API](api.md) and its own chain for bearer tokens. A session cookie is never accepted on `/api/**`, and a bearer
@@ -53,7 +53,7 @@ token is never accepted on the pages. Status: **agreed** (part of the API ground
 - The owner hash is stored. When a later token carries a different owner hash, the character has been sold or
   transferred: it is marked as needing re-authorization and an alert is raised.
 
-Status: **proposed** (separate application); the validation rules follow the EVE SSO documentation.
+Status: **agreed** (separate application); the validation rules follow the EVE SSO documentation.
 
 ## Storing refresh tokens
 
@@ -99,5 +99,4 @@ Status: **agreed** (follows from the requirements).
 
 ## Open questions
 
-- Confirm a separate EVE developer application for character linking, as proposed above.
-- Confirm Spring Session in Postgres.
+None at present.

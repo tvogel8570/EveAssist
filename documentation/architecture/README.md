@@ -61,16 +61,18 @@ flowchart LR
 | Prod in AWS | One EC2 instance with Docker Compose (app and Keycloak), Postgres on RDS | Agreed |
 | Alerts | Stored in Postgres, pushed to open pages with server-sent events (SSE) | Agreed |
 | External REST API | Designed now, built later; Keycloak OAuth for third-party apps and personal access tokens for scripts; serves stored data only | Agreed |
-| Language and framework | Java 25 and Spring Boot 4.1 | Proposed |
-| Module folder name | `App/`, beside `Api/` and `Client/` | Proposed |
-| Sessions | Spring Session stored in Postgres | Proposed |
-| Character linking | A separate EVE SSO application, called by the app directly, not through Keycloak | Proposed |
+| Language and framework | Java 25 and Spring Boot 4.1 | Agreed |
+| Module folder name | `App/`, beside `Api/` and `Client/` | Agreed |
+| Sessions | Spring Session stored in Postgres | Agreed |
+| Character linking | A separate EVE SSO application, called by the app directly, not through Keycloak | Agreed |
+| SDE location | A schema in the app's database, not a separate database | Agreed |
+| TLS and builds | Caddy on the EC2 instance; GitHub Actions builds images into Amazon ECR | Agreed |
 
 ## Module layout
 
 Status: **agreed**.
 
-EveAssist is one Spring Boot application, started as a new top-level module (proposed name `App/`). It is written from
+EveAssist is one Spring Boot application, started as a new top-level module, `App/`. It is written from
 scratch: nothing is copied or inherited from the prototype in `Api/` and `Client/`, or from the UI spikes in `spikes/`,
 so that none of their shortcuts carry over. The prototype stays as reference until the new module covers what it
 showed, and is then removed. The UI spikes were never merged: they are kept for reference on branch `ui-spikes`
@@ -134,7 +136,7 @@ What the htmx UI must get right, found while building the spikes:
 
 ## Open questions
 
-- **Proposed decisions to confirm**: Java 25 and Spring Boot 4.1; the module folder name `App/`; Spring Session in
-  Postgres; a separate EVE SSO application for character linking; the SDE kept as a schema in the app database; TLS
-  through Caddy on the EC2 instance rather than a load balancer; deploying images from GitHub Actions. Each is
-  explained in its file.
+- **Proposed decisions still to review**: loading the industry SDE data into memory for costing
+  ([Data and ownership](data.md#costing-in-memory)), how Jita prices are fetched and stored
+  ([ESI access](esi.md#jita-prices)), and the shape of the external API ([External REST API](api.md#shape)). They
+  stand unless the developer changes them.
