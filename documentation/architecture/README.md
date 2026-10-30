@@ -17,6 +17,7 @@ for review under [Open questions](#open-questions).
 - [Data and ownership](data.md): database layout, ownership and sharing, SDE import and versioning
 - [External REST API](api.md): the API for outside clients and automation, designed now and built later
 - [Deployment and operations](deployment.md): dev, prod in AWS, backups, secrets and monitoring
+- [Code structure](code-structure.md): Spring Modulith for module boundaries, hexagonal layering inside modules with real domain logic
 
 ## Context
 
@@ -67,6 +68,8 @@ flowchart LR
 | Character linking | A separate EVE SSO application, called by the app directly, not through Keycloak | Agreed |
 | SDE location | A schema in the app's database, not a separate database | Agreed |
 | TLS and builds | Caddy on the EC2 instance; GitHub Actions builds images into Amazon ECR | Agreed |
+| Code structure | Spring Modulith enforces module boundaries; hexagonal layering only inside `industry` and `market`; feature modules use the `esi` module's API directly | Proposed |
+| Architecture checks | Modulith, jMolecules and ArchUnit rules in the build from the first commit of `App/` | Agreed |
 
 ## Module layout
 
@@ -83,7 +86,7 @@ database, and the Client would only relay calls to the Api. One deployable is ch
 simpler to keep working across several computers. The htmx pages and the later REST API are two sets of controllers
 over the same services.
 
-Module boundaries inside the application are enforced (for example with Spring Modulith):
+Module boundaries inside the application are enforced (with Spring Modulith, see [Code structure](code-structure.md)):
 
 | Module | Holds |
 |---|---|
@@ -138,3 +141,4 @@ What the htmx UI must get right, found while building the spikes:
 
 - **Proposed decisions still to review**: the shape of the external API ([External REST API](api.md#shape)). The
   developer chose to keep it proposed until the phase that builds the API is decided, and to review it then.
+- **Code structure**: [Code structure](code-structure.md) is proposed and still to review, except its architecture checks, which are agreed.
