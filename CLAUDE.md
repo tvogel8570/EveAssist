@@ -4,7 +4,14 @@ An out-of-game (OOG) industry tool for EVE Online, built in phases: single playe
 corporations, then possibly public multi-tenant. Later phases must not require a rewrite of earlier ones.
 
 The code in `Api/` and `Client/` is a prototype written to try out ESI and the SDE. It is **not** the basis for the
-requirements in `documentation/requirements/`. Check with the user before building new features on top of it.
+requirements in `documentation/requirements/`. Check with the developer before building new features on top of it.
+
+## Terms
+
+The person working on EveAssist with Claude is the **developer**. Call them that in conversation, in this file, in
+handoff notes, commit messages and PR descriptions. In `documentation/`, "user" means an end user of EveAssist, a
+person who signs in to it (a player or an admin), and never the developer. When interview answers are written into
+the requirements or architecture, say "the developer decided" or similar, not "the user decided".
 
 ## Layout
 
@@ -34,7 +41,7 @@ Client 7443 (9443 with TLS).
 
 The EVE developer documentation at https://developers.eveonline.com/docs/ is the authoritative source for how to work
 with ESI (endpoints, scopes, SSO, caching, rate limits and errors). When the code, tests or real ESI responses differ
-from it, tell the user about the difference in the session where it is found. Don't quietly follow either one.
+from it, tell the developer about the difference in the session where it is found. Don't quietly follow either one.
 
 The site's source is cloned at `~/git/esi-docs` (https://github.com/esi/esi-docs). Read it there rather than fetching
 the site: the pages are Markdown under `docs/`, for example `docs/services/esi/` and `docs/services/sso/`. Run
@@ -56,12 +63,12 @@ computers.
 
 ## Worktrees
 
-Use git worktrees only when the user asks for one. Otherwise work in the main checkout, on its current branch. This
-also applies to new Claude sessions: start them without a worktree unless the user asks for one.
+Use git worktrees only when the developer asks for one. Otherwise work in the main checkout, on its current branch. This
+also applies to new Claude sessions: start them without a worktree unless the developer asks for one.
 
 ## Working across computers
 
-The user works on this repository from several computers with the same directory layout, connected over Tailscale.
+The developer works on this repository from several computers with the same directory layout, connected over Tailscale.
 Git is the source of truth. Work branches come off `development`, and their PRs target `development`.
 Claude's memory and session history stay on each machine, so anything the next machine
 needs has to be in git or in a handoff note.
