@@ -71,7 +71,7 @@ other ESI data).
   gives the type and system and, when available, the name.
 - When ESI does not give the name or system, a manager can enter them. Both are optional.
 - ESI gives neither rigs nor tax rate, so managers enter them by hand.
-- To check during the build: the user has seen the name and system missing in practice, while the ESI spec lists
+- To check during the build: the developer has seen the name and system missing in practice, while the ESI spec lists
   `system_id` as always present and `name` as optional. Test with a Station_Manager token when facilities are built.
 
 ## Open questions

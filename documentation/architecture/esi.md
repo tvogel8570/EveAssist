@@ -101,7 +101,7 @@ Status: **agreed**.
 
 ## Differences found between the prototype and the ESI documentation
 
-Flagged to the user when the architecture was drafted. The new ESI client avoids all of them.
+Flagged to the developer when the architecture was drafted. The new ESI client avoids all of them.
 
 - The prototype's `Api` sends `Cache-Control: no-cache` on every ESI request. The documentation says not to fetch
   before `Expires`, and that getting around the cache can get an application banned.
