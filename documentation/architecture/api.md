@@ -16,8 +16,10 @@ change once data and URLs exist. Status: **agreed**.
 
 ## Shape
 
-- The API lives in the same application, in its own `api` module, under `/api/v1/`. Its controllers call the same
-  services as the htmx pages, and return JSON.
+- The API lives in the same application, in its own `api` module, under `/api/v1/`. Its controllers call each module's
+  facade, and return JSON. The htmx pages call the use cases behind that facade directly, so both reach the same logic
+  and the same visibility check, and screen-only queries stay out of the API's reach (see
+  [Pages, the API and the facade](code-structure.md#pages-the-api-and-the-facade)).
 - It starts read-only: jobs, plans and their costing, projects, alerts, freshness, and prices as EveAssist computes
   them. Writes, such as creating a plan or confirming a job match, come later if needed.
 - The path carries the major version (`/api/v1/`). Fields are added without a new version; removing or changing one

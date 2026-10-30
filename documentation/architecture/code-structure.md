@@ -48,15 +48,40 @@ eveassist/
 ```
 
 - The module's base package is its public API: services, the plain objects they take and return, and its events.
-- The plain objects and events are Java records: immutable snapshots with no behavior. The service maps its domain
-  model or JPA entities to them at the module boundary, so other modules never hold an entity or reach a lazy-loaded
-  field. A service is a concrete class, and becomes an interface only when tests need a fake for it, as with the
-  `esi` module's API (see [ESI as a boundary](#esi-as-a-boundary)).
+- The plain objects and events are Java records: immutable snapshots with no business logic (see [Records](#records)).
+  The service maps its domain model or JPA entities to them at the module boundary, so other modules never hold an
+  entity or reach a lazy-loaded field. A service is a concrete class, and becomes an interface only for the reasons
+  in [Service interfaces](#service-interfaces), such as tests that need a fake for the `esi` module's API (see
+  [ESI as a boundary](#esi-as-a-boundary)). Modulith itself works the same either way: this is EveAssist's choice,
+  not a Modulith rule.
 - Everything under `internal` is hidden from other modules. Modulith's test fails if another module reaches into it.
 - Where a module needs to expose more than its base package, it declares a named interface (`@NamedInterface`) rather
   than making classes public by accident.
 - Modules depend only on modules they declare (`@ApplicationModule(allowedDependencies = ...)`), so a new dependency
   is a visible change in review.
+
+### Records
+
+The data types and events of a module's API are records. This is EveAssist's convention, not something Java or
+Modulith requires, and an ArchUnit rule enforces it (see [Verification](#verification)).
+
+- **No business logic** does not mean no code. A record may have a compact constructor that checks its input (no null
+  id, no negative quantity), read-only accessors derived from its own fields (`isFinished()`, `totalCost()`), and
+  static factory methods. It does not change state, call services or hold entities.
+- **Records are only shallowly immutable.** A collection field can still be changed by whoever holds the list that
+  was passed in. The compact constructor therefore copies every collection into an immutable one, with `List.copyOf`,
+  `Set.copyOf` or `Map.copyOf`. The copy cannot be changed by anyone, and later changes to the original do not reach
+  it. `List.copyOf` also rejects null elements.
+
+  ```java
+  public record PlanDetails(PlanId id, String name, List<PlanLine> lines) {
+      public PlanDetails {
+          lines = List.copyOf(lines);
+      }
+  }
+  ```
+
+- Nested types are records too (`PlanLine` above), so the whole snapshot is immutable, not only its top level.
 
 ### Facade and visibility
 
@@ -71,8 +96,9 @@ way round is fine: classes in `internal` may be `public`, with public methods, b
 What follows:
 
 - **One thin facade per module** in the base package, for example `IndustryService`. It has only the methods other
-  modules may call. Each checks visibility, delegates to a use case in `internal/application`, and maps the result to
-  a record. It has no helpers, and nothing inside its own module calls it.
+  modules and the external API may call. Each delegates to a use case in `internal/application`, which checks
+  visibility and returns a record (see [Pages, the API and the facade](#pages-the-api-and-the-facade)). It has no
+  helpers, and nothing inside its own module calls it.
 - **Testable logic lives in public classes under `internal`**, tested directly through their public methods. A private
   method that needs a test of its own is a sign of a missing class, usually in `internal/domain`.
 - **The facade is tested through its public methods only**, in `@ApplicationModuleTest` tests that call it as another
@@ -87,6 +113,30 @@ What follows:
 - **Guardrail**, part of the ArchUnit rules from day 1 (see [Verification](#verification)): a rule that nothing in `industry.internal` depends on the `industry` base package
   except its records and events catches a facade that is called from inside its own module, which Modulith misses.
 
+### Pages, the API and the facade
+
+Status: **proposed**. The developer chose this option after comparing it with one where everything calls the facade, in
+a spike ([`spikes/api-boundary`](../../spikes/api-boundary/README.md)).
+
+Pages and the external API want different things. A page wants what one screen shows, such as a plan list with totals,
+or the changed rows and new total after an edit. The API wants stable resources for clients EveAssist does not know.
+They therefore meet at the use cases, not at the controllers or the facade:
+
+- **Page controllers** in `internal/web` call use cases in `internal/application` directly.
+- **The `api` module and other modules** call the facade, which delegates to the same use cases.
+- **Screen-only types and queries**, such as `PlanEditorView` and `PlanChange`, stay under `internal`, so a screen change
+  cannot widen the module's API or change the JSON contract.
+- **Every public use case method takes the `Viewer` as its first parameter.**
+- **Records load only through a viewer-checking class**, for example `VisiblePlans`, which is the only class allowed to
+  use `PlanRepository`. Having the viewer is not enough, because a use case could ignore it. This rule is what makes
+  the build fail when a new use case skips the check.
+
+ArchUnit enforces the last two rules (see [Verification](#verification)). They prove that the class is used, not that it
+is right, so it has tests of its own.
+
+The costs: the facade only passes calls through for now, a reader has to know that pages and the API enter at different
+levels, and a screen spanning several modules needs a small module of its own, which the spike did not try.
+
 ## Naming
 
 Spring Modulith sets no naming convention for these types. The ones below follow DDD and jMolecules practice: names
@@ -96,7 +146,7 @@ that cross a module boundary say what the data means, and technical suffixes sta
 |---|---|---|---|
 | Query result in a module's API | Domain noun and role (`Summary` for list rows, `Details` for one item in full) | `PlanSummary`, `PlanDetails`, `JobCosting` | Module base package |
 | Command input to a module's API | Verb phrase and `Command` | `CreatePlanCommand`, `ConfirmJobMatchCommand` | Module base package |
-| Event | Past tense, no `Event` suffix | `JobFinished`, `CharacterNeedsReauthorization` | Module base package |
+| Event | Past tense, no `Event` suffix | `JobFinished`, `CharacterUnlinked` | Module base package |
 | Id | Noun and `Id`, a record around the UUID | `PlanId`, `CharacterId` | Module base package |
 | Form backing object for a Thymeleaf page | Noun and `Form` | `PlanForm` | `internal/web` |
 | JSON of the external API (later) | Noun and `Response`; inputs are a verb phrase and `Request` | `PlanResponse`, `CreatePlanRequest` | `api` module |
@@ -116,8 +166,18 @@ that cross a module boundary say what the data means, and technical suffixes sta
 
 Status: **proposed, needs validation**. The developer wants time to think about it before it stands.
 
-When a service becomes an interface because tests need a fake, the interface keeps the role name, and each
-implementation is named for how it works:
+A module's service is an interface only when one of these holds:
+
+- **Tests need a fake with behavior of its own**, as with the `esi` module (see below).
+- **There are several real implementations.**
+- **The dependency points the other way (an SPI).** If module A needs something that module B provides, but B already
+  depends on A, A declares an interface and B implements it. A then depends on its own interface, not on B, and the
+  cycle that Modulith would reject is gone. The interface lives in a named interface of A, conventionally a package
+  called `spi` (`@NamedInterface("spi")`), so that it is clear which types are meant to be implemented elsewhere.
+  This is the most common reason for interfaces in a modular monolith.
+
+When a service becomes an interface, the interface keeps the role name, and each implementation is named for how it
+works:
 
 | Type | Example | Lives in |
 |---|---|---|
@@ -174,11 +234,34 @@ What this gives tests:
 - **Facts that other modules react to** are published as application events, for example a fetched industry job that
   has finished, which `alerts` turns into an alert, or a character that needs re-authorization. Listeners use
   `@ApplicationModuleListener`, so they run after the publishing transaction commits, in their own transaction.
-- Events that must not be lost (those that create alerts) go through Modulith's event publication registry, stored in
-  Postgres, so they are delivered again after a crash. Events whose loss costs nothing, such as fetch progress for the
-  SSE stream, do not need it. This matches the rule that queued fetch tasks themselves are kept in memory only (see
-  [Background fetches](esi.md#background-fetches)).
+- An event states something that has happened. The module that publishes it needs no answer. When it needs one, it
+  makes a call instead.
+- **An event goes through Modulith's event publication registry when losing it would leave stored data wrong, or
+  leave something the user should know about without a notice.** The registry stores the event in Postgres in the
+  publishing transaction, so it is delivered again after a crash. Events whose loss costs nothing, such as fetch
+  progress for the SSE stream, do not use it. This matches the rule that queued fetch tasks themselves are kept in
+  memory only (see [Background fetches](esi.md#background-fetches)).
 - Events carry ids and the few values listeners need, not entities.
+
+### Events
+
+Examples from the requirements and architecture so far. The names and the list are settled when each feature is
+designed.
+
+| Event | Published by | Reacted to by | Registry |
+|---|---|---|---|
+| `IndustryJobsFetched(characterId)` | `industry`, after storing fetched jobs | `alerts` sets or updates job-finish timers from the stored end times | Yes: without it, a finished job raises no alert |
+| `CharacterNeedsReauthorization(characterId, missingScopes)` | `characters`, when a refresh fails or a turned-on feature needs scopes the token lacks | `alerts` shows the banner, and fetches skip the character | Yes |
+| `CharacterLinked(characterId)` | `characters` | `industry` and `market` queue the first fetches | No: the next page or refresh queues them anyway |
+| `CharacterUnlinked(characterId)` | `characters` | `industry` and `market` remove that character's data | Yes: the data must be removed |
+| `SdeVersionImported(version)` | `sde`, after the staging schema is swapped in | `industry` marks plans costed with an older SDE version for re-costing | Yes |
+| `JitaPricesUpdated(typeIds)` | `market` | `industry` re-costs open plans that use those items, and the SSE stream refreshes the page | No: prices are fetched again on demand |
+| `ContractExpiring(contractId)` | `market`, from contract timers | `alerts` | Yes |
+| `FetchProgressed(accountId, done, total)` | fetch tasks | the SSE progress bar under the header | No: a lost event only skips a progress update |
+| `AccountDeleted(accountId)` | `identity` | every module that owns rows deletes them | Yes: a privacy requirement |
+| `MemberLeftGroup(groupId, accountId)` (phase 2) | `groups` | modules drop that account's access to shared data | Yes |
+
+`CharacterNeedsReauthorization` and `ContractExpiring` do not follow the past-tense rule in [Naming](#naming) yet.
 
 ## Verification
 
@@ -205,6 +288,8 @@ almost nothing, and they never need ArchUnit's frozen-violation baseline (`Freez
   - Data types and events in a module's base package are records. No class name ends in `Dto` or `Impl`, and no
     interface name starts with `I` followed by a capital letter.
   - The facade rule from [Facade and visibility](#facade-and-visibility), if that section stands.
+  - The viewer and loading rules from [Pages, the API and the facade](#pages-the-api-and-the-facade), each tested against
+    a fixture that breaks it on purpose.
 - Modulith's documenter writes the module diagram (C4 or PlantUML) and a page per module during the build.
 - When the build is set up, check whether Modulith's `verify()` already runs the jMolecules rules (it does when
   `jmolecules-archunit` is on the class path, in recent versions), so that they are not run twice.
@@ -214,9 +299,14 @@ almost nothing, and they never need ArchUnit's frozen-violation baseline (`Freez
 - **Needs validation**: [Facade and visibility](#facade-and-visibility) and [Service interfaces](#service-interfaces).
   The developer wants time to think about both, including how they meet the testing problems the developer has had
   with non-public methods.
-
+- Where screen view models live: `internal/application` (the spike's choice, simple, but use cases then know about
+  screens) or `internal/web` (cleaner, but needs a mapping step and a richer use case result).
+- Whether a command stays under `internal` until another module or an API write needs it, as in the spike, or always
+  lives in the base package, as [Naming](#naming) says now.
+- How [Pages, the API and the facade](#pages-the-api-and-the-facade) applies to thin modules, whose controllers call a
+  plain service. If that service is also the facade, it breaks the rule that nothing inside a module calls its facade.
 - Whether `market` needs the layered form from the start, or begins thin and moves to it once its price rules are
   built.
 - Whether the generated module diagrams are committed under `documentation/architecture/`, or only produced by the
   build.
-- Which events need the event publication registry, beyond those that create alerts.
+- Past-tense names for `CharacterNeedsReauthorization` and `ContractExpiring` (see [Events](#events)).
