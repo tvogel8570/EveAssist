@@ -1,7 +1,7 @@
 # Gaining Players' Trust
 
-Status: draft. Proposed, not yet agreed with the developer, except where a section points to a requirement that is
-already agreed.
+Status: draft. Proposed, not yet agreed with the developer, except for sections marked **agreed** and the
+requirements that the first section points to.
 
 EVE Online is known for in-game scams and theft, and many players will not give a hosted tool their characters' ESI
 tokens. With a hosted EveAssist, players must trust both the code and whoever runs it, and they can check only the
@@ -33,11 +33,12 @@ The standalone alternative, where tokens never leave the player's computer, is d
 
 ## Scopes
 
+Status: **agreed**. The developer chose scopes per feature over the earlier fixed set.
+
 - Each scope is asked for only when a feature that needs it is turned on, and the page says which feature needs it.
 - A character's page lists the scopes it granted and what each is used for, with a way to drop scopes the user no
   longer wants. Features that need a dropped scope stop for that character, as for a missing scope today
-  ([ESI access and tokens](esi-access.md)).
-- See the open question below: this differs from the agreed fixed set of scopes.
+  ([ESI access and tokens](esi-access.md#failures)).
 
 ## Revoking access
 
@@ -94,9 +95,8 @@ Corporation spies are a real threat in EVE, so EveAssist must not become a spyin
 
 ## Open questions
 
-- **Scopes per feature or one fixed set**: [Users, accounts and roles](users.md) agrees one fixed set of scopes,
-  requested at linking, the same for every character. This file proposes asking for each scope only when a feature
-  needs it. Which holds?
+- **Where features are turned on**: for the whole account, so every character is asked for the scope, or for each
+  character, so a scope is granted only by the characters that use the feature.
 - **Fetch log retention**: how long fetch log entries are kept.
 - **Incident disclosure time**: what time to commit to, for example 72 hours.
 - **Export and import between hosted and standalone**: depends on whether a standalone build is made.

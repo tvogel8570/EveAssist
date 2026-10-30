@@ -53,8 +53,8 @@ identity provider used to sign in) are separate and are covered in [Users, accou
 
 - **Revoked or broken token**: when EVE SSO refuses a character's refresh token, the character is marked as needing
   re-authorization, as described in [Users, accounts and roles](users.md#eve-characters).
-- **Missing scope**: when a later version needs a scope that a character did not grant, the character is marked as
-  missing it. Features that do not need the scope keep working for that character, and only the features that do
+- **Missing scope**: when a feature needs a scope that a character did not grant (because the feature was just
+  turned on, the user dropped the scope, or a later version needs it), the character is marked as missing it. Features that do not need the scope keep working for that character, and only the features that do
   ask the user to re-authorize it.
 - **ESI down or throttled**: stored data is still shown, with its last-fetched time, and a banner says that ESI is
   unavailable or throttled. The fetch is tried again later, within ESI's limits.

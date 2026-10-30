@@ -25,14 +25,15 @@ Status: draft, interview in progress.
 - A user can link any number of EVE characters to their account, from one or several EVE accounts. Each one is linked
   through EVE SSO, separately from signing in.
 - An account can have no characters. A new user can sign in and look around before linking one.
-- Linking requests one fixed set of ESI scopes that covers every feature (skills, implants, blueprints, industry jobs,
-  orders, wallet, standings and the rest). Every character has the same scopes.
+- Linking requests only the ESI scopes of the features that are turned on. Turning on a feature that needs a scope a
+  character has not granted asks the user to re-authorize that character through EVE SSO. Characters can have
+  different scopes. See [Gaining players' trust](gain-trust.md#scopes).
 - A character belongs to one EveAssist account at a time. Linking a character that is already on another account is
   refused. The other account must remove it first, or an admin unlinks it.
 - When a user removes a character, its ESI tokens and the ESI data stored for it (blueprints, jobs, wallet
   transactions, skills and the rest) are deleted right away. Plans and projects stay, and the jobs that were assigned
   to the character show as unassigned.
-- When a character's ESI token stops working (revoked, expired or missing scopes), the character is marked as needing
+- When a character's ESI token stops working (revoked or expired), the character is marked as needing
   re-authorization. Its stored data stays, but it no longer refreshes, and an alert is raised (see
   [Manufacturing and invention](manufacturing-invention.md#alerts)). Re-authorizing through EVE SSO clears the mark.
 - How and when character tokens are used is covered in [ESI access and tokens](esi-access.md).
