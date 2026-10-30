@@ -42,6 +42,8 @@ flowchart LR
 - ECR was chosen over GitHub's registry because the instance pulls with its IAM role, so no registry credential is kept
   on it. A lifecycle rule keeps the last few images, which costs about $0.10 a month.
 - Prod runs at `eveassist.net`. The EVE application callback URLs and the Keycloak redirect URIs use it.
+- Before a feature that adds or changes ESI calls is deployed, the simultaneous-call limit is checked and tuned, as
+  [ESI access](esi.md#background-fetches) describes.
 
 Why this shape: it is cheap for a free tool (roughly $30–45 a month), it matches dev, and RDS takes on the backups and
 restores that the requirements ask for.
