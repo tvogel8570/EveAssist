@@ -111,6 +111,7 @@ The tool helps with:
 
 - When a patch changes a blueprint, live projects keep the quantities they were saved with.
 - Saved plans that use a changed blueprint are flagged, and the user re-costs them.
+- SDE updates are done during an outage, so no open screen has to change while one is applied.
 
 ## Job slots
 

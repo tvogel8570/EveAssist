@@ -76,6 +76,9 @@ The SDE comes from Fuzzwork's Postgres dump, as in the prototype (`Infrastructur
 6. Saved plans that use a changed blueprint are flagged for re-costing. Live projects keep their own copies of the
    quantities they were saved with, so they are not touched.
 
+The developer decided that SDE updates are done during an outage. No screens are open while the data changes, so
+nothing is pushed to pages when an import finishes. Saved plans still need updating, through the flags in step 6.
+
 Each plan records the SDE version it was last costed with. Only the `sde` module reads SDE tables, so a change in
 Fuzzwork's table layout is handled in one place.
 
@@ -93,4 +96,5 @@ copy at the same time as the schema. Status: **agreed**.
 
 ## Open questions
 
-None at present.
+- How the SDE outage runs, given that step 1 has an admin start the import from the admin pages: the site stays up for
+  admins only, or the app is stopped and the import is run as a command. The developer chose to decide this later.

@@ -39,7 +39,7 @@ eveassist/
         internal/
             domain/
             application/
-            web/               ← htmx controllers and templates' models
+            web/               ← htmx controllers, forms, and web models where a screen needs one
             persistence/
     market/
         ...
@@ -124,8 +124,8 @@ They therefore meet at the use cases, not at the controllers or the facade:
 
 - **Page controllers** in `internal/web` call use cases in `internal/application` directly.
 - **The `api` module and other modules** call the facade, which delegates to the same use cases.
-- **Screen-only types and queries**, such as `PlanEditorView` and `PlanChange`, stay under `internal`, so a screen change
-  cannot widen the module's API or change the JSON contract.
+- **Types and queries only pages use** stay under `internal`, so a screen change cannot widen the module's API or change
+  the JSON contract (see [Use case results](#use-case-results)).
 - **Every public use case method takes the `Viewer` as its first parameter.**
 - **Records load only through a viewer-checking class**, for example `VisiblePlans`, which is the only class allowed to
   use `PlanRepository`. Having the viewer is not enough, because a use case could ignore it. This rule is what makes
@@ -137,6 +137,56 @@ is right, so it has tests of its own.
 The costs: the facade only passes calls through for now, a reader has to know that pages and the API enter at different
 levels, and a screen spanning several modules needs a small module of its own, which the spike did not try.
 
+### Use case results
+
+Status: **proposed**. The developer chose this so that pages and the API can differ in granularity without use cases
+changing for either. The spike returned screen-shaped types here (`EditorRow`, `PlanListRow`, `PlanEditorView`,
+`PlanChange`), which only worked because its API is read-only. `App/` does not follow it on this point.
+
+- **A write returns neutral facts**, for example `PlanChangeResult(planId, changedLines, totalCost, version)`. It does
+  not return a type shaped for one screen, or only an id and version. A page picks the fragment to render from the
+  result, and the API picks its response.
+- **Reads return neutral records too**, kept in `internal/application` beside their queries and named for what the data
+  means, not for the screen that uses them, for example `PlanLineCosting` and `PlanOverview`. A read and a write that
+  draw the same row use the same record, so one fragment serves both.
+- **Templates render these records directly.** A view model in `internal/web` is added only when a screen needs grouping
+  or formatting that the record should not carry. If a shared record starts gathering fields for one screen, it is
+  split.
+- **A query may have its own SQL**, such as a list with totals, and its record sits beside it. Each consumer can have a
+  different shape, but the rules and calculations stay in the domain.
+- Use cases do not return domain objects to `internal/web`, so templates cannot reach lazy-loaded fields or change state.
+- **Records carry age and version as their own fields, where they apply**, not in a generic wrapper. For example,
+  `PlanDetails` has `version`, and `PlanCosting` has `version`, `pricesAsOf` and `sdeVersion`. Pages need these for
+  phase 1, for the "N minutes old" labels and for flagging plans after an SDE update.
+- **A write finds the changed lines by comparing.** The use case gathers its inputs from other modules once, costs the
+  plan, applies the edit, costs it again with the same inputs, and compares the two results line by line. One edit can
+  ripple through the material tree, and a line missed by per-operation tracking would show a wrong number with no error.
+  The domain does not track what each operation touched, and redrawing everything fails the large-plans rule in
+  [UI](README.md#ui).
+- **The cost is two costings per edit.** [Costing in memory](data.md#costing-in-memory) allows a few seconds for a large
+  plan, so an edit could take twice that. This is timed on large plans once `App/` exists. If it is too slow, tracking in
+  the domain can replace the comparison without changing the result type.
+
+Template tests catch a renamed record field, because templates depend on those names (see [UI](README.md#ui)).
+
+### What starts an ESI fetch
+
+Status: **proposed**. Pages may queue fetches (see [Background fetches](esi.md#background-fetches)), but an API request
+never may (see [The API and ESI](api.md#the-api-and-esi)). Pages and the API share use cases, so the two have to be kept
+apart. Deciding what to fetch is orchestration, so it stays out of controllers, which remain thin.
+
+- **A page-entry use case** handles a page action that starts a fetch. Opening a plan loads it, finds the items with
+  expired prices, queues those fetches, and returns stored data from the same query the API uses.
+- **Queries and writes do not start fetches.** Most small htmx updates are one or the other, so they need no page-entry
+  use case.
+- **Use cases are grouped into one class per set of related actions, not one class per action**, for example `PlanEntry`
+  for actions that start fetches, `PlanEditing` for writes and `PlanQueries` for reads. A class that grows too big is
+  split. A class is named for what it does, never for one screen (see [Use case results](#use-case-results)).
+- **ArchUnit keeps fetches away from the API**: query classes do not depend on the fetch-queuing code, and the facade does
+  not depend on page-entry use cases.
+
+The page shows stored data with its age at once, and updates over SSE when the fetch finishes.
+
 ## Naming
 
 Spring Modulith sets no naming convention for these types. The ones below follow DDD and jMolecules practice: names
@@ -145,7 +195,8 @@ that cross a module boundary say what the data means, and technical suffixes sta
 | Kind | Convention | Example | Lives in |
 |---|---|---|---|
 | Query result in a module's API | Domain noun and role (`Summary` for list rows, `Details` for one item in full) | `PlanSummary`, `PlanDetails`, `JobCosting` | Module base package |
-| Command input to a module's API | Verb phrase and `Command` | `CreatePlanCommand`, `ConfirmJobMatchCommand` | Module base package |
+| Use case result used only inside the module | Domain noun and role, never a screen's name | `PlanOverview`, `PlanLineCosting`, `PlanChangeResult` | `internal/application` |
+| Command input to a use case | Verb phrase and `Command` | `CreatePlanCommand`, `ConfirmJobMatchCommand` | `internal/application`, until another module or an API write needs it; then the module base package |
 | Event | Past tense, no `Event` suffix | `JobFinished`, `CharacterUnlinked` | Module base package |
 | Id | Noun and `Id`, a record around the UUID | `PlanId`, `CharacterId` | Module base package |
 | Form backing object for a Thymeleaf page | Noun and `Form` | `PlanForm` | `internal/web` |
@@ -157,6 +208,9 @@ that cross a module boundary say what the data means, and technical suffixes sta
 - `Request` and `Response` are kept for HTTP, in the `api` module. A module's command says what it asks the module to
   change, so it is a `Command`, and the CQRS module of jMolecules can mark it with `@Command`. Queries and commands then
   read alike: `PlanDetails getPlan(PlanId)` and `PlanId createPlan(CreatePlanCommand)`.
+- A command stays under `internal` until something outside the module needs it, so the module's API lists only what
+  outside callers can do. Moving one means moving the record and adding a facade method. The developer chose this over
+  always keeping commands in the base package.
 - Ids passed between modules are typed (`PlanId`), not bare `UUID` or `long`, so one kind of id cannot be passed where
   another is expected.
 - The external API's `Request` types are its own, in the `api` module, even when they carry the same fields as a
@@ -254,7 +308,7 @@ designed.
 | `CharacterNeedsReauthorization(characterId, missingScopes)` | `characters`, when a refresh fails or a turned-on feature needs scopes the token lacks | `alerts` shows the banner, and fetches skip the character | Yes |
 | `CharacterLinked(characterId)` | `characters` | `industry` and `market` queue the first fetches | No: the next page or refresh queues them anyway |
 | `CharacterUnlinked(characterId)` | `characters` | `industry` and `market` remove that character's data | Yes: the data must be removed |
-| `SdeVersionImported(version)` | `sde`, after the staging schema is swapped in | `industry` marks plans costed with an older SDE version for re-costing | Yes |
+| `SdeVersionImported(version)` | `sde`, after the staging schema is swapped in | `industry` flags saved plans that use a changed blueprint, and the user re-costs them. No open page is refreshed, because imports run during an outage (see [SDE import](data.md#sde-import-and-versioning)) | Yes |
 | `JitaPricesUpdated(typeIds)` | `market` | `industry` re-costs open plans that use those items, and the SSE stream refreshes the page | No: prices are fetched again on demand |
 | `ContractExpiring(contractId)` | `market`, from contract timers | `alerts` | Yes |
 | `FetchProgressed(accountId, done, total)` | fetch tasks | the SSE progress bar under the header | No: a lost event only skips a progress update |
@@ -290,6 +344,7 @@ almost nothing, and they never need ArchUnit's frozen-violation baseline (`Freez
   - The facade rule from [Facade and visibility](#facade-and-visibility), if that section stands.
   - The viewer and loading rules from [Pages, the API and the facade](#pages-the-api-and-the-facade), each tested against
     a fixture that breaks it on purpose.
+  - The fetch rules from [What starts an ESI fetch](#what-starts-an-esi-fetch), tested the same way.
 - Modulith's documenter writes the module diagram (C4 or PlantUML) and a page per module during the build.
 - When the build is set up, check whether Modulith's `verify()` already runs the jMolecules rules (it does when
   `jmolecules-archunit` is on the class path, in recent versions), so that they are not run twice.
@@ -299,10 +354,10 @@ almost nothing, and they never need ArchUnit's frozen-violation baseline (`Freez
 - **Needs validation**: [Facade and visibility](#facade-and-visibility) and [Service interfaces](#service-interfaces).
   The developer wants time to think about both, including how they meet the testing problems the developer has had
   with non-public methods.
-- Where screen view models live: `internal/application` (the spike's choice, simple, but use cases then know about
-  screens) or `internal/web` (cleaner, but needs a mapping step and a richer use case result).
-- Whether a command stays under `internal` until another module or an API write needs it, as in the spike, or always
-  lives in the base package, as [Naming](#naming) says now.
+- How [Pages, the API and the facade](#pages-the-api-and-the-facade) applies to background work with no signed-in
+  person, such as re-costing after a price update or deleting an account's data. It has no `Viewer`, but the rules
+  require one and allow plans to load only through `VisiblePlans`. The spike did not try this, and the developer chose to
+  settle it by building one such listener early in `App/`.
 - How [Pages, the API and the facade](#pages-the-api-and-the-facade) applies to thin modules, whose controllers call a
   plain service. If that service is also the facade, it breaks the rule that nothing inside a module calls its facade.
 - Whether `market` needs the layered form from the start, or begins thin and moves to it once its price rules are

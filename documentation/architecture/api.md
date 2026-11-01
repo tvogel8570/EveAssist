@@ -58,7 +58,9 @@ The API serves stored data only, with its age. A request through the API never t
 character's refresh token, even when the user is signed in elsewhere. The rule in
 [ESI access and tokens](../requirements/esi-access.md), that character data is fetched only while the user is signed
 in, therefore stays as it is. Job-finish alerts keep working while the user is away, because they are raised from
-stored end times. Public data the app fetches for everyone, such as Jita prices, follows its usual rules.
+stored end times. Public data the app fetches for everyone, such as Jita prices, follows its usual rules. The build
+enforces this for requests: nothing the API can reach is able to start a fetch (see
+[What starts an ESI fetch](code-structure.md#what-starts-an-esi-fetch)).
 
 ## What phase 1 does for it
 
@@ -104,5 +106,9 @@ What follows for EveAssist:
 - Which phase builds the API, and whether personal access tokens come before third-party OAuth. The developer chose
   to decide this later. The phase-1 groundwork above is done either way.
 - The details under [Shape](#shape) stay proposed until that phase is decided, and are reviewed then.
+- How ETags are built, decided when the API is built: hashing the response body, which cannot go stale but costs a full
+  costing on each request; combining the versions of everything the response depends on, which can answer 304 without
+  costing but goes stale silently if an input is missed; or a stored costing's own version, if costings are stored.
+  Starting with body hashing is the default unless costing load makes it too expensive.
 - Personal access tokens are not a built-in Keycloak feature. Whether the app issues and checks them itself (the
   proposed default), or they are mapped onto Keycloak offline tokens, is to be decided when the API is built.
