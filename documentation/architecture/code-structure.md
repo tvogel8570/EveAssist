@@ -337,17 +337,25 @@ almost nothing, and they never need ArchUnit's frozen-violation baseline (`Freez
     The domain is mapped to JPA entities by hand (see [Inside a module](#inside-a-module)), and generated code is
     harder to follow when something goes wrong.
 - **EveAssist's own ArchUnit rules**, in the same test run:
-  - `domain` packages do not depend on `org.springframework`, `jakarta.persistence` or `com.fasterxml.jackson`.
+  - `domain` packages do not depend on `org.springframework`, `jakarta.persistence`, `com.fasterxml.jackson` or
+    `tools.jackson` (Jackson 3, the default in Spring Boot 4).
   - Only the `esi` and `characters` modules use an HTTP client (ESI, and EVE SSO for character linking).
   - Data types and events in a module's base package are records. No class name ends in `Dto` or `Impl`, and no
     interface name starts with `I` followed by a capital letter.
   - The facade rule from [Facade and visibility](#facade-and-visibility), if that section stands.
-  - The viewer and loading rules from [Pages, the API and the facade](#pages-the-api-and-the-facade), each tested against
-    a fixture that breaks it on purpose.
-  - The fetch rules from [What starts an ESI fetch](#what-starts-an-esi-fetch), tested the same way.
+  - The viewer and loading rules from [Pages, the API and the facade](#pages-the-api-and-the-facade). The viewer rule
+    covers every class in `internal/application` that holds use cases, however it is annotated. The loading rule
+    covers every class in the application except `internal/persistence`, and for now only the repositories of
+    `industry`.
+  - The fetch rules from [What starts an ESI fetch](#what-starts-an-esi-fetch).
+  - Each rule runs against fixtures that break it on purpose and fixtures that follow it (`archfixture` in the test
+    sources, outside the application's base package), because a rule that cannot fail proves nothing.
 - Modulith's documenter writes the module diagram (C4 or PlantUML) and a page per module during the build.
-- When the build is set up, check whether Modulith's `verify()` already runs the jMolecules rules (it does when
-  `jmolecules-archunit` is on the class path, in recent versions), so that they are not run twice.
+- **`verify()` and the jMolecules rules**: checked against Modulith 2.1 and `jmolecules-archunit` 0.33, whose rule and
+  annotation names match the ones above. With `jmolecules-archunit` on the class path, plain `verify()` already runs
+  `JMoleculesDddRules.all()` and `ensureHexagonal` at `LENIENT` depth. `ensureHexagonal()` called directly means
+  `STRICT`. To run each rule once and at `STRICT`, the test passes both rules to
+  `verify(VerificationOptions.defaults().withAdditionalVerifications(...))`, which replaces the defaults.
 
 ## Open questions
 

@@ -17,6 +17,7 @@ the requirements or architecture, say "the developer decided" or similar, not "t
 
 | Path | What it is |
 |---|---|
+| `App/` | EveAssist's application, being built: Spring Boot 4.1 / Java 25, Spring Modulith. See `documentation/architecture/`. |
 | `Api/` | Spring Boot 4.1 / Java 25 REST API. Reads the SDE (`sdeyaml` database) with JDBC and calls ESI. OAuth2 resource server. |
 | `Client/` | Spring Boot 3.2 / Java 17 web UI: Thymeleaf with the layout dialect, Tailwind CSS (built by npm through `frontend-maven-plugin`), Flyway, JPA. Signs in through Keycloak. |
 | `Infrastructure/` | Docker Compose for Postgres and Keycloak (realm export in `keycloak/`). See `Infrastructure/README.md`. |
@@ -32,6 +33,7 @@ decision. Questions that code can answer are settled by writing the code rather 
 
 ## Build and test
 
+- App: `./mvnw verify` in `App/`, which includes the architecture checks.
 - Client: `./mvnw verify` in `Client/`. Api: `./mvnw verify` in `Api/`. Each module has its own Maven wrapper.
 - Api tests tagged `esi-live` call the real, public ESI, so the Api build needs network access. Offline, skip them
   with `./mvnw verify -DexcludedGroups=esi-live`.
