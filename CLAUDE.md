@@ -24,6 +24,12 @@ the requirements or architecture, say "the developer decided" or similar, not "t
 | `documentation/sde/` | SDE schema reference. |
 | `documentation/ai/hand-off/` | Fallback location for handoff notes (see below). |
 
+## Code and architecture decisions
+
+`documentation/architecture/` and the code must not drift apart. Code that departs from a **proposed** decision updates
+the doc in the same change, and the PR description says so. Check with the developer before departing from an **agreed**
+decision. Questions that code can answer are settled by writing the code rather than by more design in the docs.
+
 ## Build and test
 
 - Client: `./mvnw verify` in `Client/`. Api: `./mvnw verify` in `Api/`. Each module has its own Maven wrapper.
