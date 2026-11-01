@@ -8,9 +8,24 @@ One Postgres instance holds:
 
 | Database / schema | Holds | Changed by |
 |---|---|---|
-| `eveassist` database, `app` schema | Accounts, characters, ESI data, plans, projects, alerts, audit log | Flyway migrations |
+| `eveassist` database, `public` schema | Accounts, characters, ESI data, plans, projects, alerts, audit log | Flyway migrations |
 | `eveassist` database, `sde` schema | The SDE (Fuzzwork tables), read-only for the app's role | SDE import |
 | `keycloak` database | Keycloak's own data | Keycloak |
+
+The developer decided that application tables use the `public` schema rather than a schema of their own.
+
+### Database roles
+
+Status: **agreed**. The `postgres` superuser is kept for set-up and admin tasks, and each job has its own role:
+
+| Role | Used by | Can |
+|---|---|---|
+| `keycloak_owner` | Keycloak | Owns the `keycloak` database. It cannot connect to `eveassist`. |
+| `eveassist_owner` | Flyway | Owns the `eveassist` database and its `public` schema, so it can change tables. |
+| `eveassist_app` | The running app | Reads and writes rows in `public`, and reads `sde`. It cannot change tables. |
+| `eveassist_sde` | SDE import | Owns `sde`, and can create the staging schema that replaces it. It cannot touch `public`. |
+
+`Infrastructure/postgres/sql/init/3-init-eveassist.sh` creates the roles and databases, and can be run again.
 
 The SDE sits in the app's database, as a schema, so that the import can swap a new version in with a schema rename in
 one transaction, and so that queries can join SDE tables to app data when needed. The prototype keeps it in a separate
@@ -33,8 +48,9 @@ groundwork).
 - Plans, projects, facilities, materials on hand, manual prices and settings belong to the account. Jobs in a plan
   reference a character with `ON DELETE SET NULL`, so they show as unassigned when the character is removed.
 - Deleting an account deletes the Keycloak user, then the account row, and everything owned by it cascades.
-- Reads go through one visibility check per module, given the viewer (the account, and in phase 2 its group
-  memberships). Repositories take the viewer as a parameter, so a query without one does not compile.
+- Reads and writes are filtered in their SQL, given the viewer (the signed-in account, whose group memberships are looked
+  up in the SQL in phase 2). Repositories take the viewer as a parameter, so a call without one does not compile (see
+  [Pages, the API and the facade](code-structure.md#pages-the-api-and-the-facade)).
 
 Status: **agreed**.
 
@@ -93,6 +109,27 @@ The industry data a plan needs (blueprints, activities, materials, skills, type 
 The `sde` module loads it into memory at startup and after each import, so costing a large plan, such as a capital ship
 with every intermediate, walks in-memory structures and stays within a few seconds. The import swaps the in-memory
 copy at the same time as the schema. Status: **agreed**.
+
+### Last-costed total
+
+The developer decided that each plan stores its last-costed total, with enough provenance to know when to recalculate.
+SQL cannot work out a total, because costing runs in memory, and costing every plan to draw a list would be too slow.
+Status: **agreed**. The columns and rules below are **proposed**.
+
+| Column on `plan` | Holds | Plan needs recalculating when |
+|---|---|---|
+| `total_cost` | The total from the last costing | |
+| `costed_plan_version` | The plan's `version` when costed | It differs from the plan's `version` |
+| `costed_sde_version` | The SDE version used (the version each plan already records, see [SDE import](#sde-import-and-versioning)) | It differs from the live SDE version |
+| `prices_as_of` | The age of the oldest price used | Newer prices are stored for an item the plan uses |
+| `costed_at` | When the costing ran | Another input changed after this time: skills, implants, facilities, cost indices, manual prices or settings |
+
+- A plan edit costs the plan anyway, so it stores all of these in the same transaction as the edit.
+- Only the total is stored. Line-level results are still calculated when a plan is opened.
+- A recalculation that is not an edit does not change the plan's `version`, so it does not cause a conflict for someone
+  editing the plan. Its update has `WHERE version = ?` with the version it loaded, so an older result cannot overwrite a
+  newer one.
+- The list shows the stored total with its age, marked if it is out of date. It does not recalculate to draw the list.
 
 ## Open questions
 

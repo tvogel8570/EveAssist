@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="utf-8">
+    <title th:text="#{app.name}">EveAssist</title>
+</head>
+<body>
+<h1 th:text="#{app.name}">EveAssist</h1>
+<p th:text="#{home.welcome}">Welcome</p>
+<nav th:replace="~{nav :: nav}"></nav>
+</body>
+</html>

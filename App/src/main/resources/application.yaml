@@ -1,5 +1,72 @@
 spring:
   application:
     name: eveassist
+  profiles:
+    default: dev
+  config:
+    # dev secrets are kept once, beside compose.yaml; elsewhere the same names come from real environment variables
+    import: optional:file:../Infrastructure/.env[.properties]
+  datasource:
+    url: ${EVEASSIST_DB_URL}
+    username: eveassist_app
+    password: ${EVEASSIST_APP_PASSWORD}
+  flyway:
+    url: ${EVEASSIST_DB_URL}
+    user: eveassist_owner
+    password: ${EVEASSIST_OWNER_PASSWORD}
+  session:
+    jdbc:
+      initialize-schema: never
+  security:
+    oauth2:
+      client:
+        provider:
+          keycloak:
+            user-name-attribute: sub
+        registration:
+          keycloak:
+            provider: keycloak
+            client-id: eveassist-app
+            client-secret: ${KC_APP_CLIENT_SECRET}
+            authorization-grant-type: authorization_code
+            scope: openid,profile,email
 server:
-  port: 7443
+  port: 7444
+  servlet:
+    session:
+      cookie:
+        http-only: true
+        secure: true
+        same-site: lax
+---
+# read from Keycloak at start-up; tests simulate sign-in and have no Keycloak
+spring:
+  config:
+    activate:
+      on-profile: "!test"
+  security:
+    oauth2:
+      client:
+        provider:
+          keycloak:
+            issuer-uri: ${KEYCLOAK_ISSUER_URI}
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+  ssl:
+    bundle:
+      pem:
+        dev-server:
+          keystore:
+            certificate: file:../Infrastructure/keycloak/dev.eveassist.com.crt
+            private-key: file:../Infrastructure/keycloak/dev.eveassist.com.key
+server:
+  address: 127.0.0.1
+  ssl:
+    bundle: dev-server
+eveassist:
+  dev:
+    # Keycloak's dev certificate comes from a private CA, so the JVM does not trust it by default
+    trusted-certificate: ../Infrastructure/keycloak/dev.eveassist.com.crt

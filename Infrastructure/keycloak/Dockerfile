@@ -28,5 +28,3 @@ COPY --from=ubi-micro-build /mnt/rootfs /
 # continue with snc specific files
 USER 1000
 COPY --from=builder /opt/keycloak/ /opt/keycloak/
-
-COPY --chown=1000:0 EveAssist-realm-export.json /opt/keycloak/data/import/

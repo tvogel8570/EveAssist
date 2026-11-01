@@ -23,6 +23,7 @@ the requirements or architecture, say "the developer decided" or similar, not "t
 | `Infrastructure/` | Docker Compose for Postgres and Keycloak (realm export in `keycloak/`). See `Infrastructure/README.md`. |
 | `documentation/requirements/` | Requirements drafts, gathered by interview. Open questions are listed at the end of each file. |
 | `documentation/sde/` | SDE schema reference. |
+| `documentation/runbooks/` | Step-by-step operating procedures, such as loading a changed Keycloak realm. |
 | `documentation/ai/hand-off/` | Fallback location for handoff notes (see below). |
 
 ## Code and architecture decisions
@@ -34,6 +35,9 @@ decision. Questions that code can answer are settled by writing the code rather 
 ## Build and test
 
 - App: `./mvnw verify` in `App/`, which includes the architecture checks.
+- Run App with `./mvnw spring-boot:run` in `App/`, after `docker compose up -d` in `Infrastructure/`. It needs Keycloak at
+  start-up. Open it at https://dev.eveassist.com:7444. On Windows, `dev.eveassist.com` also needs an entry in the Windows
+  hosts file, because WSL's `/etc/hosts` does not apply there.
 - Client: `./mvnw verify` in `Client/`. Api: `./mvnw verify` in `Api/`. Each module has its own Maven wrapper.
 - Api tests tagged `esi-live` call the real, public ESI, so the Api build needs network access. Offline, skip them
   with `./mvnw verify -DexcludedGroups=esi-live`.
@@ -42,7 +46,7 @@ decision. Questions that code can answer are settled by writing the code rather 
 - Infrastructure: `docker compose up -d` in `Infrastructure/` (needs `.env`, `postgres/password.txt` and the
   Keycloak certificate files; see its README).
 
-Local ports with the default profile: Postgres 2345 (5432 inside the compose network), Keycloak 8442 (HTTPS), Api 8085 (8043 with TLS),
+Local ports with the default profile: Postgres 2345 (5432 inside the compose network), Keycloak 8442 (HTTPS), App 7444 (HTTPS), Api 8085 (8043 with TLS),
 Client 7443 (9443 with TLS).
 
 ## ESI
@@ -62,6 +66,9 @@ Real secrets are never committed. Each module has a `template_*` file with empty
 `template_env.properties` → `env.properties`, `template_password.txt` → `password.txt`, and template certificates
 and keystores. `.gitignore` already covers the real filenames. Don't put secrets in code, commits, PR descriptions or
 handoff notes.
+
+`App/` has no secrets file of its own. It imports `Infrastructure/.env`, so run it with `App/` as the working directory.
+In prod the same names come from real environment variables.
 
 ## IntelliJ
 

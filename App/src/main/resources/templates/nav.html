@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+<nav th:fragment="nav">
+    <a href="/" th:href="@{/}" th:text="#{app.name}">EveAssist</a>
+    <a sec:authorize="isAnonymous()" id="sign-in" href="/account" th:href="@{/account}" th:text="#{nav.signIn}">Sign in</a>
+    <a sec:authorize="isAuthenticated()" id="account" href="/account" th:href="@{/account}" th:text="#{nav.account}">Account</a>
+    <form sec:authorize="isAuthenticated()" th:action="@{/logout}" method="post">
+        <button id="sign-out" type="submit" th:text="#{nav.signOut}">Sign out</button>
+    </form>
+</nav>
+</body>
+</html>

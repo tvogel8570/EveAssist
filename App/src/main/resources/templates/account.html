@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <title th:text="#{account.title}">Your account</title>
+</head>
+<body>
+<h1 th:text="#{account.title}">Your account</h1>
+<nav th:replace="~{nav :: nav}"></nav>
+<dl>
+    <dt th:text="#{account.displayName}">Display name</dt>
+    <dd id="display-name" th:text="${account.displayName}">Name</dd>
+    <dt th:text="#{account.id}">Account id</dt>
+    <dd id="account-id" th:text="${account.id.value}">Id</dd>
+    <dt th:text="#{account.roles}">Roles</dt>
+    <dd id="roles" th:text="${#strings.listJoin(roles, ', ')}">Roles</dd>
+</dl>
+</body>
+</html>

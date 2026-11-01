@@ -49,8 +49,8 @@ eveassist/
 
 - The module's base package is its public API: services, the plain objects they take and return, and its events.
 - The plain objects and events are Java records: immutable snapshots with no business logic (see [Records](#records)).
-  The service maps its domain model or JPA entities to them at the module boundary, so other modules never hold an
-  entity or reach a lazy-loaded field. A service is a concrete class, and becomes an interface only for the reasons
+  The service maps its domain model or rows to them at the module boundary, so other modules never hold a domain
+  object. A service is a concrete class, and becomes an interface only for the reasons
   in [Service interfaces](#service-interfaces), such as tests that need a fake for the `esi` module's API (see
   [ESI as a boundary](#esi-as-a-boundary)). Modulith itself works the same either way: this is EveAssist's choice,
   not a Modulith rule.
@@ -127,12 +127,21 @@ They therefore meet at the use cases, not at the controllers or the facade:
 - **Types and queries only pages use** stay under `internal`, so a screen change cannot widen the module's API or change
   the JSON contract (see [Use case results](#use-case-results)).
 - **Every public use case method takes the `Viewer` as its first parameter.**
-- **Records load only through a viewer-checking class**, for example `VisiblePlans`, which is the only class allowed to
-  use `PlanRepository`. Having the viewer is not enough, because a use case could ignore it. This rule is what makes
-  the build fail when a new use case skips the check.
+- **Every public repository method takes the `Viewer` as its first parameter, and its SQL filters on it.** A use case
+  cannot get or change a record without one, so the build fails when a new repository method leaves it out. The
+  developer chose this over a viewer-checking class such as `VisiblePlans`, which the spike used, because the check then
+  belongs in the SQL, list queries follow the same rule, and no class only passes calls through. The spike did not try
+  this form.
+- **The viewer comes only from the signed-in session or API token**, never from request data such as a form field or URL.
+- **Writes filter too.** An `UPDATE` or `DELETE` includes the owner in its `WHERE` clause. A change to child rows first
+  checks the parent in the same transaction.
+- **Zero rows means not found**, whether the record is missing or belongs to someone else, so a response does not reveal
+  that another user's record exists.
+- **Membership is looked up in the SQL**, from the account, rather than passed as a list of groups, so someone who leaves
+  a group loses access at once. The rules for each table are in [Sharing in groups](data.md#sharing-in-groups-phase-2).
 
-ArchUnit enforces the last two rules (see [Verification](#verification)). They prove that the class is used, not that it
-is right, so it has tests of its own.
+ArchUnit enforces the signature rules (see [Verification](#verification)). They prove that the viewer is passed, not that
+the SQL uses it correctly, so each repository method has a test that another account gets nothing back.
 
 The costs: the facade only passes calls through for now, a reader has to know that pages and the API enter at different
 levels, and a screen spanning several modules needs a small module of its own, which the spike did not try.
@@ -154,7 +163,7 @@ changing for either. The spike returned screen-shaped types here (`EditorRow`, `
   split.
 - **A query may have its own SQL**, such as a list with totals, and its record sits beside it. Each consumer can have a
   different shape, but the rules and calculations stay in the domain.
-- Use cases do not return domain objects to `internal/web`, so templates cannot reach lazy-loaded fields or change state.
+- Use cases do not return domain objects to `internal/web`, so templates cannot change state.
 - **Records carry age and version as their own fields, where they apply**, not in a generic wrapper. For example,
   `PlanDetails` has `version`, and `PlanCosting` has `version`, `pricesAsOf` and `sdeVersion`. Pages need these for
   phase 1, for the "N minutes old" labels and for flagging plans after an SDE update.
@@ -202,7 +211,6 @@ that cross a module boundary say what the data means, and technical suffixes sta
 | Form backing object for a Thymeleaf page | Noun and `Form` | `PlanForm` | `internal/web` |
 | JSON of the external API (later) | Noun and `Response`; inputs are a verb phrase and `Request` | `PlanResponse`, `CreatePlanRequest` | `api` module |
 | Domain model | Plain noun | `Plan` | `internal/domain` |
-| JPA entity, where it differs from the domain model | Noun and `Entity` | `PlanEntity` | `internal/persistence` |
 
 - `Dto` is not used as a suffix. It names the mechanism, not the meaning.
 - `Request` and `Response` are kept for HTTP, in the `api` module. A module's command says what it asks the module to
@@ -262,12 +270,45 @@ Two kinds of module, with different amounts of structure:
 - `persistence` and `web` are adapters that implement or call those ports.
 
 **Thin modules** keep a plain controller, service and repository: `identity`, `alerts`, `sde`, and `groups` in phase 2.
-Mapping between a domain model, JPA entities and DTOs costs code in every change, and a module that mostly stores and
+Mapping between a domain model, rows and DTOs costs code in every change, and a module that mostly stores and
 shows rows gets nothing back for it. If one of them grows real rules, it moves to the layered form.
 
 The `characters` and `esi` modules sit between the two. They have rules that matter (token refresh, cache, rate and
 error limits) but little domain model. They keep their rules in classes that do not depend on Spring's HTTP client, so
 those rules can be tested without calls to ESI.
+
+### Persistence
+
+Status: **agreed**. The developer decided that every module uses `JdbcClient`, with hand-written SQL. `App/` does not use
+JPA or Spring Data JDBC.
+
+- **Reads** map to records with `.query(PlanOverview.class)`, which matches snake_case columns to record fields and
+  converts a `UUID` to a typed id such as `PlanId`. A hand-written mapper is needed only where the record does not line
+  up with the columns, such as a parent with its children.
+- **Layered modules** keep the SQL and the mapping in `internal/persistence`, behind the application layer's port. Domain
+  types stay plain and have no persistence annotations.
+- **Saving an aggregate** updates the parent, upserts its children by a stable key, and deletes the children no longer
+  present, in one transaction. Rows that other tables reference therefore keep their ids and are not deleted by an edit.
+- **Optimistic locking** is `UPDATE ... SET version = version + 1 WHERE id = ? AND version = ?` on the parent, on every
+  save, including one that only changes children. Zero rows updated means the aggregate has changed since it was loaded.
+- **Integration tests against Postgres** cover each repository, because SQL mistakes do not show up at compile time.
+
+Why not the others, from a comparison the developer asked for and a throwaway test on Boot 4.1.2 and Postgres 18:
+
+- **JPA**: the domain must stay free of it, so entities need two-way mapping, and change tracking then only helps if the
+  child collections are reconciled by hand. Bulk ESI writes would bypass it anyway.
+- **Spring Data JDBC**: it can map a plain domain using only jMolecules' `@Identity`, and it saves the upsert and delete
+  code. But with no `@Table` or `@Column` in the domain, renaming a field or class changes the schema names it expects,
+  and only a test catches that. Each save deletes and reinserts every child row, so a foreign key to a child with
+  `ON DELETE CASCADE` loses its rows silently, and those keys must be deferred instead. Child ids cannot be `GENERATED
+  ALWAYS`. When a save inserts new children, the object `save()` returns has them in the wrong order, and saving that
+  object again stores the wrong order. Direct SQL would still be needed for bulk writes and list queries, so it would add
+  a second tool rather than replace one.
+
+The cost is about 20 lines (an estimate) of upsert and delete per child table, the code that joins parents to children on
+load, and several places to edit when a column changes. Plans should have few child tables, because they mostly store the
+user's decisions and the material tree comes from the SDE. If this code becomes a burden, jOOQ or Spring Data JDBC can
+replace it inside `internal/persistence` without changing the port or the domain.
 
 ## ESI as a boundary
 
@@ -334,7 +375,7 @@ almost nothing, and they never need ArchUnit's frozen-violation baseline (`Freez
   - API types: events are marked `@DomainEvent` and commands `@Command` (from jMolecules' CQRS module), so the names in
     [Naming](#naming) and the stereotypes agree.
   - Not used: jMolecules' ByteBuddy plugin, which generates JPA and Jackson code from the annotations at build time.
-    The domain is mapped to JPA entities by hand (see [Inside a module](#inside-a-module)), and generated code is
+    `App/` does not use JPA (see [Persistence](#persistence)), and generated code is
     harder to follow when something goes wrong.
 - **EveAssist's own ArchUnit rules**, in the same test run:
   - `domain` packages do not depend on `org.springframework`, `jakarta.persistence`, `com.fasterxml.jackson` or
@@ -343,10 +384,9 @@ almost nothing, and they never need ArchUnit's frozen-violation baseline (`Freez
   - Data types and events in a module's base package are records. No class name ends in `Dto` or `Impl`, and no
     interface name starts with `I` followed by a capital letter.
   - The facade rule from [Facade and visibility](#facade-and-visibility), if that section stands.
-  - The viewer and loading rules from [Pages, the API and the facade](#pages-the-api-and-the-facade). The viewer rule
-    covers every class in `internal/application` that holds use cases, however it is annotated. The loading rule
-    covers every class in the application except `internal/persistence`, and for now only the repositories of
-    `industry`.
+  - The viewer rules from [Pages, the API and the facade](#pages-the-api-and-the-facade). One covers every class in
+    `internal/application` that holds use cases, however it is annotated. The other covers every public repository
+    method, except in the separate, named classes that background work uses.
   - The fetch rules from [What starts an ESI fetch](#what-starts-an-esi-fetch).
   - Each rule runs against fixtures that break it on purpose and fixtures that follow it (`archfixture` in the test
     sources, outside the application's base package), because a rule that cannot fail proves nothing.
@@ -364,7 +404,7 @@ almost nothing, and they never need ArchUnit's frozen-violation baseline (`Freez
   with non-public methods.
 - How [Pages, the API and the facade](#pages-the-api-and-the-facade) applies to background work with no signed-in
   person, such as re-costing after a price update or deleting an account's data. It has no `Viewer`, but the rules
-  require one and allow plans to load only through `VisiblePlans`. The spike did not try this, and the developer chose to
+  require one, so it needs a separate, clearly named way in. The spike did not try this, and the developer chose to
   settle it by building one such listener early in `App/`.
 - How [Pages, the API and the facade](#pages-the-api-and-the-facade) applies to thin modules, whose controllers call a
   plain service. If that service is also the facade, it breaks the rule that nothing inside a module calls its facade.

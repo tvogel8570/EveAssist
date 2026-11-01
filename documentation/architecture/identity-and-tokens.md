@@ -17,6 +17,25 @@ Covers the requirements in [Users, accounts and roles](../requirements/users.md)
   There are no invites. Each admin action writes an audit log row in the same transaction as the app's change.
 - Audit log rows hold the admin, the action, the account id, the account's display name at the time and when. They
   have no foreign key to the account, so they outlive its deletion, and a daily job deletes rows older than one year.
+- The realm is kept in git with no users, secrets or signing keys, and is loaded as
+  [its runbook](../runbooks/keycloak-realm.md) describes. A first sign-in always creates a new account: the realm's
+  `eveassist first login` flow never matches an existing user, and duplicate emails are allowed. ADMIN accounts also hold USER, as a default role, and the app ignores USER when ADMIN is
+  present.
+- EVE SSO is brokered with Keycloak's OAuth v2 provider type, not OpenID Connect, because EVE SSO refuses the `openid`
+  scope that Keycloak's OIDC type always asks for. Keycloak reads the user from EVE's `/v2/oauth/verify`, which EVE's
+  metadata names as its user info endpoint but the EVE developer documentation does not describe.
+- A sign-in with EVE is identified by `CharacterOwnerHash`, not the character id. When a character is sold, its owner
+  hash changes, so the new owner gets a new account and cannot reach the seller's.
+- The whole character name is kept in Keycloak's first name field, with last name empty. EVE names have no fixed form,
+  so a full-name claim would split them at a space. The realm's profile has no character limits on names, for the same
+  reason.
+- Users see Keycloak's own sign-in page for now. The developer decided that an EveAssist sign-in page, with a button per
+  provider that goes straight to it (`kc_idp_hint`), is built when it is needed, and a minimal Keycloak theme for the
+  remaining pages comes later. The prod realm must not offer a password form: EveAssist keeps no passwords, and only
+  dev has test users.
+- The account row is created at the first sign-in, with the display name from that sign-in, and is not updated from
+  Keycloak after that. The app reads the signed-in user's id from the session, and keeps no Keycloak access or refresh
+  token after sign-in, because it never calls anything with them.
 - The app does not ask Keycloak for `offline_access`. The prototype asked for it, but nothing runs for a user who is
   signed out, so the app needs no long-lived Keycloak token.
 
