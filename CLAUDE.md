@@ -73,6 +73,11 @@ Git is the source of truth. Work branches come off `development`, and their PRs 
 Claude's memory and session history stay on each machine, so anything the next machine
 needs has to be in git or in a handoff note.
 
+Development runs in the Ubuntu WSL distro on `Tim-Xoticpc`, in `~/git/EveAssist`. Other computers reach it with the
+`xoticpc-wsl` SSH profile in their own `~/.ssh/config`, which jumps through Windows SSH on `tim-xoticpc` to `sshd` on
+port 2222. Docker there is Docker Engine inside the distro, not Docker Desktop. Files that git ignores (see Secrets) and
+the database are not in the clone, so a new host has to copy them from the current one.
+
 - `/handoff` pushes the branch and writes a handoff note into the branch's **draft PR** description, between
   `<!-- handoff:start -->` and `<!-- handoff:end -->`. On `development` or `main`, or without `gh`, it writes to
   `documentation/ai/hand-off/HANDOFF.md` instead.
