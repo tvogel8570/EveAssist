@@ -116,7 +116,7 @@ What follows:
 ### Pages, the API and the facade
 
 Status: **proposed**. The developer chose this option after comparing it with one where everything calls the facade, in
-a spike ([`spikes/api-boundary`](../../spikes/api-boundary/README.md)).
+a spike (`spikes/api-boundary/` on branch `api-boundary-spike`, pushed to `origin`).
 
 Pages and the external API want different things. A page wants what one screen shows, such as a plan list with totals,
 or the changed rows and new total after an edit. The API wants stable resources for clients EveAssist does not know.
