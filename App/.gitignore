@@ -1,4 +1,5 @@
 target/
 node_modules/
+node/
 env.properties
 !.mvn/wrapper/maven-wrapper.jar

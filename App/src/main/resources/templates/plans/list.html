@@ -1,0 +1,41 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: page(~{::title}, ~{::main})}">
+<head><title th:text="#{plans.title}">Plans</title></head>
+<body>
+<main class="max-w-6xl mx-auto p-4">
+    <h1 class="text-xl font-semibold mb-3" th:text="#{plans.title}">Plans</h1>
+    <form class="flex gap-2 mb-4 max-w-md" method="post" th:action="@{/plans}">
+        <input id="new-plan-name" class="input input-sm grow" name="name" required maxlength="100"
+               th:placeholder="#{plans.newName}" th:aria-label="#{plans.newName}">
+        <button id="new-plan" class="btn btn-primary btn-sm" type="submit" th:text="#{plans.create}">New plan</button>
+    </form>
+    <p id="no-plans" th:if="${#lists.isEmpty(plans)}" class="opacity-70" th:text="#{plans.none}">No plans yet</p>
+    <div class="overflow-x-auto" th:unless="${#lists.isEmpty(plans)}">
+        <table class="table">
+            <thead>
+            <tr>
+                <th th:text="#{plans.name}">Name</th>
+                <th class="num" th:text="#{plans.products}">Products</th>
+                <th class="num" th:text="#{plan.total}">Total</th>
+                <th th:text="#{plans.costedAt}">Costed</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="plan : ${plans}">
+                <td><a class="link" th:href="@{/plans/{id}(id=${plan.id.value})}" th:text="${plan.name}">Name</a></td>
+                <td class="num" th:text="${plan.productCount}">1</td>
+                <td class="num">
+                    <span th:if="${plan.totalCost != null}" th:text="${#numbers.formatDecimal(plan.totalCost, 1, 'COMMA', 0, 'POINT')} + ' ISK'">1 ISK</span>
+                    <span class="opacity-60" th:unless="${plan.totalCost != null}" th:text="#{plans.notCosted}">Not costed</span>
+                </td>
+                <td>
+                    <span th:if="${plan.costedAt != null}" th:text="${@utcTime.format(plan.costedAt)} + ' UTC'">time</span>
+                    <span th:if="${plan.outOfDate}" class="badge badge-warning badge-sm" th:text="#{plans.outOfDate}">Out of date</span>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+</body>
+</html>

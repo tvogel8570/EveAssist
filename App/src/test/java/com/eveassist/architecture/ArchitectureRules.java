@@ -1,7 +1,6 @@
 package com.eveassist.architecture;
 
 import static com.tngtech.archunit.base.DescribedPredicate.describe;
-import static com.tngtech.archunit.base.DescribedPredicate.not;
 import static com.tngtech.archunit.lang.SimpleConditionEvent.violated;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
@@ -79,12 +78,13 @@ final class ArchitectureRules {
                 .allowEmptyShould(true);
     }
 
-    /** Applies to every class in the application, not only to internal.application and internal.web. */
-    ArchRule plansLoadOnlyThroughAVisibleClass() {
-        return noClasses().that().resideInAPackage(base + "..")
-                .and().resideOutsideOfPackage("..internal.persistence..")
-                .and(not(areVisibleClassesInApplication()))
-                .should().dependOnClassesThat(areRepositoriesIn(base + ".industry.internal.."))
+    /**
+     * Covers ports and implementations alike, so that a repository method cannot reach a plan without a viewer. It only
+     * proves the viewer is passed: each repository has a test that another account gets nothing back.
+     */
+    ArchRule everyRepositoryMethodTakesTheViewerFirst() {
+        return classes().that(areRepositoriesIn(base + ".industry.internal"))
+                .should(havePublicMethodsTakingTheViewerFirst())
                 .allowEmptyShould(true);
     }
 
@@ -166,14 +166,8 @@ final class ArchitectureRules {
         };
     }
 
-    private static DescribedPredicate<JavaClass> areVisibleClassesInApplication() {
-        return describe("are Visible classes in internal.application",
-                c -> c.getSimpleName().startsWith("Visible") && c.getPackageName().endsWith(".internal.application"));
-    }
-
-    private static DescribedPredicate<JavaClass> areRepositoriesIn(String packagePattern) {
-        var prefix = packagePattern.substring(0, packagePattern.length() - 2);
-        return describe("are repositories in " + packagePattern,
+    private static DescribedPredicate<JavaClass> areRepositoriesIn(String prefix) {
+        return describe("are repositories in " + prefix,
                 c -> c.getSimpleName().endsWith("Repository") && c.getPackageName().startsWith(prefix));
     }
 

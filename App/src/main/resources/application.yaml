@@ -43,7 +43,7 @@ server:
 spring:
   config:
     activate:
-      on-profile: "!test"
+      on-profile: "!test & !measure"
   security:
     oauth2:
       client:

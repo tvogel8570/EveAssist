@@ -1,6 +1,10 @@
 package com.eveassist;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.utility.MountableFile;
@@ -23,15 +27,30 @@ public final class PostgresTestDatabase {
 
     static {
         CONTAINER.start();
+        loadSdeFixture();
+    }
+
+    /** The real SDE is far too big for tests, so this is a small one with the same table names. */
+    private static void loadSdeFixture() {
+        try (var connection = DriverManager.getConnection(url(), "eveassist_sde", "test-sde");
+                var statement = connection.createStatement();
+                var script = PostgresTestDatabase.class.getResourceAsStream("/sde-fixture.sql")) {
+            statement.execute(new String(script.readAllBytes(), StandardCharsets.UTF_8));
+        } catch (IOException | SQLException e) {
+            throw new IllegalStateException("Could not load the SDE fixture", e);
+        }
+    }
+
+    private static String url() {
+        return "jdbc:postgresql://%s:%d/eveassist".formatted(
+                CONTAINER.getHost(), CONTAINER.getMappedPort(PostgreSQLContainer.POSTGRESQL_PORT));
     }
 
     private PostgresTestDatabase() {
     }
 
     public static void register(DynamicPropertyRegistry registry) {
-        var url = "jdbc:postgresql://%s:%d/eveassist".formatted(
-                CONTAINER.getHost(), CONTAINER.getMappedPort(PostgreSQLContainer.POSTGRESQL_PORT));
-        registry.add("EVEASSIST_DB_URL", () -> url);
+        registry.add("EVEASSIST_DB_URL", PostgresTestDatabase::url);
         registry.add("EVEASSIST_APP_PASSWORD", () -> "test-app");
         registry.add("EVEASSIST_OWNER_PASSWORD", () -> "test-owner");
     }

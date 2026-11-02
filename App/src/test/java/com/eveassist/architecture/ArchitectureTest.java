@@ -62,8 +62,8 @@ class ArchitectureTest {
     }
 
     @Test
-    void plansLoadOnlyThroughAVisibleClass() {
-        RULES.plansLoadOnlyThroughAVisibleClass().check(PRODUCTION);
+    void everyRepositoryMethodTakesTheViewerFirst() {
+        RULES.everyRepositoryMethodTakesTheViewerFirst().check(PRODUCTION);
     }
 
     @Test

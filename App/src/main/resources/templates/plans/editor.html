@@ -1,0 +1,51 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: page(~{::title}, ~{::main})}">
+<head><title th:text="${plan.name}">Plan</title></head>
+<body>
+<main class="max-w-6xl mx-auto p-4">
+    <h1 class="text-xl font-semibold mb-1" th:text="${plan.name}">Plan</h1>
+    <p class="text-sm opacity-70 mb-3" th:text="#{plan.simplified}">Simplified costing</p>
+    <input th:replace="~{plans/fragments :: version(${plan.version}, false)}">
+    <div th:replace="~{plans/fragments :: total(${plan.totalCost}, ${plan.unpricedLines}, ${plan.pricesAsOf}, false)}"></div>
+
+    <div id="products">
+        <p id="no-products" th:if="${#lists.isEmpty(plan.products)}" class="opacity-70 my-3" th:text="#{plan.noProducts}">No products</p>
+        <table class="table table-sm" th:unless="${#lists.isEmpty(plan.products)}">
+            <thead>
+            <tr>
+                <th th:text="#{plan.product}">Product</th>
+                <th class="num" th:text="#{plan.units}">Units</th>
+                <th class="w-20"></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="product : ${plan.products}">
+                <td class="font-medium" th:text="${product.name}">Name</td>
+                <td class="num">
+                    <input class="input input-sm w-28 text-right" type="number" name="quantity" min="1" max="1000000"
+                           th:id="'quantity-' + ${product.typeId}" th:value="${product.quantity}"
+                           th:aria-label="#{plan.unitsOf(${product.name})}"
+                           th:attr="hx-post=@{/plans/{id}/products/{type}/quantity(id=${plan.id.value},type=${product.typeId})}"
+                           hx-trigger="change" hx-swap="none" hx-include="#plan-version"
+                           hx-sync="#products:queue all" hx-indicator="#request-indicator">
+                </td>
+                <td><span th:id="'saved-' + ${product.typeId}"></span></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="max-w-md mt-3">
+        <input id="product-search" class="input input-sm w-full" type="search" name="q" autocomplete="off"
+               th:placeholder="#{plan.addProduct}" th:aria-label="#{plan.addProduct}"
+               th:attr="hx-get=@{/plans/{id}/product-search(id=${plan.id.value})}"
+               hx-trigger="input changed delay:250ms, search" hx-target="#search-results" hx-sync="this:replace"
+               hx-indicator="#request-indicator">
+        <div id="search-results" class="mt-1"></div>
+    </div>
+
+    <div th:replace="~{plans/fragments :: parts(${plan}, false)}"></div>
+    <div th:replace="~{plans/fragments :: materials(${plan}, false)}"></div>
+</main>
+</body>
+</html>

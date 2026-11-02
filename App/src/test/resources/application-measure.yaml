@@ -1,0 +1,16 @@
+# Reads the real SDE in the dev database, with no sign-in or migrations.
+spring:
+  flyway:
+    enabled: false
+  security:
+    oauth2:
+      client:
+        provider:
+          keycloak:
+            authorization-uri: http://keycloak.invalid/auth
+            token-uri: http://keycloak.invalid/token
+            jwk-set-uri: http://keycloak.invalid/certs
+        registration:
+          keycloak:
+            client-secret: unused
+            redirect-uri: "{baseUrl}/login/oauth2/code/keycloak"

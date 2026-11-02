@@ -1,3 +1,6 @@
 package archfixture.broken.industry.internal.application;
 
-public interface PlanRepository {}
+public interface PlanRepository {
+
+    String find(String planId);
+}

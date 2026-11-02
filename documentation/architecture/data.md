@@ -80,6 +80,9 @@ Status: **agreed**.
 
 The SDE comes from Fuzzwork's Postgres dump, as in the prototype (`Infrastructure/postgres`).
 
+Until the admin import is built, `Infrastructure/postgres/load-sde.sh` loads the dump into `sde` for dev, with no comparison
+or flagging.
+
 1. The app checks Fuzzwork once a day for a new dump and, when there is one, shows admins a banner on the admin
    pages. An admin starts the import (from the admin pages, or a command for dev). The import never starts by itself,
    so a broken or half-published dump does not reach users unseen.
@@ -121,15 +124,22 @@ Status: **agreed**. The columns and rules below are **proposed**.
 | `total_cost` | The total from the last costing | |
 | `costed_plan_version` | The plan's `version` when costed | It differs from the plan's `version` |
 | `costed_sde_version` | The SDE version used (the version each plan already records, see [SDE import](#sde-import-and-versioning)) | It differs from the live SDE version |
-| `prices_as_of` | The age of the oldest price used | Newer prices are stored for an item the plan uses |
+| `prices_as_of` | The age of the oldest price used | |
 | `costed_at` | When the costing ran | Another input changed after this time: skills, implants, facilities, cost indices, manual prices or settings |
 
-- A plan edit costs the plan anyway, so it stores all of these in the same transaction as the edit.
+- `plan_costed_item` lists the items that were priced. A plan is out of date when a price for one of them is newer than
+  `costed_at`. Prices are shared by all users, so comparing with the newest price of any item would mark nearly every plan
+  all the time.
+- A plan edit costs the plan anyway, so it stores all of these in the same transaction as the edit. Opening a plan stores
+  them too if the stored total is out of date. Nothing recalculates in the background (see
+  [Work with no signed-in person](code-structure.md#work-with-no-signed-in-person)).
 - Only the total is stored. Line-level results are still calculated when a plan is opened.
 - A recalculation that is not an edit does not change the plan's `version`, so it does not cause a conflict for someone
   editing the plan. Its update has `WHERE version = ?` with the version it loaded, so an older result cannot overwrite a
   newer one.
 - The list shows the stored total with its age, marked if it is out of date. It does not recalculate to draw the list.
+- **Measured**: the list query took 4.7 ms for an account with 100 plans, among 100,000 plans, 1,000,000 product rows
+  and 5,000,000 costed items on Postgres 18, using `plan_owner_ix`.
 
 ## Open questions
 

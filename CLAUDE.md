@@ -35,6 +35,7 @@ decision. Questions that code can answer are settled by writing the code rather 
 ## Build and test
 
 - App: `./mvnw verify` in `App/`, which includes the architecture checks.
+- Load the SDE for App once with `postgres/load-sde.sh` in `Infrastructure/`. App will not start without it.
 - Run App with `./mvnw spring-boot:run` in `App/`, after `docker compose up -d` in `Infrastructure/`. It needs Keycloak at
   start-up. Open it at https://dev.eveassist.com:7444. On Windows, `dev.eveassist.com` also needs an entry in the Windows
   hosts file, because WSL's `/etc/hosts` does not apply there.
@@ -42,6 +43,8 @@ decision. Questions that code can answer are settled by writing the code rather 
 - Api tests tagged `esi-live` call the real, public ESI, so the Api build needs network access. Offline, skip them
   with `./mvnw verify -DexcludedGroups=esi-live`.
 - Tests named `*IT` and Testcontainers-based tests need Docker running.
+- App's browser tests use Playwright's Chromium, which it downloads on first run. On a new machine it may also need
+  system libraries: `libnss3`, `libnspr4` and `libasound2t64`.
 - Client front end: `npm run build` or `npm run watch` in `Client/`.
 - Infrastructure: `docker compose up -d` in `Infrastructure/` (needs `.env`, `postgres/password.txt` and the
   Keycloak certificate files; see its README).

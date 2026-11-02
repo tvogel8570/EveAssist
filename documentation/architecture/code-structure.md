@@ -172,9 +172,23 @@ changing for either. The spike returned screen-shaped types here (`EditorRow`, `
   ripple through the material tree, and a line missed by per-operation tracking would show a wrong number with no error.
   The domain does not track what each operation touched, and redrawing everything fails the large-plans rule in
   [UI](README.md#ui).
-- **The cost is two costings per edit.** [Costing in memory](data.md#costing-in-memory) allows a few seconds for a large
-  plan, so an edit could take twice that. This is timed on large plans once `App/` exists. If it is too slow, tracking in
-  the domain can replace the comparison without changing the result type.
+- **The cost is two costings per edit, which turned out negligible.** Timed with `RealSdeMeasurementIT` against the real
+  SDE on the developer's WSL machine, with the costing still simplified, so skills, facilities and invention will add
+  to it:
+
+  | Plan | Lines | Two costings and compare (median) | p95 |
+  |---|---|---|---|
+  | One Titan-class ship | 79 | 0.07 ms | 0.19 ms |
+  | All capitals (48 products) | 196 | 0.16 ms | 0.19 ms |
+  | Everything buildable (4,057 products) | 4,669 | 1.91 ms | 3.35 ms |
+
+  [Costing in memory](data.md#costing-in-memory) allowed a few seconds, so the comparison stays. A real edit on a plan of
+  four capital ships, through the running app, waited about 30 to 65 ms for the server, including saving the priced items.
+- **Choosing to buy or build a part redraws the part and material tables** rather than comparing. It adds and removes whole
+  subtrees of rows, which a response of changed rows would have to place in order. A write that changes which rows exist
+  returns the whole plan as `PlanDetails`, and one that only changes their values returns `PlanChangeResult`.
+- **A quantity edit changes nearly every row of a capital plan**: 71 of 90 rows, in a 29 KB response, in that test. Updating
+  only changed rows helps most for plans of unrelated products and for smaller edits such as build-or-buy later.
 
 Template tests catch a renamed record field, because templates depend on those names (see [UI](README.md#ui)).
 
@@ -184,7 +198,8 @@ Status: **proposed**. Pages may queue fetches (see [Background fetches](esi.md#b
 never may (see [The API and ESI](api.md#the-api-and-esi)). Pages and the API share use cases, so the two have to be kept
 apart. Deciding what to fetch is orchestration, so it stays out of controllers, which remain thin.
 
-- **A page-entry use case** handles a page action that starts a fetch. Opening a plan loads it, finds the items with
+- **A page-entry use case** handles a page action that starts a fetch, or does other work on opening. `PlanEntry` replaces an
+  out-of-date stored total now, and will queue fetches once the ESI client exists. Opening a plan loads it, finds the items with
   expired prices, queues those fetches, and returns stored data from the same query the API uses.
 - **Queries and writes do not start fetches.** Most small htmx updates are one or the other, so they need no page-entry
   use case.
@@ -195,6 +210,26 @@ apart. Deciding what to fetch is orchestration, so it stays out of controllers, 
   not depend on page-entry use cases.
 
 The page shows stored data with its age at once, and updates over SSE when the fetch finishes.
+
+### Work with no signed-in person
+
+Status: **agreed**. The developer compared a separate repository for background work, a special system viewer, acting as
+each owner, and not re-costing in the background, and chose the last.
+
+- **Nothing re-costs saved plans in the background.** The list works out in SQL whether a stored total is out of date and
+  says so, and `PlanEntry` stores a fresh total when the plan is opened. An edit stores one too. See
+  [Last-costed total](data.md#last-costed-total).
+- **So the viewer rules have no exception.** No code reads a plan without a viewer, and no listener or system viewer
+  exists.
+- The cost is that a list total can be old, with its age and mark showing that, until someone opens the plan. Work is not
+  spent on plans nobody opens.
+- Deleting an account's data needs no viewer, because its rows cascade from the account row (see
+  [Ownership](data.md#ownership)).
+- **Still open**: flagging plans after an SDE import only for the blueprints that changed would need to read plans with
+  no viewer. Until then a new SDE version marks every costed plan out of date. If background work ever has to read plans,
+  a separate, clearly named class and repository, with an ArchUnit rule limiting who uses them, is the option to start
+  from. A system viewer was rejected, because a wrong value in page code could expose every user's plans and the build
+  could not catch it.
 
 ## Naming
 
@@ -350,7 +385,7 @@ designed.
 | `CharacterLinked(characterId)` | `characters` | `industry` and `market` queue the first fetches | No: the next page or refresh queues them anyway |
 | `CharacterUnlinked(characterId)` | `characters` | `industry` and `market` remove that character's data | Yes: the data must be removed |
 | `SdeVersionImported(version)` | `sde`, after the staging schema is swapped in | `industry` flags saved plans that use a changed blueprint, and the user re-costs them. No open page is refreshed, because imports run during an outage (see [SDE import](data.md#sde-import-and-versioning)) | Yes |
-| `JitaPricesUpdated(typeIds)` | `market` | `industry` re-costs open plans that use those items, and the SSE stream refreshes the page | No: prices are fetched again on demand |
+| `JitaPricesUpdated(typeIds)` | `market`, once the ESI client stores prices | The SSE stream refreshes an open page. Nothing re-costs saved plans (see [Work with no signed-in person](#work-with-no-signed-in-person)) | No: prices are fetched again on demand |
 | `ContractExpiring(contractId)` | `market`, from contract timers | `alerts` | Yes |
 | `FetchProgressed(accountId, done, total)` | fetch tasks | the SSE progress bar under the header | No: a lost event only skips a progress update |
 | `AccountDeleted(accountId)` | `identity` | every module that owns rows deletes them | Yes: a privacy requirement |
@@ -367,9 +402,11 @@ almost nothing, and they never need ArchUnit's frozen-violation baseline (`Freez
 - **Modulith**: one test runs `ApplicationModules.of(EveAssistApplication.class).verify()`, so a broken boundary or a
   cycle fails `./mvnw verify`.
 - **jMolecules, where it describes the code**:
-  - Architecture: the layered modules (`industry`, `market`) mark their packages with the hexagonal annotations
-    (`@Port`, `@Adapter` and their primary and secondary forms), checked with
-    `JMoleculesArchitectureRules.ensureHexagonal()`.
+  - Architecture: a layered module marks its adapters' packages (`@PrimaryAdapter`, `@SecondaryAdapter`) and its ports'
+    classes (`@PrimaryPort` on use cases, `@SecondaryPort` on repositories), checked with
+    `JMoleculesArchitectureRules.ensureHexagonal()`. Domain types and plain records stay unmarked. At `STRICT`, ports
+    and adapters may reach only ports and unmarked types, so marking `domain` as `@Application` would refuse a
+    repository that returns a `Plan`.
   - DDD: domain types are marked `@AggregateRoot`, `@Entity`, `@ValueObject` and `@Identity`, checked with
     `JMoleculesDddRules.all()`, for example that one aggregate refers to another by id only.
   - API types: events are marked `@DomainEvent` and commands `@Command` (from jMolecules' CQRS module), so the names in
@@ -386,7 +423,8 @@ almost nothing, and they never need ArchUnit's frozen-violation baseline (`Freez
   - The facade rule from [Facade and visibility](#facade-and-visibility), if that section stands.
   - The viewer rules from [Pages, the API and the facade](#pages-the-api-and-the-facade). One covers every class in
     `internal/application` that holds use cases, however it is annotated. The other covers every public repository
-    method, except in the separate, named classes that background work uses.
+    method in `industry` for now, with no exceptions (see [Work with no signed-in person](#work-with-no-signed-in-person)).
+    Thin modules such as `identity` are outside it: finding an account by its Keycloak id happens before there is a viewer.
   - The fetch rules from [What starts an ESI fetch](#what-starts-an-esi-fetch).
   - Each rule runs against fixtures that break it on purpose and fixtures that follow it (`archfixture` in the test
     sources, outside the application's base package), because a rule that cannot fail proves nothing.
@@ -402,10 +440,6 @@ almost nothing, and they never need ArchUnit's frozen-violation baseline (`Freez
 - **Needs validation**: [Facade and visibility](#facade-and-visibility) and [Service interfaces](#service-interfaces).
   The developer wants time to think about both, including how they meet the testing problems the developer has had
   with non-public methods.
-- How [Pages, the API and the facade](#pages-the-api-and-the-facade) applies to background work with no signed-in
-  person, such as re-costing after a price update or deleting an account's data. It has no `Viewer`, but the rules
-  require one, so it needs a separate, clearly named way in. The spike did not try this, and the developer chose to
-  settle it by building one such listener early in `App/`.
 - How [Pages, the API and the facade](#pages-the-api-and-the-facade) applies to thin modules, whose controllers call a
   plain service. If that service is also the facade, it breaks the rule that nothing inside a module calls its facade.
 - Whether `market` needs the layered form from the start, or begins thin and moves to it once its price rules are

@@ -131,9 +131,19 @@ What the htmx UI must get right, found while building the spikes:
 - **One shared htmx set-up**, written and tested once: the CSRF header on every request; `HX-Redirect` when the session
   has expired, so the sign-in page is not swapped into a fragment; a visible message on 4xx and 5xx responses;
   `hx-sync` against overlapping requests; loading indicators.
+- **htmx 4**: the developer chose it over 2.x, because it becomes htmx's `latest` version during 2027 and starting there
+  avoids an upgrade. It swaps 4xx and 5xx responses by default, so `layout.html` turns that off with `noSwap`.
+- **Table rows in an htmx response need `<hx-partial>`**, found by a browser test. htmx parses a response inside a
+  `<template>`, whose parsing mode comes from the first tag, so a bare `<tr>` after an `<input>` is silently dropped, with
+  a correct response and no error. Only a browser shows this, so each kind of update has a browser test.
+- **A request waiting in an `hx-sync` queue sends the values from when it was triggered.** The shared set-up in `app.js`
+  refreshes `expectedVersion` just before it is sent, or a quick second edit is refused as out of date.
 - **Latency**: screens are tried with Chrome's network throttling at 50 ms and 150 ms, which stand for a player near
   the AWS region and one on another continent.
 - **Large plans** update only the rows that changed and the totals, not the whole tree.
+- **Thymeleaf order**: `th:replace` runs before `th:if` and `th:each`, so on one element they do nothing useful. Put the
+  condition or loop on a `th:block` around it. This caused a missing fragment and duplicated rows while `App/` was built.
+- **Sorting** runs in the browser and lasts for one page view, so it costs no request. It is put back after an update.
 - **Escaping**: only `th:text` is used for data. `th:utext` is not used for anything a user or ESI supplied.
 - **Drag and drop**: the drop target is the whole column, and on drop the column under the pointer decides, not the
   last one the pointer crossed. The server checks every move.

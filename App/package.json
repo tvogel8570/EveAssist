@@ -1,0 +1,16 @@
+{
+  "name": "eveassist-app",
+  "private": true,
+  "scripts": {
+    "build": "npm run css && npm run js",
+    "css": "tailwindcss -i src/main/frontend/app.css -o target/classes/static/css/app.css --minify",
+    "js": "node src/main/frontend/copy-htmx.mjs",
+    "watch": "tailwindcss -i src/main/frontend/app.css -o target/classes/static/css/app.css --watch"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "4.3.3",
+    "daisyui": "5.7.50",
+    "htmx.org": "4.0.0",
+    "tailwindcss": "4.3.3"
+  }
+}

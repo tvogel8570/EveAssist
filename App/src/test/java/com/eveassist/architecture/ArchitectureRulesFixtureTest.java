@@ -36,8 +36,8 @@ class ArchitectureRulesFixtureTest {
                 rule(ArchitectureRules::moduleInternalsUseOnlyDataFromTheirBasePackage, "FacadeCallingEditing"),
                 rule(ArchitectureRules::everyUseCaseMethodTakesTheViewerFirst, "UnannotatedUseCases"),
                 rule(ArchitectureRules::everyUseCaseMethodTakesTheViewerFirst, "ViewerLastUseCases"),
-                rule(ArchitectureRules::plansLoadOnlyThroughAVisibleClass, "RepositoryInDomainService"),
-                rule(ArchitectureRules::plansLoadOnlyThroughAVisibleClass, "RepositoryInOtherModule"),
+                rule(ArchitectureRules::everyRepositoryMethodTakesTheViewerFirst, "PlanRepository"),
+                rule(ArchitectureRules::everyRepositoryMethodTakesTheViewerFirst, "JdbcPlanRepository"),
                 rule(ArchitectureRules::queriesAndWritesDoNotStartFetches, "FetchingQueries"),
                 rule(ArchitectureRules::facadesDoNotReachPageEntryUseCases, "BrokenFacade"));
     }
