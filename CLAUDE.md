@@ -75,6 +75,9 @@ Shared `.idea` settings are tracked and user-specific ones are ignored (see the 
 Keep tracked `.idea` files free of machine-specific paths and credentials, because the project is opened on several
 computers.
 
+The tracked `.idea` files do not import `App/` as a Maven project. On a computer where IntelliJ doesn't recognise it,
+open View → Tool Windows → Maven, click `+` and pick `App/pom.xml`.
+
 ## Worktrees
 
 Use git worktrees only when the developer asks for one. Otherwise work in the main checkout, on its current branch. This
