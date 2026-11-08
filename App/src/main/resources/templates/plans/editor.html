@@ -8,6 +8,18 @@
     <input th:replace="~{plans/fragments :: version(${plan.version}, false)}">
     <div th:replace="~{plans/fragments :: total(${plan.totalCost}, ${plan.unpricedLines}, ${plan.pricesAsOf}, false)}"></div>
 
+    <div class="flex flex-wrap items-center gap-3 mb-3">
+        <button type="button" id="refresh-prices" class="btn btn-sm btn-outline"
+                th:attr="hx-post=@{/plans/{id}/prices/refresh(id=${plan.id.value})}"
+                hx-trigger="click" hx-swap="none" hx-sync="#products:queue all"
+                hx-disabled-elt="this" hx-indicator="#refresh-spinner">
+            <span th:text="#{plan.refreshPrices}">Refresh prices</span>
+            <span id="refresh-spinner" class="loading loading-spinner loading-xs" aria-hidden="true"></span>
+        </button>
+        <span class="text-xs opacity-70" th:text="#{plan.pricesOnRequest}">Prices change only when you refresh them.</span>
+    </div>
+    <div th:replace="~{plans/fragments :: priceWarning(null, false)}"></div>
+
     <div id="products">
         <p id="no-products" th:if="${#lists.isEmpty(plan.products)}" class="opacity-70 my-3" th:text="#{plan.noProducts}">No products</p>
         <table class="table table-sm" th:unless="${#lists.isEmpty(plan.products)}">

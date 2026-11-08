@@ -5,7 +5,6 @@ import com.eveassist.esi.EsiResult;
 import com.eveassist.esi.MarketOrder;
 import com.eveassist.market.internal.OrderRepository;
 import com.eveassist.market.internal.PriceQuoting;
-import com.eveassist.market.internal.PriceRepository;
 import com.eveassist.sde.TypeId;
 import java.time.Clock;
 import java.util.Collection;
@@ -16,7 +15,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import org.springframework.stereotype.Service;
 
-/** Stored Jita prices. Prices are public data, shared by all users, so these calls take no viewer. */
+/** Jita prices. Prices are public data, shared by all users, so these calls take no viewer. */
 @Service
 public class MarketService {
 
@@ -24,13 +23,11 @@ public class MarketService {
     static final int THE_FORGE = 10000002;
     static final long JITA_4_4 = 60003760L;
 
-    private final PriceRepository prices;
     private final OrderRepository orders;
     private final EsiClient esi;
     private final Clock clock;
 
-    MarketService(PriceRepository prices, OrderRepository orders, EsiClient esi, Clock clock) {
-        this.prices = prices;
+    MarketService(OrderRepository orders, EsiClient esi, Clock clock) {
         this.orders = orders;
         this.esi = esi;
         this.clock = clock;
@@ -77,13 +74,5 @@ public class MarketService {
         } catch (java.util.concurrent.ExecutionException e) {
             return EsiResult.failed("ESI call failed: " + e.getCause());
         }
-    }
-
-    public Map<TypeId, JitaPrice> pricesFor(Collection<TypeId> types) {
-        return prices.pricesFor(types);
-    }
-
-    public void store(List<JitaPrice> newPrices) {
-        prices.store(newPrices);
     }
 }

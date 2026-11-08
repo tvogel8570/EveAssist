@@ -5,14 +5,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.eveassist.IntegrationTest;
 import com.eveassist.identity.internal.TestSignIn;
-import com.eveassist.market.JitaPrice;
 import com.microsoft.playwright.Browser;
 import com.microsoft.playwright.BrowserContext;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Playwright;
 import com.microsoft.playwright.Request;
-import java.math.BigDecimal;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -113,6 +110,48 @@ class PlanEditorBrowserIT extends IntegrationTest {
         assertThat(page.locator("#material-lines > #line-34")).hasCount(1);
         assertThat(page.locator("table table")).hasCount(0);
         assertNotReloaded();
+    }
+
+    @Test
+    void refreshingPricesUpdatesTheTotalWithoutReloadingAndLeavesAnotherPlanAlone() {
+        createPlanWithHauler();
+        var planUrl = page.url();
+        assertThat(page.locator("#plan-total-value")).hasText("700 ISK");
+        markPage();
+        esi.sell(34, "6.00");
+
+        page.click("#refresh-prices");
+
+        assertThat(page.locator("#plan-total-value")).hasText("820 ISK");
+        assertThat(page.locator("#refresh-prices")).isEnabled();
+        assertThat(page.locator("#price-warning .alert")).hasCount(0);
+        assertNotReloaded();
+
+        page.navigate(url("/plans"));
+        page.fill("#new-plan-name", "Second plan");
+        page.click("#new-plan");
+        page.waitForURL("**/plans/*");
+        addProduct("hauler", "Test Hauler");
+        esi.sell(34, "7.00");
+        page.navigate(planUrl);
+        assertThat(page.locator("#plan-total-value")).hasText("820 ISK");
+    }
+
+    @Test
+    void refreshingWhenEsiCannotAnswerForAnItemKeepsItsPriceAndWarns() {
+        createPlanWithHauler();
+        esi.sell(34, "6.00");
+        esi.fail(35);
+
+        page.click("#refresh-prices");
+
+        assertThat(page.locator("#plan-total-value")).hasText("820 ISK");
+        assertThat(page.locator("#price-warning .alert")).containsText("Could not refresh");
+        assertThat(page.locator("#price-warning .alert")).containsText("Pilot's Mineral");
+
+        esi.reset();
+        page.click("#refresh-prices");
+        assertThat(page.locator("#price-warning .alert")).hasCount(0);
     }
 
     @Test
@@ -226,9 +265,8 @@ class PlanEditorBrowserIT extends IntegrationTest {
 
     @Test
     void buyingAPartThenBuildingItAgainChangesTheMaterialsAndTotal() {
+        esi.sell(COMPONENT.value(), "100.00");
         createPlanWithHauler();
-        market.store(List.of(new JitaPrice(COMPONENT, new BigDecimal("100.00"), Instant.now())));
-        page.reload();
         markPage();
 
         page.click("#buy-1002");

@@ -7,7 +7,6 @@ import com.eveassist.esi.EsiClient;
 import com.eveassist.esi.EsiResult;
 import com.eveassist.esi.MarketOrder;
 import com.eveassist.market.internal.OrderRepository;
-import com.eveassist.market.internal.PriceRepository;
 import com.eveassist.sde.TypeId;
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -28,16 +27,13 @@ class MarketServiceIT extends IntegrationTest {
     private static final long ELSEWHERE = 60000004L;
 
     @Autowired
-    PriceRepository prices;
-
-    @Autowired
     OrderRepository orders;
 
     private final Map<Integer, EsiResult<List<MarketOrder>>> answers = new ConcurrentHashMap<>();
-    private final EsiClient esi = (region, type) -> answers.getOrDefault(type, EsiResult.failed("no answer for " + type));
+    private final EsiClient answering = (region, type) -> answers.getOrDefault(type, EsiResult.failed("no answer for " + type));
 
     private MarketService service() {
-        return new MarketService(prices, orders, esi, Clock.fixed(NOW, ZoneOffset.UTC));
+        return new MarketService(orders, answering, Clock.fixed(NOW, ZoneOffset.UTC));
     }
 
     private static MarketOrder order(int type, long id, long location, boolean buy, String price, long volume) {
@@ -101,7 +97,7 @@ class MarketServiceIT extends IntegrationTest {
     void unchangedKeepsTheStoredOrdersAndConfirmsTheTime() {
         var type = 900_005;
         answers.put(type, EsiResult.updated(List.of(order(type, 40, JITA, false, "10.00", 100)), NOW.minusSeconds(60)));
-        new MarketService(prices, orders, esi, Clock.fixed(NOW.minusSeconds(3600), ZoneOffset.UTC))
+        new MarketService(orders, answering, Clock.fixed(NOW.minusSeconds(3600), ZoneOffset.UTC))
                 .currentPrices(List.of(new TypeId(type)));
 
         answers.put(type, EsiResult.unchanged(NOW.plusSeconds(300)));
@@ -149,7 +145,7 @@ class MarketServiceIT extends IntegrationTest {
             return EsiResult.unchanged(NOW.plusSeconds(300));
         };
 
-        new MarketService(prices, orders, counting, Clock.fixed(NOW, ZoneOffset.UTC))
+        new MarketService(orders, counting, Clock.fixed(NOW, ZoneOffset.UTC))
                 .currentPrices(List.of(new TypeId(type), new TypeId(type)));
 
         assertThat(calls).containsEntry(type, 1);

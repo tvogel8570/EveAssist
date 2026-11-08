@@ -199,8 +199,11 @@ never may (see [The API and ESI](api.md#the-api-and-esi)). Pages and the API sha
 apart. Deciding what to fetch is orchestration, so it stays out of controllers, which remain thin.
 
 - **A page-entry use case** handles a page action that starts a fetch, or does other work on opening. `PlanEntry` replaces an
-  out-of-date stored total now, and will queue fetches once the ESI client exists. Opening a plan loads it, finds the items with
-  expired prices, queues those fetches, and returns stored data from the same query the API uses.
+  out-of-date stored total when a plan is opened, refreshes a plan's prices when the user asks, and fetches the prices
+  of a product added to a plan. Opening a plan never fetches: a plan keeps its prices until the user refreshes them.
+  A fetching action loads the plan in a read-only transaction, asks `market` for prices with no transaction open, and
+  then calls a write in `PlanEditing` that takes the prices as arguments and saves them in a second transaction. So
+  `PlanEditing` never fetches, and no database connection is held while ESI is being asked.
 - **Queries and writes do not start fetches.** Most small htmx updates are one or the other, so they need no page-entry
   use case.
 - **Use cases are grouped into one class per set of related actions, not one class per action**, for example `PlanEntry`
@@ -209,7 +212,9 @@ apart. Deciding what to fetch is orchestration, so it stays out of controllers, 
 - **ArchUnit keeps fetches away from the API**: query classes do not depend on the fetch-queuing code, and the facade does
   not depend on page-entry use cases.
 
-The page shows stored data with its age at once, and updates over SSE when the fetch finishes.
+A refresh is one request: the button shows a spinner, and the tables and total are swapped in when the fetch is done.
+Pushing progress over SSE, as [Background fetches](esi.md#background-fetches) describes for character data, is not
+used for plan prices.
 
 ### Work with no signed-in person
 
@@ -385,7 +390,6 @@ designed.
 | `CharacterLinked(characterId)` | `characters` | `industry` and `market` queue the first fetches | No: the next page or refresh queues them anyway |
 | `CharacterUnlinked(characterId)` | `characters` | `industry` and `market` remove that character's data | Yes: the data must be removed |
 | `SdeVersionImported(version)` | `sde`, after the staging schema is swapped in | `industry` flags saved plans that use a changed blueprint, and the user re-costs them. No open page is refreshed, because imports run during an outage (see [SDE import](data.md#sde-import-and-versioning)) | Yes |
-| `JitaPricesUpdated(typeIds)` | `market`, once the ESI client stores prices | The SSE stream refreshes an open page. Nothing re-costs saved plans (see [Work with no signed-in person](#work-with-no-signed-in-person)) | No: prices are fetched again on demand |
 | `ContractExpiring(contractId)` | `market`, from contract timers | `alerts` | Yes |
 | `FetchProgressed(accountId, done, total)` | fetch tasks | the SSE progress bar under the header | No: a lost event only skips a progress update |
 | `AccountDeleted(accountId)` | `identity` | every module that owns rows deletes them | Yes: a privacy requirement |

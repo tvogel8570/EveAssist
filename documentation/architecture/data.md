@@ -175,9 +175,9 @@ Status: **agreed**. The columns and rules below are **proposed**.
 | `prices_as_of` | The age of the oldest price used | |
 | `costed_at` | When the costing ran | Another input changed after this time: skills, implants, facilities, cost indices, manual prices or settings |
 
-- `plan_costed_item` lists the items that were priced. A plan is out of date when a price for one of them is newer than
-  `costed_at`. Prices are shared by all users, so comparing with the newest price of any item would mark nearly every plan
-  all the time.
+- **A price never marks a plan out of date.** A plan keeps its own prices (see [Plan prices](#plan-prices)) and they
+  change only when the user asks, so a plan is out of date only when its version or the SDE version differs from the one
+  it was costed with. The earlier `plan_costed_item` table, which compared items with the shared prices, was dropped.
 - A plan edit costs the plan anyway, so it stores all of these in the same transaction as the edit. Opening a plan stores
   them too if the stored total is out of date. Nothing recalculates in the background (see
   [Work with no signed-in person](code-structure.md#work-with-no-signed-in-person)).
@@ -186,8 +186,29 @@ Status: **agreed**. The columns and rules below are **proposed**.
   editing the plan. Its update has `WHERE version = ?` with the version it loaded, so an older result cannot overwrite a
   newer one.
 - The list shows the stored total with its age, marked if it is out of date. It does not recalculate to draw the list.
-- **Measured**: the list query took 4.7 ms for an account with 100 plans, among 100,000 plans, 1,000,000 product rows
-  and 5,000,000 costed items on Postgres 18, using `plan_owner_ix`.
+- **Measured** (with the earlier check that also joined `plan_costed_item`): the list query took 4.7 ms for an account
+  with 100 plans, among 100,000 plans, 1,000,000 product rows and 5,000,000 costed items on Postgres 18, using
+  `plan_owner_ix`. The check now reads only the plan row, so it should be cheaper. It has not been measured again.
+
+### Plan prices
+
+Status: **agreed** with the developer (2026-11-08), so that a plan can be kept as quoted to a customer.
+
+| Table | Holds |
+|---|---|
+| `plan_price` | One row per plan and item: `sell`, `buy` (null when that side has no orders), `as_of`, and `source` (`market` now, `manual` for a price the user sets, see issue #8) |
+| `jita_order` | The orders at Jita 4-4 as ESI last gave them, shared by all users, replaced per item when ESI answers |
+| `jita_fetch` | When each item's orders were last confirmed current |
+| `esi_cache` | The `ETag`, `Last-Modified` and `Expires` ESI gave for each route and parameter set |
+
+- A plan costs with `plan_price` only, never with the shared orders. The rows are written with the plan, in the same
+  transaction as an edit or a refresh.
+- A refresh replaces the prices of every item ESI answered for, keeps those it did not, and drops prices for items the
+  plan no longer needs. It increases the plan's `version`, like any edit.
+- Adding a product copies in prices for items the plan has none for, and leaves the others alone.
+- A plan holds a price for everything its products could need, bought or built, so buying or building a part never
+  needs a new one.
+- `prices_as_of` on `plan` is the age of the oldest price among the items that are bought.
 
 ## Open questions
 

@@ -108,8 +108,17 @@
     </div>
 </section>
 
+<!--/* Always on the page, so that a redraw can fill it or clear it. */-->
+<div th:fragment="priceWarning(items, oob)" id="price-warning" role="status"
+     th:attr="hx-swap-oob=${oob ? 'true' : null}">
+    <div class="alert alert-warning text-sm mb-3" th:if="${items != null and !#lists.isEmpty(items)}">
+        <span th:text="#{plan.refreshFailed(${#strings.listJoin(items, ', ')})}">Could not refresh</span>
+    </div>
+</div>
+
 <th:block th:fragment="planRedraw">
     <input th:replace="~{plans/fragments :: version(${plan.version}, true)}">
+    <div th:replace="~{plans/fragments :: priceWarning(${failedItems}, true)}"></div>
     <div th:replace="~{plans/fragments :: total(${plan.totalCost}, ${plan.unpricedLines}, ${plan.pricesAsOf}, true)}"></div>
     <section th:replace="~{plans/fragments :: parts(${plan}, true)}"></section>
     <section th:replace="~{plans/fragments :: materials(${plan}, true)}"></section>

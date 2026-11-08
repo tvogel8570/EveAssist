@@ -106,6 +106,9 @@ What follows for EveAssist:
 - Which phase builds the API, and whether personal access tokens come before third-party OAuth. The developer chose
   to decide this later. The phase-1 groundwork above is done either way.
 - The details under [Shape](#shape) stay proposed until that phase is decided, and are reviewed then.
+- An API edit that adds a product cannot fetch prices for the items the plan has none for, because the API serves
+  stored data only (see [The API and ESI](#the-api-and-esi)). Those items would stay unpriced until the user refreshes
+  in a page. Decide whether that is acceptable when the API is built.
 - How ETags are built, decided when the API is built: hashing the response body, which cannot go stale but costs a full
   costing on each request; combining the versions of everything the response depends on, which can answer 304 without
   costing but goes stale silently if an input is missed; or a stored costing's own version, if costings are stored.

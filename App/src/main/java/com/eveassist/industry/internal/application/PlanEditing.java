@@ -4,8 +4,11 @@ import com.eveassist.identity.Viewer;
 import com.eveassist.industry.PlanId;
 import com.eveassist.industry.internal.domain.Plan;
 import com.eveassist.industry.internal.domain.PlanCost;
+import com.eveassist.industry.internal.domain.PlanPrice;
 import com.eveassist.industry.internal.domain.PlanProduct;
-import java.util.ArrayList;
+import com.eveassist.market.JitaQuote;
+import com.eveassist.sde.TypeId;
+import java.util.Map;
 import org.jmolecules.architecture.hexagonal.PrimaryPort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,26 +36,48 @@ public class PlanEditing {
         if (!plan.hasProduct(command.type())) {
             throw new PlanNotFoundException();
         }
-        var inputs = costings.inputs(plan.products());
+        var inputs = costings.inputs(plan);
         var before = inputs.cost(plan);
         plan.changeQuantity(command.type(), command.quantity());
         return saveAndCompare(viewer, plan, inputs, before);
     }
 
+    /** Adds the product with no new prices, so an item the plan has no price for stays unpriced. */
     public PlanChangeResult addProduct(Viewer viewer, AddProductCommand command) {
+        return addProduct(viewer, command, Map.of());
+    }
+
+    /**
+     * Adds the product and takes the given prices for items the plan has none for. The prices the plan already has are
+     * not touched, so the rest of the quote stays as it was.
+     */
+    public PlanChangeResult addProduct(Viewer viewer, AddProductCommand command, Map<TypeId, JitaQuote> newPrices) {
         var plan = load(viewer, command.plan());
-        var withNewProduct = new ArrayList<>(plan.products());
-        withNewProduct.add(new PlanProduct(command.type(), command.quantity()));
-        var inputs = costings.inputs(withNewProduct);
+        newPrices.forEach((type, quote) -> plan.addPriceIfMissing(type, priceOf(quote)));
+        var inputs = costings.inputs(plan);
         var before = inputs.cost(plan);
         plan.addProduct(command.type(), command.quantity());
         return saveAndCompare(viewer, plan, inputs, before);
     }
 
+    /**
+     * Takes new prices for the plan, which is the only way its existing prices change. An item with no new price
+     * keeps its old one.
+     */
+    public PlanDetails replacePrices(Viewer viewer, PlanId id, long expectedVersion, Map<TypeId, JitaQuote> prices) {
+        var plan = loadAt(viewer, id, expectedVersion);
+        prices.forEach((type, quote) -> plan.setPrice(type, priceOf(quote)));
+        plan.keepPricesFor(costings.requiredTypes(plan.products()));
+        var inputs = costings.inputs(plan);
+        long version = plans.save(viewer, plan, costings.total(inputs.cost(plan), inputs))
+                .orElseThrow(PlanChangedException::new);
+        return costings.details(plan, version, inputs);
+    }
+
     /** Buying a part removes everything below it, so the result is the whole plan rather than changed lines. */
     public PlanDetails choosePartSource(Viewer viewer, ChoosePartSourceCommand command) {
         var plan = loadAt(viewer, command.plan(), command.expectedVersion());
-        var inputs = costings.inputs(plan.products());
+        var inputs = costings.inputs(plan);
         var isPart = inputs.costing().cost(plan.products()).lines().stream()
                 .anyMatch(line -> line.type().equals(command.part()) && line.buildable());
         if (!isPart || plan.hasProduct(command.part())) {
@@ -66,6 +91,10 @@ public class PlanEditing {
         var after = inputs.cost(plan);
         long version = plans.save(viewer, plan, costings.total(after, inputs)).orElseThrow(PlanChangedException::new);
         return costings.details(plan, version, inputs);
+    }
+
+    private static PlanPrice priceOf(JitaQuote quote) {
+        return new PlanPrice(quote.sell(), quote.buy(), quote.asOf());
     }
 
     private Plan loadAt(Viewer viewer, PlanId id, long expectedVersion) {
@@ -88,6 +117,6 @@ public class PlanEditing {
                         .filter(line -> !plan.hasProduct(line.type()))
                         .map(costings::describe)
                         .toList(),
-                after.total(), after.unpricedLines(), inputs.pricesAsOf());
+                after.total(), after.unpricedLines(), costings.pricesAsOf(after, inputs));
     }
 }
