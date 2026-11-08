@@ -30,6 +30,9 @@ spring:
             client-secret: ${KC_APP_CLIENT_SECRET}
             authorization-grant-type: authorization_code
             scope: openid,profile,email
+eveassist:
+  esi:
+    contact-email: ${ESI_CONTACT_EMAIL:}
 server:
   port: 7444
   servlet:
