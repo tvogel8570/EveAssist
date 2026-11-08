@@ -2,8 +2,9 @@
 
 Status: draft, interview in progress.
 
-This describes how EveAssist is built to meet the [requirements](../requirements/README.md). The prototype code that was in `Api/` and
-`Client/` (kept in git under the tag `prototype-api-client`) is a prototype. It shows which tools work (Spring Boot, Keycloak, Postgres, Thymeleaf with Tailwind and
+This describes how EveAssist is built to meet the [requirements](../requirements/README.md). An earlier
+prototype, the modules `Api/` and `Client/`, was removed from the working tree and is kept in git under the tag
+`prototype-api-client`. It showed which tools work (Spring Boot, Keycloak, Postgres, Thymeleaf with Tailwind and
 Alpine, Spring's `RestClient` against ESI, the Fuzzwork SDE dump), but it is not the architecture described here.
 
 Each decision says what was chosen and why. **Agreed** decisions were made with the developer. **Proposed** decisions
@@ -78,8 +79,9 @@ Status: **agreed**.
 
 EveAssist is one Spring Boot application, started as a new top-level module, `App/`. It is written from
 scratch: nothing is copied or inherited from the prototype in `Api/` and `Client/`, or from the UI spikes in `spikes/`,
-so that none of their shortcuts carry over. The prototype was removed from the working tree and stays in git under the tag `prototype-api-client` as reference. The UI spikes were never merged: they are kept for reference on branch `ui-spikes`
-(pushed to `origin`), and their findings are recorded below.
+so that none of their shortcuts carry over. The prototype is no longer in the working tree; it stays in git under the
+tag `prototype-api-client` as reference. The UI spikes were never merged: they are kept for reference on branch
+`ui-spikes` (pushed to `origin`), and their findings are recorded below.
 
 Why one application rather than the prototype's two: both would sign in through Keycloak and both would need the
 database, and the Client would only relay calls to the Api. One deployable is cheaper to run on one EC2 instance and
