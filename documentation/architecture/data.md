@@ -38,6 +38,54 @@ their internal key. Internal keys never appear in URLs, pages or JSON, so that t
 [REST API](api.md) can use the same ids and nothing can be guessed by counting. Status: **agreed** (part of the API
 groundwork).
 
+## Migrations and test data
+
+Status: **agreed** with the developer (2026-11-08), to be tried and changed if it does not hold up.
+
+**Migrations** are Flyway files in `App/src/main/resources/db/migration`, named
+`VYYYYMMDD_HHMM__descriptive-name-with-dashes.sql`, with the time in UTC when the migration is created.
+
+- Flyway reads `V20261108_1530` as version 20261108.1530. The first six migrations were numbered `V1` to `V6` and were
+  renamed to timestamps (taken from their commit times) on 2026-11-08, before any database but the developer's dev
+  database had applied them.
+- A timestamp avoids two branches both creating the next number. If a later migration is merged first, the older one
+  is stamped again on rebase. `outOfOrder` stays off everywhere, so Flyway refuses to start otherwise.
+- A merged migration is never edited, because Flyway checks its checksum. A change is a new migration.
+- Migrations only go forward, with no undo scripts, and each one makes one change.
+- Postgres can roll back DDL, and Flyway runs each migration in a transaction, so a failed migration leaves the
+  database as it was. `CREATE INDEX CONCURRENTLY` is an exception.
+- The SDE is not a migration: its tables come from Fuzzwork and are loaded by the import (see
+  [SDE import and versioning](#sde-import-and-versioning)).
+
+**Tests** build their database from the same production migrations, in a Testcontainer set up by the same init script
+as the real one (see `PostgresTestDatabase`). One container serves the whole run, and tests run as the limited
+`eveassist_app` role. Test data is added on top, never by changing the schema.
+
+- Test-only SQL lives in `App/src/test/resources/db/test`, which only the `test` profile loads. Its files carry the
+  marker `T_` (`VYYYYMMDD_HHMM__T_descriptive-name.sql`, or `afterMigrate__T_descriptive-name.sql`). Data goes into
+  `afterMigrate` or repeatable files, which Flyway runs after every versioned migration, so a later schema change
+  cannot run underneath it. Nothing under `src/main` has the marker.
+- A test migration never drops or relaxes a constraint, because tests would then pass against a schema that production
+  does not have.
+- **Pre-loaded data** is read-only reference data: the small SDE fixture and similar. Its ids avoid real ones, or use
+  the real values, so that it cannot contradict real data. A test never changes it.
+- **A test creates what it changes**, under unique keys (a new account per test, ids from a range kept for tests), so
+  tests do not depend on each other or on empty tables, and never assert on global counts. Tests that cannot
+  use unique keys, such as browser tests whose requests commit on the server's own thread, remove their rows in
+  `@AfterEach`.
+- **Constraints count in success measures.** For a constraint that matters (foreign key, unique key, check,
+  `ON DELETE CASCADE`), one test shows an invalid row is rejected, and the normal tests pass with it on.
+
+**Checks that keep the rules** (run by `./mvnw verify`):
+
+- `MigrationNamingTest` checks every file name, that the stamp is a real date and not in the future, and that the
+  marker `T_` is in the test location only.
+- `MigrationsIT` applies only the production migrations to an empty database, validates them, and confirms that nothing
+  is left pending. A migration that works only with test data fails here.
+- A migration is tried by `./mvnw verify` before the app applies it to the dev database. An empty database does not
+  prove it works on the dev data, for example a new `NOT NULL` column. If that bites, a rehearsal script (dump the dev
+  database, restore it in a container, run the pending migrations) is the next step.
+
 ## Ownership
 
 - Every personal row carries the account that owns it, directly (`owner_account_id`) or through its character, which

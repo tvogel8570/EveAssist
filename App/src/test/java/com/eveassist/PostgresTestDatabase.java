@@ -41,6 +41,20 @@ public final class PostgresTestDatabase {
         }
     }
 
+    /** A new, empty database owned by the migrations' role, for tests that need a schema nothing else has touched. */
+    public static String createEmptyDatabase(String name) {
+        var admin = "jdbc:postgresql://%s:%d/postgres".formatted(
+                CONTAINER.getHost(), CONTAINER.getMappedPort(PostgreSQLContainer.POSTGRESQL_PORT));
+        try (var connection = DriverManager.getConnection(admin, CONTAINER.getUsername(), CONTAINER.getPassword());
+                var statement = connection.createStatement()) {
+            statement.execute("CREATE DATABASE \"" + name + "\" OWNER eveassist_owner");
+        } catch (SQLException e) {
+            throw new IllegalStateException("Could not create the database " + name, e);
+        }
+        return "jdbc:postgresql://%s:%d/%s".formatted(
+                CONTAINER.getHost(), CONTAINER.getMappedPort(PostgreSQLContainer.POSTGRESQL_PORT), name);
+    }
+
     private static String url() {
         return "jdbc:postgresql://%s:%d/eveassist".formatted(
                 CONTAINER.getHost(), CONTAINER.getMappedPort(PostgreSQLContainer.POSTGRESQL_PORT));

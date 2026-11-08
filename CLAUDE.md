@@ -41,6 +41,9 @@ decision. Questions that code can answer are settled by writing the code rather 
   start-up. Open it at https://dev.eveassist.com:7444. On Windows, `dev.eveassist.com` also needs an entry in the Windows
   hosts file, because WSL's `/etc/hosts` does not apply there.
 - Tests named `*IT` and Testcontainers-based tests need Docker running.
+- Flyway migrations are named `VYYYYMMDD_HHMM__descriptive-name-with-dashes.sql` (UTC), and are never edited once merged.
+  Test-only SQL has the marker `T_`. The rules are in `documentation/architecture/data.md`, and `MigrationNamingTest`
+  checks them.
 - App's browser tests use Playwright's Chromium, which it downloads on first run. On a new machine it may also need
   system libraries: `libnss3`, `libnspr4` and `libasound2t64`.
 - Infrastructure: `docker compose up -d` in `Infrastructure/` (needs `.env`, `postgres/password.txt` and the
