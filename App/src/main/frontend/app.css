@@ -1,0 +1,59 @@
+@import "tailwindcss";
+@plugin "daisyui" {
+  themes: dark --default;
+}
+@source "../resources/templates";
+
+.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.line-changed {
+  animation: line-changed 1.6s ease-out;
+}
+
+@keyframes line-changed {
+  from {
+    background: color-mix(in oklab, var(--color-primary) 40%, transparent);
+  }
+  to {
+    background: transparent;
+  }
+}
+
+.saved-cue {
+  animation: saved-cue 2s ease-out forwards;
+}
+
+@keyframes saved-cue {
+  70% {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+#request-indicator {
+  opacity: 0;
+}
+
+#request-indicator.htmx-request {
+  opacity: 1;
+}
+
+.sort-button {
+  cursor: pointer;
+  font-weight: inherit;
+}
+
+.sort-button:hover {
+  text-decoration: underline;
+}
+
+#search-list button:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+}

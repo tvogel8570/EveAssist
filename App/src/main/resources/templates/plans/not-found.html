@@ -1,0 +1,10 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: page(~{::title}, ~{::main})}">
+<head><title th:text="#{plans.notFound}">Plan not found</title></head>
+<body>
+<main class="max-w-6xl mx-auto p-4">
+    <h1 class="text-xl font-semibold mb-3" th:text="#{plans.notFound}">Plan not found</h1>
+    <a class="link" th:href="@{/plans}" th:text="#{plans.backToList}">Back to plans</a>
+</main>
+</body>
+</html>

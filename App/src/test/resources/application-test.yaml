@@ -1,0 +1,14 @@
+# no Keycloak in tests: sign-in is simulated, so these endpoints are never called
+spring:
+  security:
+    oauth2:
+      client:
+        provider:
+          keycloak:
+            authorization-uri: http://keycloak.invalid/auth
+            token-uri: http://keycloak.invalid/token
+            jwk-set-uri: http://keycloak.invalid/certs
+        registration:
+          keycloak:
+            client-secret: test-secret
+            redirect-uri: "{baseUrl}/login/oauth2/code/keycloak"

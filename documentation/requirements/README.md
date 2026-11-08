@@ -1,7 +1,8 @@
 # EveAssist Requirements
 
-EveAssist is an out-of-game (OOG) tool for industry in EVE Online. The code that is already in `Api/` and `Client/`
-was written to try out ESI and the SDE. It is not the basis for these requirements.
+EveAssist is an out-of-game (OOG) tool for industry in EVE Online. The prototype code that was in `Api/` and `Client/`
+(now only in git, under the tag `prototype-api-client`) was written to try out ESI and the SDE. It is not the basis for
+these requirements.
 
 ## Audience
 

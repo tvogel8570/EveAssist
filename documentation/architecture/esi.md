@@ -73,7 +73,8 @@ age.
 ## Jita prices
 
 - Prices are public data, shared by all users. They are fetched on demand, when a plan is opened or the user asks for
-  a refresh.
+  a refresh. The developer decided that the plan editor's refresh button is added with the ESI client, because until then
+  it has nothing to fetch.
 - For each item, the app reads `GET /markets/10000002/orders?type_id=<id>` (The Forge), keeps the orders at Jita 4-4
   (station 60003760), and works out the buy and sell price from the best orders that make up the user's share of the
   volume. The orders are stored once with their `Expires`. Each user's price comes from those stored orders, so users

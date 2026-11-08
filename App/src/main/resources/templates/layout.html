@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:fragment="page(title, content)">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="htmx-config" content='{"noSwap":[204,304,"4xx","5xx"]}'>
+    <th:block sec:authorize="isAuthenticated()">
+        <meta name="_csrf" th:content="${_csrf.token}">
+        <meta name="_csrf_header" th:content="${_csrf.headerName}">
+    </th:block>
+    <title th:replace="${title}">EveAssist</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <script defer th:src="@{/js/htmx.min.js}"></script>
+    <script defer th:src="@{/js/app.js}"></script>
+</head>
+<body class="min-h-screen bg-base-100 text-base-content">
+<div class="navbar bg-base-200 px-4 gap-2">
+    <a class="text-lg font-semibold mr-4" th:href="@{/}" th:text="#{app.name}">EveAssist</a>
+    <a sec:authorize="hasRole('USER')" id="nav-plans" class="btn btn-ghost btn-sm" th:href="@{/plans}" th:text="#{nav.plans}">Plans</a>
+    <span class="grow"></span>
+    <a sec:authorize="isAnonymous()" id="sign-in" class="btn btn-primary btn-sm" th:href="@{/account}" th:text="#{nav.signIn}">Sign in</a>
+    <a sec:authorize="isAuthenticated()" id="account" class="btn btn-ghost btn-sm" th:href="@{/account}" th:text="#{nav.account}">Account</a>
+    <form sec:authorize="isAuthenticated()" th:action="@{/logout}" method="post">
+        <button id="sign-out" class="btn btn-ghost btn-sm" type="submit" th:text="#{nav.signOut}">Sign out</button>
+    </form>
+</div>
+<progress id="request-indicator" class="progress progress-primary h-1 w-full block" aria-hidden="true"></progress>
+<main class="max-w-6xl mx-auto p-4" th:replace="${content}"></main>
+<div class="toast toast-end z-30">
+    <div id="error-toast" class="alert alert-error" role="alert" hidden
+         th:data-failed="#{error.failed}" th:data-conflict="#{error.conflict}" th:data-invalid="#{error.invalid}">
+        <span></span>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,31 @@
+package com.eveassist.industry.internal.application;
+
+import com.eveassist.identity.Viewer;
+import com.eveassist.sde.ItemType;
+import com.eveassist.sde.SdeService;
+import java.util.List;
+import org.jmolecules.architecture.hexagonal.PrimaryPort;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+@PrimaryPort
+@Transactional(readOnly = true)
+public class PlanQueries {
+
+    private final PlanRepository plans;
+    private final SdeService sde;
+
+    PlanQueries(PlanRepository plans, SdeService sde) {
+        this.plans = plans;
+        this.sde = sde;
+    }
+
+    public List<PlanOverview> overviews(Viewer viewer) {
+        return plans.overviews(viewer, sde.version());
+    }
+
+    public List<ItemType> searchProducts(Viewer viewer, String text) {
+        return sde.searchBuildable(text, 12);
+    }
+}

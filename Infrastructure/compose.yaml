@@ -14,16 +14,30 @@ x-common-keycloak: &common-keycloak
     - KC_HTTPS_CERTIFICATE_KEY_FILE=/etc/x509/https/tls.key
     - KC_DB=postgres
     - KC_DB_URL=jdbc:postgresql://eve-assist-postgres:5432/keycloak
-    - KC_DB_USERNAME=localdevuser
+    - KC_DB_USERNAME=keycloak_owner
     - KC_DB_PASSWORD=${KC_DB_PASSWORD} # reference .env file in same directory as compose.yaml
     - KC_DB_SCHEMA=public
     - KC_HEALTH_ENABLED=true
     - KC_HTTPS_PORT=8442 # not 8443, so Keycloaks of other local projects can run alongside
     - KC_HOSTNAME=https://${HOST}:8442 # the URL browsers and the apps use; also the token issuer
+    # filled into the realm file when it is imported
+    - KC_EVE_CLIENT_ID=${KC_EVE_CLIENT_ID}
+    - KC_EVE_CLIENT_SECRET=${KC_EVE_CLIENT_SECRET}
+    - KC_APP_CLIENT_SECRET=${KC_APP_CLIENT_SECRET}
+    - APP_BASE_URL=${APP_BASE_URL}
   volumes:
-    - type: volume
-      source: keycloak-eve-assist
-      target: /opt/keycloak/data/import
+    - type: bind
+      source: ./keycloak/EveAssist-realm-export.json
+      target: /opt/keycloak/data/import/EveAssist-realm-export.json
+      read_only: true
+    - type: bind
+      source: ./keycloak/export # exports and the runbook's imports; ignored by git, as exports hold secrets
+      target: /opt/keycloak/data/export
+  secrets:
+    - source: server_crt
+      target: /etc/x509/https/tls.crt
+    - source: server_key
+      target: /etc/x509/https/tls.key
   user: 1000:0
   networks:
     - eve-assist-network
@@ -42,7 +56,7 @@ services:
       tags:
         - "tvogel8570/postgres-eve-assist:latest"
     healthcheck:
-      test: [ "CMD", "pg_isready", "-q", "-U", "localdevuser", "-d", "keycloak" ]
+      test: [ "CMD", "pg_isready", "-q", "-U", "postgres", "-d", "eveassist" ]
       interval: 10s
     volumes:
       - type: volume
@@ -52,6 +66,11 @@ services:
       - eve-assist-network
     environment:
       - POSTGRES_PASSWORD_FILE=/run/secrets/db-password
+      # read by sql/init/3-init-eveassist.sh
+      - KC_DB_PASSWORD=${KC_DB_PASSWORD}
+      - EVEASSIST_OWNER_PASSWORD=${EVEASSIST_OWNER_PASSWORD}
+      - EVEASSIST_APP_PASSWORD=${EVEASSIST_APP_PASSWORD}
+      - EVEASSIST_SDE_PASSWORD=${EVEASSIST_SDE_PASSWORD}
     container_name: eve-assist-postgres
     ports:
       - target: 5432
@@ -69,11 +88,6 @@ services:
       - "start"
       - "--import-realm"
       - "--optimized"
-    secrets:
-      - source: server_crt
-        target: /etc/x509/https/tls.crt
-      - source: server_key
-        target: /etc/x509/https/tls.key
     ports:
       - target: 8442 # Keycloak HTTPS port (KC_HTTPS_PORT)
         published: 8442
@@ -90,17 +104,18 @@ services:
       - iam-export
     command:
       - "export"
-      - "--file"
-      - "/opt/keycloak/data/import/EveAssist-realm-export.json"
+      - "--optimized"
+      - "--dir"
+      - "/opt/keycloak/data/export"
       - "--realm"
       - "EveAssist"
+      - "--users"
+      - "different_files"
     container_name: eve-assist-keycloak-export
 
 volumes:
   postgres-eve-assist:
     name: postgres-eve-assist
-  keycloak-eve-assist:
-    name: keycloak-eve-assist
 
 secrets:
   db-password:

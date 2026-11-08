@@ -1,0 +1,144 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<input th:fragment="version(version, oob)" type="hidden" id="plan-version" name="expectedVersion" th:value="${version}"
+       th:attr="hx-swap-oob=${oob ? 'true' : null}">
+
+<div th:fragment="total(total, unpriced, pricesAsOf, oob)" id="plan-total"
+     class="sticky top-0 z-20 bg-base-200 rounded-box p-3 mb-4 flex flex-wrap gap-x-6 gap-y-1 items-baseline shadow"
+     th:attr="hx-swap-oob=${oob ? 'true' : null}">
+    <span class="text-sm opacity-70" th:text="#{plan.total}">Total</span>
+    <span id="plan-total-value" class="text-2xl font-semibold num"
+          th:text="${#numbers.formatDecimal(total, 1, 'COMMA', 0, 'POINT')} + ' ISK'">0 ISK</span>
+    <span class="text-sm opacity-70" th:if="${pricesAsOf != null}"
+          th:text="#{plan.pricesAsOf(${@utcTime.format(pricesAsOf)})}">Prices from</span>
+    <span id="plan-unpriced" class="badge badge-warning badge-sm" th:if="${unpriced > 0}"
+          th:text="#{plan.unpriced(${unpriced})}">No price</span>
+</div>
+
+<tr th:fragment="material(line, changed)" th:id="'line-' + ${line.typeId}" th:classappend="${changed} ? 'line-changed'">
+    <td th:text="${line.name}">Item</td>
+    <td class="opacity-70 hidden sm:table-cell" th:text="${line.groupName}">Group</td>
+    <td class="num" th:data-sort="${line.quantity}" th:text="${#numbers.formatInteger(line.quantity, 1, 'COMMA')}">1</td>
+    <td class="num" th:data-sort="${line.unitPrice}">
+        <span th:if="${line.unitPrice != null}" th:text="${#numbers.formatDecimal(line.unitPrice, 1, 'COMMA', 2, 'POINT')}">1</span>
+        <span class="badge badge-warning badge-sm" th:unless="${line.unitPrice != null}" th:text="#{plan.noPrice}">No price</span>
+    </td>
+    <td class="num" th:data-sort="${line.cost}">
+        <span th:if="${line.cost != null}" th:text="${#numbers.formatDecimal(line.cost, 1, 'COMMA', 0, 'POINT')}">1</span>
+    </td>
+</tr>
+
+<tr th:fragment="part(line, planId, changed)" th:id="'line-' + ${line.typeId}" th:classappend="${changed} ? 'line-changed'">
+    <td th:text="${line.name}">Item</td>
+    <td class="opacity-70 hidden sm:table-cell" th:text="${line.groupName}">Group</td>
+    <td class="num" th:data-sort="${line.quantity}" th:text="${#numbers.formatInteger(line.quantity, 1, 'COMMA')}">1</td>
+    <td>
+        <div class="join" role="group" th:aria-label="#{plan.sourceOf(${line.name})}">
+            <button type="button" class="btn btn-xs join-item" th:id="'build-' + ${line.typeId}"
+                    th:classappend="${line.built} ? 'btn-primary'" th:aria-pressed="${line.built}" th:text="#{plan.build}"
+                    th:attr="hx-post=@{/plans/{id}/parts/{type}/build(id=${planId},type=${line.typeId})}"
+                    hx-trigger="click" hx-swap="none" hx-include="#plan-version"
+                    hx-sync="#products:queue all" hx-indicator="#request-indicator">Build</button>
+            <button type="button" class="btn btn-xs join-item" th:id="'buy-' + ${line.typeId}"
+                    th:classappend="${line.built} ? '' : 'btn-primary'" th:aria-pressed="${!line.built}" th:text="#{plan.buy}"
+                    th:attr="hx-post=@{/plans/{id}/parts/{type}/buy(id=${planId},type=${line.typeId})}"
+                    hx-trigger="click" hx-swap="none" hx-include="#plan-version"
+                    hx-sync="#products:queue all" hx-indicator="#request-indicator">Buy</button>
+        </div>
+    </td>
+    <td class="num" th:data-sort="${line.unitPrice}">
+        <th:block th:unless="${line.built}">
+            <span th:if="${line.unitPrice != null}" th:text="${#numbers.formatDecimal(line.unitPrice, 1, 'COMMA', 2, 'POINT')}">1</span>
+            <span class="badge badge-warning badge-sm" th:unless="${line.unitPrice != null}" th:text="#{plan.noPrice}">No price</span>
+        </th:block>
+    </td>
+    <td class="num" th:data-sort="${line.cost}">
+        <span th:if="${line.cost != null}" th:text="${#numbers.formatDecimal(line.cost, 1, 'COMMA', 0, 'POINT')}">1</span>
+    </td>
+</tr>
+
+<th:block th:fragment="sortHeading(label)">
+    <button type="button" class="sort-button font-[inherit]" data-sort-column>
+        <span th:text="${label}">Label</span><span class="sort-mark" aria-hidden="true"></span>
+    </button>
+</th:block>
+
+<section th:fragment="parts(plan, oob)" id="parts-section" th:attr="hx-swap-oob=${oob ? 'true' : null}">
+    <h2 class="font-semibold mt-5 mb-1"><span th:text="#{plan.parts}">Parts</span>
+        <span class="badge badge-sm" th:text="${#lists.size(plan.parts)}">0</span></h2>
+    <div class="overflow-x-auto">
+        <table class="table table-sm">
+            <thead>
+            <tr>
+                <th th:text="#{plan.item}">Item</th>
+                <th class="hidden sm:table-cell" th:text="#{plan.group}">Group</th>
+                <th class="num"><th:block th:replace="~{plans/fragments :: sortHeading(#{plan.quantity})}"></th:block></th>
+                <th th:text="#{plan.source}">Source</th>
+                <th class="num"><th:block th:replace="~{plans/fragments :: sortHeading(#{plan.unitPrice})}"></th:block></th>
+                <th class="num"><th:block th:replace="~{plans/fragments :: sortHeading(#{plan.cost})}"></th:block></th>
+            </tr>
+            </thead>
+            <tbody id="part-lines">
+            <th:block th:each="line : ${plan.parts}"><tr th:replace="~{plans/fragments :: part(${line}, ${plan.id.value}, false)}"></tr></th:block>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section th:fragment="materials(plan, oob)" id="materials-section" th:attr="hx-swap-oob=${oob ? 'true' : null}">
+    <h2 class="font-semibold mt-5 mb-1"><span th:text="#{plan.materials}">Materials</span>
+        <span class="badge badge-sm" th:text="${#lists.size(plan.bought)}">0</span></h2>
+    <div class="overflow-x-auto">
+        <table class="table table-sm table-zebra">
+            <thead>
+            <tr>
+                <th th:text="#{plan.item}">Item</th>
+                <th class="hidden sm:table-cell" th:text="#{plan.group}">Group</th>
+                <th class="num"><th:block th:replace="~{plans/fragments :: sortHeading(#{plan.quantity})}"></th:block></th>
+                <th class="num"><th:block th:replace="~{plans/fragments :: sortHeading(#{plan.unitPrice})}"></th:block></th>
+                <th class="num"><th:block th:replace="~{plans/fragments :: sortHeading(#{plan.cost})}"></th:block></th>
+            </tr>
+            </thead>
+            <tbody id="material-lines">
+            <th:block th:each="line : ${plan.bought}"><tr th:replace="~{plans/fragments :: material(${line}, false)}"></tr></th:block>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<th:block th:fragment="planRedraw">
+    <input th:replace="~{plans/fragments :: version(${plan.version}, true)}">
+    <div th:replace="~{plans/fragments :: total(${plan.totalCost}, ${plan.unpricedLines}, ${plan.pricesAsOf}, true)}"></div>
+    <section th:replace="~{plans/fragments :: parts(${plan}, true)}"></section>
+    <section th:replace="~{plans/fragments :: materials(${plan}, true)}"></section>
+</th:block>
+
+<th:block th:fragment="change">
+    <input th:replace="~{plans/fragments :: version(${change.version}, true)}">
+    <div th:replace="~{plans/fragments :: total(${change.totalCost}, ${change.unpricedLines}, ${change.pricesAsOf}, true)}"></div>
+    <span th:id="'saved-' + ${editedTypeId}" hx-swap-oob="true"><span class="saved-cue text-xs text-success" th:text="#{plan.saved}">Saved</span></span>
+    <!--/* A row needs its own hx-partial: the browser would drop a bare tr here, because the response starts with an input. */-->
+    <hx-partial th:each="line : ${change.changedLines}" th:attr="hx-target='#line-' + ${line.typeId}" hx-swap="outerHTML">
+        <th:block th:if="${line.buildable}"><tr th:replace="~{plans/fragments :: part(${line}, ${change.planId.value}, true)}"></tr></th:block>
+        <th:block th:unless="${line.buildable}"><tr th:replace="~{plans/fragments :: material(${line}, true)}"></tr></th:block>
+    </hx-partial>
+</th:block>
+
+<th:block th:fragment="searchResults">
+    <ul id="search-list" class="menu bg-base-200 rounded-box w-full" th:unless="${#lists.isEmpty(items)}">
+        <li th:each="item : ${items}">
+            <form method="post" th:action="@{/plans/{id}/products(id=${planId})}">
+                <input type="hidden" name="typeId" th:value="${item.id.value}">
+                <button type="submit" class="w-full text-left" th:text="${item.name}">Item</button>
+            </form>
+        </li>
+    </ul>
+    <p class="text-sm opacity-60 p-2" th:if="${searched and #lists.isEmpty(items)}" th:text="#{plan.noMatches}">No items found</p>
+</th:block>
+
+<th:block th:fragment="empty"></th:block>
+
+</body>
+</html>

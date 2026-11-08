@@ -45,6 +45,9 @@ out/
 **/.idea/**/modules.xml
 *.iml
 
+# IntelliJ regenerates this from its own state, and it can't be edited in the settings; it has no shared value
+**/.idea/**/jsLibraryMappings.xml
+
 # secrets
 **/env.properties
 **/.env
@@ -54,3 +57,4 @@ out/
 
 # log files
 **/*.log
+/documentation/clips/

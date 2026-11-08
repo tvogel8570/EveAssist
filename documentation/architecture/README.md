@@ -2,8 +2,9 @@
 
 Status: draft, interview in progress.
 
-This describes how EveAssist is built to meet the [requirements](../requirements/README.md). The code in `Api/` and
-`Client/` is a prototype. It shows which tools work (Spring Boot, Keycloak, Postgres, Thymeleaf with Tailwind and
+This describes how EveAssist is built to meet the [requirements](../requirements/README.md). An earlier
+prototype, the modules `Api/` and `Client/`, was removed from the working tree and is kept in git under the tag
+`prototype-api-client`. It showed which tools work (Spring Boot, Keycloak, Postgres, Thymeleaf with Tailwind and
 Alpine, Spring's `RestClient` against ESI, the Fuzzwork SDE dump), but it is not the architecture described here.
 
 Each decision says what was chosen and why. **Agreed** decisions were made with the developer. **Proposed** decisions
@@ -63,7 +64,7 @@ flowchart LR
 | Alerts | Stored in Postgres, pushed to open pages with server-sent events (SSE) | Agreed |
 | External REST API | Designed now, built later; Keycloak OAuth for third-party apps and personal access tokens for scripts; serves stored data only | Agreed |
 | Language and framework | Java 25 and Spring Boot 4.1 | Agreed |
-| Module folder name | `App/`, beside `Api/` and `Client/` | Agreed |
+| Module folder name | `App/` (the prototype `Api/` and `Client/` were removed; see tag `prototype-api-client`) | Agreed |
 | Sessions | Spring Session stored in Postgres | Agreed |
 | Character linking | A separate EVE SSO application, called by the app directly, not through Keycloak | Agreed |
 | SDE location | A schema in the app's database, not a separate database | Agreed |
@@ -78,9 +79,9 @@ Status: **agreed**.
 
 EveAssist is one Spring Boot application, started as a new top-level module, `App/`. It is written from
 scratch: nothing is copied or inherited from the prototype in `Api/` and `Client/`, or from the UI spikes in `spikes/`,
-so that none of their shortcuts carry over. The prototype stays as reference until the new module covers what it
-showed, and is then removed. The UI spikes were never merged: they are kept for reference on branch `ui-spikes`
-(pushed to `origin`), and their findings are recorded below.
+so that none of their shortcuts carry over. The prototype is no longer in the working tree; it stays in git under the
+tag `prototype-api-client` as reference. The UI spikes were never merged: they are kept for reference on branch
+`ui-spikes` (pushed to `origin`), and their findings are recorded below.
 
 Why one application rather than the prototype's two: both would sign in through Keycloak and both would need the
 database, and the Client would only relay calls to the Api. One deployable is cheaper to run on one EC2 instance and
@@ -131,9 +132,19 @@ What the htmx UI must get right, found while building the spikes:
 - **One shared htmx set-up**, written and tested once: the CSRF header on every request; `HX-Redirect` when the session
   has expired, so the sign-in page is not swapped into a fragment; a visible message on 4xx and 5xx responses;
   `hx-sync` against overlapping requests; loading indicators.
+- **htmx 4**: the developer chose it over 2.x, because it becomes htmx's `latest` version during 2027 and starting there
+  avoids an upgrade. It swaps 4xx and 5xx responses by default, so `layout.html` turns that off with `noSwap`.
+- **Table rows in an htmx response need `<hx-partial>`**, found by a browser test. htmx parses a response inside a
+  `<template>`, whose parsing mode comes from the first tag, so a bare `<tr>` after an `<input>` is silently dropped, with
+  a correct response and no error. Only a browser shows this, so each kind of update has a browser test.
+- **A request waiting in an `hx-sync` queue sends the values from when it was triggered.** The shared set-up in `app.js`
+  refreshes `expectedVersion` just before it is sent, or a quick second edit is refused as out of date.
 - **Latency**: screens are tried with Chrome's network throttling at 50 ms and 150 ms, which stand for a player near
   the AWS region and one on another continent.
 - **Large plans** update only the rows that changed and the totals, not the whole tree.
+- **Thymeleaf order**: `th:replace` runs before `th:if` and `th:each`, so on one element they do nothing useful. Put the
+  condition or loop on a `th:block` around it. This caused a missing fragment and duplicated rows while `App/` was built.
+- **Sorting** runs in the browser and lasts for one page view, so it costs no request. It is put back after an update.
 - **Escaping**: only `th:text` is used for data. `th:utext` is not used for anything a user or ESI supplied.
 - **Drag and drop**: the drop target is the whole column, and on drop the column under the pointer decides, not the
   last one the pointer crossed. The server checks every move.

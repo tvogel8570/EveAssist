@@ -1,0 +1,10 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: page(~{::title}, ~{::main})}">
+<head><title th:text="#{app.name}">EveAssist</title></head>
+<body>
+<main class="max-w-6xl mx-auto p-4">
+    <h1 class="text-3xl font-semibold mb-2" th:text="#{app.name}">EveAssist</h1>
+    <p th:text="#{home.welcome}">Welcome</p>
+</main>
+</body>
+</html>
