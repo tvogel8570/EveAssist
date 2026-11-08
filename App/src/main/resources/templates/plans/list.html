@@ -5,7 +5,7 @@
 <main class="max-w-6xl mx-auto p-4">
     <h1 class="text-xl font-semibold mb-3" th:text="#{plans.title}">Plans</h1>
     <form class="flex gap-2 mb-4 max-w-md" method="post" th:action="@{/plans}">
-        <input id="new-plan-name" class="input input-sm grow" name="name" required maxlength="100"
+        <input id="new-plan-name" class="input input-sm grow" name="name" required maxlength="100" pattern=".*\S.*"
                th:placeholder="#{plans.newName}" th:aria-label="#{plans.newName}">
         <button id="new-plan" class="btn btn-primary btn-sm" type="submit" th:text="#{plans.create}">New plan</button>
     </form>

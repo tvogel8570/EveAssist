@@ -24,9 +24,10 @@ public class PlanEntry {
     public PlanDetails open(Viewer viewer, PlanId id) {
         var plan = plans.find(viewer, id).orElseThrow(PlanNotFoundException::new);
         var inputs = costings.inputs(plan.products());
+        var cost = inputs.cost(plan);
         if (!plan.products().isEmpty()) {
-            plans.recordCosting(viewer, plan, costings.total(inputs.cost(plan), inputs));
+            plans.recordCosting(viewer, plan, costings.total(cost, inputs));
         }
-        return costings.details(plan, plan.version(), inputs);
+        return costings.details(plan, plan.version(), inputs, cost);
     }
 }
