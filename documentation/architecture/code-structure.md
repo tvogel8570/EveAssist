@@ -440,8 +440,10 @@ almost nothing, and they never need ArchUnit's frozen-violation baseline (`Freez
 - **Needs validation**: [Facade and visibility](#facade-and-visibility) and [Service interfaces](#service-interfaces).
   The developer wants time to think about both, including how they meet the testing problems the developer has had
   with non-public methods.
-- How [Pages, the API and the facade](#pages-the-api-and-the-facade) applies to thin modules, whose controllers call a
-  plain service. If that service is also the facade, it breaks the rule that nothing inside a module calls its facade.
+- ~~How [Pages, the API and the facade](#pages-the-api-and-the-facade) applies to thin modules.~~ Settled by the first
+  slice: a thin module's controllers call an internal service and it has no facade. It gains one only when another
+  module needs it, as `market`'s `MarketService` does for `industry`. `alerts` is not built until job tracking or
+  contracts need it.
 - Whether `market` needs the layered form from the start, or begins thin and moves to it once its price rules are
   built.
 - Whether the generated module diagrams are committed under `documentation/architecture/`, or only produced by the
