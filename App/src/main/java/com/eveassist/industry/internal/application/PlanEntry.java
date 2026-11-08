@@ -52,12 +52,15 @@ public class PlanEntry {
         if (!plan.products().isEmpty()) {
             plans.recordCosting(viewer, plan, costings.total(cost, inputs));
         }
-        return costings.details(plan, plan.version(), inputs);
+        return costings.details(plan, plan.version(), inputs, cost);
     }
 
     /** Fetches prices for the items the new product brings in that the plan has none for, and only those. */
     public PlanChangeResult addProduct(Viewer viewer, AddProductCommand command) {
         var plan = load(viewer, command.plan());
+        if (!costings.isBuildable(command.type())) {
+            throw new UnknownProductException();
+        }
         var products = new ArrayList<>(plan.products());
         products.add(new PlanProduct(command.type(), command.quantity()));
         var missing = new HashSet<>(costings.requiredTypes(products));

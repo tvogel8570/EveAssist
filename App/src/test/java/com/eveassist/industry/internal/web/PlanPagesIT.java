@@ -289,6 +289,56 @@ class PlanPagesIT extends IntegrationTest {
     }
 
     @Test
+    void anItemThatCannotBeBuiltCannotBeAddedAsAProduct() throws Exception {
+        var sub = newSub();
+        var id = planWith(sub);
+
+        for (var bad : new String[] {"1", "-5", "34", "999999"}) {
+            mvc.perform(post("/plans/{id}/products", id.value()).param("typeId", bad)
+                            .with(signedIn(sub)).with(csrf()))
+                    .andExpect(status().isUnprocessableContent());
+        }
+
+        assertThat(esi.asked()).as("ESI is not asked about an item that cannot be a product").isEmpty();
+        rendered(mvc.perform(get("/plans/" + id.value()).with(signedIn(sub))))
+                .andExpect(content().string(containsString("id=\"no-products\"")));
+    }
+
+    @Test
+    void aBlankOrOverLongPlanNameIsRefusedWhateverThePageAllowed() throws Exception {
+        var sub = newSub();
+
+        for (var bad : new String[] {" ", "   ", "x".repeat(101)}) {
+            mvc.perform(post("/plans").param("name", bad).with(signedIn(sub)).with(csrf()))
+                    .andExpect(status().isUnprocessableContent());
+        }
+        mvc.perform(post("/plans").param("name", "  Padded  ").with(signedIn(sub)).with(csrf()))
+                .andExpect(status().is3xxRedirection());
+        rendered(mvc.perform(get("/plans").with(signedIn(sub))))
+                .andExpect(content().string(containsString(">Padded<")));
+    }
+
+    @Test
+    void aPartHiddenBelowABoughtPartCannotBeChosen() throws Exception {
+        var sub = newSub();
+        var id = planWith(sub, new TypeId(1005));
+
+        mvc.perform(post("/plans/{id}/parts/{type}/buy", id.value(), 1006)
+                        .param("expectedVersion", "1").with(signedIn(sub)).with(csrf()))
+                .andExpect(status().isOk());
+        mvc.perform(post("/plans/{id}/parts/{type}/buy", id.value(), 1007)
+                        .param("expectedVersion", "2").with(signedIn(sub)).with(csrf()))
+                .andExpect(status().isNotFound());
+
+        mvc.perform(post("/plans/{id}/parts/{type}/build", id.value(), 1006)
+                        .param("expectedVersion", "2").with(signedIn(sub)).with(csrf()))
+                .andExpect(status().isOk());
+        mvc.perform(post("/plans/{id}/parts/{type}/buy", id.value(), 1007)
+                        .param("expectedVersion", "3").with(signedIn(sub)).with(csrf()))
+                .andExpect(status().isOk());
+    }
+
+    @Test
     void editWithABadQuantityIsRefused() throws Exception {
         var sub = newSub();
         var id = planWith(sub, HAULER);

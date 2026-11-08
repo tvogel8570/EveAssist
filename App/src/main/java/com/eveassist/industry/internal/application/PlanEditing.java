@@ -53,6 +53,9 @@ public class PlanEditing {
      */
     public PlanChangeResult addProduct(Viewer viewer, AddProductCommand command, Map<TypeId, JitaQuote> newPrices) {
         var plan = load(viewer, command.plan());
+        if (!costings.isBuildable(command.type())) {
+            throw new UnknownProductException();
+        }
         newPrices.forEach((type, quote) -> plan.addPriceIfMissing(type, priceOf(quote)));
         var inputs = costings.inputs(plan);
         var before = inputs.cost(plan);
@@ -78,7 +81,8 @@ public class PlanEditing {
     public PlanDetails choosePartSource(Viewer viewer, ChoosePartSourceCommand command) {
         var plan = loadAt(viewer, command.plan(), command.expectedVersion());
         var inputs = costings.inputs(plan);
-        var isPart = inputs.costing().cost(plan.products()).lines().stream()
+        // only a part the page shows can be chosen, so one hidden below a part that is bought is refused
+        var isPart = inputs.cost(plan).lines().stream()
                 .anyMatch(line -> line.type().equals(command.part()) && line.buildable());
         if (!isPart || plan.hasProduct(command.part())) {
             throw new PlanNotFoundException();

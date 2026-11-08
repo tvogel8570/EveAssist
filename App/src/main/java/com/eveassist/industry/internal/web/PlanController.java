@@ -6,11 +6,13 @@ import com.eveassist.industry.internal.application.AddProductCommand;
 import com.eveassist.industry.internal.application.ChangeQuantityCommand;
 import com.eveassist.industry.internal.application.ChoosePartSourceCommand;
 import com.eveassist.industry.internal.application.CreatePlanCommand;
+import com.eveassist.industry.internal.application.InvalidPlanNameException;
 import com.eveassist.industry.internal.application.PlanChangedException;
 import com.eveassist.industry.internal.application.PlanEditing;
 import com.eveassist.industry.internal.application.PlanEntry;
 import com.eveassist.industry.internal.application.PlanNotFoundException;
 import com.eveassist.industry.internal.application.PlanQueries;
+import com.eveassist.industry.internal.application.UnknownProductException;
 import com.eveassist.industry.internal.domain.InvalidQuantityException;
 import com.eveassist.sde.TypeId;
 import java.util.UUID;
@@ -49,7 +51,7 @@ class PlanController {
 
     @PostMapping
     String create(Viewer viewer, @RequestParam String name) {
-        var id = editing.create(viewer, new CreatePlanCommand(name.strip()));
+        var id = editing.create(viewer, new CreatePlanCommand(name));
         return "redirect:/plans/" + id.value();
     }
 
@@ -111,7 +113,7 @@ class PlanController {
         return "plans/fragments :: empty";
     }
 
-    @ExceptionHandler(InvalidQuantityException.class)
+    @ExceptionHandler({InvalidQuantityException.class, UnknownProductException.class, InvalidPlanNameException.class})
     @ResponseStatus(HttpStatus.UNPROCESSABLE_CONTENT)
     String invalid() {
         return "plans/fragments :: empty";

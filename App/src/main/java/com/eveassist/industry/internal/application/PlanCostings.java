@@ -46,7 +46,11 @@ class PlanCostings {
 
     /** A plan's products have their own table, so the part and material lists leave them out. */
     PlanDetails details(Plan plan, long version, Inputs inputs) {
-        var cost = inputs.cost(plan);
+        return details(plan, version, inputs, inputs.cost(plan));
+    }
+
+    /** For a caller that has already costed the plan, so that it is not costed twice. */
+    PlanDetails details(Plan plan, long version, Inputs inputs, PlanCost cost) {
         var lines = cost.lines().stream()
                 .filter(line -> !plan.hasProduct(line.type()))
                 .map(this::describe)
@@ -87,6 +91,11 @@ class PlanCostings {
         return cost.lines().stream().filter(line -> !line.built())
                 .map(line -> inputs.prices().get(line.type())).filter(java.util.Objects::nonNull)
                 .map(PlanPrice::asOf).min(Instant::compareTo).orElse(null);
+    }
+
+    /** Only an item with a blueprint can be a product. */
+    boolean isBuildable(TypeId type) {
+        return sde.recipeFor(type).isPresent();
     }
 
     String sdeVersion() {
