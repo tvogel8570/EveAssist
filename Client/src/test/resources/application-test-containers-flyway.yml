@@ -1,5 +1,0 @@
-spring:
-  datasource:
-    url: jdbc:tc:postgresql:15-alpine:///eve_assist_user
-    username: postgres
-    password: ${postgres.password}

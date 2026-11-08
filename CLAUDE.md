@@ -3,8 +3,11 @@
 An out-of-game (OOG) industry tool for EVE Online, built in phases: single player first, then small groups and
 corporations, then possibly public multi-tenant. Later phases must not require a rewrite of earlier ones.
 
-The code in `Api/` and `Client/` is a prototype written to try out ESI and the SDE. It is **not** the basis for the
-requirements in `documentation/requirements/`. Check with the developer before building new features on top of it.
+The earlier prototype modules `Api/` (REST API, ESI and SDE) and `Client/` (Thymeleaf web UI) were removed from the
+working tree. They are kept in git under the tag `prototype-api-client`. Read them with
+`git ls-tree -r --name-only prototype-api-client -- Api Client`, `git show prototype-api-client:Api/<path>` and
+`git grep <pattern> prototype-api-client -- Api Client`. They are reference only, not the basis for the requirements
+in `documentation/requirements/`. To build or run them, ask the developer first, then use a worktree on the tag.
 
 ## Terms
 
@@ -18,8 +21,6 @@ the requirements or architecture, say "the developer decided" or similar, not "t
 | Path | What it is |
 |---|---|
 | `App/` | EveAssist's application, being built: Spring Boot 4.1 / Java 25, Spring Modulith. See `documentation/architecture/`. |
-| `Api/` | Spring Boot 4.1 / Java 25 REST API. Reads the SDE (`sdeyaml` database) with JDBC and calls ESI. OAuth2 resource server. |
-| `Client/` | Spring Boot 3.2 / Java 17 web UI: Thymeleaf with the layout dialect, Tailwind CSS (built by npm through `frontend-maven-plugin`), Flyway, JPA. Signs in through Keycloak. |
 | `Infrastructure/` | Docker Compose for Postgres and Keycloak (realm export in `keycloak/`). See `Infrastructure/README.md`. |
 | `documentation/requirements/` | Requirements drafts, gathered by interview. Open questions are listed at the end of each file. |
 | `documentation/sde/` | SDE schema reference. |
@@ -39,18 +40,13 @@ decision. Questions that code can answer are settled by writing the code rather 
 - Run App with `./mvnw spring-boot:run` in `App/`, after `docker compose up -d` in `Infrastructure/`. It needs Keycloak at
   start-up. Open it at https://dev.eveassist.com:7444. On Windows, `dev.eveassist.com` also needs an entry in the Windows
   hosts file, because WSL's `/etc/hosts` does not apply there.
-- Client: `./mvnw verify` in `Client/`. Api: `./mvnw verify` in `Api/`. Each module has its own Maven wrapper.
-- Api tests tagged `esi-live` call the real, public ESI, so the Api build needs network access. Offline, skip them
-  with `./mvnw verify -DexcludedGroups=esi-live`.
 - Tests named `*IT` and Testcontainers-based tests need Docker running.
 - App's browser tests use Playwright's Chromium, which it downloads on first run. On a new machine it may also need
   system libraries: `libnss3`, `libnspr4` and `libasound2t64`.
-- Client front end: `npm run build` or `npm run watch` in `Client/`.
 - Infrastructure: `docker compose up -d` in `Infrastructure/` (needs `.env`, `postgres/password.txt` and the
   Keycloak certificate files; see its README).
 
-Local ports with the default profile: Postgres 2345 (5432 inside the compose network), Keycloak 8442 (HTTPS), App 7444 (HTTPS), Api 8085 (8043 with TLS),
-Client 7443 (9443 with TLS).
+Local ports with the default profile: Postgres 2345 (5432 inside the compose network), Keycloak 8442 (HTTPS), App 7444 (HTTPS).
 
 ## ESI
 

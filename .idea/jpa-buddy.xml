@@ -4,9 +4,9 @@
     <option name="defaultUnitInitialized" value="true" />
     <option name="renamerInitialized" value="true" />
     <option name="isSnapshotDb" value="false" />
-    <option name="snapshotModelValue" value="Client" />
+    <option name="snapshotModelValue" value="App" />
     <option name="reverseEngineeringLastDbConnectionId" value="0854d928-4029-4975-be6c-2410d479d990__sdeyaml_evesde" />
-    <option name="reLastEntityCreationPackage" value="Api/src/main/java/com/eveassist/api/sde/entity" />
+    <option name="reLastEntityCreationPackage" value="" />
     <option name="newEntityIdType" value="Long" />
     <option name="newEntityIdStrategy" />
     <option name="newEntitySequenceItemName" value="&lt;Generate exclusively for entity&gt;" />

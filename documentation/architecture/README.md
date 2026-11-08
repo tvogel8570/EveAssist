@@ -2,8 +2,8 @@
 
 Status: draft, interview in progress.
 
-This describes how EveAssist is built to meet the [requirements](../requirements/README.md). The code in `Api/` and
-`Client/` is a prototype. It shows which tools work (Spring Boot, Keycloak, Postgres, Thymeleaf with Tailwind and
+This describes how EveAssist is built to meet the [requirements](../requirements/README.md). The prototype code that was in `Api/` and
+`Client/` (kept in git under the tag `prototype-api-client`) is a prototype. It shows which tools work (Spring Boot, Keycloak, Postgres, Thymeleaf with Tailwind and
 Alpine, Spring's `RestClient` against ESI, the Fuzzwork SDE dump), but it is not the architecture described here.
 
 Each decision says what was chosen and why. **Agreed** decisions were made with the developer. **Proposed** decisions
@@ -63,7 +63,7 @@ flowchart LR
 | Alerts | Stored in Postgres, pushed to open pages with server-sent events (SSE) | Agreed |
 | External REST API | Designed now, built later; Keycloak OAuth for third-party apps and personal access tokens for scripts; serves stored data only | Agreed |
 | Language and framework | Java 25 and Spring Boot 4.1 | Agreed |
-| Module folder name | `App/`, beside `Api/` and `Client/` | Agreed |
+| Module folder name | `App/` (the prototype `Api/` and `Client/` were removed; see tag `prototype-api-client`) | Agreed |
 | Sessions | Spring Session stored in Postgres | Agreed |
 | Character linking | A separate EVE SSO application, called by the app directly, not through Keycloak | Agreed |
 | SDE location | A schema in the app's database, not a separate database | Agreed |
@@ -78,8 +78,7 @@ Status: **agreed**.
 
 EveAssist is one Spring Boot application, started as a new top-level module, `App/`. It is written from
 scratch: nothing is copied or inherited from the prototype in `Api/` and `Client/`, or from the UI spikes in `spikes/`,
-so that none of their shortcuts carry over. The prototype stays as reference until the new module covers what it
-showed, and is then removed. The UI spikes were never merged: they are kept for reference on branch `ui-spikes`
+so that none of their shortcuts carry over. The prototype was removed from the working tree and stays in git under the tag `prototype-api-client` as reference. The UI spikes were never merged: they are kept for reference on branch `ui-spikes`
 (pushed to `origin`), and their findings are recorded below.
 
 Why one application rather than the prototype's two: both would sign in through Keycloak and both would need the
