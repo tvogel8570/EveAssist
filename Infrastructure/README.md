@@ -7,8 +7,9 @@ Create postgres and keycloak docker instances
 ### postgres
 
 - ensure `password.txt` exists under `postgres` directory
-- ensure `postgres/backup/latest-postgresschema.pgdump` is the latest sdeyaml export
-  from [Fuzzwork](https://www.fuzzwork.co.uk/dump/)
+- ensure `postgres/backup/latest-postgresschema.pgdump` is the latest Postgres schema export
+  from [Fuzzwork](https://www.fuzzwork.co.uk/dump/). `postgres/load-sde.sh` loads it into the `sde` schema once the
+  database is running
 
 ### keycloak-signed certificate and private key exist and are named properly
 
