@@ -269,6 +269,18 @@ class HttpEsiClientTest {
     }
 
     @Test
+    void takesA200WithNoBodyForContractItemsAsAContractWithNoLines() {
+        // seen on real ESI for contracts that are still in the region's list: 200, content-length 0
+        esi.expect(requestTo("https://esi.test/contracts/public/items/9?page=1"))
+                .andRespond(withSuccess("", MediaType.APPLICATION_JSON));
+
+        var result = client.publicContractItems(9);
+
+        assertThat(result.outcome()).isEqualTo(EsiResult.Outcome.UPDATED);
+        assertThat(result.data()).isEmpty();
+    }
+
+    @Test
     void stillFailsOnA403ForOtherRoutes() {
         esi.expect(requestTo(PAGE_1)).andRespond(withStatus(HttpStatus.FORBIDDEN));
 

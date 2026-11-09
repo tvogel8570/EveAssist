@@ -136,11 +136,6 @@ public class ContractRepository {
                 .query((rs, row) -> new int[] {rs.getInt("bpo"), rs.getInt("abyssal")}).single();
     }
 
-    /** The contract has expired or been accepted, so ESI has no lines for it. */
-    public void drop(long contractId) {
-        jdbc.sql("DELETE FROM contract_public WHERE contract_id = :id").param("id", contractId).update();
-    }
-
     /** Contracts in the region that hold at least one copy of the blueprint, with all their lines. */
     public List<StoredContract> contractsWithCopyOf(int regionId, int blueprintTypeId, Instant now) {
         var contracts = new HashMap<Long, BigDecimal>();
