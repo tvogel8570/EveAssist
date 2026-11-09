@@ -120,8 +120,8 @@ class HttpEsiClient implements EsiClient {
             case 200 -> answer.body() == null || answer.body().name() == null
                     ? StructureLookup.failed("ESI answered without a name for structure " + structureId)
                     : StructureLookup.found(answer.body().name(), answer.body().solarSystemId());
-            case 403 -> StructureLookup.noAccess();
-            case 404 -> StructureLookup.notFound();
+            case 403 -> StructureLookup.noAccess(answer.error());
+            case 404 -> StructureLookup.notFound(answer.error());
             default -> StructureLookup.failed("ESI answered " + answer.status() + " for structure " + structureId);
         };
     }
@@ -152,7 +152,7 @@ class HttpEsiClient implements EsiClient {
                     .exchange((request, response) -> new Single(response.getStatusCode().value(),
                             response.getHeaders(),
                             response.getStatusCode().value() == 200 ? response.bodyTo(EsiStructure.class) : null,
-                            null));
+                            null, response.getStatusCode().value() == 200 ? null : errorText(response)));
             limiter.record(STRUCTURE_GROUP, answer.status(), answer.headers());
             return answer;
         } catch (RestClientException e) {
@@ -346,9 +346,19 @@ class HttpEsiClient implements EsiClient {
             @JsonProperty("solar_system_id") int solarSystemId) {
     }
 
-    private record Single(int status, HttpHeaders headers, EsiStructure body, String problem) {
+    private record Single(int status, HttpHeaders headers, EsiStructure body, String problem, String error) {
         static Single problem(String problem) {
-            return new Single(0, null, null, problem);
+            return new Single(0, null, null, problem, null);
+        }
+    }
+
+    /** ESI's own words for an error, such as {"error":"Forbidden"}, cut short. It holds no token. */
+    private static String errorText(org.springframework.http.client.ClientHttpResponse response) {
+        try {
+            var text = new String(response.getBody().readNBytes(300), java.nio.charset.StandardCharsets.UTF_8).trim();
+            return text.isEmpty() ? null : text;
+        } catch (java.io.IOException e) {
+            return null;
         }
     }
 

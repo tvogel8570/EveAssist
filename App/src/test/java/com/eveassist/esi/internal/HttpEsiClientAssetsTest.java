@@ -231,6 +231,18 @@ class HttpEsiClientAssetsTest {
     }
 
     @Test
+    void aRefusalCarriesEsisOwnWordsSoItsCauseCanBeSeen() {
+        esi.expect(requestTo("https://esi.test/universe/structures/1"))
+                .andRespond(withStatus(HttpStatus.FORBIDDEN).contentType(MediaType.APPLICATION_JSON)
+                        .body("{\"error\":\"Forbidden\"}"));
+
+        var answer = client.structure(90000001L, 1L);
+
+        assertThat(answer.status()).isEqualTo(StructureLookup.Status.NO_ACCESS);
+        assertThat(answer.problem()).contains("Forbidden").doesNotContain("token-");
+    }
+
+    @Test
     void aStructureServerErrorOrAMissingTokenIsAFailureWithAReason() {
         esi.expect(requestTo("https://esi.test/universe/structures/1")).andRespond(withServerError());
         var serverError = client.structure(90000001L, 1L);

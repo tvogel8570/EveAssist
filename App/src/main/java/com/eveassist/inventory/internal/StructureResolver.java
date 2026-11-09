@@ -21,7 +21,7 @@ class StructureResolver {
     private static final Logger log = LoggerFactory.getLogger(StructureResolver.class);
 
     static final int MOST_ASKED_PER_RUN = 25;
-    static final int MOST_REFUSALS_PER_RUN = 5;
+    static final int MOST_REFUSALS_PER_RUN = 10;
     static final Duration NAME_TRUSTED_FOR = Duration.ofDays(7);
     static final Duration NO_ACCESS_WAIT = Duration.ofDays(1);
     static final Duration NOT_FOUND_WAIT = Duration.ofDays(7);
@@ -57,6 +57,10 @@ class StructureResolver {
                 return;
             }
             structures.save(character.id(), structureId, answer, clock.instant());
+            if (answer.status() != StructureLookup.Status.FOUND) {
+                log.info("ESI answered {} for structure {} and a character: {}", answer.status(), structureId,
+                        answer.problem());
+            }
             if (answer.status() == StructureLookup.Status.NO_ACCESS) {
                 refusals++;
                 if (refusals >= MOST_REFUSALS_PER_RUN) {

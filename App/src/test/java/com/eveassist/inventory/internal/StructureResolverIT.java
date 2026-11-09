@@ -172,7 +172,7 @@ class StructureResolverIT extends IntegrationTest {
     @Test
     void stopsAfterAFewRefusalsSoTheErrorLimitIsNotSpent() {
         var character = linkActive(viewerFor(newSub()));
-        var ids = new long[12];
+        var ids = new long[25];
         for (int i = 0; i < ids.length; i++) {
             ids[i] = FIRST + 10 + i;
         }

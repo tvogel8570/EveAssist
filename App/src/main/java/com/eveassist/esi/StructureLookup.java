@@ -6,7 +6,8 @@ package com.eveassist.esi;
  *
  * @param name          the structure's name, only when {@code status} is {@code FOUND}
  * @param solarSystemId the system it is in, only when {@code status} is {@code FOUND}
- * @param problem       a short reason when {@code status} is {@code FAILED}
+ * @param problem       a short reason when {@code status} is {@code FAILED}, and ESI's own message, when it
+ *                      gave one, for {@code NO_ACCESS} and {@code NOT_FOUND}
  */
 public record StructureLookup(Status status, String name, int solarSystemId, String problem) {
 
@@ -25,11 +26,19 @@ public record StructureLookup(Status status, String name, int solarSystemId, Str
     }
 
     public static StructureLookup noAccess() {
-        return new StructureLookup(Status.NO_ACCESS, null, 0, null);
+        return noAccess(null);
+    }
+
+    public static StructureLookup noAccess(String esiMessage) {
+        return new StructureLookup(Status.NO_ACCESS, null, 0, esiMessage);
     }
 
     public static StructureLookup notFound() {
-        return new StructureLookup(Status.NOT_FOUND, null, 0, null);
+        return notFound(null);
+    }
+
+    public static StructureLookup notFound(String esiMessage) {
+        return new StructureLookup(Status.NOT_FOUND, null, 0, esiMessage);
     }
 
     public static StructureLookup failed(String problem) {
