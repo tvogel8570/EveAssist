@@ -14,8 +14,13 @@ class ContractFlagsTest {
         return new PublicContractItem(1, 1000, 1, true, true, 10, 20, 5);
     }
 
+    /** As real ESI sends it: not a copy, ME and TE present, and no runs at all (the spec says -1). */
     private static PublicContractItem original() {
-        return new PublicContractItem(2, 1001, 1, true, false, 10, 20, -1);
+        return new PublicContractItem(2, 1001, 1, true, false, 10, 20, null);
+    }
+
+    private static PublicContractItem mineral() {
+        return new PublicContractItem(4, 34, 100, true, false, null, null, null);
     }
 
     private static PublicContractItem abyssal() {
@@ -34,6 +39,18 @@ class ContractFlagsTest {
     @Test
     void aBlueprintOriginalIsFlagged() {
         assertThat(flags(copy(), original())).isEqualTo(new ContractFlags(true, false));
+    }
+
+    @Test
+    void anOriginalWithZeroMeAndTeIsStillFlagged() {
+        var zero = new PublicContractItem(5, 1002, 1, true, false, 0, 0, null);
+
+        assertThat(flags(copy(), zero)).isEqualTo(new ContractFlags(true, false));
+    }
+
+    @Test
+    void anItemThatIsNotABlueprintIsNotAnOriginalWhateverItsRuns() {
+        assertThat(flags(copy(), mineral()).any()).isFalse();
     }
 
     @Test

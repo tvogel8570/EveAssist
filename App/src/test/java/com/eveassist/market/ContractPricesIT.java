@@ -113,7 +113,7 @@ class ContractPricesIT extends IntegrationTest {
         esi.contract(contract(9_800_002, "item_exchange", "10"), List.of(copy(1, blueprint, 0, 0, 10),
                 new PublicContractItem(2, 3001, 1, true, false, null, null, null)));
         esi.contract(contract(9_800_003, "item_exchange", "10"), List.of(copy(1, blueprint, 0, 0, 10),
-                new PublicContractItem(2, blueprint + 1000, 1, true, false, 0, 0, -1)));
+                new PublicContractItem(2, blueprint + 1000, 1, true, false, 0, 0, null)));
 
         market.refreshContracts(10);
 

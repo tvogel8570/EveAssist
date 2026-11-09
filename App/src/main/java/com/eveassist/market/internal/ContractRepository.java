@@ -155,7 +155,7 @@ public class ContractRepository {
                     var runs = rs.getInt("runs");
                     lines.computeIfAbsent(id, key -> new ArrayList<>()).add(new ContractLine(rs.getInt("type_id"),
                             rs.getLong("quantity"), rs.getBoolean("included"), rs.getBoolean("is_copy"),
-                            rs.getInt("me"), rs.getInt("te"), rs.wasNull() ? null : runs));
+                            rs.getObject("me", Integer.class), rs.getObject("te", Integer.class), rs.wasNull() ? null : runs));
                     return null;
                 }).list();
         return contracts.entrySet().stream()

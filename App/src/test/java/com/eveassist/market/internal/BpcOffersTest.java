@@ -45,7 +45,7 @@ class BpcOffersTest {
     @Test
     void otherItemsAreTakenAtTheirJitaPriceAndTheCopiesShareTheRest() {
         var mixed = contract("1000.00", copy(BPC_A, 1, 0, 0, 5),
-                new ContractLine(MINERAL, 100, true, false, 0, 0, null));
+                new ContractLine(MINERAL, 100, true, false, null, null, null));
 
         var offers = BpcOffers.of(mixed, type -> type == MINERAL ? new BigDecimal("5.00") : null);
 
@@ -55,14 +55,14 @@ class BpcOffersTest {
     @Test
     void skipsContractsThatCannotBePriced() {
         var asksForItems = contract("100.00", copy(BPC_A, 1, 0, 0, 1),
-                new ContractLine(MINERAL, 1, false, false, 0, 0, null));
+                new ContractLine(MINERAL, 1, false, false, null, null, null));
         var holdsAnOriginal = contract("100.00", copy(BPC_A, 1, 0, 0, 1),
-                new ContractLine(BPC_B, 1, true, false, 0, 0, -1));
+                new ContractLine(BPC_B, 1, true, false, 0, 0, null));
         var unpricedItem = contract("100.00", copy(BPC_A, 1, 0, 0, 1),
-                new ContractLine(MINERAL, 1, true, false, 0, 0, null));
+                new ContractLine(MINERAL, 1, true, false, null, null, null));
         var cheaperThanTheItems = contract("100.00", copy(BPC_A, 1, 0, 0, 1),
-                new ContractLine(MINERAL, 100, true, false, 0, 0, null));
-        var noCopy = contract("100.00", new ContractLine(MINERAL, 1, true, false, 0, 0, null));
+                new ContractLine(MINERAL, 100, true, false, null, null, null));
+        var noCopy = contract("100.00", new ContractLine(MINERAL, 1, true, false, null, null, null));
 
         var jita = (java.util.function.IntFunction<BigDecimal>) type -> type == MINERAL ? new BigDecimal("5.00") : null;
 

@@ -117,7 +117,14 @@ age.
   with an empty body (`content-length: 0`). The OpenAPI spec describes neither. The client reads all three as "no lines",
   and the app keeps such a contract as read, with no lines, so that a sync does not add it again and nothing asks about
   it again. A sync removes it when it leaves the list. (A first version read the empty body as null and failed with a
-  `NullPointerException`, so those contracts stayed pending and were asked about in every batch.) Contracts up to 100 m³ are kept, newest first,
+  `NullPointerException`, so those contracts stayed pending and were asked about in every batch.)
+
+  **A blueprint original has no `runs` (found 2026-11-09).** The spec says `runs` is -1 for an original. Real ESI sends
+  the line with ME and TE present, `is_blueprint_copy` false and no `runs` at all: 13,848 such lines in 4,355 of 33,276
+  stored contracts, and none with -1. ESI sends ME and TE for blueprints only, so the app takes a line with those levels
+  that is not a copy as an original (`PublicContractItem.blueprintOriginal()`). The first version tested for -1, so no
+  contract was ever flagged `has_bpo`, and contracts with an original were skipped only because a blueprint has no Jita
+  price. A migration flags the contracts already stored. Contracts up to 100 m³ are kept, newest first,
   and each batch reads up to 500 sets of lines (see [Background fetches](#background-fetches)). ESI's OpenAPI spec names
   no rate-limit group for these routes and the responses carry no rate-limit headers, so only the error limit applies.
   The prices are worked out from the stored rows (see
