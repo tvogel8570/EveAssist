@@ -71,4 +71,12 @@ Deferred by the developer until the plan step is taken up:
 
 Also open:
 
+- **Follow-up, flagged 2026-11-09: structures whose name a character cannot learn.** ESI gives a player structure's name
+  only to a character that may dock there, and refuses the rest with a plain 403. Against real data, one character had
+  15 structures: 1 was named, 10 were refused and 4 were not yet asked. The refused ones held only 14 items. For now the
+  browse view shows such a location as an unknown structure with its id, and a name learned by one character is never
+  shown for another. To decide later: whether a name learned by one of the user's own characters may be used for their
+  other characters (it is the same user's data, but a character that cannot dock would then see a name that ESI withheld
+  from it), and whether the user can name a structure by hand, as for facilities in
+  [Manufacturing and invention](manufacturing-invention.md#facilities).
 - Whether blueprints with ME, TE and runs are merged into the inventory rows when the blueprint fetch exists.
