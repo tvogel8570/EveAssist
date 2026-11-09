@@ -54,6 +54,10 @@ Added 2026-11-09. Blueprint copies (BPCs) are not sold on the market, so their p
   and later runs read only the new contracts. The developer decided this on 2026-11-09. The page also has a button
   that reads one more batch, and says how many contracts are still to read, because a price may miss some offers
   until all are read. A progress display is not built yet.
+- Open contracts show what sellers ask, not what buyers pay, and a sold contract leaves the list. Prices from them lean
+  high. In The Forge the lean is larger, because ESI cuts the newest contracts off its list when a region has more than
+  35,000 (see [Jita prices](../architecture/esi.md#jita-prices)), so contracts that sell quickly are never seen. Actual
+  sale prices would come from the characters' own finished contracts (see [Contracts](#contracts)).
 - The price is a third source beside Jita sell and buy prices. Using it in plans (as a price basis, and as the fallback
   for an item with no market orders) comes with the plan features that need a BPC, such as invention.
 
