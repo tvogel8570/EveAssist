@@ -64,30 +64,33 @@ class HttpEsiClient implements EsiClient {
 
     @Override
     public EsiResult<List<MarketOrder>> marketOrders(int regionId, int typeId) {
-        return paged(MARKET_ORDER_GROUP, "/markets/%d/orders?type_id=%d".formatted(regionId, typeId), true,
+        return paged(MARKET_ORDER_GROUP, "/markets/%d/orders?type_id=%d".formatted(regionId, typeId), true, false,
                 new ParameterizedTypeReference<List<EsiOrder>>() { })
                 .map(orders -> orders.stream().map(HttpEsiClient::toMarketOrder).toList());
     }
 
     @Override
     public EsiResult<List<PublicContract>> publicContracts(int regionId) {
-        return paged(PUBLIC_CONTRACT_GROUP, "/contracts/public/%d".formatted(regionId), true,
+        return paged(PUBLIC_CONTRACT_GROUP, "/contracts/public/%d".formatted(regionId), true, false,
                 new ParameterizedTypeReference<List<EsiContract>>() { })
                 .map(contracts -> contracts.stream().map(HttpEsiClient::toPublicContract).toList());
     }
 
     @Override
     public EsiResult<List<PublicContractItem>> publicContractItems(long contractId) {
-        return paged(PUBLIC_CONTRACT_GROUP, "/contracts/public/items/%d".formatted(contractId), false,
+        return paged(PUBLIC_CONTRACT_GROUP, "/contracts/public/items/%d".formatted(contractId), false, true,
                 new ParameterizedTypeReference<List<EsiContractItem>>() { })
                 .map(items -> items.stream().map(HttpEsiClient::toPublicContractItem).toList());
     }
 
     /**
      * Reads a route through all its pages. With {@code cached}, the route is not asked again before {@code Expires}
-     * and is asked with {@code If-None-Match} afterwards. A 204 gives an updated, empty list.
+     * and is asked with {@code If-None-Match} afterwards. A 204 gives an updated, empty list. With {@code goneOn403},
+     * so does a 403: for a public contract's lines, ESI's OpenAPI spec says 204 for a contract that has expired or been
+     * accepted, but ESI answers 403 "Contract accepted by player, requires authorization" for one accepted after the
+     * list was cached (seen 2026-11-09).
      */
-    private <E> EsiResult<List<E>> paged(String group, String path, boolean cached,
+    private <E> EsiResult<List<E>> paged(String group, String path, boolean cached, boolean goneOn403,
                                          ParameterizedTypeReference<List<E>> type) {
         var key = path.substring(1);
         var stored = cached ? cache.find(key) : Optional.<EsiCache.Entry>empty();
@@ -108,7 +111,7 @@ class HttpEsiClient implements EsiClient {
                         clock.instant());
                 return EsiResult.unchanged(expires);
             }
-            if (first.status() == 204) {
+            if (first.status() == 204 || (goneOn403 && first.status() == 403)) {
                 return EsiResult.updated(List.of(), expiresOf(first.headers()));
             }
             if (first.status() != 200) {

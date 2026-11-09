@@ -89,7 +89,7 @@ age.
 - Blueprint copies have no market, so their price comes from public contracts: `GET /contracts/public/10000002` for the
   list and `GET /contracts/public/items/<id>` for the lines of one contract. The list is read through its pages and cached
   like other routes. A contract's lines never change, so the client does not cache that route: the app stores them and
-  asks once per contract. A 204 means the contract has expired or been accepted, and the app drops it. Contracts up to
+  asks once per contract. A 204 means the contract has expired or been accepted, and the app drops it. ESI also answers 403 "Contract accepted by player, requires authorization" for a contract accepted after the list was cached, which the OpenAPI spec does not say, and the app treats it the same. Contracts up to
   100 m³ are kept, newest first, and each refresh reads up to 500 sets of lines. At the time of writing The Forge's
   list has about 35 pages. ESI's OpenAPI spec names no rate-limit group for these routes and the responses carry no
   rate-limit headers, so only the error limit applies. The prices are worked out from the stored rows (see

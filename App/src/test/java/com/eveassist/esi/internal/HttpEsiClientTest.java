@@ -256,6 +256,25 @@ class HttpEsiClientTest {
         esi.verify();
     }
 
+    @Test
+    void takesA403ForContractItemsAsAContractAcceptedByAPlayer() {
+        esi.expect(requestTo("https://esi.test/contracts/public/items/9?page=1"))
+                .andRespond(withStatus(HttpStatus.FORBIDDEN).contentType(MediaType.APPLICATION_JSON)
+                        .body("{\"error\":\"Contract accepted by player, requires authorization\"}"));
+
+        var result = client.publicContractItems(9);
+
+        assertThat(result.outcome()).isEqualTo(EsiResult.Outcome.UPDATED);
+        assertThat(result.data()).isEmpty();
+    }
+
+    @Test
+    void stillFailsOnA403ForOtherRoutes() {
+        esi.expect(requestTo(PAGE_1)).andRespond(withStatus(HttpStatus.FORBIDDEN));
+
+        assertThat(client.marketOrders(10000002, 34).outcome()).isEqualTo(EsiResult.Outcome.FAILED);
+    }
+
     private static DefaultResponseCreator page(String body, String etag, String expires, String lastModified) {
         return withSuccess(body, MediaType.APPLICATION_JSON)
                 .header("ETag", etag).header("Expires", expires).header("Last-Modified", lastModified);
