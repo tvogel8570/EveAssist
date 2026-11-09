@@ -73,6 +73,18 @@ class EveTokenValidatorTest {
     }
 
     @Test
+    void acceptsTheIssuerWithoutATrailingSlash() throws Exception {
+        assertThat(validator.validate(sign(goodClaims().issuer("https://login.eveonline.com").build(), keys))
+                .characterId()).isEqualTo(90000001L);
+    }
+
+    @Test
+    void doesNotAcceptTheMisspeltIssuerInTheDocumentationExample() throws Exception {
+        assertThatThrownBy(() -> validator.validate(sign(goodClaims().issuer("logineveonline.com").build(), keys)))
+                .isInstanceOf(EveSso.SsoException.class).hasMessageContaining("logineveonline.com");
+    }
+
+    @Test
     void acceptsASingleScopeSentAsAString() throws Exception {
         var token = validator.validate(sign(goodClaims().claim("scp", "esi-assets.read_assets.v1").build(), keys));
 

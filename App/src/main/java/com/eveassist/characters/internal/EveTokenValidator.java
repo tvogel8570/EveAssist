@@ -15,7 +15,14 @@ import org.springframework.security.oauth2.jwt.JwtException;
  */
 class EveTokenValidator {
 
-    private static final Set<String> ISSUERS = Set.of("https://login.eveonline.com/", "login.eveonline.com");
+    /**
+     * The EVE documentation is not consistent: its text names {@code https://login.eveonline.com/} and
+     * {@code login.eveonline.com}, while its own validation example (snippets/sso/validate-jwt-token.py) accepts
+     * {@code https://login.eveonline.com} with no trailing slash. All three are accepted. The example's other value,
+     * {@code logineveonline.com}, looks like a typo and is not.
+     */
+    private static final Set<String> ISSUERS = Set.of("https://login.eveonline.com/", "https://login.eveonline.com",
+            "login.eveonline.com");
     private static final String SUBJECT_PREFIX = "CHARACTER:EVE:";
 
     private final Supplier<JwtDecoder> decoder;
@@ -35,7 +42,8 @@ class EveTokenValidator {
         }
         var issuer = jwt.getClaimAsString("iss");
         if (issuer == null || !ISSUERS.contains(issuer)) {
-            throw new EveSso.SsoException("The access token has the wrong issuer");
+            // the issuer is public and says nothing about the user, so it can go in the message and the log
+            throw new EveSso.SsoException("The access token has the wrong issuer: " + issuer);
         }
         var audience = jwt.getAudience();
         if (audience == null || !audience.contains(clientId) || !audience.contains("EVE Online")) {

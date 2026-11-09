@@ -9,6 +9,8 @@ import java.util.Base64;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 /**
@@ -22,6 +24,12 @@ public class CharacterLinking {
 
     /** Where to send the browser, and the state to keep until it comes back. */
     public record Start(String authorizeUrl, String state) {
+    }
+
+    private static final Logger log = LoggerFactory.getLogger(CharacterLinking.class);
+
+    private static String abbreviate(String text) {
+        return text == null || text.length() <= 300 ? text : text.substring(0, 300) + "...";
     }
 
     private final EveSso sso;
@@ -63,6 +71,10 @@ public class CharacterLinking {
         try {
             link = sso.exchange(code);
         } catch (EveSso.SsoException e) {
+            // the message and the cause's type and message say what failed, and never hold a token
+            var cause = e.getCause();
+            log.warn("Linking was refused: {}{}", e.getMessage(), cause == null ? ""
+                    : " (" + cause.getClass().getSimpleName() + ": " + abbreviate(cause.getMessage()) + ")");
             return Result.REFUSED;
         }
         var identity = link.identity();

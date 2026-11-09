@@ -74,7 +74,8 @@ token is never accepted on the pages. Status: **agreed** (part of the API ground
   identity.
 - After the code exchange, the access token is validated as the EVE SSO documentation says. The JWKS URL is read from
   `https://login.eveonline.com/.well-known/oauth-authorization-server` and cached. `iss` must be
-  `https://login.eveonline.com/` or `login.eveonline.com`, `aud` must contain both the client id and `"EVE Online"`,
+  `https://login.eveonline.com/`, `https://login.eveonline.com` or `login.eveonline.com` (the EVE documentation's text
+  names the first and last, and its own validation example accepts the second, found 2026-11-09), `aud` must contain both the client id and `"EVE Online"`,
   and `exp` is checked. The character id comes from `sub` (`CHARACTER:EVE:<id>`), the granted scopes from `scp` and
   the owner hash from `owner`.
 - The `character` row is unique on the EVE character id, so a character that is on another account is refused.
