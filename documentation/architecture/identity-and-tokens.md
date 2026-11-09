@@ -140,6 +140,12 @@ every planned feature, which is allowed because a request may ask for fewer than
 a Link a character button and the feature toggles. It grows into the scope page and fetch log in
 [Gaining players' trust](../requirements/gain-trust.md).
 
+**Portraits.** Pages load nothing from third parties, so the server downloads a character's 128 px portrait from EVE's
+image server once, when the character is linked or re-linked, and stores it in the `character` row (about 10 KB). The
+page serves it from `GET /characters/{id}/portrait`, to the owner only, with a private one-day cache header. The image
+server is not ESI, takes no token and sends nothing about the user. When it does not answer, the card shows initials.
+The portrait is deleted with the character. The developer chose this on 2026-11-09 over a cache fetched on demand.
+
 **The flow.** `GET /characters/link` creates a random `state`, keeps it in the session, and redirects to
 `https://login.eveonline.com/v2/oauth/authorize`. `GET /characters/link/callback` checks `state`, exchanges the code
 once (the state is used up by the first callback), with the client secret, validates the token as described under

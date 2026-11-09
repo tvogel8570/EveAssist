@@ -87,14 +87,30 @@ class CharacterRepository {
 
     List<CharacterDetails> listFor(AccountId owner) {
         return jdbc.sql("""
-                SELECT public_id, eve_character_id, name, scopes, state FROM character
+                SELECT public_id, eve_character_id, name, scopes, state, portrait IS NOT NULL AS has_portrait FROM character
                 WHERE owner_account_id = :owner ORDER BY name
                 """)
                 .param("owner", owner.value())
                 .query((rs, row) -> new CharacterDetails(rs.getObject("public_id", UUID.class),
                         rs.getLong("eve_character_id"), rs.getString("name"),
-                        Set.of((String[]) rs.getArray("scopes").getArray()), rs.getString("state")))
+                        Set.of((String[]) rs.getArray("scopes").getArray()), rs.getString("state"),
+                        rs.getBoolean("has_portrait")))
                 .list();
+    }
+
+    void storePortrait(long eveCharacterId, byte[] portrait) {
+        jdbc.sql("UPDATE character SET portrait = :portrait, portrait_fetched_at = now() WHERE eve_character_id = :eve")
+                .param("portrait", portrait).param("eve", eveCharacterId)
+                .update();
+    }
+
+    /** Only the owner gets the portrait. */
+    Optional<byte[]> findPortrait(AccountId owner, UUID publicId) {
+        return jdbc.sql("SELECT portrait FROM character WHERE public_id = :id AND owner_account_id = :owner "
+                        + "AND portrait IS NOT NULL")
+                .param("id", publicId).param("owner", owner.value())
+                .query((rs, row) -> rs.getBytes("portrait"))
+                .optional();
     }
 
     /** Deletes the character with its token (and, later, its ESI data) at once. */

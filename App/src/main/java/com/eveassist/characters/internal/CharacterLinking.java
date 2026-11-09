@@ -28,13 +28,16 @@ public class CharacterLinking {
     private final FeatureRepository features;
     private final CharacterRepository characters;
     private final TokenCipher cipher;
+    private final PortraitSource portraits;
     private final SecureRandom random = new SecureRandom();
 
-    CharacterLinking(EveSso sso, FeatureRepository features, CharacterRepository characters, TokenCipher cipher) {
+    CharacterLinking(EveSso sso, FeatureRepository features, CharacterRepository characters, TokenCipher cipher,
+            PortraitSource portraits) {
         this.sso = sso;
         this.features = features;
         this.characters = characters;
         this.cipher = cipher;
+        this.portraits = portraits;
     }
 
     /** Asks for the scopes of the turned-on features and nothing else. Empty when no feature is on. */
@@ -65,6 +68,10 @@ public class CharacterLinking {
         var identity = link.identity();
         var outcome = characters.link(viewer.accountId(), identity.characterId(), identity.name(),
                 identity.ownerHash(), identity.scopes(), cipher.encrypt(identity.characterId(), link.refreshToken()));
+        if (outcome != CharacterRepository.LinkOutcome.ON_ANOTHER_ACCOUNT) {
+            portraits.fetch(identity.characterId())
+                    .ifPresent(portrait -> characters.storePortrait(identity.characterId(), portrait));
+        }
         return switch (outcome) {
             case LINKED -> Result.LINKED;
             case RENEWED -> Result.RENEWED;

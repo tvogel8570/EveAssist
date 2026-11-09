@@ -14,11 +14,8 @@ import java.util.concurrent.ThreadLocalRandom;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
-import org.springframework.context.annotation.Primary;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
@@ -27,23 +24,17 @@ import org.springframework.test.web.servlet.request.RequestPostProcessor;
  * test carries the session cookie from the first request to the callback, as a browser does.
  */
 @AutoConfigureMockMvc
-@Import(CharacterLinkingIT.FakeSsoConfig.class)
+@Import(TestCharactersConfig.class)
 class CharacterLinkingIT extends IntegrationTest {
-
-    @TestConfiguration(proxyBeanMethods = false)
-    static class FakeSsoConfig {
-        @Bean
-        @Primary
-        FakeEveSso fakeEveSso() {
-            return new FakeEveSso();
-        }
-    }
 
     @Autowired
     MockMvc mvc;
 
     @Autowired
     FakeEveSso sso;
+
+    @Autowired
+    FakePortraitSource portraits;
 
     @Autowired
     FeatureRepository features;
@@ -57,6 +48,7 @@ class CharacterLinkingIT extends IntegrationTest {
     @BeforeEach
     void resetSso() {
         sso.reset();
+        portraits.reset();
     }
 
     private static long newEveId() {
@@ -114,6 +106,55 @@ class CharacterLinkingIT extends IntegrationTest {
         assertThat(characters.listFor(viewer.accountId())).singleElement()
                 .satisfies(c -> assertThat(c.name()).isEqualTo("Alt One"));
         assertThat(cipher.decrypt(eveId, characters.findToken(eveId).orElseThrow())).isEqualTo("refresh-1");
+    }
+
+    @Test
+    void storesThePortraitWhenTheCharacterIsLinked() throws Exception {
+        var sub = newSub();
+        var viewer = viewerFor(sub);
+        features.turnOn(viewer.accountId(), Feature.INVENTORY);
+        sso.nextLink = sso.link(newEveId(), "Alt One", "refresh-1");
+        var session = startLinking(sub);
+
+        mvc.perform(get("/characters/link/callback").param("code", "c").param("state", sso.askedState)
+                .with(signedInAs(sub)).cookie(session));
+
+        var id = characters.listFor(viewer.accountId()).getFirst();
+        assertThat(id.hasPortrait()).isTrue();
+        assertThat(characters.findPortrait(viewer.accountId(), id.id())).contains(FakePortraitSource.IMAGE);
+    }
+
+    @Test
+    void linksWithoutAPortraitWhenTheImageServerDoesNotAnswer() throws Exception {
+        var sub = newSub();
+        var viewer = viewerFor(sub);
+        features.turnOn(viewer.accountId(), Feature.INVENTORY);
+        sso.nextLink = sso.link(newEveId(), "Alt One", "refresh-1");
+        portraits.available = false;
+        var session = startLinking(sub);
+
+        mvc.perform(get("/characters/link/callback").param("code", "c").param("state", sso.askedState)
+                        .with(signedInAs(sub)).cookie(session))
+                .andExpect(redirectedUrl("/characters?linking=LINKED"));
+
+        assertThat(characters.listFor(viewer.accountId())).singleElement()
+                .satisfies(c -> assertThat(c.hasPortrait()).isFalse());
+    }
+
+    @Test
+    void doesNotFetchAPortraitForACharacterOnAnotherAccount() throws Exception {
+        var eveId = newEveId();
+        characters.link(viewerFor(newSub()).accountId(), eveId, "Alt One", "hash", Set.of("a"),
+                cipher.encrypt(eveId, "mine"));
+        var sub = newSub();
+        features.turnOn(viewerFor(sub).accountId(), Feature.INVENTORY);
+        sso.nextLink = sso.link(eveId, "Alt One", "theirs");
+        var session = startLinking(sub);
+
+        mvc.perform(get("/characters/link/callback").param("code", "c").param("state", sso.askedState)
+                .with(signedInAs(sub)).cookie(session));
+
+        assertThat(portraits.fetches).isZero();
     }
 
     @Test
