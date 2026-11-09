@@ -29,6 +29,10 @@ requests themselves.
   bucket-limited routes, so the scope check before a call matters.
 - **Pagination**: paged routes are read through `X-Pages`. Every page must carry the same `Last-Modified`, or the whole
   set is read again later.
+- **Timeouts**: a call gives up after 5 seconds to connect and 30 seconds for the response, set with
+  `spring.http.clients.connect-timeout` and `read-timeout`. A call that gives up is a failure like any other. Without
+  them a stalled connection would hold one of the simultaneous-call permits for ever. The values are a first guess, to
+  be checked at the checkpoint under [Background fetches](#background-fetches).
 - **Failures**: 5xx and timeouts are retried later with back-off, never in a loop. Stored data stays on screen with its
   age, and a banner says that ESI is down or throttled.
 
@@ -36,9 +40,12 @@ Status: **agreed** (follows from the requirements and the ESI documentation).
 
 ## Background fetches
 
-- Fetches run inside the app on virtual threads. A per-instance limit (a semaphore, for example 8 calls at once) keeps
-  a sign-in with many characters from flooding ESI. A refresh of one character holds that character's Postgres
-  advisory lock, so two fetches of the same character never overlap, also with several instances.
+- Fetches run inside the app on virtual threads, written as described in
+  [Background tasks](code-structure.md#background-tasks). A per-instance limit (a semaphore, for example 8 calls at
+  once) keeps a sign-in with many characters from flooding ESI. A refresh of one character holds an in-memory flag for
+  that character, so two fetches of the same character never overlap within the instance. This replaces a Postgres
+  advisory lock per character, which would have held a connection for the whole fetch (the developer decided this on
+  2026-11-09).
 - The ESI documentation sets no limit on simultaneous calls. It limits calls over time (bucket limits per rate-limit
   group, and the error limit), says to spread requests rather than burst constantly, and allows an occasional burst.
   The limit of 8 is EveAssist's own choice, to keep the burst after sign-in polite. It is not an ESI rule.
@@ -59,8 +66,20 @@ Status: **agreed** (follows from the requirements and the ESI documentation).
   kept in memory only. After a restart, the user's next page or refresh queues them again.
 
 Why not a job queue in Postgres (db-scheduler, JobRunr) or a separate worker with SQS: fetches matter only while the
-user is signed in, so losing queued tasks at a restart costs nothing, and the advisory lock and the stored fetch state
-already let several instances share the work.
+user is signed in, so losing queued tasks at a restart costs nothing, and the stored fetch state is in the database. One
+instance is expected; a second would need work to be claimed in the database (see
+[Background tasks](code-structure.md#background-tasks)).
+
+**Exception: public shared data.** The list of public contracts is read by a background loader that needs no signed-in
+user, because the data is public and shared by all users, and a user who opens the page should find it ready. The
+developer decided this on 2026-11-09. The loader starts a minute after start-up and then every 30 minutes (the list is
+cached for 30 minutes). Each run is on its own virtual thread, so the scheduler's single thread stays free for other
+scheduled work such as the alert sweep. A run reads batches of 500 contracts until none are waiting, and stops when a
+batch makes no progress (ESI throttling or down) or the app is stopping. A start that finds a run still going does
+nothing (see [Background tasks](code-structure.md#background-tasks) for the flag and for what a second instance would
+need). It is switched off with `eveassist.market.contracts.background=false`, and the batch size, first delay and interval can be
+set under `eveassist.market.contracts`. It uses the same client, so the simultaneous-call limit and the error-limit
+pause apply.
 
 Status: **agreed**.
 
@@ -86,6 +105,27 @@ age.
   [Plan prices](data.md#plan-prices)).
 - Volume history comes from `GET /markets/10000002/history?type_id=<id>` and is stored per item, also within its cache
   time.
+- Blueprint copies have no market, so their price comes from public contracts: `GET /contracts/public/10000002` for the
+  list and `GET /contracts/public/items/<id>` for the lines of one contract. The list is read through its pages and
+  cached like other routes. A contract's lines never change, so the client does not cache that route: the app stores
+  them and asks once per contract. A 204 means the contract has expired or been accepted, and the app drops it. ESI also
+  answers 403 "Contract accepted by player, requires authorization" for a contract accepted after the list was cached,
+  which the OpenAPI spec does not say, and the app treats it the same. Contracts up to 100 m³ are kept, newest first,
+  and each batch reads up to 500 sets of lines (see [Background fetches](#background-fetches)). ESI's OpenAPI spec names
+  no rate-limit group for these routes and the responses carry no rate-limit headers, so only the error limit applies.
+  The prices are worked out from the stored rows (see
+  [Contract prices](../requirements/market-logistics.md#contract-prices)).
+
+  **The list is capped (found 2026-11-09, not in ESI's documentation).** A region's list holds at most 35 pages of 1,000
+  contracts, so 35,000, sorted by contract id ascending. For a region with more public contracts than that, the
+  **newest** are cut off: The Forge's list showed contracts issued up to 5.5 hours before the request, while smaller
+  regions showed minutes. Page 36 is a 404, and the spec lists no parameter that changes this: only `page` and the
+  conditional-request headers. Eleven plausible parameters (`after`, `before`, `from_id`, `order`, `limit`, `since` and
+  others) were tried against real ESI and all were ignored. EVE Ref's snapshots are built from the same list and show
+  the same 35,000. So a contract appears in our data only when an older one expires or is accepted, and prices lag by
+  hours. Contracts issued and accepted inside that lag are never seen, and they are the well-priced ones, so the prices
+  lean high. Probing contract ids above the list's last id is no workaround: ids are shared by every region and
+  contract type, so most probes would be errors against the error limit.
 - System cost indices come from `GET /industry/systems`, fetched at most once per cache period for everyone.
 - The `market-order` group allows 12,000 tokens per 15 minutes per IP address for all users together, so the shared
   store matters in phase 3. A refresh of a large plan fetches only the items whose stored orders have expired.

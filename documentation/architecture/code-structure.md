@@ -236,6 +236,44 @@ each owner, and not re-costing in the background, and chose the last.
   from. A system viewer was rejected, because a wrong value in page code could expose every user's plans and the build
   could not catch it.
 
+### Background tasks
+
+Status: **agreed**. The developer chose this on 2026-11-09 while reviewing the public contract loader, and it is the way
+to write every task that runs outside a request, on a timer or queued.
+
+- **Each run is on its own virtual thread.** A `@Scheduled` method only starts it, with `Thread.ofVirtual()`, and
+  returns. Spring Boot's scheduler has a single platform thread, so a long run would otherwise block every other
+  scheduled job, such as the alert sweep.
+- **One run at a time is kept with an in-memory flag**: `AtomicBoolean.compareAndSet(false, true)` at the start and
+  `set(false)` in a `finally`. For work per key, such as per character, the same with a concurrent set of the keys
+  running. A start that finds the flag set does nothing. The flag covers one instance, which is all EveAssist runs and
+  the developer expects ever to run.
+- **No Postgres advisory lock for this.** A session lock keeps a pooled connection for as long as the run lasts, and a
+  transaction lock would hold a transaction while ESI is being asked, which the code never does (see
+  [What starts an ESI fetch](#what-starts-an-esi-fetch)).
+- **Writes are idempotent** (`ON CONFLICT DO NOTHING` or an upsert, deletes that find nothing), because the flag stops
+  two runs in one instance and nothing stops them in two. A duplicate run then wastes calls and does no harm.
+- **If a second instance is ever run**, each batch claims its work in the database (for example `FOR UPDATE SKIP LOCKED`
+  with a short lease) instead of holding a lock across calls.
+- **Work is done in batches.** A run stops when nothing is waiting, when a batch makes no progress (ESI throttling or
+  down, so the next start tries again), or when the app is stopping. It checks a `stopping` flag between batches, set
+  from `@PreDestroy`.
+- **A timer starts runs at a fixed delay, not at clock times**, and the first start is a short delay after start-up.
+  The interval and the batch size are properties, and a property switches the timer off so that tests call the task
+  themselves.
+- **Sign-in and token refresh are not background tasks.** Signing in, linking a character and refreshing an access token
+  run in the request that needs them, and they fail where the person can see it. A successful authentication and
+  authorization is not optional, so none of it is deferred, queued or left to a timer, and the rules above do not
+  apply to it. In particular, the refresh keeps its Postgres advisory lock on the character id (see
+  [Refreshing access tokens](identity-and-tokens.md#refreshing-access-tokens)): the lock is held for one bounded call to
+  EVE SSO, which has a timeout, and it works across instances. The developer decided this on 2026-11-09. A background
+  fetch that needs a token calls the same refresh and waits for it.
+- **A task that reads public, shared data needs no signed-in user.** Anything that reads or writes a user's data keeps
+  the viewer rules (see [Work with no signed-in person](#work-with-no-signed-in-person)).
+
+The first example is `ContractLoader` and `ContractLoadSchedule` in the `market` module (see
+[Background fetches](esi.md#background-fetches)).
+
 ## Naming
 
 Spring Modulith sets no naming convention for these types. The ones below follow DDD and jMolecules practice: names

@@ -32,6 +32,20 @@ public class SdeService {
         return data.searchBuildable(text, limit);
     }
 
+    /** Blueprints whose names contain the text, for choosing one to price. */
+    public List<ItemType> searchBlueprints(String text, int limit) {
+        return data.searchBlueprints(text, limit);
+    }
+
+    /** True for an Abyssal (mutated) item type. Names are no guide, so this comes from the SDE's mutaplasmid mappings. */
+    public boolean isAbyssal(TypeId id) {
+        return data.isAbyssal(id);
+    }
+
+    public boolean isBlueprint(TypeId id) {
+        return data.isBlueprint(id);
+    }
+
     public Set<TypeId> materialTypes() {
         return data.materialTypes();
     }

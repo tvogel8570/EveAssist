@@ -3,6 +3,7 @@ package com.eveassist.market;
 import com.eveassist.esi.EsiClient;
 import com.eveassist.esi.EsiResult;
 import com.eveassist.esi.MarketOrder;
+import com.eveassist.market.internal.ContractPrices;
 import com.eveassist.market.internal.OrderRepository;
 import com.eveassist.market.internal.PriceQuoting;
 import com.eveassist.sde.TypeId;
@@ -20,14 +21,16 @@ import org.springframework.stereotype.Service;
 public class MarketService {
 
     /** The Forge, and the station in Jita where the requirements take prices from. */
-    static final int THE_FORGE = 10000002;
+    static final int THE_FORGE = ContractPrices.THE_FORGE;
     static final long JITA_4_4 = 60003760L;
 
     private final OrderRepository orders;
     private final EsiClient esi;
     private final Clock clock;
+    private final ContractPrices contractPrices;
 
-    MarketService(OrderRepository orders, EsiClient esi, Clock clock) {
+    MarketService(OrderRepository orders, EsiClient esi, Clock clock, ContractPrices contractPrices) {
+        this.contractPrices = contractPrices;
         this.orders = orders;
         this.esi = esi;
         this.clock = clock;
@@ -74,5 +77,26 @@ public class MarketService {
         } catch (java.util.concurrent.ExecutionException e) {
             return EsiResult.failed("ESI call failed: " + e.getCause());
         }
+    }
+
+    /**
+     * Reads The Forge's public contracts: the list, then the lines of up to {@code maxContracts} new contracts. See
+     * {@link ContractPrices#refresh}.
+     */
+    public ContractRefresh refreshContracts(int maxContracts) {
+        return contractPrices.refresh(THE_FORGE, maxContracts);
+    }
+
+    /**
+     * What a blueprint copy with this ME and TE costs per run, from the stored public contracts in The Forge. Prices
+     * are public data, shared by all users, so this takes no viewer. Empty when no contract offers one.
+     */
+    public java.util.Optional<BpcQuote> bpcPrice(TypeId blueprint, int me, int te) {
+        return contractPrices.bpcPrice(THE_FORGE, blueprint, me, te);
+    }
+
+    /** How current the stored contracts are, for saying so next to a price. */
+    public ContractStatus contractStatus() {
+        return contractPrices.status(THE_FORGE);
     }
 }

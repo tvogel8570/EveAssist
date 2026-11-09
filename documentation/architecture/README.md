@@ -58,7 +58,7 @@ flowchart LR
 | UI | Server-rendered Thymeleaf with htmx, Tailwind and daisyUI; no React | Agreed |
 | Data ownership | Owner column on every personal row, explicit share tables for groups later | Agreed |
 | Refresh tokens | AES-256-GCM in the app, data key wrapped by AWS KMS (dev: key from `env.properties`) | Agreed |
-| Background fetches | In-process tasks on virtual threads, per-character Postgres advisory lock, fetch state in the database | Agreed |
+| Background tasks | In-process tasks, each run on its own virtual thread and kept to one at a time by an in-memory flag; no database lock held across ESI calls; fetch state in the database | Agreed |
 | SDE | Fuzzwork Postgres dump, loaded into a staging schema, diffed against the live one, then swapped, during an outage | Agreed |
 | Prod in AWS | One EC2 instance with Docker Compose (app and Keycloak), Postgres on RDS | Agreed |
 | Alerts | Stored in Postgres, pushed to open pages with server-sent events (SSE) | Agreed |

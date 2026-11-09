@@ -196,6 +196,85 @@ class HttpEsiClientTest {
         assertThat(result.expires()).isEqualTo(Instant.parse("2026-11-08T21:02:00Z"));
     }
 
+    @Test
+    void readsPublicContractsAcrossPages() {
+        var body = """
+                [{"contract_id":9,"type":"item_exchange","price":1250000.5,"issuer_id":5,"issuer_corporation_id":6,
+                  "date_issued":"2026-11-08T10:00:00Z","date_expired":"2026-11-22T10:00:00Z",
+                  "start_location_id":60003760,"volume":0.02,"for_corporation":false}]
+                """;
+        esi.expect(requestTo("https://esi.test/contracts/public/10000002?page=1"))
+                .andRespond(page(body, "\"c1\"", "Sun, 08 Nov 2026 21:30:00 GMT", "Sun, 08 Nov 2026 21:00:00 GMT")
+                        .header("X-Pages", "2"));
+        esi.expect(requestTo("https://esi.test/contracts/public/10000002?page=2"))
+                .andRespond(page("[]", "\"c2\"", "Sun, 08 Nov 2026 21:30:00 GMT", "Sun, 08 Nov 2026 21:00:00 GMT"));
+
+        var result = client.publicContracts(10000002);
+
+        assertThat(result.outcome()).isEqualTo(EsiResult.Outcome.UPDATED);
+        assertThat(result.data()).singleElement().satisfies(contract -> {
+            assertThat(contract.contractId()).isEqualTo(9);
+            assertThat(contract.isItemExchange()).isTrue();
+            assertThat(contract.price()).isEqualByComparingTo("1250000.5");
+            assertThat(contract.startLocationId()).isEqualTo(60003760L);
+            assertThat(contract.dateExpired()).isEqualTo(Instant.parse("2026-11-22T10:00:00Z"));
+        });
+        assertThat(stored).containsKey("contracts/public/10000002");
+        esi.verify();
+    }
+
+    @Test
+    void readsContractItemsWithBlueprintDetailsAndDoesNotCacheThem() {
+        var body = """
+                [{"record_id":1,"type_id":1000,"quantity":1,"is_included":true,"is_blueprint_copy":true,
+                  "material_efficiency":10,"time_efficiency":20,"runs":5},
+                 {"record_id":2,"type_id":34,"quantity":100,"is_included":true}]
+                """;
+        esi.expect(requestTo("https://esi.test/contracts/public/items/9?page=1"))
+                .andRespond(page(body, "\"i\"", "Sun, 08 Nov 2026 22:00:00 GMT", "Sun, 08 Nov 2026 21:00:00 GMT"));
+
+        var result = client.publicContractItems(9);
+
+        assertThat(result.data()).hasSize(2);
+        assertThat(result.data().getFirst().blueprintCopy()).isTrue();
+        assertThat(result.data().getFirst().materialEfficiency()).isEqualTo(10);
+        assertThat(result.data().getFirst().runs()).isEqualTo(5);
+        assertThat(result.data().get(1).runs()).isNull();
+        assertThat(stored).isEmpty();
+        esi.verify();
+    }
+
+    @Test
+    void takesA204ForContractItemsAsAContractThatIsGone() {
+        esi.expect(requestTo("https://esi.test/contracts/public/items/9?page=1"))
+                .andRespond(withStatus(HttpStatus.NO_CONTENT).header("Expires", "Sun, 08 Nov 2026 22:00:00 GMT"));
+
+        var result = client.publicContractItems(9);
+
+        assertThat(result.outcome()).isEqualTo(EsiResult.Outcome.UPDATED);
+        assertThat(result.data()).isEmpty();
+        esi.verify();
+    }
+
+    @Test
+    void takesA403ForContractItemsAsAContractAcceptedByAPlayer() {
+        esi.expect(requestTo("https://esi.test/contracts/public/items/9?page=1"))
+                .andRespond(withStatus(HttpStatus.FORBIDDEN).contentType(MediaType.APPLICATION_JSON)
+                        .body("{\"error\":\"Contract accepted by player, requires authorization\"}"));
+
+        var result = client.publicContractItems(9);
+
+        assertThat(result.outcome()).isEqualTo(EsiResult.Outcome.UPDATED);
+        assertThat(result.data()).isEmpty();
+    }
+
+    @Test
+    void stillFailsOnA403ForOtherRoutes() {
+        esi.expect(requestTo(PAGE_1)).andRespond(withStatus(HttpStatus.FORBIDDEN));
+
+        assertThat(client.marketOrders(10000002, 34).outcome()).isEqualTo(EsiResult.Outcome.FAILED);
+    }
+
     private static DefaultResponseCreator page(String body, String etag, String expires, String lastModified) {
         return withSuccess(body, MediaType.APPLICATION_JSON)
                 .header("ETag", etag).header("Expires", expires).header("Last-Modified", lastModified);

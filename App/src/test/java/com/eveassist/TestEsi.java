@@ -3,6 +3,8 @@ package com.eveassist;
 import com.eveassist.esi.EsiClient;
 import com.eveassist.esi.EsiResult;
 import com.eveassist.esi.MarketOrder;
+import com.eveassist.esi.PublicContract;
+import com.eveassist.esi.PublicContractItem;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
@@ -28,6 +30,9 @@ public class TestEsi implements EsiClient {
         sells.clear();
         broken.clear();
         asked.clear();
+        contracts.clear();
+        contractItems.clear();
+        itemsAsked.clear();
         sells.put(34, new BigDecimal("5.00"));
         sells.put(35, new BigDecimal("10.00"));
     }
@@ -56,5 +61,31 @@ public class TestEsi implements EsiClient {
                 ? List.<MarketOrder>of()
                 : List.of(new MarketOrder(typeId * 10L, typeId, JITA_4_4, false, price, 1000));
         return EsiResult.updated(orders, Instant.now().plusSeconds(300));
+    }
+
+    private final List<PublicContract> contracts = new CopyOnWriteArrayList<>();
+    private final Map<Long, List<PublicContractItem>> contractItems = new ConcurrentHashMap<>();
+    private final List<Long> itemsAsked = new CopyOnWriteArrayList<>();
+
+    /** Puts a public contract in the region's list, with the lines ESI will give for it. */
+    public void contract(PublicContract contract, List<PublicContractItem> items) {
+        contracts.add(contract);
+        contractItems.put(contract.contractId(), items);
+    }
+
+    /** The contracts whose lines ESI has been asked for since the test began, in the order asked. */
+    public List<Long> contractItemsAsked() {
+        return List.copyOf(itemsAsked);
+    }
+
+    @Override
+    public EsiResult<List<PublicContract>> publicContracts(int regionId) {
+        return EsiResult.updated(List.copyOf(contracts), Instant.now().plusSeconds(1800));
+    }
+
+    @Override
+    public EsiResult<List<PublicContractItem>> publicContractItems(long contractId) {
+        itemsAsked.add(contractId);
+        return EsiResult.updated(contractItems.getOrDefault(contractId, List.of()), Instant.now().plusSeconds(3600));
     }
 }

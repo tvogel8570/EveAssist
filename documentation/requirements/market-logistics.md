@@ -25,6 +25,42 @@ Status: draft, interview in progress.
 - The user can enter a manual price for an item, for example a contract price, which overrides the market. Manual prices
   stay until the user changes them. Each one shows its age, with a warning once it is older than a set number of days.
 
+## Contract prices
+
+Added 2026-11-09. Blueprint copies (BPCs) are not sold on the market, so their price comes from public contracts.
+
+- Public item exchange contracts in The Forge are the source. Courier and auction contracts are not used. The contracts
+  of the characters themselves are a separate feature (see [Contracts](#contracts)).
+- The price of a BPC is per run, for one blueprint type with its ME and TE. A copy of 10 runs for 1,000,000 ISK is
+  100,000 ISK per run.
+- The price uses copies with exactly the ME and TE asked for. When there are none, it uses copies whose ME and TE are
+  both at least as good, and says so.
+- A price is worked out like a market price: the volume-weighted average of the cheapest offers that make up the same
+  share of the runs on offer (5% by default).
+- A pack of several copies is split between them in proportion to their runs, so every run in it costs the same. Items
+  in the contract that are not BPCs are valued at their Jita sell price first, and the BPCs share the rest. A contract
+  that asks for items, holds an item with no Jita price, or costs less than its other items, is not used.
+- **Contracts with a blueprint original (BPO) or an Abyssal item are flagged and set aside.** Neither has a market price,
+  and a fair split of the contract price will need a rule for each kind (how to value an original, how to value a
+  rolled Abyssal module), so they are not priced and not looked at again for now. The page says how many are set aside.
+  Abyssal items are recognised from the SDE's mutaplasmid mappings, not from names. How to split such contracts, and
+  how to split a pack of copies, are separate decisions still to be made.
+- Offers more than ten times above or below the middle offer for the blueprint are left out as joke or mistaken
+  prices, once there are at least three offers.
+- Only contracts up to 100 m³ are read: a copy takes 0.01 m³, and larger contracts are ships and cargo.
+- The contracts are public data shared by all users. They are read in the background, and no one has to be signed in
+  for that: a minute after the app starts, and then every 30 minutes. A region has tens of thousands of
+  contracts and each one's contents need a call of their own, so the first run takes about half an hour to an hour,
+  and later runs read only the new contracts. The developer decided this on 2026-11-09. The page also has a button
+  that reads one more batch, and says how many contracts are still to read, because a price may miss some offers
+  until all are read. A progress display is not built yet.
+- Open contracts show what sellers ask, not what buyers pay, and a sold contract leaves the list. Prices from them lean
+  high. In The Forge the lean is larger, because ESI cuts the newest contracts off its list when a region has more than
+  35,000 (see [Jita prices](../architecture/esi.md#jita-prices)), so contracts that sell quickly are never seen. Actual
+  sale prices would come from the characters' own finished contracts (see [Contracts](#contracts)).
+- The price is a third source beside Jita sell and buy prices. Using it in plans (as a price basis, and as the fallback
+  for an item with no market orders) comes with the plan features that need a BPC, such as invention.
+
 ## Fees
 
 Cost and profit include every fee:
@@ -72,4 +108,11 @@ Cost and profit include every fee:
 
 ## Open questions
 
-None at present.
+- **Items with their own attributes.** Added 2026-11-09 at the developer's request, not for now. Contract lines have fields
+  for blueprints (ME, TE, runs, copy or original) and nothing for other items that differ one from another, mainly
+  Abyssal (mutated) modules. Their value comes from the rolled attributes, so a contract line is not worth the type's
+  price. ESI gives the line an `item_id` (EveAssist does not read it yet), and `GET /dogma/dynamic/items/{type_id}/{item_id}`
+  gives the mutaplasmid, the source item and the attributes, one call per item. Things to decide when this is taken up:
+  how to value such an item, whether the extra call per item fits in the background loader's budget (see
+  [Background fetches](../architecture/esi.md#background-fetches)), and what the stored line needs. Until then a contract
+  that holds one is flagged and set aside (see [Contract prices](#contract-prices)).

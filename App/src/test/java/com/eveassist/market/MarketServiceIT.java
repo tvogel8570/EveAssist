@@ -29,11 +29,14 @@ class MarketServiceIT extends IntegrationTest {
     @Autowired
     OrderRepository orders;
 
+    @Autowired
+    com.eveassist.market.internal.ContractPrices contractPrices;
+
     private final Map<Integer, EsiResult<List<MarketOrder>>> answers = new ConcurrentHashMap<>();
-    private final EsiClient answering = (region, type) -> answers.getOrDefault(type, EsiResult.failed("no answer for " + type));
+    private final OrdersEsi answering = (region, type) -> answers.getOrDefault(type, EsiResult.failed("no answer for " + type));
 
     private MarketService service() {
-        return new MarketService(orders, answering, Clock.fixed(NOW, ZoneOffset.UTC));
+        return new MarketService(orders, answering, Clock.fixed(NOW, ZoneOffset.UTC), contractPrices);
     }
 
     private static MarketOrder order(int type, long id, long location, boolean buy, String price, long volume) {
@@ -97,7 +100,7 @@ class MarketServiceIT extends IntegrationTest {
     void unchangedKeepsTheStoredOrdersAndConfirmsTheTime() {
         var type = 900_005;
         answers.put(type, EsiResult.updated(List.of(order(type, 40, JITA, false, "10.00", 100)), NOW.minusSeconds(60)));
-        new MarketService(orders, answering, Clock.fixed(NOW.minusSeconds(3600), ZoneOffset.UTC))
+        new MarketService(orders, answering, Clock.fixed(NOW.minusSeconds(3600), ZoneOffset.UTC), contractPrices)
                 .currentPrices(List.of(new TypeId(type)));
 
         answers.put(type, EsiResult.unchanged(NOW.plusSeconds(300)));
@@ -138,14 +141,14 @@ class MarketServiceIT extends IntegrationTest {
     void asksEsiOncePerItemEvenWhenTheItemIsListedTwice() {
         var type = 900_009;
         var calls = new HashMap<Integer, Integer>();
-        EsiClient counting = (region, id) -> {
+        OrdersEsi counting = (region, id) -> {
             synchronized (calls) {
                 calls.merge(id, 1, Integer::sum);
             }
             return EsiResult.unchanged(NOW.plusSeconds(300));
         };
 
-        new MarketService(orders, counting, Clock.fixed(NOW, ZoneOffset.UTC))
+        new MarketService(orders, counting, Clock.fixed(NOW, ZoneOffset.UTC), contractPrices)
                 .currentPrices(List.of(new TypeId(type), new TypeId(type)));
 
         assertThat(calls).containsEntry(type, 1);

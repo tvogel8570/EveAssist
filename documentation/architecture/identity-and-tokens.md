@@ -100,7 +100,9 @@ Status: **agreed**.
 
 - An access token is refreshed when less than 60 seconds of it are left, not after a request fails.
 - Only one refresh runs at a time for each character. The refresh holds a Postgres advisory lock on the character id,
-  which also works across several instances. Requests that arrive meanwhile wait for its result.
+  which also works across several instances. Requests that arrive meanwhile wait for its result. Sign-in and refreshing are
+  deliberately not background tasks (see [Background tasks](code-structure.md#background-tasks)): they run in the
+  request, and the lock is held only for the one call to EVE SSO, which times out after 30 seconds.
 - After a 401, the token is refreshed once and the request retried once. There is no retry loop.
 - When EVE SSO refuses the refresh token (`invalid_grant`), the character is marked as needing re-authorization, its
   stored data stays, and an alert is raised. Re-linking through EVE SSO clears the mark.
