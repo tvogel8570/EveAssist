@@ -63,7 +63,7 @@ class PlanController {
 
     @PostMapping("/{id}/products")
     String addProduct(Viewer viewer, @PathVariable UUID id, @RequestParam int typeId) {
-        editing.addProduct(viewer, new AddProductCommand(new PlanId(id), new TypeId(typeId), 1));
+        entry.addProduct(viewer, new AddProductCommand(new PlanId(id), new TypeId(typeId), 1));
         return "redirect:/plans/" + id;
     }
 
@@ -81,6 +81,14 @@ class PlanController {
             @PathVariable String source, @RequestParam long expectedVersion, Model model) {
         model.addAttribute("plan", editing.choosePartSource(viewer, new ChoosePartSourceCommand(
                 new PlanId(id), new TypeId(typeId), source.equals("buy"), expectedVersion)));
+        return "plans/fragments :: planRedraw";
+    }
+
+    @PostMapping("/{id}/prices/refresh")
+    String refreshPrices(Viewer viewer, @PathVariable UUID id, Model model) {
+        var refresh = entry.refreshPrices(viewer, new PlanId(id));
+        model.addAttribute("plan", refresh.plan());
+        model.addAttribute("failedItems", refresh.failedItems());
         return "plans/fragments :: planRedraw";
     }
 

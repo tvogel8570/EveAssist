@@ -6,7 +6,10 @@ Status: draft, interview in progress.
 
 - Prices come only from Jita (The Forge region, Jita 4-4). Other trade hubs and player-owned structure markets are not
   needed for now.
-- Prices are refreshed on demand, when the user opens a plan or asks for a refresh. There is no background refresh.
+- A plan keeps the prices it was costed with, so that it can be kept as quoted to a customer. They change only when the
+  user asks to refresh that plan's prices, or when a product is added whose items the plan has no price for (those are
+  fetched at once, and the rest stay as they were). Opening a plan never changes its prices, and there is no
+  background refresh. The developer decided this on 2026-11-08, replacing "refreshed when the user opens a plan".
 - Each price shows when it was fetched.
 - A price is the volume-weighted average of the best orders that make up a set share of the item's order volume (the
   cheapest sell orders, or the highest buy orders). The share is a user setting, 5% by default. The same price is used

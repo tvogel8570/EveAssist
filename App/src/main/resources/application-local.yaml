@@ -1,0 +1,5 @@
+# Add to the dev profile (active profiles: dev,local) to reach the app from another computer, such as over Tailscale.
+# The dev profile binds to 127.0.0.1 only. This one listens on every interface, so the app is reachable on whatever
+# addresses the host has. See documentation/README.md.
+server:
+  address: 0.0.0.0

@@ -6,11 +6,14 @@ import com.eveassist.industry.internal.application.PlanOverview;
 import com.eveassist.industry.internal.application.PlanRepository;
 import com.eveassist.industry.internal.application.PlanTotal;
 import com.eveassist.industry.internal.domain.Plan;
+import com.eveassist.industry.internal.domain.PlanPrice;
 import com.eveassist.industry.internal.domain.PlanProduct;
 import com.eveassist.sde.TypeId;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -20,12 +23,12 @@ import org.springframework.stereotype.Repository;
 @Repository
 class JdbcPlanRepository implements PlanRepository {
 
-    /** Whether a stored total is out of date. Other inputs to costing, such as skills, join this when they exist. */
+    /**
+     * Whether a stored total is out of date. A plan's prices change only when the user asks, so they never make it so.
+     * Other inputs to costing, such as skills, join this when they exist.
+     */
     private static final String OUT_OF_DATE = """
-            (p.costed_plan_version IS DISTINCT FROM p.version
-                OR p.costed_sde_version IS DISTINCT FROM :sde
-                OR EXISTS (SELECT FROM plan_costed_item i JOIN jita_price j ON j.type_id = i.type_id
-                           WHERE i.plan_id = p.id AND j.as_of > p.costed_at))
+            (p.costed_plan_version IS DISTINCT FROM p.version OR p.costed_sde_version IS DISTINCT FROM :sde)
             """;
 
     private final JdbcClient jdbc;
@@ -54,7 +57,8 @@ class JdbcPlanRepository implements PlanRepository {
                 .param("owner", viewer.accountId().value())
                 .query(Row.class)
                 .optional();
-        return row.map(plan -> new Plan(id, plan.name(), plan.version(), products(plan.id()), boughtParts(plan.id())));
+        return row.map(plan -> new Plan(id, plan.name(), plan.version(), products(plan.id()), boughtParts(plan.id()),
+                prices(plan.id())));
     }
 
     private List<PlanProduct> products(long planId) {
@@ -62,6 +66,16 @@ class JdbcPlanRepository implements PlanRepository {
                 .param("plan", planId)
                 .query((rs, row) -> new PlanProduct(new TypeId(rs.getInt("type_id")), rs.getLong("quantity")))
                 .list();
+    }
+
+    private Map<TypeId, PlanPrice> prices(long planId) {
+        var prices = new HashMap<TypeId, PlanPrice>();
+        jdbc.sql("SELECT type_id, sell, buy, as_of FROM plan_price WHERE plan_id = :plan")
+                .param("plan", planId)
+                .query((rs, row) -> prices.put(new TypeId(rs.getInt("type_id")), new PlanPrice(
+                        rs.getBigDecimal("sell"), rs.getBigDecimal("buy"), rs.getTimestamp("as_of").toInstant())))
+                .list();
+        return prices;
     }
 
     private Set<TypeId> boughtParts(long planId) {
@@ -93,7 +107,7 @@ class JdbcPlanRepository implements PlanRepository {
         updated.ifPresent(row -> {
             saveProducts(row[0], plan.products());
             saveBoughtParts(row[0], plan.boughtParts());
-            savePricedItems(row[0], total.pricedItems());
+            savePrices(row[0], plan.prices());
         });
         return updated.map(row -> row[1]);
     }
@@ -130,12 +144,29 @@ class JdbcPlanRepository implements PlanRepository {
         }
     }
 
-    private void savePricedItems(long planId, Set<TypeId> items) {
-        jdbc.sql("DELETE FROM plan_costed_item WHERE plan_id = :plan").param("plan", planId).update();
-        for (var item : items) {
-            jdbc.sql("INSERT INTO plan_costed_item (plan_id, type_id) VALUES (:plan, :type)")
+    private void savePrices(long planId, Map<TypeId, PlanPrice> prices) {
+        for (var entry : prices.entrySet()) {
+            jdbc.sql("""
+                    INSERT INTO plan_price (plan_id, type_id, sell, buy, as_of) VALUES (:plan, :type, :sell, :buy, :asOf)
+                    ON CONFLICT (plan_id, type_id) DO UPDATE SET sell = excluded.sell, buy = excluded.buy,
+                        as_of = excluded.as_of
+                    WHERE (plan_price.sell, plan_price.buy, plan_price.as_of)
+                        IS DISTINCT FROM (excluded.sell, excluded.buy, excluded.as_of)
+                    """)
                     .param("plan", planId)
-                    .param("type", item.value())
+                    .param("type", entry.getKey().value())
+                    .param("sell", entry.getValue().sell())
+                    .param("buy", entry.getValue().buy())
+                    .param("asOf", Timestamp.from(entry.getValue().asOf()))
+                    .update();
+        }
+        var keep = prices.keySet().stream().map(TypeId::value).toList();
+        if (keep.isEmpty()) {
+            jdbc.sql("DELETE FROM plan_price WHERE plan_id = :plan").param("plan", planId).update();
+        } else {
+            jdbc.sql("DELETE FROM plan_price WHERE plan_id = :plan AND type_id NOT IN (:keep)")
+                    .param("plan", planId)
+                    .param("keep", keep)
                     .update();
         }
     }
@@ -155,8 +186,7 @@ class JdbcPlanRepository implements PlanRepository {
                 .param("owner", viewer.accountId().value())
                 .param("version", plan.version())
                 .query(Long.class)
-                .optional()
-                .ifPresent(planId -> savePricedItems(planId, total.pricedItems()));
+                .optional();
     }
 
     @Override

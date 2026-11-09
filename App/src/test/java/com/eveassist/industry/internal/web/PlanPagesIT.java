@@ -16,11 +16,8 @@ import com.eveassist.industry.PlanId;
 import com.eveassist.industry.internal.application.AddProductCommand;
 import com.eveassist.industry.internal.application.CreatePlanCommand;
 import com.eveassist.industry.internal.application.PlanEditing;
-import com.eveassist.market.JitaPrice;
+import com.eveassist.industry.internal.application.PlanEntry;
 import com.eveassist.sde.TypeId;
-import java.math.BigDecimal;
-import java.time.Instant;
-import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,6 +39,9 @@ class PlanPagesIT extends IntegrationTest {
     PlanEditing editing;
 
     @Autowired
+    PlanEntry entry;
+
+    @Autowired
     JdbcClient jdbc;
 
     private RequestPostProcessor signedIn(String sub) {
@@ -53,7 +53,7 @@ class PlanPagesIT extends IntegrationTest {
         var viewer = viewerFor(sub);
         var id = editing.create(viewer, new CreatePlanCommand("My <i>plan</i>"));
         for (var product : products) {
-            editing.addProduct(viewer, new AddProductCommand(id, product, 1));
+            entry.addProduct(viewer, new AddProductCommand(id, product, 1));
         }
         return id;
     }
@@ -90,8 +90,8 @@ class PlanPagesIT extends IntegrationTest {
         rendered(mvc.perform(get("/plans").with(session)))
                 .andExpect(content().string(not(containsString("Out of date"))));
 
-        market.store(List.of(new JitaPrice(TRITANIUM, new BigDecimal("6.00"), Instant.now().minusSeconds(1))));
-        jdbc.sql("UPDATE plan SET costed_at = now() - interval '1 hour' WHERE public_id = :id")
+        // a newer SDE changes how a plan is costed, so the stored total is out of date
+        jdbc.sql("UPDATE plan SET costed_sde_version = 'older-sde' WHERE public_id = :id")
                 .param("id", id.value()).update();
 
         rendered(mvc.perform(get("/plans").with(session)))
@@ -99,10 +99,102 @@ class PlanPagesIT extends IntegrationTest {
                 .andExpect(content().string(containsString("700 ISK")));
 
         rendered(mvc.perform(get("/plans/" + id.value()).with(session)))
-                .andExpect(content().string(containsString("820 ISK")));
+                .andExpect(content().string(containsString("700 ISK")));
+        rendered(mvc.perform(get("/plans").with(session)))
+                .andExpect(content().string(not(containsString("Out of date"))));
+    }
+
+    @Test
+    void aNewerMarketPriceChangesNothingOnAPlanUntilTheUserRefreshes() throws Exception {
+        var sub = newSub();
+        var id = planWith(sub, HAULER);
+        var session = signedIn(sub);
+
+        esi.sell(34, "6.00");
+
+        rendered(mvc.perform(get("/plans/" + id.value()).with(session)))
+                .andExpect(content().string(containsString("700 ISK")));
         rendered(mvc.perform(get("/plans").with(session)))
                 .andExpect(content().string(not(containsString("Out of date"))))
+                .andExpect(content().string(containsString("700 ISK")));
+
+        rendered(mvc.perform(post("/plans/{id}/prices/refresh", id.value()).with(session).with(csrf())))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("id=\"plan-total-value\"")))
                 .andExpect(content().string(containsString("820 ISK")));
+        rendered(mvc.perform(get("/plans/" + id.value()).with(session)))
+                .andExpect(content().string(containsString("820 ISK")));
+    }
+
+    @Test
+    void refreshingOnePlanLeavesAnotherPlanAsQuoted() throws Exception {
+        var sub = newSub();
+        var quoted = planWith(sub, HAULER);
+        var refreshed = planWith(sub, HAULER);
+        var session = signedIn(sub);
+        esi.sell(34, "6.00");
+
+        mvc.perform(post("/plans/{id}/prices/refresh", refreshed.value()).with(session).with(csrf()))
+                .andExpect(status().isOk());
+
+        rendered(mvc.perform(get("/plans/" + quoted.value()).with(session)))
+                .andExpect(content().string(containsString("700 ISK")));
+        rendered(mvc.perform(get("/plans/" + refreshed.value()).with(session)))
+                .andExpect(content().string(containsString("820 ISK")));
+    }
+
+    @Test
+    void refreshingKeepsThePriceOfAnItemEsiCouldNotAnswerAndSaysSo() throws Exception {
+        var sub = newSub();
+        var id = planWith(sub, HAULER);
+        var session = signedIn(sub);
+        esi.sell(34, "6.00");
+        esi.fail(35);
+
+        var body = rendered(mvc.perform(post("/plans/{id}/prices/refresh", id.value()).with(session).with(csrf())))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+
+        assertThat(body).contains("id=\"price-warning\"", "Could not refresh", "Pilot&#39;s Mineral");
+        // Tritanium rose by 1 on 120 units; the failed item kept its price of 10
+        rendered(mvc.perform(get("/plans/" + id.value()).with(session)))
+                .andExpect(content().string(containsString("820 ISK")));
+    }
+
+    @Test
+    void addingAProductFetchesOnlyTheItemsThePlanHasNoPriceFor() throws Exception {
+        var sub = newSub();
+        var id = planWith(sub, HAULER);
+        var before = esi.asked().size();
+        esi.sell(34, "6.00");
+
+        entry.addProduct(viewerFor(sub), new AddProductCommand(id, SECOND_SHIP, 1));
+
+        var asked = esi.asked().subList(before, esi.asked().size());
+        assertThat(asked).as("Tritanium is already priced, so it is not asked about again")
+                .doesNotContain(34).contains(1003);
+        rendered(mvc.perform(get("/plans/" + id.value()).with(signedIn(sub))))
+                .andExpect(content().string(not(containsString("820 ISK"))));
+    }
+
+    @Test
+    void anAddedProductWhoseItemsEsiCannotAnswerIsLeftUnpriced() throws Exception {
+        var sub = newSub();
+        var id = planWith(sub);
+        esi.fail(34);
+
+        entry.addProduct(viewerFor(sub), new AddProductCommand(id, HAULER, 1));
+
+        rendered(mvc.perform(get("/plans/" + id.value()).with(signedIn(sub))))
+                .andExpect(content().string(containsString("id=\"plan-unpriced\"")));
+    }
+
+    @Test
+    void refreshingAnotherAccountsPlanIsNotFound() throws Exception {
+        var foreign = planWith(newSub(), HAULER);
+
+        mvc.perform(post("/plans/{id}/prices/refresh", foreign.value()).with(signedIn(newSub())).with(csrf()))
+                .andExpect(status().isNotFound());
     }
 
     @Test
@@ -207,6 +299,7 @@ class PlanPagesIT extends IntegrationTest {
                     .andExpect(status().isUnprocessableContent());
         }
 
+        assertThat(esi.asked()).as("ESI is not asked about an item that cannot be a product").isEmpty();
         rendered(mvc.perform(get("/plans/" + id.value()).with(signedIn(sub))))
                 .andExpect(content().string(containsString("id=\"no-products\"")));
     }

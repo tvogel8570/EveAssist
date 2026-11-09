@@ -1,5 +1,8 @@
-# no Keycloak in tests: sign-in is simulated, so these endpoints are never called
+# production migrations, then test-only SQL (see documentation/architecture/data.md)
 spring:
+  flyway:
+    locations: classpath:db/migration,classpath:db/test
+  # no Keycloak in tests: sign-in is simulated, so these endpoints are never called
   security:
     oauth2:
       client:

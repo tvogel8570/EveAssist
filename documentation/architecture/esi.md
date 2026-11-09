@@ -72,18 +72,23 @@ age.
 
 ## Jita prices
 
-- Prices are public data, shared by all users. They are fetched on demand, when a plan is opened or the user asks for
-  a refresh. The developer decided that the plan editor's refresh button is added with the ESI client, because until then
-  it has nothing to fetch.
+- Prices are public data, shared by all users. They are fetched on demand, and only when the user asks: the plan
+  editor's Refresh prices button, or adding a product whose items the plan has no price for. Opening a plan never
+  fetches, because a plan keeps the prices it was costed with so that it can be kept as quoted. The developer decided
+  this on 2026-11-08. A refresh asks ESI about every item the plan could need, bought or built, runs the calls on
+  virtual threads under the per-instance limit, and keeps the old price of any item ESI could not answer, listing it in
+  a warning. The calls happen between two short transactions, never inside one.
 - For each item, the app reads `GET /markets/10000002/orders?type_id=<id>` (The Forge), keeps the orders at Jita 4-4
   (station 60003760), and works out the buy and sell price from the best orders that make up the user's share of the
-  volume. The orders are stored once with their `Expires`. Each user's price comes from those stored orders, so users
-  with different shares cost no extra ESI calls.
+  volume. The orders are stored once (`jita_order`, with `jita_fetch` for when each item was last confirmed current, and
+  `esi_cache` for the ESI client's `ETag` and `Expires`). Each user's price comes from those stored orders, so users
+  with different shares cost no extra ESI calls. The price a plan uses is copied into the plan when it is taken (see
+  [Plan prices](data.md#plan-prices)).
 - Volume history comes from `GET /markets/10000002/history?type_id=<id>` and is stored per item, also within its cache
   time.
 - System cost indices come from `GET /industry/systems`, fetched at most once per cache period for everyone.
 - The `market-order` group allows 12,000 tokens per 15 minutes per IP address for all users together, so the shared
-  store matters in phase 3. Opening a large plan fetches only the items whose stored orders have expired.
+  store matters in phase 3. A refresh of a large plan fetches only the items whose stored orders have expired.
 
 Why ESI rather than Fuzzwork's market aggregates: the aggregates are fixed at the best 5% of volume, while the
 requirements make the share a user setting, and they would add a third-party service with no uptime promise.
@@ -125,3 +130,13 @@ Flagged to the developer when the architecture was drafted. The new ESI client a
 
 - The concurrency limit per instance (8 is a first guess) and how early the client slows down against a bucket are to
   be tuned against real responses, at the checkpoint under [Background fetches](#background-fetches).
+  **Checkpoint for market prices, 2026-11-08**: 60 real items (the materials of blueprints, from the dev SDE), 8 calls
+  at a time with a new connection each, took about 4 s. All answered 200 with `X-Pages: 1`, no 429 and no error
+  headers. Each cost 2 tokens, so 120 of the 12,000 in the `market-order` bucket, and the lowest `X-Ratelimit-Remaining`
+  was 11,880. The limit of 8 stays for now. Character data will need its own checkpoint, because its buckets are far
+  smaller (for example 150 tokens for wallet routes).
+- The response to a request sent with `X-Compatibility-Date: 2026-08-18` carries `x-compatibility-date: 2020-01-01`.
+  This is probably because the orders route has no newer version. It is not confirmed with ESI's documentation.
+- The OpenAPI spec lists `Cache-Control`, `ETag`, `Last-Modified` and `X-Pages` as headers of the orders route but not
+  `Expires`. The real response sends `Expires`, as the documentation describes, so the client uses it and falls back to
+  `max-age`.

@@ -36,6 +36,14 @@
   }
 }
 
+#refresh-spinner {
+  display: none;
+}
+
+#refresh-spinner.htmx-request {
+  display: inline-block;
+}
+
 #request-indicator {
   opacity: 0;
 }

@@ -142,6 +142,7 @@ final class ArchitectureRules {
                 internal.getDirectDependenciesFromSelf().stream()
                         .filter(d -> d.getTargetClass().getPackageName().equals(moduleBase))
                         .filter(d -> !isData(d.getTargetClass()))
+                        .filter(d -> !isImplementingItsOwnInterface(internal, d.getTargetClass()))
                         .forEach(d -> events.add(violated(internal, d.getDescription())));
             }
         };
@@ -150,6 +151,11 @@ final class ArchitectureRules {
     private String moduleBaseOf(JavaClass internal) {
         var name = internal.getPackageName();
         return name.substring(0, name.indexOf(".internal"));
+    }
+
+    /** An interface in the base package is the module's API, and its production implementation lives in internal. */
+    private static boolean isImplementingItsOwnInterface(JavaClass internal, JavaClass target) {
+        return target.isInterface() && internal.isAssignableTo(target.getName());
     }
 
     private static boolean isData(JavaClass target) {
