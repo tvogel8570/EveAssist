@@ -27,7 +27,11 @@
                     <a class="link text-xs" th:if="${row.phase == 'NEEDS_REAUTHORIZATION' or row.phase == 'MISSING_SCOPE'}"
                        th:href="@{/characters}" th:text="#{inventory.fixOnCharacters}">Characters page</a>
                 </td>
-                <td class="num" th:text="${row.itemCount != null} ? ${#numbers.formatInteger(row.itemCount, 1, 'COMMA')} : '-'">0</td>
+                <td class="num">
+                    <span th:text="${row.itemCount != null} ? ${#numbers.formatInteger(row.itemCount, 1, 'COMMA')} : '-'">0</span>
+                    <span class="block text-xs opacity-70" th:if="${row.structures > 0}"
+                          th:text="#{inventory.structures(${row.structuresNamed}, ${row.structures})}">3 of 5 structures named</span>
+                </td>
                 <td>
                     <span th:if="${row.fetchedAt != null}" th:text="${row.fetchedAt} + ' UTC'">time</span>
                     <span class="opacity-60" th:unless="${row.fetchedAt != null}" th:text="#{inventory.never}">Never</span>

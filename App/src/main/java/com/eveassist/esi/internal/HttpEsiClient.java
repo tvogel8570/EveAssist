@@ -1,8 +1,10 @@
 package com.eveassist.esi.internal;
 
 import com.eveassist.esi.AccessTokens;
+import com.eveassist.esi.TokenGrant;
 import com.eveassist.esi.CharacterAsset;
 import com.eveassist.esi.EsiClient;
+import com.eveassist.esi.StructureLookup;
 import com.eveassist.esi.EsiResult;
 import com.eveassist.esi.MarketOrder;
 import com.eveassist.esi.PublicContract;
@@ -39,6 +41,8 @@ class HttpEsiClient implements EsiClient {
     private static final String MARKET_ORDER_GROUP = "market-order";
     /** 1,800 tokens per 15 minutes per character, from ESI's OpenAPI spec. */
     private static final String CHARACTER_ASSET_GROUP = "char-asset";
+    /** ESI's OpenAPI spec names no rate-limit group for this route, so only the error limit applies. */
+    private static final String STRUCTURE_GROUP = "universe-structure";
     /** ESI's OpenAPI spec names no rate-limit group for the public contract routes, so only the error limit applies. */
     private static final String PUBLIC_CONTRACT_GROUP = "contracts-public";
     /** Used when ESI sends neither {@code Expires} nor {@code max-age}. */
@@ -102,6 +106,68 @@ class HttpEsiClient implements EsiClient {
                 new ParameterizedTypeReference<List<EsiAsset>>() { },
                 new Auth(eveCharacterId, ASSETS_SCOPE))
                 .map(assets -> assets.stream().map(HttpEsiClient::toCharacterAsset).toList());
+    }
+
+    @Override
+    public StructureLookup structure(long eveCharacterId, long structureId) {
+        var auth = new Auth(eveCharacterId, STRUCTURES_SCOPE);
+        var uri = "/universe/structures/%d".formatted(structureId);
+        var answer = getObject(uri, auth);
+        if (answer.problem() != null) {
+            return StructureLookup.failed(answer.problem());
+        }
+        return switch (answer.status()) {
+            case 200 -> answer.body() == null || answer.body().name() == null
+                    ? StructureLookup.failed("ESI answered without a name for structure " + structureId)
+                    : StructureLookup.found(answer.body().name(), answer.body().solarSystemId());
+            case 403 -> StructureLookup.noAccess();
+            case 404 -> StructureLookup.notFound();
+            default -> StructureLookup.failed("ESI answered " + answer.status() + " for structure " + structureId);
+        };
+    }
+
+    /** One object route, asked with a token, and once more after a 401. */
+    private Single getObject(String uri, Auth auth) {
+        var answer = getObjectOnce(uri, auth);
+        if (answer.status() == 401) {
+            tokens.invalidate(auth.eveCharacterId());
+            answer = getObjectOnce(uri, auth);
+        }
+        return answer;
+    }
+
+    private Single getObjectOnce(String uri, Auth auth) {
+        var wait = limiter.before(STRUCTURE_GROUP);
+        if (wait.isPresent()) {
+            return Single.problem(wait.get());
+        }
+        var grant = tokens.accessToken(auth.eveCharacterId(), auth.scope());
+        if (grant.problem() != null) {
+            return Single.problem(why(grant, auth));
+        }
+        simultaneous.acquireUninterruptibly();
+        try {
+            var answer = http.get().uri(uri)
+                    .headers(headers -> headers.setBearerAuth(grant.token()))
+                    .exchange((request, response) -> new Single(response.getStatusCode().value(),
+                            response.getHeaders(),
+                            response.getStatusCode().value() == 200 ? response.bodyTo(EsiStructure.class) : null,
+                            null));
+            limiter.record(STRUCTURE_GROUP, answer.status(), answer.headers());
+            return answer;
+        } catch (RestClientException e) {
+            return Single.problem("ESI could not be reached: " + e.getMessage());
+        } finally {
+            simultaneous.release();
+        }
+    }
+
+    private static String why(TokenGrant grant, Auth auth) {
+        return switch (grant.problem()) {
+            case NEEDS_REAUTHORIZATION -> "The character needs to be authorized again";
+            case MISSING_SCOPE -> "The character did not grant " + auth.scope();
+            case UNAVAILABLE -> "A token for the character is not available right now";
+        };
     }
 
     /** Which character's token a call is made with, and the scope that call needs. */
@@ -195,11 +261,7 @@ class HttpEsiClient implements EsiClient {
         if (auth != null) {
             var grant = tokens.accessToken(auth.eveCharacterId(), auth.scope());
             if (grant.problem() != null) {
-                return Page.problem(switch (grant.problem()) {
-                    case NEEDS_REAUTHORIZATION -> "The character needs to be authorized again";
-                    case MISSING_SCOPE -> "The character did not grant " + auth.scope();
-                    case UNAVAILABLE -> "A token for the character is not available right now";
-                });
+                return Page.problem(why(grant, auth));
             }
             bearer = grant.token();
         }
@@ -276,6 +338,18 @@ class HttpEsiClient implements EsiClient {
             @JsonProperty("location_flag") String locationFlag,
             @JsonProperty("is_singleton") boolean singleton,
             @JsonProperty("is_blueprint_copy") Boolean blueprintCopy) {
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private record EsiStructure(
+            @JsonProperty("name") String name,
+            @JsonProperty("solar_system_id") int solarSystemId) {
+    }
+
+    private record Single(int status, HttpHeaders headers, EsiStructure body, String problem) {
+        static Single problem(String problem) {
+            return new Single(0, null, null, problem);
+        }
     }
 
     private record Page<E>(int status, HttpHeaders headers, List<E> body, String problem) {

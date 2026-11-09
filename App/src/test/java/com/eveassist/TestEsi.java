@@ -6,6 +6,7 @@ import com.eveassist.esi.EsiResult;
 import com.eveassist.esi.MarketOrder;
 import com.eveassist.esi.PublicContract;
 import com.eveassist.esi.PublicContractItem;
+import com.eveassist.esi.StructureLookup;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
@@ -36,6 +37,8 @@ public class TestEsi implements EsiClient {
         itemsAsked.clear();
         assets.clear();
         assetsAsked.clear();
+        structures.clear();
+        structuresAsked.clear();
         assetsGate = null;
         sells.put(34, new BigDecimal("5.00"));
         sells.put(35, new BigDecimal("10.00"));
@@ -69,6 +72,25 @@ public class TestEsi implements EsiClient {
     /** The characters whose assets ESI has been asked about since the test began, in the order asked. */
     public List<Long> assetsAsked() {
         return List.copyOf(assetsAsked);
+    }
+
+    private final Map<Long, StructureLookup> structures = new ConcurrentHashMap<>();
+    private final List<String> structuresAsked = new CopyOnWriteArrayList<>();
+
+    /** What ESI answers for a structure, whichever character asks. A structure with no answer set is not accessible. */
+    public void structure(long structureId, StructureLookup answer) {
+        structures.put(structureId, answer);
+    }
+
+    /** The asks so far, as {@code "<EVE character id>:<structure id>"}, in the order made. */
+    public List<String> structuresAsked() {
+        return List.copyOf(structuresAsked);
+    }
+
+    @Override
+    public StructureLookup structure(long eveCharacterId, long structureId) {
+        structuresAsked.add(eveCharacterId + ":" + structureId);
+        return structures.getOrDefault(structureId, StructureLookup.noAccess());
     }
 
     private volatile java.util.concurrent.CountDownLatch assetsGate;

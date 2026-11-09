@@ -54,19 +54,26 @@ public class AssetFetcher {
      * @param fetchedAt when ESI last answered, with new data or "unchanged"
      * @param itemCount how many item rows are stored for the character
      * @param problem   a short reason when the last attempt failed
+     * @param structures      how many player structures the character has items in
+     * @param structuresNamed how many of those have a name, which only a character that may dock there can learn
      */
     public record CharacterAssets(UUID characterId, String name, Phase phase, Instant fetchedAt, Integer itemCount,
-            String problem) {
+            String problem, int structures, int structuresNamed) {
     }
 
     private final LinkedCharacters linked;
     private final EsiClient esi;
     private final AssetRepository assets;
     private final Clock clock;
+    private final StructureResolver resolver;
+    private final StructureRepository structures;
     private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
     private final Set<UUID> running = ConcurrentHashMap.newKeySet();
 
-    AssetFetcher(LinkedCharacters linked, EsiClient esi, AssetRepository assets, Clock clock) {
+    AssetFetcher(LinkedCharacters linked, EsiClient esi, AssetRepository assets, Clock clock,
+            StructureResolver resolver, StructureRepository structures) {
+        this.resolver = resolver;
+        this.structures = structures;
         this.linked = linked;
         this.esi = esi;
         this.assets = assets;
@@ -108,6 +115,10 @@ public class AssetFetcher {
                 case UNCHANGED -> assets.recordUnchanged(character.id(), now);
                 case FAILED -> assets.recordFailure(character.id(), now, result.problem());
             }
+            if (result.outcome() != EsiResult.Outcome.FAILED) {
+                // after the rows are stored, and also when ESI said nothing changed, to finish what an earlier run left
+                resolver.resolve(character);
+            }
         } catch (DataIntegrityViolationException gone) {
             // the character was removed while ESI was being asked, and its rows went with it
             log.debug("A character was removed during its asset fetch");
@@ -122,9 +133,10 @@ public class AssetFetcher {
         return characters.stream().map(character -> {
             var state = states.get(character.id());
             var phase = phaseOf(character, state);
+            var counts = structures.counts(character.id());
             return new CharacterAssets(character.id(), character.name(), phase,
                     state == null ? null : state.fetchedAt(), state == null ? null : state.itemCount(),
-                    state == null ? null : state.problem());
+                    state == null ? null : state.problem(), counts.total(), counts.named());
         }).toList();
     }
 

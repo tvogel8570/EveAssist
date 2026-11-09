@@ -26,7 +26,7 @@ class InventoryController {
 
     /** A character's row on the page: the fetch phase and when, in UTC (the account's time zone comes later). */
     public record Row(java.util.UUID id, String name, String phase, String fetchedAt, Integer itemCount,
-            String problem) {
+            String problem, int structures, int structuresNamed) {
     }
 
     @GetMapping("/inventory")
@@ -52,7 +52,7 @@ class InventoryController {
         model.addAttribute("rows", fetcher.status(viewer).stream()
                 .map(status -> new Row(status.characterId(), status.name(), status.phase().name(),
                         status.fetchedAt() == null ? null : UTC.format(status.fetchedAt()), status.itemCount(),
-                        status.problem()))
+                        status.problem(), status.structures(), status.structuresNamed()))
                 .toList());
         model.addAttribute("running", fetcher.anyRunning(viewer));
     }

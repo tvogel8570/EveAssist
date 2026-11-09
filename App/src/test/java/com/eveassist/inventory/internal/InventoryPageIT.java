@@ -90,8 +90,31 @@ class InventoryPageIT extends IntegrationTest {
         var page = mvc.perform(get("/inventory/status").with(signedInAs(sub)))
                 .andExpect(content().string(not(containsString("??"))))
                 .andReturn().getResponse().getContentAsString();
-        assertThat(page).contains("Alt One", "Up to date").containsPattern("<td class=\"num\">\\s*2\\s*</td>");
+        assertThat(page).contains("Alt One", "Up to date").containsPattern("<td class=\"num\">\\s*<span>2</span>");
         assertThat(page).contains(" UTC");
+    }
+
+    @Test
+    void saysHowManyStructuresHaveANameOnlyWhenThereAreStructures() throws Exception {
+        var sub = newSub();
+        var viewer = viewerFor(sub);
+        var eveId = link(viewer, "Alt One", "ACTIVE", ASSETS, "esi-universe.read_structures.v1");
+        esi.assetsOf(eveId, List.of(
+                new CharacterAsset(1, 34, 5, 1_000_000_000_001L, "item", "Hangar", false, null),
+                new CharacterAsset(2, 34, 5, 1_000_000_000_002L, "item", "Hangar", false, null),
+                new CharacterAsset(3, 34, 5, 60003760L, "station", "Hangar", false, null)));
+        esi.structure(1_000_000_000_001L, com.eveassist.esi.StructureLookup.found("Alpha", 30000142));
+        mvc.perform(get("/inventory").with(signedInAs(sub)));
+        awaitIdle(viewer);
+
+        mvc.perform(get("/inventory/status").with(signedInAs(sub)))
+                .andExpect(content().string(containsString("1 of 2 structures named")))
+                .andExpect(content().string(not(containsString("??"))));
+
+        var plainSub = newSub();
+        link(viewerFor(plainSub), "No Structures", "ACTIVE", ASSETS);
+        mvc.perform(get("/inventory/status").with(signedInAs(plainSub)))
+                .andExpect(content().string(not(containsString("structures named"))));
     }
 
     @Test

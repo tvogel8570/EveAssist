@@ -4,11 +4,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.headerDoesNotExist;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withServerError;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
 import com.eveassist.esi.AccessTokens;
 import com.eveassist.esi.EsiResult;
+import com.eveassist.esi.StructureLookup;
 import com.eveassist.esi.TokenGrant;
 import java.time.Duration;
 import java.time.Instant;
@@ -185,6 +187,61 @@ class HttpEsiClientAssetsTest {
         }
         // the mock server was given no expectation, so any request would have failed the test
         esi.verify();
+    }
+
+    @Test
+    void readsAStructureNameWithTheCharactersTokenAndTheStructuresScope() {
+        esi.expect(requestTo("https://esi.test/universe/structures/1023603822720"))
+                .andExpect(header("Authorization", "Bearer token-1"))
+                .andRespond(withSuccess("""
+                        {"name":"Jita - Trade Hub","owner_id":98000001,"position":{"x":1,"y":2,"z":3},
+                         "solar_system_id":30000142,"type_id":35834}""", MediaType.APPLICATION_JSON));
+
+        var answer = client.structure(90000001L, 1023603822720L);
+
+        assertThat(answer.status()).isEqualTo(StructureLookup.Status.FOUND);
+        assertThat(answer.name()).isEqualTo("Jita - Trade Hub");
+        assertThat(answer.solarSystemId()).isEqualTo(30000142);
+        assertThat(tokens.scopesAsked).containsExactly("esi-universe.read_structures.v1");
+        esi.verify();
+    }
+
+    @Test
+    void aStructureTheCharacterMayNotDockAtIsAnAnswerNotAFailure() {
+        esi.expect(requestTo("https://esi.test/universe/structures/1")).andRespond(withStatus(HttpStatus.FORBIDDEN));
+        esi.expect(requestTo("https://esi.test/universe/structures/2")).andRespond(withStatus(HttpStatus.NOT_FOUND));
+
+        assertThat(client.structure(90000001L, 1L).status()).isEqualTo(StructureLookup.Status.NO_ACCESS);
+        assertThat(client.structure(90000001L, 2L).status()).isEqualTo(StructureLookup.Status.NOT_FOUND);
+        esi.verify();
+    }
+
+    @Test
+    void aStructureAskedAfterA401UsesANewTokenOnceAndNeverLoops() {
+        esi.expect(requestTo("https://esi.test/universe/structures/1")).andExpect(header("Authorization", "Bearer token-1"))
+                .andRespond(withStatus(HttpStatus.UNAUTHORIZED));
+        esi.expect(requestTo("https://esi.test/universe/structures/1")).andExpect(header("Authorization", "Bearer token-2"))
+                .andRespond(withStatus(HttpStatus.UNAUTHORIZED));
+
+        var answer = client.structure(90000001L, 1L);
+
+        assertThat(answer.status()).isEqualTo(StructureLookup.Status.FAILED);
+        assertThat(tokens.invalidated).hasSize(1);
+        esi.verify();
+    }
+
+    @Test
+    void aStructureServerErrorOrAMissingTokenIsAFailureWithAReason() {
+        esi.expect(requestTo("https://esi.test/universe/structures/1")).andRespond(withServerError());
+        var serverError = client.structure(90000001L, 1L);
+        assertThat(serverError.status()).isEqualTo(StructureLookup.Status.FAILED);
+        assertThat(serverError.problem()).isNotBlank();
+
+        tokens.problem = TokenGrant.Problem.MISSING_SCOPE;
+        var noScope = client.structure(90000001L, 3L);
+
+        assertThat(noScope.status()).isEqualTo(StructureLookup.Status.FAILED);
+        assertThat(noScope.problem()).contains("esi-universe.read_structures.v1");
     }
 
     @Test

@@ -161,9 +161,16 @@ Status: **proposed** (added 2026-11-09 with the asset fetch).
   (about 30,000,000 to 33,000,000) can be named from the SDE, and a structure id (above 1,000,000,000,000) needs ESI.
   Blueprint copies have `is_blueprint_copy` true. Originals have no value, like every other item, so a blueprint
   original is told by the SDE's blueprint category. The `Deliveries` and `AssetSafety` flags also occur in real data.
-- **Not yet**: names of player structures (`GET /universe/structures/{id}`, scope `esi-universe.read_structures.v1`,
-  one call per structure, 403 when the character has no docking access, which counts toward the error limit) and the
-  checkpoint under [Background fetches](#background-fetches) for the `char-asset` group.
+- **Structure names**: `GET /universe/structures/{structure_id}` needs `esi-universe.read_structures.v1`, is asked
+  with the character's token and has no rate-limit group in the OpenAPI spec, so only the error limit applies. ESI
+  answers 200 with a name only for a character that may dock there, and 403 (or 404 for a structure that is gone), which
+  the spec does not list. Every 403 counts toward the error limit, so after storing a character's assets (and also when
+  ESI said nothing changed, to finish an earlier run) the app asks about the structures where that character has
+  top-level items and nothing current is known: at most 25 per run, new ones first, stopping after 5 refusals. A name is
+  trusted for 7 days, a refusal for 1 day and a "not found" for 7 days. A failure (throttled, down, no token) stops the
+  run and is not kept. Answers are stored per character (`character_structure`), not shared, because only a character
+  with docking access can learn a name, and they go with the character. Status: **proposed**.
+- **Not yet**: the checkpoint under [Background fetches](#background-fetches) for the `char-asset` group.
 
 ## Alerts
 

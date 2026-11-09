@@ -38,4 +38,14 @@ public interface EsiClient {
     EsiResult<List<CharacterAsset>> characterAssets(long eveCharacterId);
 
     String ASSETS_SCOPE = "esi-assets.read_assets.v1";
+
+    /**
+     * The name of a player structure, from {@code GET /universe/structures/{structure_id}}, asked with the
+     * character's token. It needs the scope {@value #STRUCTURES_SCOPE}. ESI answers only for a character that may dock
+     * there, and answers 403 to the rest, which counts toward its error limit, so callers ask about as few structures
+     * as they can. The answer is not cached here: the caller keeps it, as it keeps its other stored data.
+     */
+    StructureLookup structure(long eveCharacterId, long structureId);
+
+    String STRUCTURES_SCOPE = "esi-universe.read_structures.v1";
 }
