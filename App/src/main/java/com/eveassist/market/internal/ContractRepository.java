@@ -107,7 +107,7 @@ public class ContractRepository {
     }
 
     @Transactional
-    public void saveItems(long contractId, List<PublicContractItem> items) {
+    public void saveItems(long contractId, List<PublicContractItem> items, ContractFlags flags) {
         batch.batchUpdate("""
                 INSERT INTO contract_public_item (contract_id, record_id, type_id, quantity, included, is_copy, me, te, runs)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -123,8 +123,17 @@ public class ContractRepository {
             setInt(statement, 8, item.timeEfficiency());
             setInt(statement, 9, item.runs());
         });
-        jdbc.sql("UPDATE contract_public SET items_fetched = true WHERE contract_id = :id")
-                .param("id", contractId).update();
+        jdbc.sql("UPDATE contract_public SET items_fetched = true, has_bpo = :bpo, has_abyssal = :abyssal WHERE contract_id = :id")
+                .param("id", contractId).param("bpo", flags.bpo()).param("abyssal", flags.abyssal()).update();
+    }
+
+    /** How many stored contracts are set aside, as {@code [with a blueprint original, with an Abyssal item]}. */
+    public int[] setAside(int regionId) {
+        return jdbc.sql("""
+                SELECT count(*) FILTER (WHERE has_bpo) AS bpo, count(*) FILTER (WHERE has_abyssal) AS abyssal
+                FROM contract_public WHERE region_id = :region AND expires_at > now()
+                """).param("region", regionId)
+                .query((rs, row) -> new int[] {rs.getInt("bpo"), rs.getInt("abyssal")}).single();
     }
 
     /** The contract has expired or been accepted, so ESI has no lines for it. */
@@ -141,6 +150,7 @@ public class ContractRepository {
                 FROM contract_public c
                 JOIN contract_public_item i ON i.contract_id = c.contract_id
                 WHERE c.region_id = :region AND c.items_fetched AND c.expires_at > :now
+                  AND NOT c.has_bpo AND NOT c.has_abyssal
                   AND c.contract_id IN (SELECT contract_id FROM contract_public_item
                                         WHERE type_id = :type AND is_copy)
                 """).param("region", regionId).param("type", blueprintTypeId).param("now", Timestamp.from(now))

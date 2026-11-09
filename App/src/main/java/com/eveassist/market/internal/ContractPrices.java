@@ -6,6 +6,7 @@ import com.eveassist.esi.PublicContractItem;
 import com.eveassist.market.BpcQuote;
 import com.eveassist.market.ContractRefresh;
 import com.eveassist.market.ContractStatus;
+import com.eveassist.sde.SdeService;
 import com.eveassist.sde.TypeId;
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -31,9 +32,11 @@ public class ContractPrices {
     private final ContractRepository contracts;
     private final OrderRepository orders;
     private final EsiClient esi;
+    private final SdeService sde;
     private final Clock clock;
 
-    ContractPrices(ContractRepository contracts, OrderRepository orders, EsiClient esi, Clock clock) {
+    ContractPrices(ContractRepository contracts, OrderRepository orders, EsiClient esi, SdeService sde, Clock clock) {
+        this.sde = sde;
         this.contracts = contracts;
         this.orders = orders;
         this.esi = esi;
@@ -73,7 +76,7 @@ public class ContractPrices {
                 contracts.drop(entry.getKey());
                 gone++;
             } else {
-                contracts.saveItems(entry.getKey(), result.data());
+                contracts.saveItems(entry.getKey(), result.data(), ContractFlags.of(result.data(), sde::isAbyssal));
                 read++;
             }
         }
@@ -100,7 +103,9 @@ public class ContractPrices {
     }
 
     public ContractStatus status(int regionId) {
-        return new ContractStatus(contracts.fetchedAt(regionId).orElse(null), contracts.pendingCount(regionId));
+        var setAside = contracts.setAside(regionId);
+        return new ContractStatus(contracts.fetchedAt(regionId).orElse(null), contracts.pendingCount(regionId), setAside[0],
+                setAside[1]);
     }
 
     private static EsiResult<List<PublicContractItem>> result(Future<EsiResult<List<PublicContractItem>>> future) {

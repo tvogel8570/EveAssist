@@ -18,6 +18,8 @@
             <span th:if="${status.listedAt != null}" th:text="#{bpc.listedAt(${@utcTime.format(status.listedAt)})}">Listed</span>
             <span th:unless="${status.listedAt != null}" th:text="#{bpc.neverListed}">Never read</span>
             <span th:if="${status.pending > 0}" th:text="' · ' + #{bpc.pending(${status.pending})}">pending</span>
+            <span id="contracts-set-aside" th:if="${status.withBlueprintOriginals > 0 or status.withAbyssalItems > 0}"
+                  th:text="' · ' + #{bpc.setAside(${status.withBlueprintOriginals}, ${status.withAbyssalItems})}">set aside</span>
         </span>
     </div>
 

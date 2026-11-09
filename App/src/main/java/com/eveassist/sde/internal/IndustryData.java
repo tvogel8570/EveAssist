@@ -26,6 +26,7 @@ public class IndustryData {
     private final Map<TypeId, ItemType> types;
     private final Map<TypeId, Recipe> recipes;
     private final Set<TypeId> blueprints;
+    private final Set<TypeId> abyssalTypes;
 
     IndustryData(JdbcClient jdbc) {
         version = jdbc.sql("SELECT name FROM sde.sde_version ORDER BY imported_at DESC LIMIT 1")
@@ -42,6 +43,10 @@ public class IndustryData {
                 .list().stream()
                 .collect(Collectors.toUnmodifiableMap(ItemType::id, type -> type));
         recipes = Map.copyOf(loadRecipes(jdbc));
+        // What a mutaplasmid turns an item into. Names are no guide: "50MN Abyssal Microwarpdrive" is one, "Abyssal Trace" is not.
+        abyssalTypes = Set.copyOf(jdbc.sql("""
+                SELECT DISTINCT "resultingTypeID" FROM sde."dynamicItemAttributeMappings"
+                """).query((rs, row) -> new TypeId(rs.getInt("resultingTypeID"))).list());
         blueprints = Set.copyOf(jdbc.sql("""
                 SELECT DISTINCT p."typeID" FROM sde."industryActivityProducts" p
                 JOIN sde."invTypes" t ON t."typeID" = p."typeID" AND t.published
@@ -118,6 +123,11 @@ public class IndustryData {
                         .thenComparing(ItemType::name))
                 .limit(limit)
                 .toList();
+    }
+
+    /** True for the types a mutaplasmid produces, whose value depends on the attributes each item was rolled with. */
+    public boolean isAbyssal(TypeId id) {
+        return abyssalTypes.contains(id);
     }
 
     public boolean isBlueprint(TypeId id) {

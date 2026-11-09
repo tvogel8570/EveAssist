@@ -36,3 +36,7 @@ INSERT INTO sde."industryActivityMaterials" VALUES
     (2003, 1, 1002, 1), (2003, 1, 36, 1),
     (2004, 1, 34, 1),
     (2005, 1, 1006, 1), (2006, 1, 1007, 1), (2006, 1, 34, 1), (2007, 1, 34, 1);
+
+-- A mutaplasmid (5001) that turns the Test Hauler's kind of item into type 3001, as in the real SDE
+CREATE TABLE sde."dynamicItemAttributeMappings" ("typeID" integer, "applicableTypeID" integer, "resultingTypeID" integer);
+INSERT INTO sde."dynamicItemAttributeMappings" VALUES (5001, 1002, 3001);

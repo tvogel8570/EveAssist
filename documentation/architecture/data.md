@@ -216,7 +216,7 @@ Status: **proposed**. Public data shared by all users, so these tables have no o
 
 | Table | Holds |
 |---|---|
-| `contract_public` | A public item exchange contract of up to 100 m³ with a price: region, price, issued and expiry time, start location, volume, and whether its lines have been read |
+| `contract_public` | A public item exchange contract of up to 100 m³ with a price: region, price, issued and expiry time, start location, volume, whether its lines have been read, and two flags, `has_bpo` and `has_abyssal`, for contracts set aside because they hold a blueprint original or an Abyssal item |
 | `contract_public_item` | The lines of a contract, read once: type, quantity, whether the issuer gives or asks for it, and for blueprint copies the ME, TE and runs. Removed with the contract |
 | `contract_public_fetch` | When each region's list was last confirmed current |
 

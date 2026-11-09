@@ -37,6 +37,11 @@ public class SdeService {
         return data.searchBlueprints(text, limit);
     }
 
+    /** True for an Abyssal (mutated) item type. Names are no guide, so this comes from the SDE's mutaplasmid mappings. */
+    public boolean isAbyssal(TypeId id) {
+        return data.isAbyssal(id);
+    }
+
     public boolean isBlueprint(TypeId id) {
         return data.isBlueprint(id);
     }

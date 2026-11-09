@@ -46,7 +46,7 @@ class ContractLoaderIT extends IntegrationTest {
     void doesNothingWhileARunIsGoingAndRunsAgainAfterwards() throws Exception {
         var inside = new CountDownLatch(1);
         var release = new CountDownLatch(1);
-        var blocking = new ContractPrices(null, null, null, Clock.systemUTC()) {
+        var blocking = new ContractPrices(null, null, null, null, Clock.systemUTC()) {
             @Override
             public ContractRefresh refresh(int regionId, int maxContracts) {
                 inside.countDown();

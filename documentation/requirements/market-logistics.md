@@ -39,8 +39,12 @@ Added 2026-11-09. Blueprint copies (BPCs) are not sold on the market, so their p
   share of the runs on offer (5% by default).
 - A pack of several copies is split between them in proportion to their runs, so every run in it costs the same. Items
   in the contract that are not BPCs are valued at their Jita sell price first, and the BPCs share the rest. A contract
-  that asks for items, holds a blueprint original, holds an item with no Jita price, or costs less than its other
-  items, is not used.
+  that asks for items, holds an item with no Jita price, or costs less than its other items, is not used.
+- **Contracts with a blueprint original (BPO) or an Abyssal item are flagged and set aside.** Neither has a market price,
+  and a fair split of the contract price will need a rule for each kind (how to value an original, how to value a
+  rolled Abyssal module), so they are not priced and not looked at again for now. The page says how many are set aside.
+  Abyssal items are recognised from the SDE's mutaplasmid mappings, not from names. How to split such contracts, and
+  how to split a pack of copies, are separate decisions still to be made.
 - Offers more than ten times above or below the middle offer for the blueprint are left out as joke or mistaken
   prices, once there are at least three offers.
 - Only contracts up to 100 m³ are read: a copy takes 0.01 m³, and larger contracts are ships and cargo.
@@ -107,4 +111,4 @@ Cost and profit include every fee:
   gives the mutaplasmid, the source item and the attributes, one call per item. Things to decide when this is taken up:
   how to value such an item, whether the extra call per item fits in the background loader's budget (see
   [Background fetches](../architecture/esi.md#background-fetches)), and what the stored line needs. Until then a contract
-  that holds one is skipped when pricing blueprint copies, because the item has no Jita price that fits it.
+  that holds one is flagged and set aside (see [Contract prices](#contract-prices)).

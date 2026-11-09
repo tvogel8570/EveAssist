@@ -19,6 +19,9 @@ class ContractPricesIT extends IntegrationTest {
     @Autowired
     MarketService market;
 
+    @Autowired
+    com.eveassist.sde.SdeService sde;
+
     private static PublicContract contract(long id, String type, String price) {
         return new PublicContract(id, type, new BigDecimal(price), 5, Instant.now().minusSeconds(3600),
                 Instant.now().plusSeconds(86400), 60003760L, 0.01);
@@ -90,5 +93,29 @@ class ContractPricesIT extends IntegrationTest {
 
         assertThat(market.bpcPrice(new TypeId(BLUEPRINT + 3), 0, 0))
                 .hasValueSatisfying(quote -> assertThat(quote.perRun()).isEqualByComparingTo("100.00"));
+    }
+
+    @Test
+    void recognisesAbyssalTypesFromTheSdeMappingsNotFromNames() {
+        assertThat(sde.isAbyssal(new TypeId(3001))).isTrue();
+        assertThat(sde.isAbyssal(new TypeId(34))).isFalse();
+    }
+
+    @Test
+    void flagsAndSetsAsideContractsWithABlueprintOriginalOrAnAbyssalItem() {
+        var blueprint = BLUEPRINT + 4;
+        esi.contract(contract(9_800_001, "item_exchange", "1000"), List.of(copy(1, blueprint, 0, 0, 10)));
+        esi.contract(contract(9_800_002, "item_exchange", "10"), List.of(copy(1, blueprint, 0, 0, 10),
+                new PublicContractItem(2, 3001, 1, true, false, null, null, null)));
+        esi.contract(contract(9_800_003, "item_exchange", "10"), List.of(copy(1, blueprint, 0, 0, 10),
+                new PublicContractItem(2, blueprint + 1000, 1, true, false, 0, 0, -1)));
+
+        market.refreshContracts(10);
+
+        assertThat(market.bpcPrice(new TypeId(blueprint), 0, 0))
+                .hasValueSatisfying(quote -> assertThat(quote.perRun()).isEqualByComparingTo("100.00"));
+        var status = market.contractStatus();
+        assertThat(status.withAbyssalItems()).isEqualTo(1);
+        assertThat(status.withBlueprintOriginals()).isEqualTo(1);
     }
 }
