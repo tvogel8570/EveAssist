@@ -6,6 +6,8 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Set;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
@@ -23,6 +25,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 @Component
 class HttpEveSso implements EveSso {
 
+    private static final Logger log = LoggerFactory.getLogger(HttpEveSso.class);
     private static final Duration JWKS_CACHE_TIME = Duration.ofHours(1);
 
     private final RestClient http;
@@ -72,6 +75,30 @@ class HttpEveSso implements EveSso {
             throw new SsoException("EVE SSO answered without tokens");
         }
         return new SsoLink(validator.validate(response.accessToken()), response.refreshToken());
+    }
+
+    /**
+     * {@code POST} to the revocation endpoint that EVE SSO's metadata advertises (the documentation pages do not
+     * describe it), authenticated like the token endpoint. The token goes in the body and nowhere else, and is never
+     * logged.
+     */
+    @Override
+    public boolean revoke(String refreshToken) {
+        var form = new LinkedMultiValueMap<String, String>();
+        form.add("token_type_hint", "refresh_token");
+        form.add("token", refreshToken);
+        try {
+            http.post().uri(properties.revokeUrl())
+                    .headers(headers -> headers.setBasicAuth(properties.clientId(), properties.clientSecret()))
+                    .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                    .body(form)
+                    .retrieve()
+                    .toBodilessEntity();
+            return true;
+        } catch (RestClientException e) {
+            log.warn("EVE SSO did not confirm a token revocation: {}", e.getClass().getSimpleName());
+            return false;
+        }
     }
 
     private synchronized JwtDecoder jwtDecoder() {

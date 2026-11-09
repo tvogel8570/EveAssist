@@ -39,7 +39,8 @@ class CharactersController {
 
     @GetMapping("/characters")
     String page(Viewer viewer, @RequestParam(required = false) String linking,
-            @RequestParam(required = false) String removed, Model model) {
+            @RequestParam(required = false) String removed, @RequestParam(required = false) String dropped,
+            Model model) {
         var on = characters.featuresOn(viewer);
         model.addAttribute("features", Arrays.stream(Feature.values())
                 .map(feature -> new FeatureRow(feature, on.contains(feature), feature.scopes().stream().sorted().toList()))
@@ -48,6 +49,7 @@ class CharactersController {
         model.addAttribute("anyFeatureOn", !on.isEmpty());
         model.addAttribute("linking", linking != null && LINKING_RESULTS.contains(linking) ? linking : null);
         model.addAttribute("removed", removed != null);
+        model.addAttribute("revokeFailed", "unrevoked".equals(removed) || "unrevoked".equals(dropped));
         return "characters/list";
     }
 
@@ -67,7 +69,25 @@ class CharactersController {
 
     @PostMapping("/characters/{id}/remove")
     String remove(Viewer viewer, @PathVariable UUID id) {
-        return characters.remove(viewer, id) ? "redirect:/characters?removed" : "redirect:/characters";
+        return switch (characters.remove(viewer, id)) {
+            case NOT_FOUND -> "redirect:/characters";
+            case DONE -> "redirect:/characters?removed";
+            case DONE_NOT_REVOKED -> "redirect:/characters?removed=unrevoked";
+        };
+    }
+
+    /**
+     * Drops the permissions a character granted: its token is revoked at EVE and deleted here. When EVE confirms, the
+     * browser goes straight on to link the character again with only what the turned-on features need. When EVE does
+     * not, the page says the old token may still be valid, so the user can revoke it by hand first.
+     */
+    @PostMapping("/characters/{id}/drop-access")
+    String dropAccess(Viewer viewer, @PathVariable UUID id) {
+        return switch (characters.dropAccess(viewer, id)) {
+            case NOT_FOUND -> "redirect:/characters";
+            case DONE -> "redirect:/characters/link";
+            case DONE_NOT_REVOKED -> "redirect:/characters?dropped=unrevoked";
+        };
     }
 
     @GetMapping("/characters/{id}/portrait")

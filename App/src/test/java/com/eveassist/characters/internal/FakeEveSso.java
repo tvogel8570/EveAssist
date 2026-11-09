@@ -1,5 +1,7 @@
 package com.eveassist.characters.internal;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 /** EVE SSO as a test sees it: records what was asked, and answers with what the test set up. */
@@ -10,8 +12,13 @@ class FakeEveSso implements EveSso {
     int exchanges;
     SsoLink nextLink;
     SsoException failWith;
+    /** The refresh tokens EVE was asked to revoke, in order. */
+    final List<String> revoked = new ArrayList<>();
+    boolean revokeConfirmed = true;
 
     void reset() {
+        revoked.clear();
+        revokeConfirmed = true;
         askedScopes = null;
         askedState = null;
         exchanges = 0;
@@ -29,6 +36,12 @@ class FakeEveSso implements EveSso {
         askedState = state;
         askedScopes = scopes;
         return "https://sso.invalid/authorize?state=" + state;
+    }
+
+    @Override
+    public boolean revoke(String refreshToken) {
+        revoked.add(refreshToken);
+        return revokeConfirmed;
     }
 
     @Override

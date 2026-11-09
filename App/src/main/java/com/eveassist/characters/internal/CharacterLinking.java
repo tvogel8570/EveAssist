@@ -37,15 +37,17 @@ public class CharacterLinking {
     private final CharacterRepository characters;
     private final TokenCipher cipher;
     private final PortraitSource portraits;
+    private final TokenRevoker revoker;
     private final SecureRandom random = new SecureRandom();
 
     CharacterLinking(EveSso sso, FeatureRepository features, CharacterRepository characters, TokenCipher cipher,
-            PortraitSource portraits) {
+            PortraitSource portraits, TokenRevoker revoker) {
         this.sso = sso;
         this.features = features;
         this.characters = characters;
         this.cipher = cipher;
         this.portraits = portraits;
+        this.revoker = revoker;
     }
 
     /** Asks for the scopes of the turned-on features and nothing else. Empty when no feature is on. */
@@ -78,8 +80,13 @@ public class CharacterLinking {
             return Result.REFUSED;
         }
         var identity = link.identity();
+        // only the owner's own token is looked up, so a refused link can never revoke someone else's access
+        var previous = characters.findToken(viewer.accountId(), identity.characterId());
         var outcome = characters.link(viewer.accountId(), identity.characterId(), identity.name(),
                 identity.ownerHash(), identity.scopes(), cipher.encrypt(identity.characterId(), link.refreshToken()));
+        if (outcome == CharacterRepository.LinkOutcome.RENEWED) {
+            previous.ifPresent(old -> revoker.revoke(identity.characterId(), old));
+        }
         if (outcome != CharacterRepository.LinkOutcome.ON_ANOTHER_ACCOUNT) {
             portraits.fetch(identity.characterId())
                     .ifPresent(portrait -> characters.storePortrait(identity.characterId(), portrait));

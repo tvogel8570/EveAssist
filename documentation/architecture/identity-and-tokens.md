@@ -141,6 +141,21 @@ every planned feature, which is allowed because a request may ask for fewer than
 a Link a character button and the feature toggles. It grows into the scope page and fetch log in
 [Gaining players' trust](../requirements/gain-trust.md).
 
+**Dropping permissions.** A token's scopes are fixed when the player consents, and the EVE documentation describes no way
+to narrow them. Turning a feature off therefore only stops using it and changes what the next link asks for. The
+character's card lists the scopes it granted that no turned-on feature uses as "not in use", and offers **Drop unused
+permissions**: EveAssist revokes the refresh token at EVE, deletes its own copy, marks the character as needing
+re-authorization (its stored data stays) and sends the browser straight on to link it again with only the scopes the
+turned-on features need. The developer chose this on 2026-11-09 over revoking automatically when a feature is turned
+off, which one click could turn into re-linking every character.
+
+Revocation uses the `revocation_endpoint` in EVE SSO's metadata (`https://login.eveonline.com/v2/oauth/revoke`),
+authenticated like the token endpoint, with `token` and `token_type_hint=refresh_token`. The EVE documentation pages do
+not describe it (found 2026-11-09). The same call is made when a character is **removed** and when it is **linked
+again**, so the old token does not stay valid at EVE after our copy is gone. Our own deletion never waits for EVE: when
+EVE does not confirm, the page says the old access may still be valid and where to revoke it by hand. A refused link
+(a character on another account) never revokes anything, because only the owner's own token is looked up.
+
 **Portraits.** Pages load nothing from third parties, so the server downloads a character's 128 px portrait from EVE's
 image server once, when the character is linked or re-linked, and stores it in the `character` row (about 10 KB). The
 page serves it from `GET /characters/{id}/portrait`, to the owner only, with a private one-day cache header. The image

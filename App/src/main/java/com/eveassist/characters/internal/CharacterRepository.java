@@ -113,6 +113,53 @@ class CharacterRepository {
                 .optional();
     }
 
+    /** A stored token with the EVE character it belongs to. */
+    record OwnedToken(long eveCharacterId, EncryptedToken token) {
+    }
+
+    /** The token of one of the owner's characters. Empty for anyone else's, so no one can revoke another's token. */
+    Optional<OwnedToken> findOwnedToken(AccountId owner, UUID publicId) {
+        return jdbc.sql("""
+                SELECT c.eve_character_id, t.ciphertext, t.nonce, t.key_id FROM character_token t
+                JOIN character c ON c.id = t.character_id
+                WHERE c.public_id = :id AND c.owner_account_id = :owner
+                """)
+                .param("id", publicId).param("owner", owner.value())
+                .query((rs, row) -> new OwnedToken(rs.getLong("eve_character_id"),
+                        new EncryptedToken(rs.getBytes("ciphertext"), rs.getBytes("nonce"), rs.getString("key_id"))))
+                .optional();
+    }
+
+    /** Same, found by the EVE character id, for a re-link. */
+    Optional<EncryptedToken> findToken(AccountId owner, long eveCharacterId) {
+        return jdbc.sql("""
+                SELECT t.ciphertext, t.nonce, t.key_id FROM character_token t
+                JOIN character c ON c.id = t.character_id
+                WHERE c.eve_character_id = :eve AND c.owner_account_id = :owner
+                """)
+                .param("eve", eveCharacterId).param("owner", owner.value())
+                .query((rs, row) -> new EncryptedToken(rs.getBytes("ciphertext"), rs.getBytes("nonce"),
+                        rs.getString("key_id")))
+                .optional();
+    }
+
+    /**
+     * Forgets the saved access: deletes the token and the scopes it granted, and marks the character as needing
+     * re-authorization. The character and its stored data stay. False when it is not the owner's.
+     */
+    @Transactional
+    boolean dropAccess(AccountId owner, UUID publicId) {
+        var id = jdbc.sql("""
+                UPDATE character SET scopes = '{}', state = 'NEEDS_REAUTHORIZATION'
+                WHERE public_id = :id AND owner_account_id = :owner RETURNING id
+                """)
+                .param("id", publicId).param("owner", owner.value())
+                .query(Long.class).optional();
+        id.ifPresent(characterId -> jdbc.sql("DELETE FROM character_token WHERE character_id = :id")
+                .param("id", characterId).update());
+        return id.isPresent();
+    }
+
     /** Deletes the character with its token (and, later, its ESI data) at once. */
     boolean remove(AccountId owner, UUID publicId) {
         return jdbc.sql("DELETE FROM character WHERE public_id = :id AND owner_account_id = :owner")

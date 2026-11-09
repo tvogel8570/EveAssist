@@ -109,6 +109,37 @@ class CharacterLinkingIT extends IntegrationTest {
     }
 
     @Test
+    void linkingAgainRevokesTheOldTokenAtEveAndKeepsTheNewOne() throws Exception {
+        var sub = newSub();
+        var viewer = viewerFor(sub);
+        features.turnOn(viewer.accountId(), Feature.INVENTORY);
+        var eveId = newEveId();
+        characters.link(viewer.accountId(), eveId, "Alt One", "hash", Set.of("a"), cipher.encrypt(eveId, "old-token"));
+        sso.nextLink = sso.link(eveId, "Alt One", "new-token");
+        var session = startLinking(sub);
+
+        mvc.perform(get("/characters/link/callback").param("code", "c").param("state", sso.askedState)
+                        .with(signedInAs(sub)).cookie(session))
+                .andExpect(redirectedUrl("/characters?linking=RENEWED"));
+
+        assertThat(sso.revoked).containsExactly("old-token");
+        assertThat(cipher.decrypt(eveId, characters.findToken(eveId).orElseThrow())).isEqualTo("new-token");
+    }
+
+    @Test
+    void aFirstLinkRevokesNothing() throws Exception {
+        var sub = newSub();
+        features.turnOn(viewerFor(sub).accountId(), Feature.INVENTORY);
+        sso.nextLink = sso.link(newEveId(), "Alt One", "refresh-1");
+        var session = startLinking(sub);
+
+        mvc.perform(get("/characters/link/callback").param("code", "c").param("state", sso.askedState)
+                .with(signedInAs(sub)).cookie(session));
+
+        assertThat(sso.revoked).isEmpty();
+    }
+
+    @Test
     void storesThePortraitWhenTheCharacterIsLinked() throws Exception {
         var sub = newSub();
         var viewer = viewerFor(sub);
@@ -218,6 +249,8 @@ class CharacterLinkingIT extends IntegrationTest {
                 .andExpect(redirectedUrl("/characters?linking=ON_ANOTHER_ACCOUNT"));
 
         assertThat(cipher.decrypt(eveId, characters.findToken(eveId).orElseThrow())).isEqualTo("mine");
+        // a refused link must never revoke the access of the account that owns the character
+        assertThat(sso.revoked).isEmpty();
     }
 
     @Test

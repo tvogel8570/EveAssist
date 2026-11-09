@@ -11,6 +11,12 @@ interface EveSso {
     /** Exchanges the authorization code and validates the access token that comes back. */
     SsoLink exchange(String code);
 
+    /**
+     * Revokes a refresh token at EVE, which ends the whole grant it carries. True when EVE confirmed. A failure is not
+     * thrown: callers delete their own copy either way and tell the user to revoke it at CCP's page.
+     */
+    boolean revoke(String refreshToken);
+
     /** What a validated link gives: who the character is, what it granted, and the refresh token to store. */
     record SsoLink(VerifiedToken identity, String refreshToken) {
     }

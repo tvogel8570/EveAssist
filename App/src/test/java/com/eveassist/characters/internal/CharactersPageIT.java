@@ -16,6 +16,7 @@ import com.eveassist.IntegrationTest;
 import com.eveassist.characters.Feature;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -46,6 +47,14 @@ class CharactersPageIT extends IntegrationTest {
 
     @Autowired
     JdbcClient jdbc;
+
+    @Autowired
+    FakeEveSso sso;
+
+    @BeforeEach
+    void resetSso() {
+        sso.reset();
+    }
 
     private static long newEveId() {
         return 2_000_000_000L + ThreadLocalRandom.current().nextInt(1_000_000_000);
@@ -110,10 +119,107 @@ class CharactersPageIT extends IntegrationTest {
 
         var visible = text(page);
         assertThat(visible).contains("Alt One", "Alt Two", "Alt Three");
-        assertThat(visible).contains("Active", "Needs permissions", "EVE refused this character");
+        assertThat(visible).contains("Active", "Needs permissions", "no working saved access");
         assertThat(visible).contains("Permissions: assets, structure names");
         // Alt Two lacks assets
         assertThat(visible).contains("Missing: assets");
+    }
+
+    @Test
+    void showsGrantedScopesThatNoTurnedOnFeatureUsesAndOffersToDropThem() throws Exception {
+        var sub = newSub();
+        viewerFor(sub);
+        link(sub, "Alt One", BOTH);
+
+        var withFeatureOff = text(mvc.perform(get("/characters").with(signedInAs(sub)))
+                .andExpect(content().string(not(containsString("??"))))
+                .andReturn().getResponse().getContentAsString());
+
+        assertThat(withFeatureOff).contains("Not in use: assets, structure names");
+        assertThat(withFeatureOff).contains("Drop unused permissions");
+        assertThat(withFeatureOff).doesNotContain("Permissions: assets");
+
+        features.turnOn(viewerFor(sub).accountId(), Feature.INVENTORY);
+
+        var withFeatureOn = text(mvc.perform(get("/characters").with(signedInAs(sub)))
+                .andReturn().getResponse().getContentAsString());
+
+        assertThat(withFeatureOn).contains("Permissions: assets, structure names");
+        assertThat(withFeatureOn).doesNotContain("Not in use").doesNotContain("Drop unused permissions");
+    }
+
+    @Test
+    void dropsAccessByRevokingTheTokenAtEveAndLinkingAgain() throws Exception {
+        var sub = newSub();
+        var eveId = link(sub, "Alt One", BOTH);
+        var id = characters.listFor(viewerFor(sub).accountId()).getFirst().id();
+
+        mvc.perform(post("/characters/{id}/drop-access", id).with(signedInAs(sub)).with(csrf()))
+                .andExpect(redirectedUrl("/characters/link"));
+
+        assertThat(sso.revoked).containsExactly("refresh");
+        assertThat(characters.findToken(eveId)).isEmpty();
+        assertThat(characters.listFor(viewerFor(sub).accountId())).singleElement().satisfies(c -> {
+            assertThat(c.scopes()).isEmpty();
+            assertThat(c.state()).isEqualTo("NEEDS_REAUTHORIZATION");
+        });
+    }
+
+    @Test
+    void doesNotLinkAgainWhenEveDidNotConfirmTheRevocation() throws Exception {
+        var sub = newSub();
+        link(sub, "Alt One", BOTH);
+        var id = characters.listFor(viewerFor(sub).accountId()).getFirst().id();
+        sso.revokeConfirmed = false;
+
+        mvc.perform(post("/characters/{id}/drop-access", id).with(signedInAs(sub)).with(csrf()))
+                .andExpect(redirectedUrl("/characters?dropped=unrevoked"));
+        mvc.perform(get("/characters").param("dropped", "unrevoked").with(signedInAs(sub)))
+                .andExpect(content().string(containsString("id=\"revoke-failed-message\"")))
+                .andExpect(content().string(not(containsString("??"))));
+    }
+
+    @Test
+    void neverDropsOrRevokesAnotherAccountsCharacter() throws Exception {
+        var otherSub = newSub();
+        var otherEveId = link(otherSub, "Theirs", BOTH);
+        var otherId = characters.listFor(viewerFor(otherSub).accountId()).getFirst().id();
+        var sub = newSub();
+        viewerFor(sub);
+
+        mvc.perform(post("/characters/{id}/drop-access", otherId).with(signedInAs(sub)).with(csrf()))
+                .andExpect(redirectedUrl("/characters"));
+
+        assertThat(sso.revoked).isEmpty();
+        assertThat(characters.findToken(otherEveId)).isPresent();
+    }
+
+    @Test
+    void revokesTheTokenAtEveWhenACharacterIsRemoved() throws Exception {
+        var sub = newSub();
+        link(sub, "Alt One", BOTH);
+        var id = characters.listFor(viewerFor(sub).accountId()).getFirst().id();
+
+        mvc.perform(post("/characters/{id}/remove", id).with(signedInAs(sub)).with(csrf()))
+                .andExpect(redirectedUrl("/characters?removed"));
+
+        assertThat(sso.revoked).containsExactly("refresh");
+    }
+
+    @Test
+    void removesTheCharacterEvenWhenEveDoesNotConfirmAndSaysSo() throws Exception {
+        var sub = newSub();
+        var eveId = link(sub, "Alt One", BOTH);
+        var id = characters.listFor(viewerFor(sub).accountId()).getFirst().id();
+        sso.revokeConfirmed = false;
+
+        mvc.perform(post("/characters/{id}/remove", id).with(signedInAs(sub)).with(csrf()))
+                .andExpect(redirectedUrl("/characters?removed=unrevoked"));
+
+        assertThat(characters.findToken(eveId)).isEmpty();
+        mvc.perform(get("/characters").param("removed", "unrevoked").with(signedInAs(sub)))
+                .andExpect(content().string(containsString("id=\"revoke-failed-message\"")))
+                .andExpect(content().string(containsString("id=\"removed-message\"")));
     }
 
     @Test

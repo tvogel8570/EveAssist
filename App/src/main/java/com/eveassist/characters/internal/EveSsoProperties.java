@@ -16,5 +16,6 @@ record EveSsoProperties(
         @DefaultValue("") String redirectUri,
         @DefaultValue("https://login.eveonline.com/v2/oauth/authorize") String authorizeUrl,
         @DefaultValue("https://login.eveonline.com/v2/oauth/token") String tokenUrl,
-        @DefaultValue("https://login.eveonline.com/.well-known/oauth-authorization-server") String metadataUrl) {
+        @DefaultValue("https://login.eveonline.com/.well-known/oauth-authorization-server") String metadataUrl,
+        @DefaultValue("https://login.eveonline.com/v2/oauth/revoke") String revokeUrl) {
 }

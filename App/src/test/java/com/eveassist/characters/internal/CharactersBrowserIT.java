@@ -8,6 +8,7 @@ import com.eveassist.characters.Feature;
 import com.eveassist.identity.internal.TestSignIn;
 import com.microsoft.playwright.Browser;
 import com.microsoft.playwright.BrowserContext;
+import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Playwright;
 import java.util.ArrayList;
@@ -23,7 +24,7 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.context.annotation.Import;
 
 /** The Characters page in a real browser: the htmx toggle that reloads the page, and the two-step remove. */
-@Import(TestSignIn.class)
+@Import({TestSignIn.class, TestCharactersConfig.class})
 class CharactersBrowserIT extends IntegrationTest {
 
     private static Playwright playwright;
@@ -110,7 +111,7 @@ class CharactersBrowserIT extends IntegrationTest {
         var altOne = page.locator("#characters > .card", new Page.LocatorOptions().setHasText("Alt One"));
         assertThat(altOne).isVisible();
 
-        altOne.locator("summary").click();
+        altOne.locator("summary", new Locator.LocatorOptions().setHasText("Remove")).click();
         assertThat(altOne.getByText("Remove Alt One?")).isVisible();
         assertThat(characters.listFor(viewerFor(sub).accountId())).hasSize(2);
 
