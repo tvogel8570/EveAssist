@@ -44,6 +44,10 @@ spring:
 eveassist:
   characters:
     token-data-key: ${EVE_TOKEN_DATA_KEY:}
+    sso:
+      client-id: ${EVE_LINK_CLIENT_ID:}
+      client-secret: ${EVE_LINK_CLIENT_SECRET:}
+      redirect-uri: ${APP_BASE_URL:https://dev.eveassist.com:7444}/characters/link/callback
   esi:
     contact-email: ${ESI_CONTACT_EMAIL:}
 server:

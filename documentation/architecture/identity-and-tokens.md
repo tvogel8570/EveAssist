@@ -58,8 +58,10 @@ token is never accepted on the pages. Status: **agreed** (part of the API ground
 
 ## Linking a character
 
-- Linking goes straight from the app to EVE SSO, separate from sign-in, with the authorization code flow, a random
-  `state` and PKCE. The redirect comes back to the app.
+- Linking goes straight from the app to EVE SSO, separate from sign-in, with the authorization code flow and a random
+  `state`. The redirect comes back to the app. The app is a confidential client with a secret, so it uses the secret
+  (HTTP Basic at the token endpoint) and not PKCE: the EVE documentation presents the two as alternatives, PKCE being
+  for clients that cannot keep a secret. The first build changed this from "state and PKCE" on 2026-11-09.
 - It uses its own EVE developer application, registered with every scope that any feature uses, separate from the
   application that Keycloak uses for "sign in with EVE". Each authorization request asks only for the scopes of the
   features that are turned on. Signing in then never asks for scopes, and linking never creates a Keycloak
@@ -132,9 +134,9 @@ every planned feature, which is allowed because a request may ask for fewer than
 a Link a character button and the feature toggles. It grows into the scope page and fetch log in
 [Gaining players' trust](../requirements/gain-trust.md).
 
-**The flow.** `GET /characters/link` creates `state` and a PKCE verifier, keeps them in the session, and redirects to
+**The flow.** `GET /characters/link` creates a random `state`, keeps it in the session, and redirects to
 `https://login.eveonline.com/v2/oauth/authorize`. `GET /characters/link/callback` checks `state`, exchanges the code
-(with the client secret and the verifier), validates the token as described under
+once (the state is used up by the first callback), with the client secret, validates the token as described under
 [Linking a character](#linking-a-character), and stores the character and the encrypted refresh token. A character on
 another account is refused with a message. Linking a character already on this account renews its token and scopes.
 It is a normal request, not a background task. The client id and secret are `EVE_LINK_CLIENT_ID` and
