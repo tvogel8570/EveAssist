@@ -36,9 +36,12 @@ Status: **agreed** (follows from the requirements and the ESI documentation).
 
 ## Background fetches
 
-- Fetches run inside the app on virtual threads. A per-instance limit (a semaphore, for example 8 calls at once) keeps
-  a sign-in with many characters from flooding ESI. A refresh of one character holds that character's Postgres
-  advisory lock, so two fetches of the same character never overlap, also with several instances.
+- Fetches run inside the app on virtual threads, written as described in
+  [Background tasks](code-structure.md#background-tasks). A per-instance limit (a semaphore, for example 8 calls at
+  once) keeps a sign-in with many characters from flooding ESI. A refresh of one character holds an in-memory flag for
+  that character, so two fetches of the same character never overlap within the instance. This replaces a Postgres
+  advisory lock per character, which would have held a connection for the whole fetch (the developer decided this on
+  2026-11-09).
 - The ESI documentation sets no limit on simultaneous calls. It limits calls over time (bucket limits per rate-limit
   group, and the error limit), says to spread requests rather than burst constantly, and allows an occasional burst.
   The limit of 8 is EveAssist's own choice, to keep the burst after sign-in polite. It is not an ESI rule.
@@ -59,8 +62,9 @@ Status: **agreed** (follows from the requirements and the ESI documentation).
   kept in memory only. After a restart, the user's next page or refresh queues them again.
 
 Why not a job queue in Postgres (db-scheduler, JobRunr) or a separate worker with SQS: fetches matter only while the
-user is signed in, so losing queued tasks at a restart costs nothing, and the advisory lock and the stored fetch state
-already let several instances share the work.
+user is signed in, so losing queued tasks at a restart costs nothing, and the stored fetch state is in the database. One
+instance is expected; a second would need work to be claimed in the database (see
+[Background tasks](code-structure.md#background-tasks)).
 
 **Exception: public shared data.** The list of public contracts is read by a background loader that needs no signed-in
 user, because the data is public and shared by all users, and a user who opens the page should find it ready. The
@@ -68,10 +72,8 @@ developer decided this on 2026-11-09. The loader starts a minute after start-up 
 cached for 30 minutes). Each run is on its own virtual thread, so the scheduler's single thread stays free for other
 scheduled work such as the alert sweep. A run reads batches of 500 contracts until none are waiting, and stops when a
 batch makes no progress (ESI throttling or down) or the app is stopping. A start that finds a run still going does
-nothing. That guard is an in-memory flag, so it covers one instance only; the developer expects never to need a second.
-If a second instance is ever run, each batch should claim its contracts in the database (for example `FOR UPDATE SKIP
-LOCKED` with a short lease), because a Postgres lock held across ESI calls would hold a connection for the whole run. It
-is switched off with `eveassist.market.contracts.background=false`, and the batch size, first delay and interval can be
+nothing (see [Background tasks](code-structure.md#background-tasks) for the flag and for what a second instance would
+need). It is switched off with `eveassist.market.contracts.background=false`, and the batch size, first delay and interval can be
 set under `eveassist.market.contracts`. It uses the same client, so the simultaneous-call limit and the error-limit
 pause apply.
 
