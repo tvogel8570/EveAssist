@@ -62,6 +62,12 @@ token is never accepted on the pages. Status: **agreed** (part of the API ground
   `state`. The redirect comes back to the app. The app is a confidential client with a secret, so it uses the secret
   (HTTP Basic at the token endpoint) and not PKCE: the EVE documentation presents the two as alternatives, PKCE being
   for clients that cannot keep a secret. The first build changed this from "state and PKCE" on 2026-11-09.
+  **PKCE comes back if EveAssist ever has a client that cannot keep a secret**: a React or other single-page front
+  end, a mobile or desktop app, or anything that runs the linking flow itself against the [REST API](api.md) (which
+  already uses PKCE for third-party applications). Then the authorization request adds `code_challenge` and
+  `code_challenge_method=S256`, and the token request sends `code_verifier` and `client_id` in place of the secret. The
+  EVE developer application for such a client is registered as a separate public application, not by weakening this
+  one. Until then the server-rendered pages keep the secret flow.
 - It uses its own EVE developer application, registered with every scope that any feature uses, separate from the
   application that Keycloak uses for "sign in with EVE". Each authorization request asks only for the scopes of the
   features that are turned on. Signing in then never asks for scopes, and linking never creates a Keycloak
