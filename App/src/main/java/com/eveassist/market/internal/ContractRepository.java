@@ -21,6 +21,12 @@ import org.springframework.transaction.annotation.Transactional;
 @Repository
 public class ContractRepository {
 
+    /**
+     * Contracts above this volume (m3) are not kept. A blueprint copy takes 0.01 m3, so a pack of ten thousand fits, and
+     * the large contracts (ships, cargo) would cost thousands of ESI calls for lines that hold no copies.
+     */
+    static final double MAX_VOLUME = 100.0;
+
     private final JdbcClient jdbc;
     private final JdbcTemplate batch;
 
@@ -31,7 +37,7 @@ public class ContractRepository {
 
     /**
      * Makes the stored contracts of the region match the list ESI gave: contracts that have gone from it are removed,
-     * and new item exchange contracts with a price are added, still waiting for their lines. Contracts already stored
+     * and new item exchange contracts with a price and a small volume are added, still waiting for their lines. Contracts already stored
      * are left alone, because a contract does not change.
      *
      * @return how many new contracts were added
@@ -40,7 +46,8 @@ public class ContractRepository {
     public int sync(int regionId, List<PublicContract> listed, Instant at) {
         var wanted = new HashMap<Long, PublicContract>();
         for (var contract : listed) {
-            if (contract.isItemExchange() && contract.price().signum() > 0 && contract.dateExpired().isAfter(at)) {
+            if (contract.isItemExchange() && contract.price().signum() > 0 && contract.volume() <= MAX_VOLUME
+                    && contract.dateExpired().isAfter(at)) {
                 wanted.put(contract.contractId(), contract);
             }
         }

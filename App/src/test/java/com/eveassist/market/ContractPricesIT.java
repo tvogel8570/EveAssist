@@ -35,6 +35,9 @@ class ContractPricesIT extends IntegrationTest {
         esi.contract(contract(9_100_003, "courier", "5"), List.of());
         esi.contract(contract(9_100_004, "item_exchange", "0"), List.of(copy(1, BLUEPRINT, 10, 20, 10)));
 
+        esi.contract(new PublicContract(9_100_005, "item_exchange", new BigDecimal("5"), 5, Instant.now().minusSeconds(60),
+                Instant.now().plusSeconds(86400), 60003760L, 5000.0), List.of(copy(1, BLUEPRINT, 10, 20, 10)));
+
         var first = market.refreshContracts(100);
 
         assertThat(first.added()).isEqualTo(2);
