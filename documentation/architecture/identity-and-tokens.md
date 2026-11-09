@@ -111,6 +111,48 @@ Status: **agreed**.
 
 Status: **agreed** (follows from the requirements).
 
+## First build: linking for pilot inventory
+
+Added 2026-11-09 for [Pilot inventory](../requirements/pilot-inventory.md). It builds the parts above that inventory
+needs, in their final shape, and none of the rest (no KMS, no admin unlink, no owner-hash alert). Status: **proposed**.
+
+**Module and tables.** The `characters` module holds `character` (account, EVE character id unique, name, owner hash,
+granted scopes, state: active or needs re-authorization, linked at), `character_token` (character, encrypted refresh
+token, nonce, key id, replaced at each refresh) and `account_feature` (account, feature, turned on at). Deleting a
+character cascades to its token and, later, to its ESI data.
+
+**Features and scopes.** A `Feature` enum in `characters` maps each feature to its read-only scopes. The first is
+`INVENTORY`: `esi-assets.read_assets.v1` and `esi-universe.read_structures.v1`. The account turns features on and off
+(the developer decided on 2026-11-09 to build the toggle now). An authorization request asks for the union of the
+scopes of the turned-on features. Turning a feature on marks each linked character that lacks its scopes as needing
+them, and the Characters page offers re-authorization. The EVE developer application is registered with the scopes of
+every planned feature, which is allowed because a request may ask for fewer than the registration lists.
+
+**The Characters page.** A page of its own, with a card per character (portrait, name, state, granted scopes, Remove),
+a Link a character button and the feature toggles. It grows into the scope page and fetch log in
+[Gaining players' trust](../requirements/gain-trust.md).
+
+**The flow.** `GET /characters/link` creates `state` and a PKCE verifier, keeps them in the session, and redirects to
+`https://login.eveonline.com/v2/oauth/authorize`. `GET /characters/link/callback` checks `state`, exchanges the code
+(with the client secret and the verifier), validates the token as described under
+[Linking a character](#linking-a-character), and stores the character and the encrypted refresh token. A character on
+another account is refused with a message. Linking a character already on this account renews its token and scopes.
+It is a normal request, not a background task. The client id and secret are `EVE_LINK_CLIENT_ID` and
+`EVE_LINK_CLIENT_SECRET`.
+
+**Encryption in dev.** `EVE_TOKEN_DATA_KEY` (32 random bytes, base64) in `Infrastructure/.env` is the data key. The
+code reads it through a `DataKeyProvider` with the key id. The KMS version is a second implementation later, so no
+stored format changes.
+
+**How `esi` gets a token.** `esi` must not depend on `characters`, so it owns a small port, `AccessTokens`
+(`accessToken(characterId, requiredScope)`), which `characters` implements. It refreshes under the advisory lock when
+fewer than 60 seconds are left, refuses a call whose scope the character lacks, and marks the character as needing
+re-authorization on `invalid_grant`. `EsiClient` gets authenticated methods that take a character id, with the same
+cache, limits and error handling as the public ones, the cache keyed by character and route. Assets are the first.
+
+**Tests.** Unit tests cover the token rules with a fake EVE SSO. An integration test covers the callback, with the
+refusal of a character on another account and the cascade on removal. Template tests cover the Characters page.
+
 ## Admins
 
 - ADMIN reaches only the `identity` module's admin pages: account fields and the names and ids of linked characters.
