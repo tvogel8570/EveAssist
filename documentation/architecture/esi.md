@@ -153,6 +153,14 @@ Status: **proposed** (added 2026-11-09 with the asset fetch).
 - **Storage**: each fetch replaces the character's rows in one transaction (`character_asset`, no history), after the
   ESI call and never inside it. `character_fetch` records when ESI last answered, when the rows last changed, how many
   rows there are and the last problem. A failed fetch keeps the stored rows and their age.
+- **Found 2026-11-09, against real data (not in ESI's documentation)**: the OpenAPI spec lists `location_type` as
+  `station`, `solar_system`, `item` or `other` and says nothing more. For items in a player structure, real ESI answers
+  `item`, not `other`, with the structure's id (above 1,000,000,000,000) as `location_id`. One character had 176 items in
+  15 structures, all typed `item`. So a top-level item is found by its `location_id` not being the `item_id` of another
+  item in the same list, never by `location_type`. NPC stations (about 60,000,000 to 64,000,000) and solar systems
+  (about 30,000,000 to 33,000,000) can be named from the SDE, and a structure id (above 1,000,000,000,000) needs ESI.
+  Blueprint copies have `is_blueprint_copy` true. Originals have no value, like every other item, so a blueprint
+  original is told by the SDE's blueprint category. The `Deliveries` and `AssetSafety` flags also occur in real data.
 - **Not yet**: names of player structures (`GET /universe/structures/{id}`, scope `esi-universe.read_structures.v1`,
   one call per structure, 403 when the character has no docking access, which counts toward the error limit) and the
   checkpoint under [Background fetches](#background-fetches) for the `char-asset` group.
