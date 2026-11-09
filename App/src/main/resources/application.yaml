@@ -42,6 +42,8 @@ spring:
       connect-timeout: 5s
       read-timeout: 30s
 eveassist:
+  characters:
+    token-data-key: ${EVE_TOKEN_DATA_KEY:}
   esi:
     contact-email: ${ESI_CONTACT_EMAIL:}
 server:
