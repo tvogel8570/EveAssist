@@ -260,9 +260,15 @@ to write every task that runs outside a request, on a timer or queued.
   two runs in one instance and nothing stops them in two. A duplicate run then wastes calls and does no harm.
 - **If a second instance is ever run**, each batch claims its work in the database (for example `FOR UPDATE SKIP LOCKED`
   with a short lease) instead of holding a lock across calls.
-- **Work is done in batches.** A run stops when nothing is waiting, when a batch makes no progress (ESI throttling or
-  down, so the next start tries again), or when the app is stopping. It checks a `stopping` flag between batches, set
-  from `@PreDestroy`.
+- **Work is done in batches, and each batch in small chunks that are saved one by one.** A run stops when nothing is
+  waiting, when a batch makes no progress (ESI throttling or down, so the next start tries again), or when the app is
+  stopping. It checks a `stopping` flag before every chunk, and a stopped loader starts no new run.
+- **Shutdown waits for the run.** The `@PreDestroy` method sets the flag and then waits, up to a timeout (10 seconds
+  by default), for the run to finish its chunk and log that it stopped. Spring destroys a bean before the beans it
+  depends on, so the database pool is still open while it waits, and an integration test checks that the loader
+  depends on the pool. If the wait runs out, shutdown goes on and the run is cut off. That is safe: each unit of work
+  is one transaction, so nothing is half written, and what was not saved is picked up by the next run. The timeout is
+  a property.
 - **A timer starts runs at a fixed delay, not at clock times**, and the first start is a short delay after start-up.
   The interval and the batch size are properties, and a property switches the timer off so that tests call the task
   themselves.

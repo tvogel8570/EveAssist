@@ -19,6 +19,7 @@ for review under [Open questions](#open-questions).
 - [Data and ownership](data.md): database layout, ownership and sharing, SDE import and versioning
 - [External REST API](api.md): the API for outside clients and automation, designed now and built later
 - [Deployment and operations](deployment.md): dev, prod in AWS, backups, secrets and monitoring
+- [Log context and correlation](logging.md): MDC attributes and correlation ids for logs (proposed, a later work stream)
 - [Code structure](code-structure.md): Spring Modulith for module boundaries, hexagonal layering inside modules with real domain logic
 
 ## Context
@@ -59,6 +60,7 @@ flowchart LR
 | UI | Server-rendered Thymeleaf with htmx, Tailwind and daisyUI; no React | Agreed |
 | Data ownership | Owner column on every personal row, explicit share tables for groups later | Agreed |
 | Refresh tokens | AES-256-GCM in the app, data key wrapped by AWS KMS (dev: key from `env.properties`) | Agreed |
+| Log context | Correlation id and other attributes in every log line through MDC, carried across threads on purpose; not started | Proposed |
 | Background tasks | In-process tasks, each run on its own virtual thread and kept to one at a time by an in-memory flag; no database lock held across ESI calls; fetch state in the database | Agreed |
 | SDE | Fuzzwork Postgres dump, loaded into a staging schema, diffed against the live one, then swapped, during an outage | Agreed |
 | Prod in AWS | One EC2 instance with Docker Compose (app and Keycloak), Postgres on RDS | Agreed |

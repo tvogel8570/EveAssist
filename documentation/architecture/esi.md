@@ -75,10 +75,13 @@ user, because the data is public and shared by all users, and a user who opens t
 developer decided this on 2026-11-09. The loader starts a minute after start-up and then every 30 minutes (the list is
 cached for 30 minutes). Each run is on its own virtual thread, so the scheduler's single thread stays free for other
 scheduled work such as the alert sweep. A run reads batches of 500 contracts until none are waiting, and stops when a
-batch makes no progress (ESI throttling or down) or the app is stopping. A start that finds a run still going does
+batch makes no progress (ESI throttling or down) or the app is stopping. Contracts' lines are read and saved 40 at a
+time, each contract in one transaction. When the app stops, shutdown waits up to 10 seconds
+(`eveassist.market.contracts.shutdown-wait`) for the run to finish its chunk, and a stopped loader starts no new run.
+A start that finds a run still going does
 nothing (see [Background tasks](code-structure.md#background-tasks) for the flag and for what a second instance would
-need). It is switched off with `eveassist.market.contracts.background=false`, and the batch size, first delay and interval can be
-set under `eveassist.market.contracts`. It uses the same client, so the simultaneous-call limit and the error-limit
+need). It is switched off with `eveassist.market.contracts.background=false`, and the batch size, first delay, interval and
+shutdown wait can be set under `eveassist.market.contracts`. It uses the same client, so the simultaneous-call limit and the error-limit
 pause apply.
 
 Status: **agreed**.
@@ -108,15 +111,21 @@ age.
 - Blueprint copies have no market, so their price comes from public contracts: `GET /contracts/public/10000002` for the
   list and `GET /contracts/public/items/<id>` for the lines of one contract. The list is read through its pages and
   cached like other routes. A contract's lines never change, so the client does not cache that route: the app stores
-  them and asks once per contract. A 204 means the contract has expired or been accepted, and the app drops it. ESI also
+  them and asks once per contract. A 204 means the contract has expired or been accepted. ESI also
   answers 403 "Contract accepted by player, requires authorization" for a contract accepted after the list was cached,
-  which the OpenAPI spec does not say, and the app treats it the same. Contracts up to 100 m³ are kept, newest first,
+  and, for a small share of contracts that are still in the list (5 of about 2,300 on 2026-11-09, some hours old), 200
+  with an empty body (`content-length: 0`). The OpenAPI spec describes neither. The client reads all three as "no lines",
+  and the app keeps such a contract as read, with no lines, so that a sync does not add it again and nothing asks about
+  it again. A sync removes it when it leaves the list. (A first version read the empty body as null and failed with a
+  `NullPointerException`, so those contracts stayed pending and were asked about in every batch.) Contracts up to 100 m³ are kept, newest first,
   and each batch reads up to 500 sets of lines (see [Background fetches](#background-fetches)). ESI's OpenAPI spec names
   no rate-limit group for these routes and the responses carry no rate-limit headers, so only the error limit applies.
   The prices are worked out from the stored rows (see
   [Contract prices](../requirements/market-logistics.md#contract-prices)).
 
-  **The list is capped (found 2026-11-09, not in ESI's documentation).** A region's list holds at most 35 pages of 1,000
+  **The list is capped (found 2026-11-09, not in ESI's documentation).** ESI developers confirmed it in the EVE developer
+  Discord on 2026-11-09: a known issue since 2026-10-19, caused by an internal limit in ESI, with no timeline for a fix.
+  Nothing on our side can change it, so the app treats the cap as a fact of the data, not as something to wait out. A region's list holds at most 35 pages of 1,000
   contracts, so 35,000, sorted by contract id ascending. For a region with more public contracts than that, the
   **newest** are cut off: The Forge's list showed contracts issued up to 5.5 hours before the request, while smaller
   regions showed minutes. Page 36 is a 404, and the spec lists no parameter that changes this: only `page` and the
