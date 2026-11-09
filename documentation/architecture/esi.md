@@ -106,23 +106,26 @@ age.
 - Volume history comes from `GET /markets/10000002/history?type_id=<id>` and is stored per item, also within its cache
   time.
 - Blueprint copies have no market, so their price comes from public contracts: `GET /contracts/public/10000002` for the
-  list and `GET /contracts/public/items/<id>` for the lines of one contract. The list is read through its pages and cached
-  like other routes. A contract's lines never change, so the client does not cache that route: the app stores them and
-  asks once per contract. A 204 means the contract has expired or been accepted, and the app drops it. ESI also answers 403 "Contract accepted by player, requires authorization" for a contract accepted after the list was cached, which the OpenAPI spec does not say, and the app treats it the same. Contracts up to
-  100 m³ are kept, newest first, and each batch reads up to 500 sets of lines (see [Background fetches](#background-fetches)).
+  list and `GET /contracts/public/items/<id>` for the lines of one contract. The list is read through its pages and
+  cached like other routes. A contract's lines never change, so the client does not cache that route: the app stores
+  them and asks once per contract. A 204 means the contract has expired or been accepted, and the app drops it. ESI also
+  answers 403 "Contract accepted by player, requires authorization" for a contract accepted after the list was cached,
+  which the OpenAPI spec does not say, and the app treats it the same. Contracts up to 100 m³ are kept, newest first,
+  and each batch reads up to 500 sets of lines (see [Background fetches](#background-fetches)). ESI's OpenAPI spec names
+  no rate-limit group for these routes and the responses carry no rate-limit headers, so only the error limit applies.
+  The prices are worked out from the stored rows (see
+  [Contract prices](../requirements/market-logistics.md#contract-prices)).
 
   **The list is capped (found 2026-11-09, not in ESI's documentation).** A region's list holds at most 35 pages of 1,000
   contracts, so 35,000, sorted by contract id ascending. For a region with more public contracts than that, the
   **newest** are cut off: The Forge's list showed contracts issued up to 5.5 hours before the request, while smaller
   regions showed minutes. Page 36 is a 404, and the spec lists no parameter that changes this: only `page` and the
-  conditional-request headers. Eleven plausible parameters (`after`, `before`, `from_id`, `order`, `limit`,
-  `since` and others) were tried against real ESI and all were ignored. EVE Ref's snapshots are built from the same
-  list and show the same 35,000. So a contract appears in our data only when an older one expires or is accepted, and
-  prices lag by hours. Contracts issued and accepted inside that lag are never seen, and they are the well-priced ones,
-  so the prices lean high. Probing contract ids above the list's last id is no workaround: ids are shared by every
-  region and contract type, so most probes would be errors against the error limit. ESI's OpenAPI spec names no rate-limit group for these routes and the responses carry no
-  rate-limit headers, so only the error limit applies. The prices are worked out from the stored rows (see
-  [Contract prices](../requirements/market-logistics.md#contract-prices)).
+  conditional-request headers. Eleven plausible parameters (`after`, `before`, `from_id`, `order`, `limit`, `since` and
+  others) were tried against real ESI and all were ignored. EVE Ref's snapshots are built from the same list and show
+  the same 35,000. So a contract appears in our data only when an older one expires or is accepted, and prices lag by
+  hours. Contracts issued and accepted inside that lag are never seen, and they are the well-priced ones, so the prices
+  lean high. Probing contract ids above the list's last id is no workaround: ids are shared by every region and
+  contract type, so most probes would be errors against the error limit.
 - System cost indices come from `GET /industry/systems`, fetched at most once per cache period for everyone.
 - The `market-order` group allows 12,000 tokens per 15 minutes per IP address for all users together, so the shared
   store matters in phase 3. A refresh of a large plan fetches only the items whose stored orders have expired.
