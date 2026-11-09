@@ -25,6 +25,31 @@ Status: draft, interview in progress.
 - The user can enter a manual price for an item, for example a contract price, which overrides the market. Manual prices
   stay until the user changes them. Each one shows its age, with a warning once it is older than a set number of days.
 
+## Contract prices
+
+Added 2026-11-09. Blueprint copies (BPCs) are not sold on the market, so their price comes from public contracts.
+
+- Public item exchange contracts in The Forge are the source. Courier and auction contracts are not used. The contracts
+  of the characters themselves are a separate feature (see [Contracts](#contracts)).
+- The price of a BPC is per run, for one blueprint type with its ME and TE. A copy of 10 runs for 1,000,000 ISK is
+  100,000 ISK per run.
+- The price uses copies with exactly the ME and TE asked for. When there are none, it uses copies whose ME and TE are
+  both at least as good, and says so.
+- A price is worked out like a market price: the volume-weighted average of the cheapest offers that make up the same
+  share of the runs on offer (5% by default).
+- A pack of several copies is split between them in proportion to their runs, so every run in it costs the same. Items
+  in the contract that are not BPCs are valued at their Jita sell price first, and the BPCs share the rest. A contract
+  that asks for items, holds a blueprint original, holds an item with no Jita price, or costs less than its other
+  items, is not used.
+- Offers more than ten times above or below the middle offer for the blueprint are left out as joke or mistaken
+  prices, once there are at least three offers.
+- Only contracts up to 100 m³ are read: a copy takes 0.01 m³, and larger contracts are ships and cargo.
+- The contracts are public data shared by all users. They are read when the user asks, in batches, because a region has
+  tens of thousands of contracts and each one's contents need a call of their own. Until all are read, the page says how
+  many are still to read, and a price may miss some offers.
+- The price is a third source beside Jita sell and buy prices. Using it in plans (as a price basis, and as the fallback
+  for an item with no market orders) comes with the plan features that need a BPC, such as invention.
+
 ## Fees
 
 Cost and profit include every fee:

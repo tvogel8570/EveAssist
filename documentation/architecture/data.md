@@ -210,6 +210,20 @@ Status: **agreed** with the developer (2026-11-08), so that a plan can be kept a
   needs a new one.
 - `prices_as_of` on `plan` is the age of the oldest price among the items that are bought.
 
+### Public contracts
+
+Status: **proposed**. Public data shared by all users, so these tables have no owner and no viewer.
+
+| Table | Holds |
+|---|---|
+| `contract_public` | A public item exchange contract of up to 100 m³ with a price: region, price, issued and expiry time, start location, volume, and whether its lines have been read |
+| `contract_public_item` | The lines of a contract, read once: type, quantity, whether the issuer gives or asks for it, and for blueprint copies the ME, TE and runs. Removed with the contract |
+| `contract_public_fetch` | When each region's list was last confirmed current |
+
+- A refresh makes the stored contracts match ESI's list: contracts that are gone or expired are deleted, and new ones are
+  added with their lines pending. Contracts already stored are not touched.
+- Prices are worked out from these rows when asked and are not stored.
+
 ## Open questions
 
 - How the SDE outage runs, given that step 1 has an admin start the import from the admin pages: the site stays up for
