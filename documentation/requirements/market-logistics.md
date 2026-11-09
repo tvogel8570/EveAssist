@@ -100,4 +100,11 @@ Cost and profit include every fee:
 
 ## Open questions
 
-None at present.
+- **Items with their own attributes.** Added 2026-11-09 at the developer's request, not for now. Contract lines have fields
+  for blueprints (ME, TE, runs, copy or original) and nothing for other items that differ one from another, mainly
+  Abyssal (mutated) modules. Their value comes from the rolled attributes, so a contract line is not worth the type's
+  price. ESI gives the line an `item_id` (EveAssist does not read it yet), and `GET /dogma/dynamic/items/{type_id}/{item_id}`
+  gives the mutaplasmid, the source item and the attributes, one call per item. Things to decide when this is taken up:
+  how to value such an item, whether the extra call per item fits in the background loader's budget (see
+  [Background fetches](../architecture/esi.md#background-fetches)), and what the stored line needs. Until then a contract
+  that holds one is skipped when pricing blueprint copies, because the item has no Jita price that fits it.
