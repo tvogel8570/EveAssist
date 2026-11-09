@@ -113,6 +113,43 @@ class CharacterRepository {
                 .optional();
     }
 
+    /** What the token provider needs to know about a character before it asks EVE for anything. */
+    record Standing(String ownerHash, Set<String> scopes, boolean needsReauthorization) {
+    }
+
+    Optional<Standing> findStanding(long eveCharacterId) {
+        return jdbc.sql("SELECT owner_hash, scopes, state FROM character WHERE eve_character_id = :eve")
+                .param("eve", eveCharacterId)
+                .query((rs, row) -> new Standing(rs.getString("owner_hash"),
+                        Set.of((String[]) rs.getArray("scopes").getArray()),
+                        "NEEDS_REAUTHORIZATION".equals(rs.getString("state"))))
+                .optional();
+    }
+
+    /** EVE refused the saved access, or the character was sold. Its stored data stays. */
+    void markNeedsReauthorization(long eveCharacterId) {
+        jdbc.sql("UPDATE character SET state = 'NEEDS_REAUTHORIZATION' WHERE eve_character_id = :eve")
+                .param("eve", eveCharacterId).update();
+    }
+
+    /** Stores a newer refresh token for a character that already has one. */
+    void replaceToken(long eveCharacterId, EncryptedToken token) {
+        jdbc.sql("""
+                UPDATE character_token SET ciphertext = :ciphertext, nonce = :nonce, key_id = :keyId,
+                    updated_at = now()
+                WHERE character_id = (SELECT id FROM character WHERE eve_character_id = :eve)
+                """)
+                .param("ciphertext", token.ciphertext()).param("nonce", token.nonce()).param("keyId", token.keyId())
+                .param("eve", eveCharacterId)
+                .update();
+    }
+
+    void updateScopes(long eveCharacterId, Set<String> scopes) {
+        jdbc.sql("UPDATE character SET scopes = :scopes WHERE eve_character_id = :eve")
+                .param("scopes", scopes.stream().sorted().toArray(String[]::new)).param("eve", eveCharacterId)
+                .update();
+    }
+
     /** A stored token with the EVE character it belongs to. */
     record OwnedToken(long eveCharacterId, EncryptedToken token) {
     }

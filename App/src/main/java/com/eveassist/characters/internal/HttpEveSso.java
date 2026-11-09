@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.util.UriComponentsBuilder;
 
 /**
@@ -75,6 +76,36 @@ class HttpEveSso implements EveSso {
             throw new SsoException("EVE SSO answered without tokens");
         }
         return new SsoLink(validator.validate(response.accessToken()), response.refreshToken());
+    }
+
+    @Override
+    public RefreshedAccess refresh(String refreshToken) {
+        var form = new LinkedMultiValueMap<String, String>();
+        form.add("grant_type", "refresh_token");
+        form.add("refresh_token", refreshToken);
+        TokenResponse response;
+        try {
+            response = http.post().uri(properties.tokenUrl())
+                    .headers(headers -> headers.setBasicAuth(properties.clientId(), properties.clientSecret()))
+                    .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                    .body(form)
+                    .retrieve()
+                    .body(TokenResponse.class);
+        } catch (RestClientResponseException e) {
+            // EVE answers 400 with {"error":"invalid_grant"} for a refresh token it refuses
+            if (e.getStatusCode().value() == 400 && e.getResponseBodyAsString().contains("invalid_grant")) {
+                throw new InvalidGrantException("EVE SSO refused the refresh token", e);
+            }
+            throw new SsoException("EVE SSO answered " + e.getStatusCode().value() + " to a refresh", e);
+        } catch (RestClientException e) {
+            throw new SsoException("EVE SSO did not answer a refresh", e);
+        }
+        if (response == null || response.accessToken() == null) {
+            throw new SsoException("EVE SSO answered a refresh without an access token");
+        }
+        // EVE may return the same refresh token or a new one. The newest is the one to keep.
+        var newest = response.refreshToken() != null ? response.refreshToken() : refreshToken;
+        return new RefreshedAccess(response.accessToken(), validator.validate(response.accessToken()), newest);
     }
 
     /**

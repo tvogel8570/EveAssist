@@ -38,10 +38,12 @@ public class CharacterLinking {
     private final TokenCipher cipher;
     private final PortraitSource portraits;
     private final TokenRevoker revoker;
+    private final CharacterAccessTokens accessTokens;
     private final SecureRandom random = new SecureRandom();
 
     CharacterLinking(EveSso sso, FeatureRepository features, CharacterRepository characters, TokenCipher cipher,
-            PortraitSource portraits, TokenRevoker revoker) {
+            PortraitSource portraits, TokenRevoker revoker, CharacterAccessTokens accessTokens) {
+        this.accessTokens = accessTokens;
         this.sso = sso;
         this.features = features;
         this.characters = characters;
@@ -84,6 +86,10 @@ public class CharacterLinking {
         var previous = characters.findToken(viewer.accountId(), identity.characterId());
         var outcome = characters.link(viewer.accountId(), identity.characterId(), identity.name(),
                 identity.ownerHash(), identity.scopes(), cipher.encrypt(identity.characterId(), link.refreshToken()));
+        if (outcome != CharacterRepository.LinkOutcome.ON_ANOTHER_ACCOUNT) {
+            // the scopes and the token are new, so a cached access token must not be used
+            accessTokens.forget(identity.characterId());
+        }
         if (outcome == CharacterRepository.LinkOutcome.RENEWED) {
             previous.ifPresent(old -> revoker.revoke(identity.characterId(), old));
         }

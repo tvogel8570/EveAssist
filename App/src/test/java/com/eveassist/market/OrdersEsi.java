@@ -1,5 +1,6 @@
 package com.eveassist.market;
 
+import com.eveassist.esi.CharacterAsset;
 import com.eveassist.esi.EsiClient;
 import com.eveassist.esi.EsiResult;
 import com.eveassist.esi.PublicContract;
@@ -17,6 +18,11 @@ interface OrdersEsi extends EsiClient {
 
     @Override
     default EsiResult<List<PublicContractItem>> publicContractItems(long contractId) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    default EsiResult<List<CharacterAsset>> characterAssets(long eveCharacterId) {
         throw new UnsupportedOperationException();
     }
 }

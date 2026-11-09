@@ -64,7 +64,10 @@ class EveTokenValidator {
         if (name == null || ownerHash == null) {
             throw new EveSso.SsoException("The access token lacks the character name or owner");
         }
-        return new EveSso.VerifiedToken(characterId, name, ownerHash, scopes(jwt));
+        if (jwt.getExpiresAt() == null) {
+            throw new EveSso.SsoException("The access token has no expiry");
+        }
+        return new EveSso.VerifiedToken(characterId, name, ownerHash, scopes(jwt), jwt.getExpiresAt());
     }
 
     /** ESI sends {@code scp} as an array, or as a single string when only one scope was granted. */

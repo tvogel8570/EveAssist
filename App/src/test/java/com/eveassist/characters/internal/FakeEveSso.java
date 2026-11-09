@@ -1,5 +1,6 @@
 package com.eveassist.characters.internal;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -17,6 +18,9 @@ class FakeEveSso implements EveSso {
     boolean revokeConfirmed = true;
 
     void reset() {
+        nextRefresh = null;
+        refreshFailure = null;
+        refreshed.clear();
         revoked.clear();
         revokeConfirmed = true;
         askedScopes = null;
@@ -28,7 +32,30 @@ class FakeEveSso implements EveSso {
 
     SsoLink link(long characterId, String name, String refreshToken) {
         return new SsoLink(new VerifiedToken(characterId, name, "owner-hash-" + characterId,
-                Set.of("esi-assets.read_assets.v1", "esi-universe.read_structures.v1")), refreshToken);
+                Set.of("esi-assets.read_assets.v1", "esi-universe.read_structures.v1"),
+                Instant.now().plusSeconds(1200)), refreshToken);
+    }
+
+    /** What a refresh gives next, or null to answer as the default: a new access token for the character. */
+    RefreshedAccess nextRefresh;
+    /** A refresh fails with this instead, when set. */
+    SsoException refreshFailure;
+    final List<String> refreshed = new ArrayList<>();
+
+    /** A refresh answer for a character, with the scopes it still holds. */
+    RefreshedAccess access(long characterId, String ownerHash, Set<String> scopes, Instant expiresAt,
+            String refreshToken) {
+        return new RefreshedAccess("access-" + characterId + "-" + refreshed.size(),
+                new VerifiedToken(characterId, "Name", ownerHash, scopes, expiresAt), refreshToken);
+    }
+
+    @Override
+    public RefreshedAccess refresh(String refreshToken) {
+        refreshed.add(refreshToken);
+        if (refreshFailure != null) {
+            throw refreshFailure;
+        }
+        return nextRefresh;
     }
 
     @Override

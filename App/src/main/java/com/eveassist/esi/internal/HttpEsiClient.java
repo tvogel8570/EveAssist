@@ -1,5 +1,7 @@
 package com.eveassist.esi.internal;
 
+import com.eveassist.esi.AccessTokens;
+import com.eveassist.esi.CharacterAsset;
 import com.eveassist.esi.EsiClient;
 import com.eveassist.esi.EsiResult;
 import com.eveassist.esi.MarketOrder;
@@ -18,6 +20,7 @@ import java.util.concurrent.Semaphore;
 import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
@@ -34,6 +37,8 @@ class HttpEsiClient implements EsiClient {
 
     private static final Logger log = LoggerFactory.getLogger(HttpEsiClient.class);
     private static final String MARKET_ORDER_GROUP = "market-order";
+    /** 1,800 tokens per 15 minutes per character, from ESI's OpenAPI spec. */
+    private static final String CHARACTER_ASSET_GROUP = "char-asset";
     /** ESI's OpenAPI spec names no rate-limit group for the public contract routes, so only the error limit applies. */
     private static final String PUBLIC_CONTRACT_GROUP = "contracts-public";
     /** Used when ESI sends neither {@code Expires} nor {@code max-age}. */
@@ -45,9 +50,17 @@ class HttpEsiClient implements EsiClient {
     private final EsiLimiter limiter;
     private final Clock clock;
     private final Semaphore simultaneous;
+    private final AccessTokens tokens;
 
     HttpEsiClient(RestClient.Builder builder, EsiProperties properties, EsiCache cache, EsiLimiter limiter,
                   Clock clock) {
+        this(builder, properties, cache, limiter, clock, new NoAccessTokens());
+    }
+
+    @Autowired
+    HttpEsiClient(RestClient.Builder builder, EsiProperties properties, EsiCache cache, EsiLimiter limiter,
+                  Clock clock, AccessTokens tokens) {
+        this.tokens = tokens;
         this.http = builder.baseUrl(properties.baseUrl())
                 .defaultHeader(HttpHeaders.USER_AGENT, userAgent(properties))
                 .defaultHeader("X-Compatibility-Date", properties.compatibilityDate())
@@ -83,6 +96,18 @@ class HttpEsiClient implements EsiClient {
                 .map(items -> items.stream().map(HttpEsiClient::toPublicContractItem).toList());
     }
 
+    @Override
+    public EsiResult<List<CharacterAsset>> characterAssets(long eveCharacterId) {
+        return paged(CHARACTER_ASSET_GROUP, "/characters/%d/assets".formatted(eveCharacterId), true, false,
+                new ParameterizedTypeReference<List<EsiAsset>>() { },
+                new Auth(eveCharacterId, ASSETS_SCOPE))
+                .map(assets -> assets.stream().map(HttpEsiClient::toCharacterAsset).toList());
+    }
+
+    /** Which character's token a call is made with, and the scope that call needs. */
+    private record Auth(long eveCharacterId, String scope) {
+    }
+
     /**
      * Reads a route through all its pages. With {@code cached}, the route is not asked again before {@code Expires}
      * and is asked with {@code If-None-Match} afterwards. A 204 gives an updated, empty list. With {@code goneOn403},
@@ -92,6 +117,11 @@ class HttpEsiClient implements EsiClient {
      */
     private <E> EsiResult<List<E>> paged(String group, String path, boolean cached, boolean goneOn403,
                                          ParameterizedTypeReference<List<E>> type) {
+        return paged(group, path, cached, goneOn403, type, null);
+    }
+
+    private <E> EsiResult<List<E>> paged(String group, String path, boolean cached, boolean goneOn403,
+                                         ParameterizedTypeReference<List<E>> type, Auth auth) {
         var key = path.substring(1);
         var stored = cached ? cache.find(key) : Optional.<EsiCache.Entry>empty();
         if (stored.isPresent() && stored.get().expires().isAfter(clock.instant())) {
@@ -101,7 +131,7 @@ class HttpEsiClient implements EsiClient {
         // A page set that changes while it is read is read again once, without asking for a 304
         for (int attempt = 0; attempt < 2; attempt++) {
             var etag = attempt == 0 ? stored.map(EsiCache.Entry::etag).orElse(null) : null;
-            var first = get(group, path + separator + "page=1", etag, type);
+            var first = get(group, path + separator + "page=1", etag, type, auth);
             if (first.problem() != null) {
                 return EsiResult.failed(first.problem());
             }
@@ -122,7 +152,7 @@ class HttpEsiClient implements EsiClient {
             var pages = (int) number(first.headers().getFirst("X-Pages"), 1);
             var consistent = true;
             for (int page = 2; page <= pages && consistent; page++) {
-                var next = get(group, path + separator + "page=" + page, null, type);
+                var next = get(group, path + separator + "page=" + page, null, type, auth);
                 if (next.problem() != null) {
                     return EsiResult.failed(next.problem());
                 }
@@ -144,17 +174,45 @@ class HttpEsiClient implements EsiClient {
         return EsiResult.failed("The pages of " + key + " changed while they were being read");
     }
 
-    private <E> Page<E> get(String group, String uri, String etag, ParameterizedTypeReference<List<E>> type) {
+    private <E> Page<E> get(String group, String uri, String etag, ParameterizedTypeReference<List<E>> type,
+                            Auth auth) {
+        var page = getOnce(group, uri, etag, type, auth);
+        if (page.status() == 401 && auth != null) {
+            // The token was refused: forget it and ask once more with a fresh one. Never a loop.
+            tokens.invalidate(auth.eveCharacterId());
+            page = getOnce(group, uri, etag, type, auth);
+        }
+        return page;
+    }
+
+    private <E> Page<E> getOnce(String group, String uri, String etag, ParameterizedTypeReference<List<E>> type,
+                                Auth auth) {
         var wait = limiter.before(group);
         if (wait.isPresent()) {
             return Page.problem(wait.get());
         }
+        String bearer = null;
+        if (auth != null) {
+            var grant = tokens.accessToken(auth.eveCharacterId(), auth.scope());
+            if (grant.problem() != null) {
+                return Page.problem(switch (grant.problem()) {
+                    case NEEDS_REAUTHORIZATION -> "The character needs to be authorized again";
+                    case MISSING_SCOPE -> "The character did not grant " + auth.scope();
+                    case UNAVAILABLE -> "A token for the character is not available right now";
+                });
+            }
+            bearer = grant.token();
+        }
+        var bearerToken = bearer;
         simultaneous.acquireUninterruptibly();
         try {
             var page = http.get().uri(uri)
                     .headers(headers -> {
                         if (etag != null) {
                             headers.set(HttpHeaders.IF_NONE_MATCH, etag);
+                        }
+                        if (bearerToken != null) {
+                            headers.setBearerAuth(bearerToken);
                         }
                     })
                     .exchange((request, response) -> new Page<E>(response.getStatusCode().value(),
@@ -201,6 +259,23 @@ class HttpEsiClient implements EsiClient {
     private static MarketOrder toMarketOrder(EsiOrder order) {
         return new MarketOrder(order.orderId(), order.typeId(), order.locationId(), order.buy(), order.price(),
                 order.volumeRemain());
+    }
+
+    private static CharacterAsset toCharacterAsset(EsiAsset asset) {
+        return new CharacterAsset(asset.itemId(), asset.typeId(), asset.quantity(), asset.locationId(),
+                asset.locationType(), asset.locationFlag(), asset.singleton(), asset.blueprintCopy());
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private record EsiAsset(
+            @JsonProperty("item_id") long itemId,
+            @JsonProperty("type_id") int typeId,
+            @JsonProperty("quantity") long quantity,
+            @JsonProperty("location_id") long locationId,
+            @JsonProperty("location_type") String locationType,
+            @JsonProperty("location_flag") String locationFlag,
+            @JsonProperty("is_singleton") boolean singleton,
+            @JsonProperty("is_blueprint_copy") Boolean blueprintCopy) {
     }
 
     private record Page<E>(int status, HttpHeaders headers, List<E> body, String problem) {

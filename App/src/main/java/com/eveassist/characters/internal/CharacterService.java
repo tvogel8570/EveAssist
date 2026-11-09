@@ -26,8 +26,11 @@ public class CharacterService {
     private final CharacterRepository characters;
     private final FeatureRepository features;
     private final TokenRevoker revoker;
+    private final CharacterAccessTokens accessTokens;
 
-    CharacterService(CharacterRepository characters, FeatureRepository features, TokenRevoker revoker) {
+    CharacterService(CharacterRepository characters, FeatureRepository features, TokenRevoker revoker,
+            CharacterAccessTokens accessTokens) {
+        this.accessTokens = accessTokens;
         this.characters = characters;
         this.features = features;
         this.revoker = revoker;
@@ -71,6 +74,7 @@ public class CharacterService {
         if (!characters.remove(viewer.accountId(), characterId)) {
             return AccessResult.NOT_FOUND;
         }
+        stored.ifPresent(token -> accessTokens.forget(token.eveCharacterId()));
         return stored.map(token -> revoker.revoke(token.eveCharacterId(), token.token())
                 ? AccessResult.DONE : AccessResult.DONE_NOT_REVOKED).orElse(AccessResult.DONE);
     }
@@ -85,6 +89,7 @@ public class CharacterService {
         if (!characters.dropAccess(viewer.accountId(), characterId)) {
             return AccessResult.NOT_FOUND;
         }
+        stored.ifPresent(token -> accessTokens.forget(token.eveCharacterId()));
         return stored.map(token -> revoker.revoke(token.eveCharacterId(), token.token())
                 ? AccessResult.DONE : AccessResult.DONE_NOT_REVOKED).orElse(AccessResult.DONE);
     }

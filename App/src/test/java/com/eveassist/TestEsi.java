@@ -1,5 +1,6 @@
 package com.eveassist;
 
+import com.eveassist.esi.CharacterAsset;
 import com.eveassist.esi.EsiClient;
 import com.eveassist.esi.EsiResult;
 import com.eveassist.esi.MarketOrder;
@@ -33,6 +34,8 @@ public class TestEsi implements EsiClient {
         contracts.clear();
         contractItems.clear();
         itemsAsked.clear();
+        assets.clear();
+        assetsAsked.clear();
         sells.put(34, new BigDecimal("5.00"));
         sells.put(35, new BigDecimal("10.00"));
     }
@@ -43,6 +46,34 @@ public class TestEsi implements EsiClient {
 
     public void fail(int type) {
         broken.add(type);
+    }
+
+    private final Map<Long, EsiResult<List<CharacterAsset>>> assets = new ConcurrentHashMap<>();
+    private final List<Long> assetsAsked = new CopyOnWriteArrayList<>();
+
+    /** What ESI answers for a character's assets from now on. A character with no answer set gets an empty list. */
+    public void assetsOf(long eveCharacterId, List<CharacterAsset> list) {
+        assets.put(eveCharacterId, EsiResult.updated(List.copyOf(list), Instant.now().plusSeconds(3600)));
+    }
+
+    /** ESI answers that the stored copy is still current, as it does before the cache time is over. */
+    public void assetsUnchanged(long eveCharacterId) {
+        assets.put(eveCharacterId, EsiResult.unchanged(Instant.now().plusSeconds(3600)));
+    }
+
+    public void failAssets(long eveCharacterId, String problem) {
+        assets.put(eveCharacterId, EsiResult.failed(problem));
+    }
+
+    /** The characters whose assets ESI has been asked about since the test began, in the order asked. */
+    public List<Long> assetsAsked() {
+        return List.copyOf(assetsAsked);
+    }
+
+    @Override
+    public EsiResult<List<CharacterAsset>> characterAssets(long eveCharacterId) {
+        assetsAsked.add(eveCharacterId);
+        return assets.getOrDefault(eveCharacterId, EsiResult.updated(List.of(), Instant.now().plusSeconds(3600)));
     }
 
     /** The items ESI has been asked about since the test began, in the order asked. */

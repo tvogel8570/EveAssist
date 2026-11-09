@@ -28,4 +28,14 @@ public interface EsiClient {
      * was accepted.
      */
     EsiResult<List<PublicContractItem>> publicContractItems(long contractId);
+
+    /**
+     * Everything a character owns, from {@code GET /characters/{character_id}/assets}, read through every page. It
+     * needs the scope {@value #ASSETS_SCOPE}, and is asked with the character's access token (see {@link AccessTokens}).
+     * The outcomes are those of {@link #marketOrders}. A character that needs re-authorization or lacks the scope is a
+     * {@link EsiResult.Outcome#FAILED} result whose problem says so, and ESI is not called.
+     */
+    EsiResult<List<CharacterAsset>> characterAssets(long eveCharacterId);
+
+    String ASSETS_SCOPE = "esi-assets.read_assets.v1";
 }

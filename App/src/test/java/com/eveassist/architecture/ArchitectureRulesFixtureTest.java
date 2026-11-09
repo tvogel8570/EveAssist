@@ -34,6 +34,7 @@ class ArchitectureRulesFixtureTest {
                 rule(ArchitectureRules::namesCarryMeaningNotMechanism, "PlanLookupImpl"),
                 rule(ArchitectureRules::namesCarryMeaningNotMechanism, "IPlanLookup"),
                 rule(ArchitectureRules::moduleInternalsUseOnlyDataFromTheirBasePackage, "FacadeCallingEditing"),
+                rule(ArchitectureRules::moduleInternalsUseOnlyDataFromTheirBasePackage, "UnmarkedPortUser"),
                 rule(ArchitectureRules::everyUseCaseMethodTakesTheViewerFirst, "UnannotatedUseCases"),
                 rule(ArchitectureRules::everyUseCaseMethodTakesTheViewerFirst, "ViewerLastUseCases"),
                 rule(ArchitectureRules::everyRepositoryMethodTakesTheViewerFirst, "PlanRepository"),
