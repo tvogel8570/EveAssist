@@ -5,6 +5,7 @@ import com.eveassist.esi.EsiResult;
 import com.eveassist.esi.PublicContractItem;
 import com.eveassist.market.BpcQuote;
 import com.eveassist.market.ContractRefresh;
+import com.eveassist.market.ContractStatus;
 import com.eveassist.sde.TypeId;
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -23,6 +24,9 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class ContractPrices {
+
+    /** The Forge, the region whose contracts are read. */
+    public static final int THE_FORGE = 10000002;
 
     private final ContractRepository contracts;
     private final OrderRepository orders;
@@ -93,6 +97,10 @@ public class ContractPrices {
                 .toList();
         var asOf = contracts.fetchedAt(regionId).orElse(now);
         return BpcPricing.quote(blueprint, me, te, offers, PriceRule.DEFAULT_SHARE, asOf);
+    }
+
+    public ContractStatus status(int regionId) {
+        return new ContractStatus(contracts.fetchedAt(regionId).orElse(null), contracts.pendingCount(regionId));
     }
 
     private static EsiResult<List<PublicContractItem>> result(Future<EsiResult<List<PublicContractItem>>> future) {

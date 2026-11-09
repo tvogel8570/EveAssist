@@ -18,6 +18,7 @@
 <div class="navbar bg-base-200 px-4 gap-2">
     <a class="text-lg font-semibold mr-4" th:href="@{/}" th:text="#{app.name}">EveAssist</a>
     <a sec:authorize="hasRole('USER')" id="nav-plans" class="btn btn-ghost btn-sm" th:href="@{/plans}" th:text="#{nav.plans}">Plans</a>
+    <a sec:authorize="hasRole('USER')" id="nav-bpc" class="btn btn-ghost btn-sm" th:href="@{/market/blueprint-copies}" th:text="#{nav.blueprintCopies}">Blueprint copies</a>
     <span class="grow"></span>
     <a sec:authorize="isAnonymous()" id="sign-in" class="btn btn-primary btn-sm" th:href="@{/account}" th:text="#{nav.signIn}">Sign in</a>
     <a sec:authorize="isAuthenticated()" id="account" class="btn btn-ghost btn-sm" th:href="@{/account}" th:text="#{nav.account}">Account</a>

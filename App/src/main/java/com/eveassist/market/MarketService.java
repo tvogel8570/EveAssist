@@ -21,7 +21,7 @@ import org.springframework.stereotype.Service;
 public class MarketService {
 
     /** The Forge, and the station in Jita where the requirements take prices from. */
-    static final int THE_FORGE = 10000002;
+    static final int THE_FORGE = ContractPrices.THE_FORGE;
     static final long JITA_4_4 = 60003760L;
 
     private final OrderRepository orders;
@@ -93,5 +93,10 @@ public class MarketService {
      */
     public java.util.Optional<BpcQuote> bpcPrice(TypeId blueprint, int me, int te) {
         return contractPrices.bpcPrice(THE_FORGE, blueprint, me, te);
+    }
+
+    /** How current the stored contracts are, for saying so next to a price. */
+    public ContractStatus contractStatus() {
+        return contractPrices.status(THE_FORGE);
     }
 }

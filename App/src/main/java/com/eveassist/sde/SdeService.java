@@ -32,6 +32,15 @@ public class SdeService {
         return data.searchBuildable(text, limit);
     }
 
+    /** Blueprints whose names contain the text, for choosing one to price. */
+    public List<ItemType> searchBlueprints(String text, int limit) {
+        return data.searchBlueprints(text, limit);
+    }
+
+    public boolean isBlueprint(TypeId id) {
+        return data.isBlueprint(id);
+    }
+
     public Set<TypeId> materialTypes() {
         return data.materialTypes();
     }

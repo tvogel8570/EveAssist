@@ -1,0 +1,65 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: page(~{::title}, ~{::main})}">
+<head><title th:text="#{bpc.title}">Blueprint copy prices</title></head>
+<body>
+<main class="max-w-6xl mx-auto p-4">
+    <h1 class="text-xl font-semibold mb-1" th:text="#{bpc.title}">Blueprint copy prices</h1>
+    <p class="opacity-70 mb-3" th:text="#{bpc.intro}">Prices per run from public item exchange contracts in The Forge.</p>
+
+    <div class="flex flex-wrap items-center gap-3 mb-4">
+        <form method="post" th:action="@{/market/blueprint-copies/refresh}">
+            <input type="hidden" name="q" th:value="${q}">
+            <input type="hidden" name="type" th:if="${blueprint != null}" th:value="${blueprint.id.value}">
+            <input type="hidden" name="me" th:if="${blueprint != null}" th:value="${me}">
+            <input type="hidden" name="te" th:if="${blueprint != null}" th:value="${te}">
+            <button id="refresh-contracts" class="btn btn-primary btn-sm" type="submit" th:text="#{bpc.refresh}">Refresh contracts</button>
+        </form>
+        <span id="contract-status" class="text-sm opacity-80">
+            <span th:if="${status.listedAt != null}" th:text="#{bpc.listedAt(${@utcTime.format(status.listedAt)})}">Listed</span>
+            <span th:unless="${status.listedAt != null}" th:text="#{bpc.neverListed}">Never read</span>
+            <span th:if="${status.pending > 0}" th:text="' · ' + #{bpc.pending(${status.pending})}">pending</span>
+        </span>
+    </div>
+
+    <div id="refresh-result" class="alert mb-4" th:if="${refresh != null}">
+        <div>
+            <p th:text="#{bpc.refreshed(${refresh.added}, ${refresh.linesRead}, ${refresh.gone}, ${refresh.pending})}">Refreshed</p>
+            <p class="text-warning" th:each="problem : ${refresh.problems}" th:text="${problem}">problem</p>
+        </div>
+    </div>
+
+    <form class="flex gap-2 mb-4 max-w-xl" method="get" th:action="@{/market/blueprint-copies}">
+        <input id="bpc-search" class="input input-sm grow" name="q" th:value="${q}" maxlength="100"
+               th:placeholder="#{bpc.search}" th:aria-label="#{bpc.search}">
+        <button class="btn btn-sm" type="submit" th:text="#{bpc.find}">Find</button>
+    </form>
+
+    <ul id="bpc-found" class="mb-4" th:if="${found != null}">
+        <li class="opacity-70" th:if="${#lists.isEmpty(found)}" th:text="#{bpc.noneFound}">No blueprint found</li>
+        <li th:each="item : ${found}">
+            <a class="link" th:href="@{/market/blueprint-copies(q=${q},type=${item.id.value})}" th:text="${item.name}">Blueprint</a>
+        </li>
+    </ul>
+
+    <section id="bpc-price" th:if="${blueprint != null}">
+        <h2 class="font-semibold mb-2" th:text="${blueprint.name}">Blueprint</h2>
+        <form class="flex flex-wrap items-end gap-2 mb-3" method="get" th:action="@{/market/blueprint-copies}">
+            <input type="hidden" name="q" th:value="${q}">
+            <input type="hidden" name="type" th:value="${blueprint.id.value}">
+            <label class="flex flex-col text-sm"><span th:text="#{bpc.me}">ME</span>
+                <input id="bpc-me" class="input input-sm w-20" type="number" name="me" min="0" max="10" th:value="${me}"></label>
+            <label class="flex flex-col text-sm"><span th:text="#{bpc.te}">TE</span>
+                <input id="bpc-te" class="input input-sm w-20" type="number" name="te" min="0" max="20" th:value="${te}"></label>
+            <button class="btn btn-sm" type="submit" th:text="#{bpc.price}">Price</button>
+        </form>
+        <p id="bpc-none" class="opacity-70" th:if="${quote == null}" th:text="#{bpc.noOffer}">No contract offers this</p>
+        <div id="bpc-quote" th:if="${quote != null}">
+            <p class="text-lg"><span class="num" th:text="${#numbers.formatDecimal(quote.perRun, 1, 'COMMA', 2, 'POINT')}">1</span> ISK
+                <span th:text="#{bpc.perRun}">per run</span></p>
+            <p class="text-sm opacity-80" th:text="#{bpc.basis(${quote.offers}, ${quote.runsOffered})}">Basis</p>
+            <p class="badge badge-warning badge-sm" th:if="${quote.match.name() == 'AT_LEAST'}" th:text="#{bpc.atLeast(${quote.me}, ${quote.te})}">At least</p>
+        </div>
+    </section>
+</main>
+</body>
+</html>
