@@ -66,8 +66,8 @@ Status: **agreed**.
 
 ## Scaling later
 
-The app is nearly ready for a second instance: sessions are in Postgres, alerts can pass between instances with
-`LISTEN`/`NOTIFY`, and fetch state is in the database. Background tasks are kept to one run at a time by in-memory
+The app is nearly ready for a second instance: sessions are in Postgres, token refreshes are guarded by a per-character
+advisory lock, alerts can pass between instances with `LISTEN`/`NOTIFY`, and fetch state is in the database. Background tasks are kept to one run at a time by in-memory
 flags, which cover one instance, so a second instance first needs each task to claim its work in the database (see
 [Background tasks](code-structure.md#background-tasks)). At that point a load balancer replaces Caddy and the app may move to ECS. Keycloak can stay on one instance for a while.
 

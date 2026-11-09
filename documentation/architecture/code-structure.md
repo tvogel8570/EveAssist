@@ -261,6 +261,13 @@ to write every task that runs outside a request, on a timer or queued.
 - **A timer starts runs at a fixed delay, not at clock times**, and the first start is a short delay after start-up.
   The interval and the batch size are properties, and a property switches the timer off so that tests call the task
   themselves.
+- **Sign-in and token refresh are not background tasks.** Signing in, linking a character and refreshing an access token
+  run in the request that needs them, and they fail where the person can see it. A successful authentication and
+  authorization is not optional, so none of it is deferred, queued or left to a timer, and the rules above do not
+  apply to it. In particular, the refresh keeps its Postgres advisory lock on the character id (see
+  [Refreshing access tokens](identity-and-tokens.md#refreshing-access-tokens)): the lock is held for one bounded call to
+  EVE SSO, which has a timeout, and it works across instances. The developer decided this on 2026-11-09. A background
+  fetch that needs a token calls the same refresh and waits for it.
 - **A task that reads public, shared data needs no signed-in user.** Anything that reads or writes a user's data keeps
   the viewer rules (see [Work with no signed-in person](#work-with-no-signed-in-person)).
 
