@@ -31,8 +31,10 @@ On Windows, `dev.eveassist.com` needs an entry in the Windows hosts file as well
 App and Keycloak run in WSL on `Tim-Xoticpc`, whose WSL network the other computers cannot reach. The Ubuntu distro
 has its own Tailscale node, `xoticpc-wsl-ts` (100.119.135.20), so the ports are reachable over the tailnet.
 
-1. On `Tim-Xoticpc`, start Keycloak (`docker compose up -d` in `Infrastructure/`) and App listening on all addresses:
-   `SERVER_ADDRESS=0.0.0.0 ./mvnw spring-boot:run` in `App/`. Without that override App only listens on `127.0.0.1`.
+1. On `Tim-Xoticpc`, start Keycloak (`docker compose up -d` in `Infrastructure/`) and App with the `local` profile added
+   to `dev`, so that it listens on all addresses: `./mvnw spring-boot:run -Dspring-boot.run.profiles=dev,local` in `App/`,
+   or `dev,local` as Active profiles in IntelliJ. With `dev` alone App only listens on `127.0.0.1`. Do not run it with
+   `local` alone, which switches the dev profile off, and with it the TLS settings.
 2. On the other computer, add `100.119.135.20 dev.eveassist.com` to its hosts file (`/etc/hosts`, or
    `C:\Windows\System32\drivers\etc\hosts` on Windows, edited as administrator).
 3. Open the links above. The ports in the URLs stay the same.
