@@ -29,6 +29,10 @@ requests themselves.
   bucket-limited routes, so the scope check before a call matters.
 - **Pagination**: paged routes are read through `X-Pages`. Every page must carry the same `Last-Modified`, or the whole
   set is read again later.
+- **Timeouts**: a call gives up after 5 seconds to connect and 30 seconds for the response, set with
+  `spring.http.clients.connect-timeout` and `read-timeout`. A call that gives up is a failure like any other. Without
+  them a stalled connection would hold one of the simultaneous-call permits for ever. The values are a first guess, to
+  be checked at the checkpoint under [Background fetches](#background-fetches).
 - **Failures**: 5xx and timeouts are retried later with back-off, never in a loop. Stored data stays on screen with its
   age, and a banner says that ESI is down or throttled.
 

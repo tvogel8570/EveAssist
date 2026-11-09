@@ -33,6 +33,14 @@ spring:
             - openid
             - profile
             - email
+  http:
+    clients:
+      # Without these a call to a server that accepts the connection and then says nothing waits forever, holding one of
+      # the ESI client's simultaneous-call permits (and, for the contract loader, its run). They apply to every
+      # RestClient built from Spring Boot's builder. EsiTimeoutTest checks that a stall before or after the response
+      # headers makes a call fail.
+      connect-timeout: 5s
+      read-timeout: 30s
 eveassist:
   esi:
     contact-email: ${ESI_CONTACT_EMAIL:}
