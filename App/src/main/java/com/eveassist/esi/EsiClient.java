@@ -14,4 +14,18 @@ public interface EsiClient {
      * what it stored.
      */
     EsiResult<List<MarketOrder>> marketOrders(int regionId, int typeId);
+
+    /**
+     * All public contracts in a region, from {@code GET /contracts/public/{region_id}}, read through every page. The
+     * outcomes are those of {@link #marketOrders}.
+     */
+    EsiResult<List<PublicContract>> publicContracts(int regionId);
+
+    /**
+     * The lines of one public contract, from {@code GET /contracts/public/items/{contract_id}}. A contract's items do
+     * not change, so the client does not cache this route: the caller asks once and keeps the answer. The result is
+     * {@link EsiResult.Outcome#UPDATED} with no lines when ESI answers 204, which means the contract has expired or
+     * was accepted.
+     */
+    EsiResult<List<PublicContractItem>> publicContractItems(long contractId);
 }

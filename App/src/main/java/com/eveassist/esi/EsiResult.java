@@ -1,6 +1,7 @@
 package com.eveassist.esi;
 
 import java.time.Instant;
+import java.util.function.Function;
 
 /**
  * What an ESI call gave back. A failure is a value, not an exception, so that a caller can keep stored data and say
@@ -19,6 +20,11 @@ public record EsiResult<T>(Outcome outcome, T data, Instant expires, String prob
         UNCHANGED,
         /** ESI could not be asked or did not answer well: throttled, down, an error or a bad page set. */
         FAILED
+    }
+
+    /** The same outcome with the data converted. */
+    public <R> EsiResult<R> map(Function<T, R> conversion) {
+        return new EsiResult<>(outcome, data == null ? null : conversion.apply(data), expires, problem);
     }
 
     public static <T> EsiResult<T> updated(T data, Instant expires) {

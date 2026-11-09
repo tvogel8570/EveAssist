@@ -30,7 +30,7 @@ class MarketServiceIT extends IntegrationTest {
     OrderRepository orders;
 
     private final Map<Integer, EsiResult<List<MarketOrder>>> answers = new ConcurrentHashMap<>();
-    private final EsiClient answering = (region, type) -> answers.getOrDefault(type, EsiResult.failed("no answer for " + type));
+    private final OrdersEsi answering = (region, type) -> answers.getOrDefault(type, EsiResult.failed("no answer for " + type));
 
     private MarketService service() {
         return new MarketService(orders, answering, Clock.fixed(NOW, ZoneOffset.UTC));
@@ -138,7 +138,7 @@ class MarketServiceIT extends IntegrationTest {
     void asksEsiOncePerItemEvenWhenTheItemIsListedTwice() {
         var type = 900_009;
         var calls = new HashMap<Integer, Integer>();
-        EsiClient counting = (region, id) -> {
+        OrdersEsi counting = (region, id) -> {
             synchronized (calls) {
                 calls.merge(id, 1, Integer::sum);
             }

@@ -1,0 +1,22 @@
+package com.eveassist.market;
+
+import com.eveassist.esi.EsiClient;
+import com.eveassist.esi.EsiResult;
+import com.eveassist.esi.PublicContract;
+import com.eveassist.esi.PublicContractItem;
+import java.util.List;
+
+/** An ESI that answers market orders only, so a test can write it as a lambda. */
+@FunctionalInterface
+interface OrdersEsi extends EsiClient {
+
+    @Override
+    default EsiResult<List<PublicContract>> publicContracts(int regionId) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    default EsiResult<List<PublicContractItem>> publicContractItems(long contractId) {
+        throw new UnsupportedOperationException();
+    }
+}
