@@ -44,9 +44,12 @@ Added 2026-11-09. Blueprint copies (BPCs) are not sold on the market, so their p
 - Offers more than ten times above or below the middle offer for the blueprint are left out as joke or mistaken
   prices, once there are at least three offers.
 - Only contracts up to 100 m³ are read: a copy takes 0.01 m³, and larger contracts are ships and cargo.
-- The contracts are public data shared by all users. They are read when the user asks, in batches, because a region has
-  tens of thousands of contracts and each one's contents need a call of their own. Until all are read, the page says how
-  many are still to read, and a price may miss some offers.
+- The contracts are public data shared by all users. They are read in the background, and no one has to be signed in
+  for that: a minute after the app starts, and then 30 minutes after each run ends. A region has tens of thousands of
+  contracts and each one's contents need a call of their own, so the first run takes about half an hour to an hour,
+  and later runs read only the new contracts. The developer decided this on 2026-11-09. The page also has a button
+  that reads one more batch, and says how many contracts are still to read, because a price may miss some offers
+  until all are read. A progress display is not built yet.
 - The price is a third source beside Jita sell and buy prices. Using it in plans (as a price basis, and as the fallback
   for an item with no market orders) comes with the plan features that need a BPC, such as invention.
 

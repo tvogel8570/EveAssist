@@ -62,6 +62,15 @@ Why not a job queue in Postgres (db-scheduler, JobRunr) or a separate worker wit
 user is signed in, so losing queued tasks at a restart costs nothing, and the advisory lock and the stored fetch state
 already let several instances share the work.
 
+**Exception: public shared data.** The list of public contracts is read by a background loader that needs no signed-in
+user, because the data is public and shared by all users, and a user who opens the page should find it ready. The
+developer decided this on 2026-11-09. The loader starts a minute after start-up and then 30 minutes after each run
+ends (the list is cached for 30 minutes), reads batches of 500 contracts until none are waiting, and stops when a batch
+makes no progress (ESI throttling or down) or the app is stopping. A Postgres session advisory lock (key `0x45410001`)
+keeps two instances, or a run that is still going, from reading together. It is switched off with
+`eveassist.market.contracts.background=false`, and the batch size, first delay and interval can be set under
+`eveassist.market.contracts`. It uses the same client, so the simultaneous-call limit and the error-limit pause apply.
+
 Status: **agreed**.
 
 ## Corporation data (phase 2)
@@ -90,7 +99,7 @@ age.
   list and `GET /contracts/public/items/<id>` for the lines of one contract. The list is read through its pages and cached
   like other routes. A contract's lines never change, so the client does not cache that route: the app stores them and
   asks once per contract. A 204 means the contract has expired or been accepted, and the app drops it. ESI also answers 403 "Contract accepted by player, requires authorization" for a contract accepted after the list was cached, which the OpenAPI spec does not say, and the app treats it the same. Contracts up to
-  100 m³ are kept, newest first, and each refresh reads up to 500 sets of lines. At the time of writing The Forge's
+  100 m³ are kept, newest first, and each batch reads up to 500 sets of lines (see [Background fetches](#background-fetches)). At the time of writing The Forge's
   list has about 35 pages. ESI's OpenAPI spec names no rate-limit group for these routes and the responses carry no
   rate-limit headers, so only the error limit applies. The prices are worked out from the stored rows (see
   [Contract prices](../requirements/market-logistics.md#contract-prices)).

@@ -15,3 +15,8 @@ spring:
           keycloak:
             client-secret: test-secret
             redirect-uri: "{baseUrl}/login/oauth2/code/keycloak"
+eveassist:
+  market:
+    contracts:
+      # tests call the loader themselves, so nothing else asks the test ESI in the background
+      background: false
