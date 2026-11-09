@@ -1,0 +1,17 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: page(~{::title}, ~{::main})}">
+<head><title th:text="#{inventory.title}">Inventory</title></head>
+<body>
+<main class="max-w-6xl mx-auto p-4">
+    <div class="flex items-center gap-3 mb-3">
+        <h1 class="text-xl font-semibold" th:text="#{inventory.title}">Inventory</h1>
+        <span class="grow"></span>
+        <form method="post" th:action="@{/inventory/refresh}">
+            <button id="refresh-assets" class="btn btn-primary btn-sm" type="submit" th:text="#{inventory.refresh}">Refresh</button>
+        </form>
+    </div>
+    <p class="text-sm opacity-70 mb-4" th:text="#{inventory.note}">ESI keeps its copy for a while, so a refresh may find nothing new.</p>
+    <th:block th:replace="~{inventory/fragments :: status}"></th:block>
+</main>
+</body>
+</html>

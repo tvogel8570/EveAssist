@@ -36,6 +36,7 @@ public class TestEsi implements EsiClient {
         itemsAsked.clear();
         assets.clear();
         assetsAsked.clear();
+        assetsGate = null;
         sells.put(34, new BigDecimal("5.00"));
         sells.put(35, new BigDecimal("10.00"));
     }
@@ -70,9 +71,24 @@ public class TestEsi implements EsiClient {
         return List.copyOf(assetsAsked);
     }
 
+    private volatile java.util.concurrent.CountDownLatch assetsGate;
+
+    /** Holds every asset call until the latch opens, so a test can look at a fetch that is still running. */
+    public void holdAssetCalls(java.util.concurrent.CountDownLatch gate) {
+        assetsGate = gate;
+    }
+
     @Override
     public EsiResult<List<CharacterAsset>> characterAssets(long eveCharacterId) {
         assetsAsked.add(eveCharacterId);
+        var gate = assetsGate;
+        if (gate != null) {
+            try {
+                gate.await();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
         return assets.getOrDefault(eveCharacterId, EsiResult.updated(List.of(), Instant.now().plusSeconds(3600)));
     }
 

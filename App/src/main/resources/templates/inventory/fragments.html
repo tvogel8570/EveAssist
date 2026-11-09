@@ -1,0 +1,41 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- The fetch status of every character. While a fetch runs it asks for itself again every two seconds. -->
+<div id="fetch-status" th:fragment="status" th:attr="hx-get=${running} ? @{/inventory/status} : null"
+     hx-trigger="every 2s" hx-swap="outerHTML">
+    <p id="no-characters" th:if="${#lists.isEmpty(rows)}" class="opacity-70 text-center py-6" th:text="#{inventory.noCharacters}">No characters.</p>
+    <div class="overflow-x-auto" th:unless="${#lists.isEmpty(rows)}">
+        <table class="table">
+            <thead>
+            <tr>
+                <th th:text="#{inventory.character}">Character</th>
+                <th th:text="#{inventory.state}">State</th>
+                <th class="num" th:text="#{inventory.items}">Items</th>
+                <th th:text="#{inventory.fetched}">Fetched</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="row : ${rows}" th:id="'asset-row-' + ${row.id}">
+                <td th:text="${row.name}">Name</td>
+                <td>
+                    <span class="badge badge-sm"
+                          th:classappend="${row.phase == 'CURRENT'} ? 'badge-success' : (${row.phase == 'RUNNING' or row.phase == 'NEVER'} ? 'badge-info' : (${row.phase == 'FAILED'} ? 'badge-warning' : 'badge-error'))"
+                          th:text="#{'inventory.phase.' + ${row.phase}}">State</span>
+                    <span class="loading loading-spinner loading-xs ml-1" th:if="${row.phase == 'RUNNING'}"></span>
+                    <span class="block text-xs opacity-70" th:if="${row.problem != null and row.phase == 'FAILED'}" th:text="${row.problem}">Problem</span>
+                    <a class="link text-xs" th:if="${row.phase == 'NEEDS_REAUTHORIZATION' or row.phase == 'MISSING_SCOPE'}"
+                       th:href="@{/characters}" th:text="#{inventory.fixOnCharacters}">Characters page</a>
+                </td>
+                <td class="num" th:text="${row.itemCount != null} ? ${#numbers.formatInteger(row.itemCount, 1, 'COMMA')} : '-'">0</td>
+                <td>
+                    <span th:if="${row.fetchedAt != null}" th:text="${row.fetchedAt} + ' UTC'">time</span>
+                    <span class="opacity-60" th:unless="${row.fetchedAt != null}" th:text="#{inventory.never}">Never</span>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+</body>
+</html>

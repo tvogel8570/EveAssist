@@ -135,6 +135,28 @@ requirements make the share a user setting, and they would add a third-party ser
 
 Status: **agreed** (follows from the requirements).
 
+## Character assets
+
+Status: **proposed** (added 2026-11-09 with the asset fetch).
+
+- **Route and scope**: `GET /characters/{character_id}/assets` needs `esi-assets.read_assets.v1` and is in the
+  `char-asset` group (1,800 tokens per 15 minutes per character). The client reads it through its pages like other
+  routes, caches it per character and route (`ETag`, `Expires`), and sends the character's access token as a bearer
+  token. The token comes from the `AccessTokens` port, which the `characters` module implements (see
+  [Refreshing access tokens](identity-and-tokens.md#refreshing-access-tokens)). The scope is checked before the call,
+  so a character that did not grant it costs no request. After a 401 the token is forgotten and the request is made
+  once more with a fresh one, never in a loop.
+- **When it runs**: opening the inventory page, or its Refresh button, queues one task per character that can be
+  fetched, on virtual threads. ESI's cache time decides whether ESI is asked at all, so opening the page again costs
+  nothing while its copy is current. A character already being fetched is skipped (an in-memory flag per character). The
+  page shows stored data at once and polls a status block every two seconds while a task runs.
+- **Storage**: each fetch replaces the character's rows in one transaction (`character_asset`, no history), after the
+  ESI call and never inside it. `character_fetch` records when ESI last answered, when the rows last changed, how many
+  rows there are and the last problem. A failed fetch keeps the stored rows and their age.
+- **Not yet**: names of player structures (`GET /universe/structures/{id}`, scope `esi-universe.read_structures.v1`,
+  one call per structure, 403 when the character has no docking access, which counts toward the error limit) and the
+  checkpoint under [Background fetches](#background-fetches) for the `char-asset` group.
+
 ## Alerts
 
 - Every alert is a row in Postgres: account, kind (job finished, project blocked, contract accepted or completed,
