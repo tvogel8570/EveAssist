@@ -64,12 +64,16 @@ already let several instances share the work.
 
 **Exception: public shared data.** The list of public contracts is read by a background loader that needs no signed-in
 user, because the data is public and shared by all users, and a user who opens the page should find it ready. The
-developer decided this on 2026-11-09. The loader starts a minute after start-up and then 30 minutes after each run
-ends (the list is cached for 30 minutes), reads batches of 500 contracts until none are waiting, and stops when a batch
-makes no progress (ESI throttling or down) or the app is stopping. A Postgres session advisory lock (key `0x45410001`)
-keeps two instances, or a run that is still going, from reading together. It is switched off with
-`eveassist.market.contracts.background=false`, and the batch size, first delay and interval can be set under
-`eveassist.market.contracts`. It uses the same client, so the simultaneous-call limit and the error-limit pause apply.
+developer decided this on 2026-11-09. The loader starts a minute after start-up and then every 30 minutes (the list is
+cached for 30 minutes). Each run is on its own virtual thread, so the scheduler's single thread stays free for other
+scheduled work such as the alert sweep. A run reads batches of 500 contracts until none are waiting, and stops when a
+batch makes no progress (ESI throttling or down) or the app is stopping. A start that finds a run still going does
+nothing. That guard is an in-memory flag, so it covers one instance only; the developer expects never to need a second.
+If a second instance is ever run, each batch should claim its contracts in the database (for example `FOR UPDATE SKIP
+LOCKED` with a short lease), because a Postgres lock held across ESI calls would hold a connection for the whole run. It
+is switched off with `eveassist.market.contracts.background=false`, and the batch size, first delay and interval can be
+set under `eveassist.market.contracts`. It uses the same client, so the simultaneous-call limit and the error-limit
+pause apply.
 
 Status: **agreed**.
 

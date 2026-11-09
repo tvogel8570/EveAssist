@@ -6,9 +6,9 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 
 /**
- * Starts {@link ContractLoader} a minute after start-up and then 30 minutes after each run ends, which is how long ESI
- * caches the contract list. Waiting for the last run to end, not a fixed clock time, is what ESI's best practices ask
- * for. Switched off with {@code eveassist.market.contracts.background=false}, as tests do.
+ * Starts {@link ContractLoader} a minute after start-up and then every 30 minutes, which is how long ESI caches the
+ * contract list. A run is long on the first load, so it goes on a virtual thread of its own and the scheduler's single
+ * thread stays free for other scheduled work. A start that finds a run still going does nothing. Switched off with {@code eveassist.market.contracts.background=false}, as tests do.
  */
 @Configuration
 @EnableScheduling
@@ -24,6 +24,6 @@ class ContractLoadSchedule {
     @Scheduled(initialDelayString = "${eveassist.market.contracts.initial-delay:PT1M}",
             fixedDelayString = "${eveassist.market.contracts.interval:PT30M}")
     void run() {
-        loader.loadAll();
+        Thread.ofVirtual().name("contract-loader").start(loader::loadAll);
     }
 }

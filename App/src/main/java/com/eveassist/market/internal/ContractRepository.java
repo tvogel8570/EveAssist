@@ -60,6 +60,7 @@ public class ContractRepository {
         batch.batchUpdate("""
                 INSERT INTO contract_public (contract_id, region_id, price, issued_at, expires_at, start_location_id, volume)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT (contract_id) DO NOTHING
                 """, added, 1000, (statement, contract) -> {
             statement.setLong(1, contract.contractId());
             statement.setInt(2, regionId);

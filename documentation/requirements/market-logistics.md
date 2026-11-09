@@ -45,7 +45,7 @@ Added 2026-11-09. Blueprint copies (BPCs) are not sold on the market, so their p
   prices, once there are at least three offers.
 - Only contracts up to 100 m³ are read: a copy takes 0.01 m³, and larger contracts are ships and cargo.
 - The contracts are public data shared by all users. They are read in the background, and no one has to be signed in
-  for that: a minute after the app starts, and then 30 minutes after each run ends. A region has tens of thousands of
+  for that: a minute after the app starts, and then every 30 minutes. A region has tens of thousands of
   contracts and each one's contents need a call of their own, so the first run takes about half an hour to an hour,
   and later runs read only the new contracts. The developer decided this on 2026-11-09. The page also has a button
   that reads one more batch, and says how many contracts are still to read, because a price may miss some offers

@@ -5,10 +5,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.eveassist.IntegrationTest;
 import com.eveassist.esi.PublicContract;
 import com.eveassist.esi.PublicContractItem;
+import com.eveassist.market.ContractRefresh;
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
-import javax.sql.DataSource;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -19,9 +22,6 @@ class ContractLoaderIT extends IntegrationTest {
 
     @Autowired
     ContractRepository contracts;
-
-    @Autowired
-    DataSource dataSource;
 
     private void contract(long id) {
         esi.contract(new PublicContract(id, "item_exchange", new BigDecimal("100"), 5, Instant.now().minusSeconds(60),
@@ -35,7 +35,7 @@ class ContractLoaderIT extends IntegrationTest {
             contract(id);
         }
 
-        var ran = new ContractLoader(prices, dataSource, 2).loadAll();
+        var ran = new ContractLoader(prices, 2).loadAll();
 
         assertThat(ran).isTrue();
         assertThat(contracts.pendingCount(ContractPrices.THE_FORGE)).isZero();
@@ -43,18 +43,30 @@ class ContractLoaderIT extends IntegrationTest {
     }
 
     @Test
-    void doesNothingWhileAnotherRunHoldsTheLock() throws Exception {
-        contract(9_700_001);
-        try (var other = dataSource.getConnection(); var lock = other.createStatement()) {
-            lock.execute("SELECT pg_advisory_lock(" + ContractLoader.LOCK_KEY + ")");
-            try {
-                assertThat(new ContractLoader(prices, dataSource, 2).loadAll()).isFalse();
-                assertThat(esi.contractItemsAsked()).isEmpty();
-            } finally {
-                lock.execute("SELECT pg_advisory_unlock(" + ContractLoader.LOCK_KEY + ")");
+    void doesNothingWhileARunIsGoingAndRunsAgainAfterwards() throws Exception {
+        var inside = new CountDownLatch(1);
+        var release = new CountDownLatch(1);
+        var blocking = new ContractPrices(null, null, null, Clock.systemUTC()) {
+            @Override
+            public ContractRefresh refresh(int regionId, int maxContracts) {
+                inside.countDown();
+                try {
+                    release.await(10, TimeUnit.SECONDS);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+                return new ContractRefresh(0, 0, 0, 0, List.of());
             }
-        }
+        };
+        var loader = new ContractLoader(blocking, 2);
 
-        assertThat(new ContractLoader(prices, dataSource, 2).loadAll()).isTrue();
+        var first = Thread.ofVirtual().start(loader::loadAll);
+        assertThat(inside.await(10, TimeUnit.SECONDS)).isTrue();
+
+        assertThat(loader.loadAll()).isFalse();
+
+        release.countDown();
+        first.join();
+        assertThat(loader.loadAll()).isTrue();
     }
 }
