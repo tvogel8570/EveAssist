@@ -94,6 +94,11 @@ public class Plan {
         products.replaceAll(product -> product.type().equals(type) ? new PlanProduct(type, quantity) : product);
     }
 
+    /** Takes a product out. What it needed is not forgotten: prices stay, so putting it back is quoted as it was. */
+    public void removeProduct(TypeId type) {
+        products.removeIf(product -> product.type().equals(type));
+    }
+
     /** Adding a product the plan already has adds to its quantity. */
     public void addProduct(TypeId type, long quantity) {
         check(quantity);

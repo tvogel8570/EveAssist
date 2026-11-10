@@ -42,6 +42,22 @@ public class PlanEditing {
         return saveAndCompare(viewer, plan, inputs, before);
     }
 
+    /**
+     * Takes the product out and costs the plan again. The plan keeps its prices, so putting the product back (see
+     * {@link PlanEntry#addProduct}) is quoted as it was, and a plan with no product left is allowed.
+     */
+    public ProductRemoval removeProduct(Viewer viewer, RemoveProductCommand command) {
+        var plan = loadAt(viewer, command.plan(), command.expectedVersion());
+        var removed = plan.products().stream().filter(product -> product.type().equals(command.type())).findFirst()
+                .orElseThrow(PlanNotFoundException::new);
+        plan.removeProduct(command.type());
+        var inputs = costings.inputs(plan);
+        long version = plans.save(viewer, plan, costings.total(inputs.cost(plan), inputs))
+                .orElseThrow(PlanChangedException::new);
+        return new ProductRemoval(costings.details(plan, version, inputs), removed.type(),
+                costings.name(removed.type()), removed.quantity());
+    }
+
     /** Adds the product with no new prices, so an item the plan has no price for stays unpriced. */
     public PlanChangeResult addProduct(Viewer viewer, AddProductCommand command) {
         return addProduct(viewer, command, Map.of());

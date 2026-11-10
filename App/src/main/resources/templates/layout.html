@@ -32,7 +32,8 @@
 <main class="max-w-6xl mx-auto p-4" th:replace="${content}"></main>
 <div class="toast toast-end z-30">
     <div id="error-toast" class="alert alert-error" role="alert" hidden
-         th:data-failed="#{error.failed}" th:data-conflict="#{error.conflict}" th:data-invalid="#{error.invalid}">
+         th:data-failed="#{error.failed}" th:data-conflict="#{error.conflict}" th:data-invalid="#{error.invalid}"
+         th:data-units-low="#{plan.unitsTooLow}" th:data-units-high="#{plan.unitsTooHigh}">
         <span></span>
     </div>
 </div>

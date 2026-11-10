@@ -124,6 +124,65 @@
     <section th:replace="~{plans/fragments :: materials(${plan}, true)}"></section>
 </th:block>
 
+<!--
+  The products of a plan: a table with the units of each and a button to remove it, or a note that there are none. It
+  is the whole of #products, so a response that changes the products can replace it (oob).
+-->
+<div th:fragment="products(plan, oob)" id="products" th:attr="hx-swap-oob=${oob ? 'true' : null}">
+        <p id="no-products" th:if="${#lists.isEmpty(plan.products)}" class="opacity-70 my-3" th:text="#{plan.noProducts}">No products</p>
+        <table class="table table-sm" th:unless="${#lists.isEmpty(plan.products)}">
+            <thead>
+            <tr>
+                <th th:text="#{plan.product}">Product</th>
+                <th class="num" th:text="#{plan.units}">Units</th>
+                <th class="w-20"></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="product : ${plan.products}">
+                <td class="font-medium" th:text="${product.name}">Name</td>
+                <td class="num">
+                    <input class="input input-sm w-28 text-right" type="number" name="quantity" min="1" max="1000000"
+                           data-plan-quantity
+                           th:id="'quantity-' + ${product.typeId}" th:value="${product.quantity}"
+                           th:aria-label="#{plan.unitsOf(${product.name})}"
+                           th:attr="data-saved=${product.quantity}, data-type=${product.typeId}, hx-post=@{/plans/{id}/products/{type}/quantity(id=${plan.id.value},type=${product.typeId})}"
+                           hx-trigger="change" hx-swap="none" hx-include="#plan-version"
+                           hx-sync="#products:queue all" hx-indicator="#request-indicator">
+                </td>
+                <td class="whitespace-nowrap">
+                    <span th:id="'saved-' + ${product.typeId}"></span>
+                    <button type="button" class="btn btn-ghost btn-xs" th:id="'remove-' + ${product.typeId}"
+                            th:aria-label="#{plan.remove(${product.name})}" th:title="#{plan.remove(${product.name})}"
+                            th:attr="hx-post=@{/plans/{id}/products/{type}/remove(id=${plan.id.value},type=${product.typeId})}"
+                            hx-include="#plan-version" hx-swap="none" hx-sync="#products:queue all"
+                            hx-indicator="#request-indicator">&#10005;</button>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+</div>
+
+<!-- What was just removed, with a button to put it back with the units it had. Empty when nothing was. -->
+<div th:fragment="undoBar(removed, oob)" id="undo-bar" role="status" aria-live="polite" class="min-h-0"
+     th:attr="hx-swap-oob=${oob ? 'true' : null}">
+    <div th:if="${removed != null}" class="alert alert-info alert-soft flex items-center gap-3 my-2 py-2">
+        <span class="grow" th:text="#{plan.removed(${removed.name}, ${removed.quantity})}">Removed Item (3 units).</span>
+        <form th:attr="hx-post=@{/plans/{id}/products/{type}/restore(id=${plan.id.value},type=${removed.type.value})}"
+              hx-swap="none" hx-sync="#products:queue all">
+            <input type="hidden" name="quantity" th:value="${removed.quantity}">
+            <button type="submit" id="undo-remove" class="btn btn-sm" th:text="#{plan.undo}">Undo</button>
+        </form>
+    </div>
+</div>
+
+<!-- After a product is removed or put back: the plan redrawn, with the products and the offer to undo. -->
+<th:block th:fragment="productsRedraw">
+    <th:block th:replace="~{plans/fragments :: planRedraw}"></th:block>
+    <div th:replace="~{plans/fragments :: products(${plan}, true)}"></div>
+    <div th:replace="~{plans/fragments :: undoBar(${removed}, true)}"></div>
+</th:block>
+
 <th:block th:fragment="change">
     <input th:replace="~{plans/fragments :: version(${change.version}, true)}">
     <div th:replace="~{plans/fragments :: total(${change.totalCost}, ${change.unpricedLines}, ${change.pricesAsOf}, true)}"></div>

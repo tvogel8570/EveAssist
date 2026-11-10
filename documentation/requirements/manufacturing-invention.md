@@ -68,6 +68,18 @@ All of these are in scope:
 - Surplus from rounding and batch sizes (extra components, extra units) is listed for each plan and credited at market
   value in its cost.
 
+### Working with plans
+
+Added 2026-11-10 at the developer's request.
+
+- **New plan** can be started from the Plans list and from a plan's own page (a New button opens a small box for the
+  name, because plans cannot be renamed yet).
+- **Remove a product.** Each product row has a remove button. The plan is costed again at once, and a message says what
+  was removed and offers **Undo**, which puts it back with the units it had and the prices the plan already had. A plan
+  may be left with no products.
+- **Units** are whole numbers from 1 to 1,000,000. Anything else is refused with the reason (a 0 says to use Remove), and
+  the number the plan holds returns to the box, so the box never shows what the plan does not have.
+
 ## Research
 
 - ME/TE research jobs on BPOs are tracked (running jobs, slots and finish times) but not planned. The tool does not

@@ -34,6 +34,27 @@
 
     document.addEventListener('htmx:error', () => showError('failed'));
 
+    // Units of a plan product. A number the plan cannot hold (not whole, below 1 or above the largest) is refused here with
+    // the reason, and the number the plan holds is put back, so the box never shows what the plan does not have. The event
+    // is stopped before htmx sees it, which also keeps the browser's own validation bubble from opening.
+    document.addEventListener('change', event => {
+        const box = event.target;
+        if (!(box instanceof HTMLInputElement) || !box.hasAttribute('data-plan-quantity')) {
+            return;
+        }
+        const text = box.value.trim();
+        const value = Number(text);
+        const low = text === '' || !Number.isInteger(value) || value < Number(box.min);
+        const high = !low && value > Number(box.max);
+        if (low || high) {
+            event.stopImmediatePropagation();
+            box.value = box.dataset.saved;
+            showError(low ? 'unitsLow' : 'unitsHigh');
+            return;
+        }
+        box.dataset.saved = String(value);
+    }, true);
+
     // Up and down arrows move through a search's results, and Enter on a result picks it.
     document.addEventListener('keydown', event => {
         const search = document.getElementById('product-search');

@@ -229,7 +229,10 @@ class PlanEditorBrowserIT extends IntegrationTest {
         page.fill("#quantity-1001", "0");
         page.press("#quantity-1001", "Tab");
 
-        assertThat(page.locator("#error-toast")).containsText("whole number");
+        // the reason is given, the number the plan holds returns, and nothing was sent (see also
+        // unitsTheBoxCannotHoldAreRefusedWithAReasonAndTheOldNumberReturns)
+        assertThat(page.locator("#error-toast")).containsText("at least 1");
+        assertThat(page.locator("#quantity-1001")).hasValue("1");
         assertThat(page.locator("#plan-total-value")).hasText("700 ISK");
         assertNotReloaded();
     }
@@ -385,5 +388,53 @@ class PlanEditorBrowserIT extends IntegrationTest {
         page.click("h1");
 
         assertThat(page.locator("#new-plan-name-here")).not().isVisible();
+    }
+
+    // ---- removing a product
+
+    @Test
+    void removingAProductTakesItOutAndUpdatesTheTotalAndUndoBringsItBack() {
+        page.navigate(url("/plans"));
+        createPlanWithHauler();
+        var quoted = page.locator("#plan-total").innerText();
+
+        page.click("#remove-1001");
+
+        assertThat(page.locator("#no-products")).isVisible();
+        assertThat(page.locator("#quantity-1001")).hasCount(0);
+        assertThat(page.locator("#undo-bar")).containsText("Removed Test Hauler (1 unit).");
+        assertThat(page.locator("#plan-total")).not().hasText(quoted);
+
+        page.click("#undo-remove");
+
+        assertThat(page.locator("#quantity-1001")).hasValue("1");
+        assertThat(page.locator("#undo-bar")).not().containsText("Removed");
+        assertThat(page.locator("#plan-total")).hasText(quoted);
+    }
+
+    @Test
+    void unitsTheBoxCannotHoldAreRefusedWithAReasonAndTheOldNumberReturns() {
+        page.navigate(url("/plans"));
+        createPlanWithHauler();
+        var quoted = page.locator("#plan-total").innerText();
+
+        page.locator("#quantity-1001").fill("0");
+        page.locator("#quantity-1001").blur();
+
+        assertThat(page.locator("#error-toast")).containsText("at least 1");
+        assertThat(page.locator("#quantity-1001")).hasValue("1");
+        assertThat(page.locator("#plan-total")).hasText(quoted);
+
+        page.locator("#quantity-1001").fill("1000001");
+        page.locator("#quantity-1001").blur();
+
+        assertThat(page.locator("#error-toast")).containsText("at most 1,000,000");
+        assertThat(page.locator("#quantity-1001")).hasValue("1");
+
+        // a good number is still saved
+        page.locator("#quantity-1001").fill("2");
+        page.locator("#quantity-1001").blur();
+        assertThat(page.locator("#saved-1001")).containsText("Saved");
+        assertThat(page.locator("#plan-total")).not().hasText(quoted);
     }
 }

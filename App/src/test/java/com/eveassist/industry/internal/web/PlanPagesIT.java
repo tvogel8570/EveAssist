@@ -14,6 +14,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.eveassist.IntegrationTest;
 import com.eveassist.industry.PlanId;
 import com.eveassist.industry.internal.application.AddProductCommand;
+import com.eveassist.industry.internal.application.ChangeQuantityCommand;
 import com.eveassist.industry.internal.application.CreatePlanCommand;
 import com.eveassist.industry.internal.application.PlanEditing;
 import com.eveassist.industry.internal.application.PlanEntry;
@@ -419,5 +420,101 @@ class PlanPagesIT extends IntegrationTest {
         mvc.perform(post("/plans").param("name", "From the plan page").with(session).with(csrf()))
                 .andExpect(status().is3xxRedirection());
         rendered(mvc.perform(get("/plans").with(session))).andExpect(content().string(containsString("From the plan page")));
+    }
+
+    // ---- removing a product, and putting it back
+
+    private String removeBody(String sub, PlanId id, int type, long version) throws Exception {
+        return rendered(mvc.perform(post("/plans/{id}/products/{type}/remove", id.value(), type)
+                        .param("expectedVersion", String.valueOf(version)).with(signedIn(sub)).with(csrf())))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+    }
+
+    private long storedProducts(PlanId id) {
+        return jdbc.sql("SELECT count(*) FROM plan_product pp JOIN plan p ON p.id = pp.plan_id WHERE p.public_id = :id")
+                .param("id", id.value()).query(Long.class).single();
+    }
+
+    @Test
+    void removingAProductRedrawsThePlanCostsTheRestAndOffersUndo() throws Exception {
+        var sub = newSub();
+        var id = planWith(sub, HAULER);
+
+        var body = removeBody(sub, id, 1001, 1);
+
+        // the products, the totals and the version are replaced, and what was removed can be put back
+        assertThat(body).contains("id=\"products\"", "id=\"no-products\"", "id=\"plan-total\"", "id=\"plan-version\"",
+                "value=\"2\"", "id=\"undo-bar\"", "Removed Test Hauler (1 unit).", "id=\"undo-remove\"",
+                "/plans/" + id.value() + "/products/1001/restore", "name=\"quantity\"");
+        assertThat(body).doesNotContain("id=\"quantity-1001\"", "<html");
+        assertThat(storedProducts(id)).isZero();
+    }
+
+    @Test
+    void aRemovedProductIsOfferedBackWithTheUnitsItHad() throws Exception {
+        var sub = newSub();
+        var id = planWith(sub, HAULER);
+        editing.changeQuantity(viewerFor(sub), new ChangeQuantityCommand(id, HAULER, 3, 1));
+
+        var body = removeBody(sub, id, 1001, 2);
+
+        assertThat(body).contains("Removed Test Hauler (3 units).", "value=\"3\"");
+    }
+
+    @Test
+    void undoPutsTheProductBackWithItsUnitsAndTheQuoteItHad() throws Exception {
+        var sub = newSub();
+        var id = planWith(sub, HAULER);
+        var viewer = viewerFor(sub);
+        editing.changeQuantity(viewer, new ChangeQuantityCommand(id, HAULER, 3, 1));
+        var before = entry.open(viewer, id).totalCost();
+        removeBody(sub, id, 1001, 2);
+
+        var body = rendered(mvc.perform(post("/plans/{id}/products/{type}/restore", id.value(), 1001)
+                        .param("quantity", "3").with(signedIn(sub)).with(csrf())))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+
+        assertThat(body).contains("id=\"quantity-1001\"", "value=\"3\"", "id=\"undo-bar\"");
+        assertThat(body).doesNotContain("Removed Test Hauler", "id=\"no-products\"");
+        var after = entry.open(viewer, id);
+        assertThat(after.products()).singleElement().satisfies(line -> assertThat(line.quantity()).isEqualTo(3));
+        // the plan kept its prices, so it is quoted as before and is not left unpriced
+        assertThat(after.totalCost()).isEqualByComparingTo(before);
+        assertThat(after.unpricedLines()).isZero();
+    }
+
+    @Test
+    void removingFromAPlanThatChangedOrDoesNotHaveTheProductOrIsAnotherAccountsIsRefused() throws Exception {
+        var sub = newSub();
+        var id = planWith(sub, HAULER);
+
+        mvc.perform(post("/plans/{id}/products/{type}/remove", id.value(), 1001)
+                        .param("expectedVersion", "0").with(signedIn(sub)).with(csrf()))
+                .andExpect(status().isConflict());
+        mvc.perform(post("/plans/{id}/products/{type}/remove", id.value(), 34)
+                        .param("expectedVersion", "1").with(signedIn(sub)).with(csrf()))
+                .andExpect(status().isNotFound());
+        mvc.perform(post("/plans/{id}/products/{type}/remove", id.value(), 1001)
+                        .param("expectedVersion", "1").with(signedIn(newSub())).with(csrf()))
+                .andExpect(status().isNotFound());
+        mvc.perform(post("/plans/{id}/products/{type}/remove", id.value(), 1001).param("expectedVersion", "1")
+                        .with(signedIn(sub)))
+                .andExpect(status().isForbidden());
+        // nothing was removed by any of them
+        assertThat(storedProducts(id)).isEqualTo(1);
+    }
+
+    @Test
+    void theEditorOffersARemoveButtonForEachProductAndAnEmptyUndoBar() throws Exception {
+        var sub = newSub();
+        var id = planWith(sub, HAULER);
+
+        var page = rendered(mvc.perform(get("/plans/" + id.value()).with(signedIn(sub))))
+                .andReturn().getResponse().getContentAsString();
+
+        assertThat(page).contains("id=\"remove-1001\"", "aria-label=\"Remove Test Hauler\"",
+                "/plans/" + id.value() + "/products/1001/remove", "id=\"undo-bar\"", "data-plan-quantity",
+                "data-saved=\"1\"");
+        assertThat(page).doesNotContain("Removed Test Hauler");
     }
 }
