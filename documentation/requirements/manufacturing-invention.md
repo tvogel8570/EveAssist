@@ -100,6 +100,34 @@ Added 2026-11-10 at the developer's request.
 - An archived plan the user has not asked to see is not counted as "no plans yet": a list that is empty only because
   everything is archived says so.
 
+### Trying a plan without an account
+
+Decided with the developer on 2026-11-10. A visitor who has not signed in can build and cost a plan, so a new player can
+see what EveAssist does before creating an account.
+
+- **Its own page.** It is separate from the signed-in plan page, and it has no list of plans. The costing, ME 10 and
+  TE 20, the build or buy choice, the runs needed and the total are the same as for a signed-in plan, and the two pages
+  share the parts that show the results.
+- **Nothing is saved on the server.** The plan is kept in the browser's own storage for that site. It survives closing
+  the browser, but it is lost if the visitor clears the site's data or uses another browser or computer, and the page
+  says so. The address is not used to hold the plan, because it is too short for a large plan.
+- **No save, rename, archive, delete or list.** The visitor can start a new plan, which clears the page.
+- **At most 10 products** in a plan, so that one visitor cannot ask for an unlimited amount of work.
+- **Prices.** The page uses the prices the server already holds, however old, and asks for an item's price only when
+  the server holds none. **Refresh prices** is not offered. The page shows how old the prices are and warns when they
+  are stale.
+- **Limits on fetching prices for visitors.** ESI allows 12,000 tokens per 15 minutes for the market orders of the whole
+  app (see [ESI](../architecture/esi.md#jita-prices)), so every user shares one allowance, and a fresh fetch costs 2
+  tokens. A plan of ten large ships needs about 100 to 150 items fetched when nothing is stored, and most plans need
+  under 50. The starting limits, to be tuned against real usage, are:
+  - **One visitor** (identified by network address) can have at most **200 items fetched per hour**. Beyond that the
+    page uses stored prices only and lists the items it could not price.
+  - **All visitors together** can have at most **1,500 items fetched per 15 minutes**, a quarter of the allowance. The
+    rest is kept for signed-in users. Beyond it, visitors get stored prices only, with the same list.
+  - An item whose price is already stored costs nothing against either limit.
+- **No characters.** The page reads nothing about the visitor's characters, so it has no materials on hand.
+- **Taking a plan into an account** when the visitor signs in is wanted but not required at first.
+
 ## Research
 
 - ME/TE research jobs on BPOs are tracked (running jobs, slots and finish times) but not planned. The tool does not
@@ -164,4 +192,6 @@ Prices, the price basis and fees are defined in [Market and logistics](market-lo
 
 ## Open questions
 
-None at present.
+- Updating the stored prices in the background, so that a price is not old when someone opens a plan, is worth
+  considering. It would help signed-in plans and the plan without an account. Not decided.
+- How old a price must be before a plan warns that it is stale. The same age could serve both kinds of plan.
