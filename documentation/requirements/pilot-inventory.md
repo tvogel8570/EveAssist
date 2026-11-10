@@ -46,7 +46,8 @@ Decided with the developer on 2026-11-10, from mockups (`documentation/mockups/i
   status line is one line ("21 characters: 19 up to date, 2 need authorization") that opens into a table. EVE does not
   say which game account a character is on, so grouping characters by account would need tags the user sets. That is
   not built.
-- **Search and Add filter.** The search matches item, group and category. Add filter asks for a column and then shows
+- **Search and Add filter.** The search waits for a 2-second pause (Enter and leaving the field apply at once) and typing
+  replaces the address entry instead of adding one (see [UI conventions](../architecture/ui-conventions.md)). The search matches item, group and category. Add filter asks for a column and then shows
   its values to tick, each with the number of item types it would leave. The columns are category, group, character,
   where, region and how held, and a minimum total. **Filters from different columns all apply, and several values in
   one column mean any of them.** Each chosen filter is a chip that can be taken away, and the chips can be cleared at

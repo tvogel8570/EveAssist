@@ -1,0 +1,36 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!--
+  A search box that refreshes a list while you type. This is the one place that says how such a box behaves, so every page
+  that has one behaves the same (see documentation/architecture/ui-conventions.md):
+
+  - It waits for a pause of 2 seconds after the last key, so the list does not change under the hands while typing. Enter,
+    and leaving the field (the form's own change event), apply at once.
+  - The answer replaces the list under the box and never the box itself (target and select). A box that is swapped away
+    loses its focus, fires a change event as it is removed (which sends the whole form again), and, if it has an id, has
+    its typed text reset by htmx 4's attribute copy for CSS transitions.
+  - It has an id, so labels and tests can find it.
+  - With replaceUrl the typed search replaces the current address entry instead of adding one, so the back button does not
+    step through every search term.
+
+  id          the element id (required)
+  name        the request parameter
+  value       what the box holds now
+  placeholder the placeholder, which is also its accessible label (already worded)
+  css         the classes
+  url         where the request goes
+  target      the element that is replaced with the answer
+  swap        how, or null for the default
+  select      which part of the answer to use, or null for all of it (use it to swap only the list under the box)
+  include     other fields to send with it, or null
+  sync        how it queues with other requests, or null
+  replaceUrl  true when the address should follow what is typed (replaced, not pushed)
+-->
+<input th:fragment="field(id, name, value, placeholder, css, url, target, swap, select, include, sync, replaceUrl)"
+       type="search" autocomplete="off" th:id="${id}" th:name="${name}" th:value="${value}" th:class="${css}"
+       th:placeholder="${placeholder}" th:aria-label="${placeholder}"
+       th:attr="hx-get=${url}, hx-target=${target}, hx-swap=${swap}, hx-select=${select}, hx-include=${include}, hx-sync=${sync}, hx-replace-url=${replaceUrl} ? 'true' : null"
+       hx-trigger="input changed delay:2000ms, search">
+</body>
+</html>

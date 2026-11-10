@@ -291,6 +291,10 @@ class InventoryBrowseIT extends IntegrationTest {
                         .header("HX-Request", "true"))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
         assertThat(text(searched)).contains("Jita IV").doesNotContain("Amarr VIII");
+        // the box is answered with its id (htmx gives focus back only to an element with one), what was typed, and the
+        // agreed pause (see documentation/architecture/ui-conventions.md)
+        assertThat(searched).contains("id=\"filter-list-search\"").contains("name=\"fq\"").contains("value=\"jita\"")
+                .contains("delay:2000ms").contains("hx-select=\"#filter-choices &gt; *\"");
     }
 
     @Test
