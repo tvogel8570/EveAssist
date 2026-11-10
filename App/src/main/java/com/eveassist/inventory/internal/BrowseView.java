@@ -50,8 +50,8 @@ public record BrowseView(List<ItemView> items, int itemTypes, long units, boolea
     }
 
     /** One place an item type is held, and how. */
-    public record WhereLine(String place, boolean placeUnknown, String region, String held, String hangar,
-            String characters, long total) {
+    public record WhereLine(String place, boolean placeUnknown, String region, String held, String heldCode,
+            String hangar, String characters, long total) {
     }
 
     /** A holder of items, a character or a corporation, with its colour. */

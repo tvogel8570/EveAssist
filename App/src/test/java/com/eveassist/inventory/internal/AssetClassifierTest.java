@@ -246,4 +246,67 @@ class AssetClassifierTest {
 
         assertThat(AssetClassifier.namedCandidates(assets)).containsExactly(10L);
     }
+
+    @Test
+    void everyFlagForSomethingDeliveredAndNotYetTakenIsInDeliveries() {
+        for (var flag : List.of("Deliveries", "CorpDeliveries", "CapsuleerDeliveries", "CorporationGoalDeliveries")) {
+            var assets = List.of(
+                    item(1, 34, STATION, "station", flag),
+                    item(10, 3296, STATION, "station", "Hangar"),
+                    item(11, 34, 10, "item", flag));
+
+            assertThat(placed(assets, 1).held()).as(flag).isEqualTo(Held.DELIVERIES);
+            // inside a container too: the flag, not the depth, decides
+            assertThat(placed(assets, 11).held()).as(flag + " in a container").isEqualTo(Held.DELIVERIES);
+        }
+    }
+
+    @Test
+    void anOrdinaryHangarFlagIsStillAHangar() {
+        assertThat(placed(List.of(item(1, 34, STATION, "station", "Hangar")), 1).held()).isEqualTo(Held.HANGAR);
+        assertThat(placed(List.of(item(1, 34, STATION, "station", "CorpSAG3")), 1).held()).isEqualTo(Held.HANGAR);
+    }
+
+    // ---- an office the corporation lost
+
+    @Test
+    void whatIsInAnImpoundedOfficeIsImpoundedAtTheStationInItsHangarAndTheOfficeIsNotAnItem() {
+        var assets = List.of(
+                new CharacterAsset(OFFICE, 27, 1, STATION, "station", "Impounded", true, null),
+                item(1, 34, OFFICE, "item", "CorpSAG3"),
+                item(10, 3296, OFFICE, "item", "CorpSAG2"),
+                item(11, 35, 10, "item", "Unlocked"));
+
+        var result = corporation(assets);
+
+        assertThat(result).extracting(p -> p.asset().itemId()).containsExactlyInAnyOrder(1L, 10L, 11L);
+        assertThat(corp(assets, 1).held()).isEqualTo(Held.IMPOUNDED);
+        assertThat(corp(assets, 1).rootLocationId()).isEqualTo(STATION);
+        assertThat(corp(assets, 1).depth()).isZero();
+        assertThat(corp(assets, 1).division()).isEqualTo(3);
+        // a container in it, and what the container holds, are impounded too, and keep their depth
+        assertThat(corp(assets, 10).held()).isEqualTo(Held.IMPOUNDED);
+        assertThat(corp(assets, 11).held()).isEqualTo(Held.IMPOUNDED);
+        assertThat(corp(assets, 11).depth()).isEqualTo(1);
+        assertThat(corp(assets, 11).division()).isEqualTo(2);
+    }
+
+    @Test
+    void anOrdinaryOfficeIsStillAHangarAndAFlagOfImpoundedAloneIsImpounded() {
+        var normal = List.of(
+                new CharacterAsset(OFFICE, 27, 1, STATION, "station", "OfficeFolder", true, null),
+                item(1, 34, OFFICE, "item", "CorpSAG1"));
+        assertThat(corp(normal, 1).held()).isEqualTo(Held.HANGAR);
+
+        assertThat(placed(List.of(item(2, 34, STATION, "station", "Impounded")), 2).held()).isEqualTo(Held.IMPOUNDED);
+    }
+
+    @Test
+    void assetSafetyIsDecidedByItsFlagBeforeAnImpoundedOffice() {
+        var assets = List.of(
+                new CharacterAsset(OFFICE, 27, 1, STATION, "station", "Impounded", true, null),
+                item(1, 34, OFFICE, "item", "AssetSafety"));
+
+        assertThat(corp(assets, 1).held()).isEqualTo(Held.ASSET_SAFETY);
+    }
 }

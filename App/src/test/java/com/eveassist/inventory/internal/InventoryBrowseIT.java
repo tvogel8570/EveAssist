@@ -301,7 +301,7 @@ class InventoryBrowseIT extends IntegrationTest {
                 .andExpect(status().isOk()).andExpect(content().string(not(containsString("??"))))
                 .andReturn().getResponse().getContentAsString();
         assertThat(text(how)).contains("in a hangar").contains("Not fitted or in ships");
-        assertThat(how).contains("/inventory?ui=1&amp;how=ASSET_SAFETY&amp;how=DELIVERIES&amp;how=HANGAR&amp;how=IN_CONTAINER");
+        assertThat(how).contains("/inventory?ui=1&amp;how=ASSET_SAFETY&amp;how=DELIVERIES&amp;how=HANGAR&amp;how=IMPOUNDED&amp;how=IN_CONTAINER");
 
         var minimum = mvc.perform(get("/inventory/filter/min").param("ui", "1").param("min", "250")
                         .with(signedInAs(s.sub())))
@@ -805,5 +805,69 @@ class InventoryBrowseIT extends IntegrationTest {
                         .with(signedInAs(s.sub()))).andReturn().getResponse().getContentAsString();
 
         assertThat(raw).contains(">  Prod <");
+    }
+
+    @Test
+    void theHowHeldBadgeOfItemsInDeliveriesHasItsOwnColourAndNoOtherDoes() throws Exception {
+        var sub = newSub();
+        var viewer = viewerFor(sub);
+        var one = link(viewer, "Alt One");
+        assets.replace(one, List.of(asset(1, TRITANIUM, 500, JITA, "Hangar"),
+                asset(2, TRITANIUM, 40, AMARR, "Deliveries")), Instant.now());
+
+        var raw = mvc.perform(get("/inventory/item/" + TRITANIUM).param("ui", "1").param("chars", "1")
+                        .with(signedInAs(sub))).andReturn().getResponse().getContentAsString();
+
+        // one badge says "in deliveries" and is coloured, the "in a hangar" one is not
+        var deliveries = raw.substring(raw.lastIndexOf("<span", raw.indexOf("in deliveries")), raw.indexOf("in deliveries"));
+        var hangar = raw.substring(raw.lastIndexOf("<span", raw.indexOf("in a hangar")), raw.indexOf("in a hangar"));
+        assertThat(deliveries).contains("text-warning");
+        assertThat(hangar).doesNotContain("text-warning");
+        assertThat(raw.split("text-warning", -1)).hasSize(2);
+    }
+
+    @Test
+    void assetSafetyAndImpoundedShareAColourThatDiffersFromDeliveries() throws Exception {
+        var s = setup();
+        var corporation = corporation(s.viewer(), s.one(), "Test Industries");
+        assets.replace(s.two(), List.of(asset(40, TRITANIUM, 7, JITA, "AssetSafety"),
+                asset(41, TRITANIUM, 8, AMARR, "Deliveries")), Instant.now());
+        corporations.replace(corporation, List.of(
+                new CharacterAsset(OFFICE, 27, 1, JITA, "station", "Impounded", true, null),
+                new CharacterAsset(60, TRITANIUM, 9, OFFICE, "item", "CorpSAG1", false, null)), Instant.now());
+
+        var raw = mvc.perform(get("/inventory/item/" + TRITANIUM).param("ui", "1").param("chars", "1")
+                        .with(signedInAs(s.sub()))).andReturn().getResponse().getContentAsString();
+
+        assertThat(badgeBefore(raw, "in asset safety")).contains("text-error").doesNotContain("text-warning");
+        assertThat(badgeBefore(raw, "in an impounded office")).contains("text-error").doesNotContain("text-warning");
+        assertThat(badgeBefore(raw, "in deliveries")).contains("text-warning").doesNotContain("text-error");
+        assertThat(badgeBefore(raw, "in a hangar")).doesNotContain("text-warning").doesNotContain("text-error");
+        // the impounded office is a folder, not an item, and is not listed as one
+        assertThat(text(whole(s.sub(), ""))).doesNotContain("Office");
+    }
+
+    /** The opening tag of the badge whose text is the given words. */
+    private static String badgeBefore(String html, String words) {
+        var at = html.indexOf(words);
+        assertThat(at).as(words).isGreaterThanOrEqualTo(0);
+        return html.substring(html.lastIndexOf("<span", at), at);
+    }
+
+    @Test
+    void theHowHeldFilterOffersImpoundedAndTheLoosePresetKeepsIt() throws Exception {
+        var s = setup();
+        var corporation = corporation(s.viewer(), s.one(), "Test Industries");
+        corporations.replace(corporation, List.of(
+                new CharacterAsset(OFFICE, 27, 1, JITA, "station", "Impounded", true, null),
+                new CharacterAsset(60, TRITANIUM, 9, OFFICE, "item", "CorpSAG1", false, null)), Instant.now());
+
+        var list = text(mvc.perform(get("/inventory/filter/how").param("ui", "1").with(signedInAs(s.sub())))
+                .andReturn().getResponse().getContentAsString());
+        var only = text(whole(s.sub(), "?ui=1&chars=1&how=impounded"));
+
+        assertThat(list).contains("in an impounded office");
+        assertThat(only).contains("1 item type, 9 units").contains("How held: in an impounded office");
+        assertThat(BrowseFilter.none().looseOnly().held()).contains(Held.IMPOUNDED, Held.ASSET_SAFETY, Held.DELIVERIES);
     }
 }

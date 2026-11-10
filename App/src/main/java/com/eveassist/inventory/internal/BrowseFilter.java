@@ -143,7 +143,8 @@ public record BrowseFilter(String search, Set<Integer> categories, Set<Integer> 
 
     /** Leaves out what is fitted to a ship or in a ship's hold, which is not loose stock. */
     public BrowseFilter looseOnly() {
-        return with(Dimension.HOW, Set.of(Held.HANGAR, Held.IN_CONTAINER, Held.DELIVERIES, Held.ASSET_SAFETY));
+        return with(Dimension.HOW, Set.of(Held.HANGAR, Held.IN_CONTAINER, Held.DELIVERIES, Held.ASSET_SAFETY,
+                Held.IMPOUNDED));
     }
 
     public BrowseFilter withMinimum(long minimum) {

@@ -217,7 +217,8 @@ public class BrowseService {
                     : String.join(", ", who);
             var place = placeName(row.placeName(), String.valueOf(row.locationId()));
             return new WhereLine(place, row.placeName() == null, row.regionName() == null ? "" : row.regionName(),
-                    howHeld(row), hangar(row.division(), row.byCharacter().keySet(), hangars), shown, row.total());
+                    howHeld(row), row.held().name(), hangar(row.division(), row.byCharacter().keySet(), hangars), shown,
+                    row.total());
         }).toList();
     }
 

@@ -11,9 +11,11 @@ character's assets are stored, `AssetClassifier` walks each chain to its top and
 
 - `root_location_id`: the station, solar system or structure at the top of the chain;
 - `depth` and `container_type_id`: how deep it is, and the type of what holds it directly;
-- `held`: `HANGAR`, `IN_CONTAINER`, `IN_SHIP`, `FITTED`, `DELIVERIES` or `ASSET_SAFETY`, from the location flag and the
-  depth. Asset safety and deliveries are decided by the flag at any depth, because items inside an asset safety wrap
-  are still in asset safety.
+- `held`: `HANGAR`, `IN_CONTAINER`, `IN_SHIP`, `FITTED`, `DELIVERIES`, `ASSET_SAFETY` or `IMPOUNDED`, from the location
+  flag and the depth. Asset safety and deliveries (every flag ESI gives to something delivered and not yet taken) are
+  decided by the flag at any depth, because items inside an asset safety wrap are still in asset safety. Everything in a
+  corporation's impounded office (type Office, flag `Impounded`) is `IMPOUNDED`, and the office itself is a folder like any
+  other and is not stored.
 
 The walk never uses `location_type`, because real ESI types an item in a structure as `item` (see
 [Character assets](esi.md#character-assets)). Doing this once at store time keeps every page request a plain query, and

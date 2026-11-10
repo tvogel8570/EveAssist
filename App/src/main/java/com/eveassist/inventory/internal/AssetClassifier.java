@@ -52,17 +52,19 @@ final class AssetClassifier {
         for (var asset : assets) {
             byItem.put(asset.itemId(), asset);
         }
-        return assets.stream().filter(asset -> !(corporation && OFFICE_FLAG.equals(asset.locationFlag()))).map(asset -> {
+        return assets.stream().filter(asset -> !(corporation && isOffice(asset))).map(asset -> {
             long at = asset.locationId();
             int depth = 0;
             int steps = 0;
             Integer container = null;
             Integer division = null;
+            var impounded = false;
             var child = asset;
             var holder = byItem.get(at);
             while (holder != null && steps++ < LONGEST_CHAIN) {
-                if (corporation && OFFICE_FLAG.equals(holder.locationFlag())) {
+                if (corporation && isOffice(holder)) {
                     division = divisionOf(child.locationFlag());
+                    impounded |= IMPOUNDED_FLAG.equals(holder.locationFlag());
                 } else {
                     if (container == null) {
                         container = holder.typeId();
@@ -73,8 +75,19 @@ final class AssetClassifier {
                 at = holder.locationId();
                 holder = byItem.get(at);
             }
-            return new Placed(asset, at, depth, container, Held.of(asset.locationFlag(), depth), division);
+            return new Placed(asset, at, depth, container, Held.of(asset.locationFlag(), depth, impounded), division);
         }).toList();
+    }
+
+    /** The flag of an office the corporation lost: the office and what is in it are impounded. */
+    static final String IMPOUNDED_FLAG = "Impounded";
+
+    /**
+     * An office is a folder: it is the item type that never changes, whatever flag it has ({@code OfficeFolder} normally,
+     * {@code Impounded} after the corporation lost it).
+     */
+    private static boolean isOffice(CharacterAsset asset) {
+        return OFFICE_FLAG.equals(asset.locationFlag()) || asset.typeId() == OFFICE_TYPE_ID;
     }
 
     /** The item type of an office. An office is a folder, whatever flag it has (an impounded one is {@code Impounded}). */

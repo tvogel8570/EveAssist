@@ -144,7 +144,10 @@
             <td class="opacity-70 hidden sm:table-cell" th:text="${line.region}">Region</td>
             <td>
                 <!-- whitespace-pre: names from the game keep every space, which players use to order their lists -->
-                <span class="badge badge-sm badge-ghost whitespace-pre" th:text="${line.held}">in a hangar</span>
+                <!-- the items most often "lost" stand out: deliveries in amber, asset safety and impounded in red -->
+                <span class="badge badge-sm badge-ghost whitespace-pre"
+                      th:classappend="${line.heldCode == 'DELIVERIES'} ? 'text-warning font-semibold' : (${line.heldCode == 'ASSET_SAFETY' or line.heldCode == 'IMPOUNDED'} ? 'text-error font-semibold')"
+                      th:text="${line.held}">in a hangar</span>
                 <span class="badge badge-sm badge-outline whitespace-pre" th:if="${!#strings.isEmpty(line.hangar)}" th:text="${line.hangar}">Production</span>
             </td>
             <td class="text-xs hidden md:table-cell" th:if="${showCharacters}" th:text="${line.characters}">Characters</td>

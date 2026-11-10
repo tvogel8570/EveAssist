@@ -58,6 +58,12 @@ Decided with the developer on 2026-11-10, from mockups (`documentation/mockups/i
   named. Ships (an item in a ship's hold, or fitted) keep their plain wording for now. The CSV has a Container column
   (name, or kind when there is no name). Names from the game are shown exactly as typed, spaces included (players use them to
   order their lists in the game), and so are the names of a corporation's hangars. Ships' names are kept the same way.
+- **Items that are hard to find stand out.** An item "in deliveries" (waiting to be taken, for a character, a corporation, a
+  capsuleer or a corporation goal) has its "how held" text in amber. An item "in asset safety", or "in an impounded
+  office" (a corporation lost its office, and what was in it waits there), has it in red. These are the items most often
+  looked for as lost, and nothing else is coloured. An impounded office is a folder like any other office, so it is not
+  listed as an item. "In an impounded office" is its own entry in the How held filter, and the "not fitted or in ships"
+  shortcut keeps it.
 - **How held** says whether an item is in a hangar, in a container, in a ship's hold, fitted to a ship, in deliveries or
   in asset safety. All of them count in the totals unless the filter leaves them out. A shortcut leaves out what is fitted
   or in ships.
