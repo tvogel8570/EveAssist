@@ -65,3 +65,30 @@
   outline: 2px solid var(--color-primary);
   outline-offset: -2px;
 }
+
+/* One colour for each character, used by the bars on the inventory page. The golden angle keeps neighbours apart. */
+.seg-0 { fill: hsl(0 62% 58%); }
+.seg-1 { fill: hsl(138 62% 58%); }
+.seg-2 { fill: hsl(275 62% 58%); }
+.seg-3 { fill: hsl(53 62% 58%); }
+.seg-4 { fill: hsl(190 62% 58%); }
+.seg-5 { fill: hsl(328 62% 58%); }
+.seg-6 { fill: hsl(105 62% 58%); }
+.seg-7 { fill: hsl(243 62% 58%); }
+.seg-8 { fill: hsl(20 62% 58%); }
+.seg-9 { fill: hsl(158 62% 58%); }
+.seg-10 { fill: hsl(295 62% 58%); }
+.seg-11 { fill: hsl(73 62% 58%); }
+.seg-12 { fill: hsl(210 62% 58%); }
+.seg-13 { fill: hsl(348 62% 58%); }
+.seg-14 { fill: hsl(125 62% 58%); }
+.seg-15 { fill: hsl(263 62% 58%); }
+.seg-16 { fill: hsl(40 62% 58%); }
+.seg-17 { fill: hsl(178 62% 58%); }
+.seg-18 { fill: hsl(315 62% 58%); }
+.seg-19 { fill: hsl(93 62% 58%); }
+.seg-20 { fill: hsl(230 62% 58%); }
+.seg-21 { fill: hsl(8 62% 58%); }
+.seg-22 { fill: hsl(145 62% 58%); }
+.seg-23 { fill: hsl(283 62% 58%); }
+.seg-rest { fill: var(--color-base-300); }

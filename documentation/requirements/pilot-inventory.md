@@ -34,13 +34,36 @@ parts. Inventory asks for two scopes, both read-only:
 
 ## Browse view
 
-The first view is totals by item with a search box: one row per item type, with the total across characters, expandable
-to character and location. The developer expects significant changes to it later, so it is built to be changed.
-Wanted:
+Decided with the developer on 2026-11-10, from mockups (`documentation/mockups/inventory-browse-v3.html`).
 
-- **Filters**: by character, region, system or station, and by market group or category.
-- **Sorting and grouping**, and **export** (for example as text).
-- **Shortfall**: for a plan or project, the materials needed, held and missing.
+- **A table of item types**: one row per item type with its **Total** first, then, when characters are shown, a single
+  bar of who holds it, then the category and the number of places. A row opens to show where the item is: the place,
+  its region, how it is held and which characters hold it. There is no list-and-detail layout and no layout grouped by
+  category.
+- **Characters are optional and on by default.** One switch shows or hides the bar. Each character has its own colour,
+  the same in every bar. On a phone the Total stays beside the item's name, and the bar sits under it.
+- **Many characters.** An industrialist may have 21 characters on 7 game accounts. The bar scales to any number, and the
+  status line is one line ("21 characters: 19 up to date, 2 need authorization") that opens into a table. EVE does not
+  say which game account a character is on, so grouping characters by account would need tags the user sets. That is
+  not built.
+- **Search and Add filter.** The search matches item, group and category. Add filter asks for a column and then shows
+  its values to tick, each with the number of item types it would leave. The columns are category, group, character,
+  where, region and how held, and a minimum total. **Filters from different columns all apply, and several values in
+  one column mean any of them.** Each chosen filter is a chip that can be taken away, and the chips can be cleared at
+  once.
+- **How held** says whether an item is in a hangar, in a container, in a ship's hold, fitted to a ship, in deliveries or
+  in asset safety. All of them count in the totals unless the filter leaves them out. A shortcut leaves out what is fitted
+  or in ships.
+- **The address is the filter.** A filtered, sorted view can be reloaded, bookmarked and sent, and the back button steps
+  back through the filters.
+- **Sort** by most units, name or category. A long list shows the first 100 item types and offers more.
+- **Copy as text** (item and total, tab-separated) and **Export CSV** (one line for each item, character, place and
+  way of holding) follow the filter.
+- **Places.** A place is a station or solar system named from the SDE, or a structure named by any character of the
+  account. A structure no character of the account can name shows as an unknown structure with its id.
+- **Blueprints** are tagged BPC or BPO and say that ME and TE are not read yet.
+
+Still wanted, later: shortfall against a plan or project, grouping by market group, and value in ISK.
 
 A location tree like the in-game asset window is not wanted for now.
 

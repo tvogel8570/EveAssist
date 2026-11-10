@@ -54,8 +54,8 @@ class StructureResolverIT extends IntegrationTest {
     private void insertAsset(LinkedCharacter character, long itemId, long locationId, String locationType) {
         jdbc.sql("""
                 INSERT INTO character_asset (character_id, item_id, type_id, quantity, location_id, location_type,
-                    location_flag, is_singleton)
-                VALUES (:id, :item, 34, 1, :location, :type, 'Hangar', false)
+                    location_flag, is_singleton, root_location_id, depth, held)
+                VALUES (:id, :item, 34, 1, :location, :type, 'Hangar', false, :location, 0, 'HANGAR')
                 """)
                 .param("id", character.id()).param("item", itemId).param("location", locationId)
                 .param("type", locationType).update();

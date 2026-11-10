@@ -105,6 +105,62 @@
         applySort(body);
     });
 
+    // The inventory list: a row opens and closes the row below it, where htmx loads the places the first time.
+    document.addEventListener('click', event => {
+        const row = event.target.closest('tr[data-expand]');
+        if (!row || event.target.closest('a, button, input, label, select')) {
+            return;
+        }
+        const detail = document.getElementById(row.dataset.expand);
+        if (!detail) {
+            return;
+        }
+        detail.hidden = !detail.hidden;
+        const mark = row.querySelector('[data-expander]');
+        if (mark) {
+            mark.textContent = detail.hidden ? '▸' : '▾';
+        }
+    });
+
+    // A drop-down menu made of <details> closes when something in it is chosen or when the page is clicked elsewhere.
+    document.addEventListener('click', event => {
+        document.querySelectorAll('details[data-autoclose][open]').forEach(menu => {
+            if (!menu.contains(event.target) || event.target.closest('li')) {
+                menu.open = false;
+            }
+        });
+    });
+
+    // Copy as text: one line for each item in the list, the name and the total, with a tab between.
+    document.addEventListener('click', event => {
+        const button = event.target.closest('[data-copy-lines]');
+        if (!button) {
+            return;
+        }
+        const lines = [...document.querySelectorAll('#browse tr[data-item]')]
+            .map(row => `${row.dataset.item}\t${row.dataset.total}`).join('\n');
+        const done = () => {
+            const label = button.textContent;
+            button.textContent = button.dataset.copied;
+            setTimeout(() => { button.textContent = label; }, 1500);
+        };
+        if (navigator.clipboard?.writeText) {
+            navigator.clipboard.writeText(lines).then(done, () => selectText(lines));
+        } else {
+            selectText(lines);
+        }
+    });
+
+    // Some browsers refuse the clipboard. The text is put in a box and selected, so Ctrl+C still works.
+    function selectText(text) {
+        const box = document.createElement('textarea');
+        box.value = text;
+        box.setAttribute('aria-label', 'Copy this text');
+        box.className = 'textarea textarea-bordered w-full h-32 mt-2';
+        document.getElementById('browse').prepend(box);
+        box.select();
+    }
+
     document.addEventListener('htmx:after:settle', () => {
         sorts.forEach((sort, id) => {
             const body = document.getElementById(id);

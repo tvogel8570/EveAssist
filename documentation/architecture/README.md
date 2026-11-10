@@ -13,6 +13,7 @@ for review under [Open questions](#open-questions).
 
 ## Files
 
+- [Inventory](inventory.md): how assets are stored and browsed, the filter and the page's two answers
 - [Identity and ESI tokens](identity-and-tokens.md): sign-in, character linking, token storage and refresh
 - [ESI access](esi.md): the ESI client, background fetches, freshness, prices and alerts
 - [Data and ownership](data.md): database layout, ownership and sharing, SDE import and versioning

@@ -70,7 +70,7 @@ class InventoryPageIT extends IntegrationTest {
 
         mvc.perform(get("/inventory").with(signedInAs(sub)))
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString("id=\"no-characters\"")))
+                .andExpect(content().string(containsString("id=\"no-assets\"")))
                 .andExpect(content().string(containsString("id=\"nav-inventory\"")))
                 .andExpect(content().string(not(containsString("??"))));
     }

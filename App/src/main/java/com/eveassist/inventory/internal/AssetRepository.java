@@ -45,16 +45,18 @@ class AssetRepository {
     @Transactional
     void replace(UUID characterId, List<CharacterAsset> assets, Instant now) {
         jdbc.sql("DELETE FROM character_asset WHERE character_id = :id").param("id", characterId).update();
-        for (int from = 0; from < assets.size(); from += BATCH) {
-            var chunk = assets.subList(from, Math.min(from + BATCH, assets.size()));
+        var placed = AssetClassifier.classify(assets);
+        for (int from = 0; from < placed.size(); from += BATCH) {
+            var chunk = placed.subList(from, Math.min(from + BATCH, placed.size()));
             template.batchUpdate("""
                     INSERT INTO character_asset (character_id, item_id, type_id, quantity, location_id, location_type,
-                        location_flag, is_singleton, blueprint_copy)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        location_flag, is_singleton, blueprint_copy, root_location_id, depth, container_type_id, held)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """, new BatchPreparedStatementSetter() {
                 @Override
                 public void setValues(PreparedStatement statement, int i) throws SQLException {
-                    var asset = chunk.get(i);
+                    var item = chunk.get(i);
+                    var asset = item.asset();
                     statement.setObject(1, characterId);
                     statement.setLong(2, asset.itemId());
                     statement.setInt(3, asset.typeId());
@@ -68,6 +70,14 @@ class AssetRepository {
                     } else {
                         statement.setBoolean(9, asset.blueprintCopy());
                     }
+                    statement.setLong(10, item.rootLocationId());
+                    statement.setInt(11, item.depth());
+                    if (item.containerTypeId() == null) {
+                        statement.setNull(12, Types.INTEGER);
+                    } else {
+                        statement.setInt(12, item.containerTypeId());
+                    }
+                    statement.setString(13, item.held().name());
                 }
 
                 @Override
