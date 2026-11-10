@@ -54,6 +54,10 @@ list at `/actuator/metrics`:
 
 The numbers are for the running instance since it started, and are not stored anywhere.
 
+Spring Boot's own timing of outgoing HTTP calls (`http.client.requests`) is switched off. ESI URLs carry ids, so every call
+was a new `uri` tag, the 100-value limit was reached (log line "Reached the maximum number of 'uri' tags") and character ids
+would have sat in metric names. Per-route ESI metrics need the URLs built from templates in `HttpEsiClient` first.
+
 ## When to look again
 
 The values here were set for one player with about 20 characters and have not been measured under load. The user counts

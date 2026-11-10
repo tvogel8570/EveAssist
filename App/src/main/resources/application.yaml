@@ -5,6 +5,13 @@ management:
     web:
       exposure:
         include: metrics
+  metrics:
+    enable:
+      # Spring Boot times every outgoing RestClient call and tags it with the full URL. ESI URLs carry ids (contracts,
+      # characters, structures), so every call is a new tag value, the 100-value limit is reached ("Reached the maximum
+      # number of 'uri' tags") and character ids would sit in metric names. Nothing uses it. To get per-route ESI
+      # metrics, build the URLs from templates in HttpEsiClient first.
+      http.client.requests: false
 spring:
   application:
     name: eveassist
