@@ -28,6 +28,8 @@ public class ContractLoader {
     private final int batchSize;
     private final AtomicBoolean running = new AtomicBoolean();
     private final Duration shutdownWait;
+    /** Makes starting a run and stopping the loader exclude each other, so a stop never misses a run that is starting. */
+    private final Object lifecycle = new Object();
     private volatile boolean stopping;
     private volatile CompletableFuture<Void> currentRun = CompletableFuture.completedFuture(null);
 
@@ -47,16 +49,18 @@ public class ContractLoader {
      * @return false when a run is already going, so nothing was done
      */
     public boolean loadAll() {
-        if (stopping) {
-            log.info("Public contract loading not started: the application is stopping");
-            return false;
-        }
-        if (!running.compareAndSet(false, true)) {
-            log.info("Public contracts are already being read; skipping this run");
-            return false;
-        }
         var done = new CompletableFuture<Void>();
-        currentRun = done;
+        synchronized (lifecycle) {
+            if (stopping) {
+                log.info("Public contract loading not started: the application is stopping");
+                return false;
+            }
+            if (!running.compareAndSet(false, true)) {
+                log.info("Public contracts are already being read; skipping this run");
+                return false;
+            }
+            currentRun = done;
+        }
         var started = System.nanoTime();
         var totals = new Totals();
         var outcome = Outcome.FAILED;
@@ -148,8 +152,11 @@ public class ContractLoader {
      */
     @PreDestroy
     void stop() {
-        stopping = true;
-        var run = currentRun;
+        CompletableFuture<Void> run;
+        synchronized (lifecycle) {
+            stopping = true;
+            run = currentRun;
+        }
         if (run.isDone()) {
             return;
         }

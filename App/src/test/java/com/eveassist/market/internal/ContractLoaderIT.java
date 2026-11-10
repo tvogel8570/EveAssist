@@ -158,6 +158,38 @@ class ContractLoaderIT extends IntegrationTest {
     }
 
     @Test
+    void aStopNeverMissesARunThatIsStarting() throws Exception {
+        var active = new java.util.concurrent.atomic.AtomicInteger();
+        var entries = new java.util.concurrent.atomic.AtomicInteger();
+        var prices = new ContractPrices(null, null, null, null, Clock.systemUTC()) {
+            @Override
+            public ContractRefresh refresh(int regionId, int maxContracts, java.util.function.BooleanSupplier stop) {
+                entries.incrementAndGet();
+                active.incrementAndGet();
+                try {
+                    Thread.sleep(2);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                } finally {
+                    active.decrementAndGet();
+                }
+                return new ContractRefresh(0, 0, 0, 0, List.of());
+            }
+        };
+        for (int i = 0; i < 200; i++) {
+            var loader = new ContractLoader(prices, 500, SHUTDOWN_WAIT);
+            var run = Thread.ofPlatform().start(loader::loadAll);
+
+            loader.stop();
+
+            var enteredAtStop = entries.get();
+            assertThat(active.get()).as("no run is still going when stop returns (round %d)", i).isZero();
+            run.join();
+            assertThat(entries.get()).as("no run begins after stop returns (round %d)", i).isEqualTo(enteredAtStop);
+        }
+    }
+
+    @Test
     void shutdownReturnsAtOnceWhenNothingIsRunning() {
         var started = System.nanoTime();
 

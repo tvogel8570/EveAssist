@@ -18,6 +18,8 @@ import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.function.BooleanSupplier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 /**
@@ -26,6 +28,8 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class ContractPrices {
+
+    private static final Logger log = LoggerFactory.getLogger(ContractPrices.class);
 
     /** The Forge, the region whose contracts are read. */
     public static final int THE_FORGE = 10000002;
@@ -89,6 +93,8 @@ public class ContractPrices {
                 } else if (result.data() == null || result.data().isEmpty()) {
                     // expired, accepted, or one ESI has no lines for. It stays, read and without lines, so that a sync
                     // does not add it again while the list still shows it
+                    log.info("ESI had no lines for public contract {} (empty answer, 204 or 403); kept as read with no lines",
+                            entry.getKey());
                     contracts.saveItems(entry.getKey(), List.of(), new ContractFlags(false, false));
                     gone++;
                 } else {

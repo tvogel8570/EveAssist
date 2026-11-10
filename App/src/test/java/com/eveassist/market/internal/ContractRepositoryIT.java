@@ -75,6 +75,26 @@ class ContractRepositoryIT extends IntegrationTest {
         assertThat(flagged(onlyCopyAndMineral)).isFalse();
     }
 
+    @Test
+    void runsStayNullForAnOriginalAndKeepTheirValueWhenTeIsNull() {
+        var id = 9_950_020L;
+        jdbc.sql("""
+                INSERT INTO contract_public (contract_id, region_id, price, issued_at, expires_at, volume, items_fetched)
+                VALUES (:id, :region, 100, now(), now() + interval '1 day', 0.01, true)
+                """).param("id", id).param("region", REGION + 3).update();
+        insertLine(id, 1, 1000, false, 10, 20, null); // an original: ME and TE, no runs
+        insertLine(id, 2, 1001, true, 5, null, 7);    // a copy with no TE but runs
+
+        var stored = contracts.contractsWithCopyOf(REGION + 3, 1001, Instant.now());
+
+        var lines = stored.getFirst().lines();
+        var original = lines.stream().filter(l -> l.typeId() == 1000).findFirst().orElseThrow();
+        var copy = lines.stream().filter(l -> l.typeId() == 1001).findFirst().orElseThrow();
+        assertThat(original.runs()).isNull();
+        assertThat(copy.runs()).isEqualTo(7);
+        assertThat(copy.te()).isNull();
+    }
+
     private void insertLine(long contract, long record, int type, boolean copy, Integer me, Integer te, Integer runs) {
         jdbc.sql("""
                 INSERT INTO contract_public_item (contract_id, record_id, type_id, quantity, included, is_copy, me, te, runs)

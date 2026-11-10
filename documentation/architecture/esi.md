@@ -116,7 +116,8 @@ age.
   and, for a small share of contracts that are still in the list (5 of about 2,300 on 2026-11-09, some hours old), 200
   with an empty body (`content-length: 0`). The OpenAPI spec describes neither. The client reads all three as "no lines",
   and the app keeps such a contract as read, with no lines, so that a sync does not add it again and nothing asks about
-  it again. A sync removes it when it leaves the list. (A first version read the empty body as null and failed with a
+  it again. Each one is logged at INFO with its id, so that real cases can be asked about again later and show whether the
+  empty answer is transient (a retry is not built). A sync removes it when it leaves the list. (A first version read the empty body as null and failed with a
   `NullPointerException`, so those contracts stayed pending and were asked about in every batch.)
 
   **A blueprint original has no `runs` (found 2026-11-09).** The spec says `runs` is -1 for an original. Real ESI sends

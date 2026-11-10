@@ -152,10 +152,9 @@ public class ContractRepository {
                 .query((rs, row) -> {
                     var id = rs.getLong("contract_id");
                     contracts.put(id, rs.getBigDecimal("price"));
-                    var runs = rs.getInt("runs");
                     lines.computeIfAbsent(id, key -> new ArrayList<>()).add(new ContractLine(rs.getInt("type_id"),
                             rs.getLong("quantity"), rs.getBoolean("included"), rs.getBoolean("is_copy"),
-                            rs.getObject("me", Integer.class), rs.getObject("te", Integer.class), rs.wasNull() ? null : runs));
+                            rs.getObject("me", Integer.class), rs.getObject("te", Integer.class), rs.getObject("runs", Integer.class)));
                     return null;
                 }).list();
         return contracts.entrySet().stream()
