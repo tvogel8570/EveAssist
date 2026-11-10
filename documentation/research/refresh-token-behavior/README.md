@@ -44,3 +44,22 @@ third-party applications page and revoke EveAssist for the test character if it 
 | Step 4: T3 refused | Revoke-then-authorize also fails, and the flow needs another design. |
 
 Send the report file back, or paste its lines.
+
+## Result, 2026-11-10
+
+Run against one character (Erich Benford), with EveAssist stopped. Steps 1 and 2 showed no consent screen, because EVE
+already had a grant for the character and application that covered the scope. After the revocation in step 3, step 4 did
+show it.
+
+| Step | Result |
+|---|---|
+| 1 | T1 authorized. A refresh worked and returned the **same** refresh token (no rotation). |
+| 2 | T2 authorized for the same character. **T1 and T2 both refreshed fine**, each returning the same token it was sent. |
+| 3 | Revoked T1 (HTTP 200). T2 was then **refused**: `400 invalid_grant: Invalid refresh token. Character grant missing/expired.`, and so was T1. Revocation ends the whole grant. |
+| 4 | Revoke everything, authorize again (T3). It worked. Revoke-then-authorize gives a fresh grant. |
+| 5 | Revoking an already revoked token and a made-up one both answered HTTP 200. |
+
+What it means for EveAssist is in `documentation/architecture/identity-and-tokens.md` (one grant for each character and
+application). Not tested in that run: whether T1 and T2 were the very same string (the script now compares them by hash and
+says so in step 2), and what a re-authorization with fewer scopes does to the existing grant.
+

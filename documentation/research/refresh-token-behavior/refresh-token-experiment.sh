@@ -125,6 +125,12 @@ say ""
 say "Step 2: authorize the SAME character again (T2) without revoking anything. Does T1 still work?"
 authorize T2 || exit 1
 if [[ "${CHARACTER_OF[T1]}" != "${CHARACTER_OF[T2]}" ]]; then say "  Different characters: start again."; exit 1; fi
+# the same refresh token string again, or a new one? Compared by hash, never printed
+if [[ "$(sha256sum < "$WORK/T1.refresh")" == "$(sha256sum < "$WORK/T2.refresh")" ]]; then
+  say "  T1 and T2 are the SAME refresh token string"
+else
+  say "  T1 and T2 are DIFFERENT refresh token strings"
+fi
 refresh T1 "T1 (after T2 was issued)"; t1_ok=$?
 refresh T2 "T2"; t2_ok=$?
 

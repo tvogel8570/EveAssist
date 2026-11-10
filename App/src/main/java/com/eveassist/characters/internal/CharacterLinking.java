@@ -37,19 +37,17 @@ public class CharacterLinking {
     private final CharacterRepository characters;
     private final TokenCipher cipher;
     private final PortraitSource portraits;
-    private final TokenRevoker revoker;
     private final CharacterAccessTokens accessTokens;
     private final SecureRandom random = new SecureRandom();
 
     CharacterLinking(EveSso sso, FeatureRepository features, CharacterRepository characters, TokenCipher cipher,
-            PortraitSource portraits, TokenRevoker revoker, CharacterAccessTokens accessTokens) {
+            PortraitSource portraits, CharacterAccessTokens accessTokens) {
         this.accessTokens = accessTokens;
         this.sso = sso;
         this.features = features;
         this.characters = characters;
         this.cipher = cipher;
         this.portraits = portraits;
-        this.revoker = revoker;
     }
 
     /** Asks for the scopes of the turned-on features and nothing else. Empty when no feature is on. */

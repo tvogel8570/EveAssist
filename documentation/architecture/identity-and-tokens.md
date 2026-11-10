@@ -94,9 +94,9 @@ Status: **agreed** (separate application); the validation rules follow the EVE S
 - The data key is wrapped by an AWS KMS key. At startup the app asks KMS to unwrap it once and holds it in memory. In
   dev the data key comes from `env.properties`, which is not committed, as `CLAUDE.md` describes.
 - Each stored token records the id of the key that encrypted it. To rotate, a new data key is added and used for new
-  writes. EVE SSO returns a new refresh token at every refresh, and the newest one is stored, so old ciphertexts
-  are replaced as characters are used. Tokens left on the old key are re-encrypted by a one-off job before that key
-  is retired.
+  writes. A refresh stores the newest refresh token EVE returns, but EVE returned the same token every time when this was
+  checked (2026-11-10), so use alone does not move a token to the new key. Tokens left on the old key are re-encrypted by
+  a one-off job before that key is retired.
 - Refresh tokens are never logged, never put in exceptions, and never included in the data export.
 
 Why in the app rather than pgcrypto: the key never travels to the database, so it cannot show up in query logs or
@@ -113,6 +113,15 @@ Status: **agreed**.
   deliberately not background tasks (see [Background tasks](code-structure.md#background-tasks)): they run in the
   request, and the lock is held only for the one call to EVE SSO, which times out after 30 seconds.
 - After a 401, the token is refreshed once and the request retried once. There is no retry loop.
+- EVE may rotate refresh tokens without notice (its old documentation says the returned token "may not be the same",
+  and the new documentation says nothing), so every refresh stores the token it gets back. If the save fails, the new
+  token is kept in memory, sent at the next refresh and saved again at the next call, because EVE may have retired the old
+  one. The first time a character gets a different token, a log line says so and the counter
+  `eveassist.sso.refresh.rotated` rises, which is the cue to re-run the experiment and learn whether the old token
+  survives. EveAssist never revokes after a rotation and never tries the old token, because reuse of a rotated token can
+  end the whole grant.
+- At most two refreshes run at once on an instance, because each holds a pooled connection for its lock and needs another
+  for its own queries.
 - When EVE SSO refuses the refresh token (`invalid_grant`), the character is marked as needing re-authorization, its
   stored data stays, and an alert is raised. Re-linking through EVE SSO clears the mark.
 - Before each ESI request, the endpoint's scope is checked against the character's granted scopes. A missing scope
@@ -156,10 +165,27 @@ off, which one click could turn into re-linking every character.
 
 Revocation uses the `revocation_endpoint` in EVE SSO's metadata (`https://login.eveonline.com/v2/oauth/revoke`),
 authenticated like the token endpoint, with `token` and `token_type_hint=refresh_token`. The EVE documentation pages do
-not describe it (found 2026-11-09). The same call is made when a character is **removed** and when it is **linked
-again**, so the old token does not stay valid at EVE after our copy is gone. Our own deletion never waits for EVE: when
-EVE does not confirm, the page says the old access may still be valid and where to revoke it by hand. A refused link
-(a character on another account) never revokes anything, because only the owner's own token is looked up.
+not describe it (found 2026-11-09). The same call is made when a character is **removed**, so the token does not stay
+valid at EVE after our copy is gone. Our own deletion never waits for EVE: when EVE does not confirm, the page says the
+old access may still be valid and where to revoke it by hand. A refused link (a character on another account) never
+revokes anything, because only the owner's own token is looked up.
+
+**One grant for each character and application** (found 2026-11-10 with
+[`refresh-token-experiment.sh`](../research/refresh-token-behavior/README.md), which asks EVE SSO directly). EVE keeps one
+grant for a character and the application, and its refresh tokens belong to that grant:
+
+- Authorizing a character again while the grant already covers the scopes shows no consent screen, and the first token
+  keeps working beside the second.
+- **Revoking either token ends the grant, so every token of it stops working** (`invalid_grant: Invalid refresh token.
+  Character grant missing/expired.`). The first version of linking revoked the previous token after storing the new one,
+  and characters linked again while their old token was valid were refused at their first refresh. So **linking again does
+  not revoke**. Removing a character and **Drop unused permissions** do revoke, and the latter revokes before it links, so
+  the new authorization starts a new grant with a consent screen.
+- Because the tokens share one grant, a replaced token is not a second credential with a life of its own: it ends when the
+  current token is revoked, on removal or on the player's own revocation at CCP's third-party applications page.
+- A refresh returned the same refresh token every time, so EVE does not rotate tokens for this application today.
+- The revoke endpoint answers 200 for a token that is already revoked and for a made-up one, so a 200 only says that EVE
+  took the request.
 
 **Portraits.** Pages load nothing from third parties, so the server downloads a character's 128 px portrait from EVE's
 image server once, when the character is linked or re-linked, and stores it in the `character` row (about 10 KB). The
