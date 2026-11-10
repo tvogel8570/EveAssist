@@ -38,6 +38,7 @@
                     <span class="text-xs opacity-60" th:text="${choice.itemTypes}">3</span>
                 </label>
             </div>
+            <p class="text-xs opacity-60" th:if="${facet.truncated}" th:text="#{inventory.filter.truncated}">Search to narrow this list.</p>
             <p class="text-xs opacity-60" th:text="#{inventory.filter.count}">Item types each value would leave.</p>
         </div>
     </div>

@@ -33,7 +33,9 @@ no open column, which closes the list. Values that do not parse are dropped, a v
 100 characters, because the filter arrives in the address.
 
 The list of values for a column leaves out that column's own filter, so a choice can be widened, and counts the item
-types each value would leave under all the other filters.
+types each value would leave under all the other filters, including the minimum total. It returns at most 500 values and
+the list's own search runs in the database, so a long list (places, groups) stays reachable. A page lists at most 1,000
+item types and then says so, instead of offering more.
 
 ## Queries
 
@@ -45,14 +47,17 @@ region comes from the system stored with the name.
 
 ## The bar and its colours
 
-Each character has one of 24 colours, from its place among the viewer's characters in the order of their EVE ids, so
-the colour is the same everywhere and only grows when a character is linked. A bar is an inline SVG with a rectangle
+Each character has one of 24 colours, from its place among the viewer's characters in the order they were first linked
+(`linked_at`, then EVE id), so the colour is the same everywhere and linking a character never changes another's.
+Removing one moves the colours of those linked after it, and more than 24 characters share colours. A bar is an inline SVG with a rectangle
 for each character, and its colours are classes in `app.css` (`seg-0` to `seg-23`). The page writes no inline style, so
 that a strict Content Security Policy (see [Gaining players' trust](../requirements/gain-trust.md)) will not block it.
 
 ## The CSV export
 
-One line for each item, character, place and way of holding, at most 100,000 lines. Every cell is quoted, and a cell that
+One line for each item, character, place and way of holding, honouring every filter including the minimum total. It
+stops at 100,000 lines and then says so in a last line. Copy as text asks the server for the same filter and gives every
+item type (up to 10,000), not only the page on screen. Every cell is quoted, and a cell that
 starts with `=`, `+`, `-` or `@` (and is not a plain number) gets a quote in front, because names come from the game and
 a spreadsheet would run such a cell as a formula.
 

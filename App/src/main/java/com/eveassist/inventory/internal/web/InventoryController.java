@@ -166,6 +166,14 @@ class InventoryController {
         return "redirect:/inventory";
     }
 
+    /** Every item type the filter lets through, as lines of name, a tab and the total, for Copy as text. */
+    @GetMapping(value = "/inventory/export.txt", produces = "text/plain;charset=UTF-8")
+    @org.springframework.web.bind.annotation.ResponseBody
+    String copyText(Viewer viewer, HttpServletRequest request, HttpServletResponse response) {
+        response.setHeader("Cache-Control", "no-store");
+        return browse.copyText(viewer, BrowseFilter.parse(request.getParameterMap()));
+    }
+
     /** Everything the filter lets through, one line for each item, character, place and way of holding. */
     @GetMapping("/inventory/export.csv")
     void export(Viewer viewer, HttpServletRequest request, HttpServletResponse response) throws IOException {

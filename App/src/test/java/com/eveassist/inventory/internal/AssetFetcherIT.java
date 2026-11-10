@@ -247,6 +247,31 @@ class AssetFetcherIT extends IntegrationTest {
     }
 
     @Test
+    void anUnexpectedFailureForACharacterThatWasRemovedIsHandledNotThrown() {
+        var gone = new com.eveassist.characters.LinkedCharacter(UUID.randomUUID(), 2_100_000_001L, "Gone",
+                java.util.Set.of(ASSETS_SCOPE), false);
+        esi.throwOnAssets(new IllegalStateException("boom"));
+
+        fetcher.fetch(gone);
+
+        assertThat(storedRows(gone.id())).isZero();
+    }
+
+    @Test
+    void anUnexpectedFailureIsRecordedForACharacterThatStillExists() {
+        var viewer = viewerFor(newSub());
+        var character = linkActive(viewer, "Alt One");
+        esi.throwOnAssets(new IllegalStateException("boom"));
+
+        fetcher.refresh(viewer);
+        awaitIdle(viewer);
+
+        var status = statusOf(viewer, character.id());
+        assertThat(status.phase()).isEqualTo(Phase.FAILED);
+        assertThat(status.problem()).contains("unexpectedly").doesNotContain("boom");
+    }
+
+    @Test
     void aFetchThatFindsItsCharacterGoneLeavesNothingBehind() {
         var viewer = viewerFor(newSub());
         var gone = new com.eveassist.characters.LinkedCharacter(UUID.randomUUID(), 2_100_000_000L, "Gone",

@@ -3,8 +3,14 @@ package com.eveassist.inventory.internal;
 import java.util.List;
 import java.util.UUID;
 
-/** What the inventory page shows for a filter. Plain data for the templates: every text is already worded. */
-public record BrowseView(List<ItemView> items, int itemTypes, long units, boolean more, boolean showCharacters,
+/**
+ * What the inventory page shows for a filter. Plain data for the templates: every text is already worded.
+ *
+ * @param more   true when there are more item types than are shown and asking for more would show them
+ * @param capped true when there are more than the most the page will ever list, so only a narrower filter helps
+ */
+public record BrowseView(List<ItemView> items, int itemTypes, long units, boolean more, boolean capped,
+        boolean showCharacters,
         List<Chip> chips, String clearAllQuery, String exportQuery, String moreQuery, boolean unfiltered,
         boolean hasAssets) {
 
@@ -39,7 +45,8 @@ public record BrowseView(List<ItemView> items, int itemTypes, long units, boolea
     }
 
     /** The list of values for one column. */
-    public record FacetView(String dimension, String title, List<Choice> choices, boolean searchable) {
+    public record FacetView(String dimension, String title, List<Choice> choices, boolean searchable,
+            boolean truncated) {
     }
 
     /** One place an item type is held, and how. */

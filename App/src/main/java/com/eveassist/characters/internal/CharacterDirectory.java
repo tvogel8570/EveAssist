@@ -19,7 +19,7 @@ class CharacterDirectory implements LinkedCharacters {
     public List<LinkedCharacter> of(Viewer viewer) {
         return characters.listFor(viewer.accountId()).stream()
                 .map(row -> new LinkedCharacter(row.id(), row.eveCharacterId(), row.name(), row.scopes(),
-                        "NEEDS_REAUTHORIZATION".equals(row.state())))
+                        "NEEDS_REAUTHORIZATION".equals(row.state()), row.linkedAt()))
                 .toList();
     }
 }

@@ -25,7 +25,8 @@ import org.springframework.stereotype.Service;
 /**
  * Answers the inventory page for one viewer. The viewer's own linked characters are the only ones asked about, and each
  * has a colour that stays the same on every page and in every bar: the colour comes from its place among the viewer's
- * characters in the order of their EVE ids, which only grows when one is linked.
+ * characters in the order they were first linked, so linking a character never changes the colour of another. Removing
+ * one moves the colours of those linked after it, and more than 24 characters share colours.
  */
 @Service
 public class BrowseService {
@@ -45,7 +46,8 @@ public class BrowseService {
 
     /** The viewer's characters with their colours, in the order that fixes the colours. */
     private Map<UUID, BrowseView.CharacterRef> characters(Viewer viewer) {
-        var sorted = linked.of(viewer).stream().sorted(Comparator.comparingLong(LinkedCharacter::eveCharacterId))
+        var sorted = linked.of(viewer).stream()
+                .sorted(Comparator.comparing(LinkedCharacter::linkedAt).thenComparingLong(LinkedCharacter::eveCharacterId))
                 .toList();
         var result = new java.util.LinkedHashMap<UUID, BrowseView.CharacterRef>();
         for (int i = 0; i < sorted.size(); i++) {
@@ -63,15 +65,26 @@ public class BrowseService {
         var characters = characters(viewer);
         var ids = characters.keySet().toArray(UUID[]::new);
         if (ids.length == 0) {
-            return new BrowseView(List.of(), 0, 0, false, filter.showCharacters(), List.of(), none(filter), "", "",
-                    filter.unfiltered(), false);
+            return new BrowseView(List.of(), 0, 0, false, false, filter.showCharacters(), List.of(), none(filter), "",
+                    "", filter.unfiltered(), false);
         }
         var rows = queries.items(ids, filter);
         var summary = queries.summary(ids, filter);
         var items = rows.stream().map(row -> item(row, characters)).toList();
-        return new BrowseView(items, summary.itemTypes(), summary.units(), summary.itemTypes() > items.size(),
-                filter.showCharacters(), chips(ids, characters, filter), none(filter), filter.toQuery(),
+        return new BrowseView(items, summary.itemTypes(), summary.units(),
+                moreAvailable(summary.itemTypes(), items.size(), filter.limit()),
+                capped(summary.itemTypes(), items.size(), filter.limit()), filter.showCharacters(), chips(ids, characters, filter), none(filter), filter.toQuery(),
                 filter.withLimit(filter.limit() + BrowseFilter.FIRST_PAGE).toQuery(), filter.unfiltered(), true);
+    }
+
+    /** More item types than shown, and a bigger page would show them. */
+    static boolean moreAvailable(int itemTypes, int shown, int limit) {
+        return itemTypes > shown && limit < BrowseFilter.MOST_ITEMS;
+    }
+
+    /** More item types than shown, but the page already lists the most it ever will: only a narrower filter helps. */
+    static boolean capped(int itemTypes, int shown, int limit) {
+        return itemTypes > shown && limit >= BrowseFilter.MOST_ITEMS;
     }
 
     private static String none(BrowseFilter filter) {
@@ -137,6 +150,9 @@ public class BrowseService {
         if (dimension == Dimension.PLACE) {
             return placeName(null, value);
         }
+        if (dimension == Dimension.CHARACTER) {
+            return text("inventory.character.unlinked");
+        }
         return dimension == Dimension.REGION && "0".equals(value) ? text("inventory.region.unknown") : value;
     }
 
@@ -176,11 +192,12 @@ public class BrowseService {
         var characters = characters(viewer);
         var title = text("inventory.filter." + dimension.parameter);
         if (characters.isEmpty()) {
-            return new FacetView(dimension.parameter, title, List.of(), true);
+            return new FacetView(dimension.parameter, title, List.of(), true, false);
         }
         var chosen = filter.valuesOf(dimension);
         var needle = search == null ? "" : search.strip().toLowerCase(Locale.ROOT);
-        var choices = queries.facet(characters.keySet().toArray(UUID[]::new), dimension, filter).stream().map(facet -> {
+        var found = queries.facet(characters.keySet().toArray(UUID[]::new), dimension, filter, search);
+        var choices = found.stream().map(facet -> {
             var label = switch (dimension) {
                 case CHARACTER -> {
                     var character = characters.get(UUID.fromString(facet.value()));
@@ -194,8 +211,33 @@ public class BrowseService {
             return new Choice(facet.value(), label, facet.itemTypes(), chosen.contains(facet.value()));
         }).filter(choice -> needle.isEmpty() || choice.label().toLowerCase(Locale.ROOT).contains(needle))
                 .sorted(Comparator.comparing(Choice::label, String.CASE_INSENSITIVE_ORDER)).toList();
-        return new FacetView(dimension.parameter, title, choices, dimension != Dimension.HOW);
+        return new FacetView(dimension.parameter, title, choices, dimension != Dimension.HOW,
+                found.size() >= BrowseQueries.MOST_FACET_VALUES);
     }
+
+    /** True when the export reached its size limit, so lines after the last one may be missing. */
+    static boolean cutShort(int rows, int most) {
+        return rows >= most;
+    }
+
+    /**
+     * Every item type the filter lets through, one line each with the name, a tab and the total, for Copy as text. It
+     * is the whole list, not the page that is on screen, up to a limit that no real list reaches.
+     */
+    public String copyText(Viewer viewer, BrowseFilter filter) {
+        var characters = characters(viewer);
+        if (characters.isEmpty()) {
+            return "";
+        }
+        var out = new StringBuilder();
+        for (var row : queries.items(characters.keySet().toArray(UUID[]::new), filter, MOST_COPIED)) {
+            out.append(row.name().replaceAll("[\\t\\r\\n]+", " ")).append('\t').append(row.total()).append('\n');
+        }
+        return out.toString();
+    }
+
+    /** The most item types Copy as text gives. */
+    static final int MOST_COPIED = 10_000;
 
     /** The lines of the CSV export, worded. */
     public List<String[]> export(Viewer viewer, BrowseFilter filter) {
@@ -204,11 +246,15 @@ public class BrowseService {
         if (characters.isEmpty()) {
             return lines;
         }
-        for (var row : queries.export(characters.keySet().toArray(UUID[]::new), filter)) {
+        var rows = queries.export(characters.keySet().toArray(UUID[]::new), filter);
+        for (var row : rows) {
             var character = characters.get(row.character());
             lines.add(new String[] {row.item(), row.category(), row.group(), character == null ? "" : character.name(),
                     row.place(), row.region(), text("inventory.held." + row.held().name()),
                     String.valueOf(row.quantity()), row.blueprint()});
+        }
+        if (cutShort(rows.size(), BrowseQueries.MOST_EXPORT_ROWS)) {
+            lines.add(new String[] {text("inventory.csv.cut", BrowseQueries.MOST_EXPORT_ROWS)});
         }
         return lines;
     }

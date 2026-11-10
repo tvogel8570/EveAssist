@@ -118,10 +118,15 @@ class BrowseQueries {
 
     /** The item types that pass the filter, by the chosen sort, one page of them. */
     List<ItemRow> items(UUID[] characters, BrowseFilter filter) {
+        return items(characters, filter, filter.limit());
+    }
+
+    /** The same, with a page size of the caller's choosing, for the copy of the whole list. */
+    List<ItemRow> items(UUID[] characters, BrowseFilter filter, int limit) {
         var where = where(characters, filter, null);
         var params = new HashMap<>(where.params());
         params.put("min", filter.minTotal());
-        params.put("limit", filter.limit());
+        params.put("limit", limit);
         var order = switch (filter.sort()) {
             case TOTAL -> "t.total DESC, t.name";
             case NAME -> "t.name";
@@ -153,6 +158,15 @@ class BrowseQueries {
                         List.of((UUID[]) rs.getArray("holders").getArray()),
                         java.util.Arrays.stream((Long[]) rs.getArray("held").getArray()).toList()))
                 .list();
+    }
+
+    /** The item types whose total, within the filter, reaches the minimum. The export and the lists of values use it. */
+    List<Integer> typesAtLeastMinimum(UUID[] characters, BrowseFilter filter) {
+        var where = where(characters, filter, null);
+        var params = new HashMap<>(where.params());
+        params.put("min", filter.minTotal());
+        return jdbc.sql("SELECT a.type_id " + FROM + where.sql() + " GROUP BY a.type_id HAVING sum(a.quantity) >= :min")
+                .params(params).query(Integer.class).list();
     }
 
     /** How many item types pass the filter and how many units they come to, before the page limit. */
@@ -200,7 +214,29 @@ class BrowseQueries {
      * widened.
      */
     List<Facet> facet(UUID[] characters, Dimension dimension, BrowseFilter filter) {
+        return facet(characters, dimension, filter, null);
+    }
+
+    /** The most values a list returns. A search in the list narrows it, so the rest stay reachable. */
+    static final int MOST_FACET_VALUES = 500;
+
+    /**
+     * With a search, only values whose name contains it are returned. The names of characters and ways of holding are
+     * not in the database, so the caller searches those.
+     */
+    List<Facet> facet(UUID[] characters, Dimension dimension, BrowseFilter filter, String search) {
         var where = where(characters, filter, dimension);
+        var sql = where.sql();
+        var params = new HashMap<>(where.params());
+        if (filter.minTotal() > 0) {
+            // the counts must agree with the list: only item types that reach the minimum under the other filters
+            var types = typesAtLeastMinimum(characters, filter.without(dimension));
+            if (types.isEmpty()) {
+                return List.of();
+            }
+            sql += " AND a.type_id = ANY(:types)";
+            params.put("types", types.toArray(Integer[]::new));
+        }
         var columns = switch (dimension) {
             case CATEGORY -> new String[] {"g.\"categoryID\"::text", "cat.\"categoryName\""};
             case GROUP -> new String[] {"ty.\"groupID\"::text", "g.\"groupName\""};
@@ -209,9 +245,17 @@ class BrowseQueries {
             case REGION -> new String[] {REGION_ID + "::text", "COALESCE(rg.\"regionName\", '')"};
             case HOW -> new String[] {"a.held", "a.held"};
         };
+        var named = dimension != Dimension.CHARACTER && dimension != Dimension.HOW;
+        var having = "";
+        if (named && search != null && !search.isBlank()) {
+            having = " HAVING min(" + columns[1] + ") ILIKE :search";
+            params.put("search", "%" + search.strip().replace("\\", "\\\\").replace("%", "\\%")
+                    .replace("_", "\\_") + "%");
+        }
         return jdbc.sql("SELECT " + columns[0] + " AS value, min(" + columns[1] + ") AS label, "
-                        + "count(DISTINCT a.type_id) AS item_types " + FROM + where.sql() + " GROUP BY 1 ORDER BY 2, 1")
-                .params(where.params())
+                        + "count(DISTINCT a.type_id) AS item_types " + FROM + sql + " GROUP BY 1" + having
+                        + " ORDER BY 2, 1 LIMIT " + MOST_FACET_VALUES)
+                .params(params)
                 .query((rs, row) -> new Facet(rs.getString("value"), rs.getString("label"), rs.getInt("item_types")))
                 .list();
     }
@@ -251,15 +295,26 @@ class BrowseQueries {
     static final int MOST_EXPORT_ROWS = 100_000;
 
     List<ExportRow> export(UUID[] characters, BrowseFilter filter) {
-        var where = where(characters, filter.withoutMinimum(), null);
+        var where = where(characters, filter, null);
+        var sql = where.sql();
+        var params = new HashMap<>(where.params());
+        if (filter.minTotal() > 0) {
+            // the minimum is on an item type's total, so the types that reach it are found first
+            var types = typesAtLeastMinimum(characters, filter);
+            if (types.isEmpty()) {
+                return List.of();
+            }
+            sql += " AND a.type_id = ANY(:types)";
+            params.put("types", types.toArray(Integer[]::new));
+        }
         return jdbc.sql("SELECT ty.\"typeName\" AS item, cat.\"categoryName\" AS category, g.\"groupName\" AS grp, "
                         + "a.character_id, " + PLACE_NAME + " AS place_name, a.root_location_id, "
                         + "rg.\"regionName\" AS region_name, a.held, sum(a.quantity) AS quantity, "
                         + "CASE WHEN a.blueprint_copy IS TRUE THEN 'copy' WHEN cat.\"categoryID\" = 9 THEN 'original' "
-                        + "ELSE '' END AS blueprint " + FROM + where.sql()
+                        + "ELSE '' END AS blueprint " + FROM + sql
                         + " GROUP BY item, category, grp, a.character_id, place_name, a.root_location_id, region_name, "
                         + "a.held, blueprint ORDER BY item, a.character_id, a.root_location_id LIMIT " + MOST_EXPORT_ROWS)
-                .params(where.params())
+                .params(params)
                 .query((rs, row) -> new ExportRow(rs.getString("item"), rs.getString("category"), rs.getString("grp"),
                         rs.getObject("character_id", UUID.class),
                         rs.getString("place_name") != null ? rs.getString("place_name")

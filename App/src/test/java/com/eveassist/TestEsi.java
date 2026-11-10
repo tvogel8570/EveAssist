@@ -40,6 +40,7 @@ public class TestEsi implements EsiClient {
         structures.clear();
         structuresAsked.clear();
         assetsGate = null;
+        assetsFailure = null;
         sells.put(34, new BigDecimal("5.00"));
         sells.put(35, new BigDecimal("10.00"));
     }
@@ -94,6 +95,12 @@ public class TestEsi implements EsiClient {
     }
 
     private volatile java.util.concurrent.CountDownLatch assetsGate;
+    private volatile RuntimeException assetsFailure;
+
+    /** Makes every asset call throw, as an ESI client does for a failure it did not expect. */
+    public void throwOnAssets(RuntimeException failure) {
+        assetsFailure = failure;
+    }
 
     /** Holds every asset call until the latch opens, so a test can look at a fetch that is still running. */
     public void holdAssetCalls(java.util.concurrent.CountDownLatch gate) {
@@ -110,6 +117,9 @@ public class TestEsi implements EsiClient {
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
+        }
+        if (assetsFailure != null) {
+            throw assetsFailure;
         }
         return assets.getOrDefault(eveCharacterId, EsiResult.updated(List.of(), Instant.now().plusSeconds(3600)));
     }

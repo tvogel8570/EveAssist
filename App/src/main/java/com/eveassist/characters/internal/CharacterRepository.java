@@ -87,14 +87,15 @@ class CharacterRepository {
 
     List<CharacterDetails> listFor(AccountId owner) {
         return jdbc.sql("""
-                SELECT public_id, eve_character_id, name, scopes, state, portrait IS NOT NULL AS has_portrait FROM character
+                SELECT public_id, eve_character_id, name, scopes, state, portrait IS NOT NULL AS has_portrait,
+                       linked_at FROM character
                 WHERE owner_account_id = :owner ORDER BY name
                 """)
                 .param("owner", owner.value())
                 .query((rs, row) -> new CharacterDetails(rs.getObject("public_id", UUID.class),
                         rs.getLong("eve_character_id"), rs.getString("name"),
                         Set.of((String[]) rs.getArray("scopes").getArray()), rs.getString("state"),
-                        rs.getBoolean("has_portrait")))
+                        rs.getBoolean("has_portrait"), rs.getTimestamp("linked_at").toInstant()))
                 .list();
     }
 

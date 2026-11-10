@@ -45,6 +45,9 @@ class InventoryBrowseIT extends IntegrationTest {
     @Autowired
     AssetRepository assets;
 
+    @Autowired
+    BrowseService browse;
+
     private RequestPostProcessor signedInAs(String sub) {
         return oidcLogin().idToken(token -> token.subject(sub)).authorities(new SimpleGrantedAuthority("ROLE_USER"));
     }
@@ -472,6 +475,72 @@ class InventoryBrowseIT extends IntegrationTest {
         assertThat(page).contains("<details").contains("id=\"fetch-status\"");
         assertThat(text(page)).contains("2 characters:");
         assertThat(page).contains("id=\"asset-row-" + s.one() + "\"");
+    }
+
+    @Test
+    void copyAsTextGivesTheWholeListAsNameTabTotalAndFollowsTheFilter() throws Exception {
+        var s = setup();
+
+        var all = mvc.perform(get("/inventory/export.txt").param("ui", "1").with(signedInAs(s.sub())))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Type", containsString("text/plain")))
+                .andExpect(header().string("Cache-Control", containsString("no-store")))
+                .andReturn().getResponse().getContentAsString();
+
+        assertThat(all.split("\n")).containsExactly("Tritanium\t2000", "Pilot's Mineral\t20", "Test Component\t5",
+                "Test Hauler\t1");
+        var narrowed = mvc.perform(get("/inventory/export.txt").param("ui", "1").param("category", "4")
+                        .param("min", "100").with(signedInAs(s.sub())))
+                .andReturn().getResponse().getContentAsString();
+        assertThat(narrowed).isEqualTo("Tritanium\t2000\n");
+        // the button asks for exactly the filter that is on screen
+        assertThat(partial(s.sub(), "?ui=1&chars=1&category=4")).contains("/inventory/export.txt?ui=1&amp;category=4&amp;chars=1");
+    }
+
+    @Test
+    void theCsvAndTheCopyFollowTheMinimumJustLikeTheList() throws Exception {
+        var s = setup();
+
+        var csv = mvc.perform(get("/inventory/export.csv").param("ui", "1").param("min", "100")
+                        .with(signedInAs(s.sub())))
+                .andReturn().getResponse().getContentAsString();
+
+        assertThat(csv).contains("\"Tritanium\"").doesNotContain("Pilot's Mineral").doesNotContain("Test Hauler");
+        assertThat(csv.split("\r\n")).hasSize(3);
+    }
+
+    @Test
+    void aCharacterThatIsNoLongerLinkedIsNamedAsSuchInItsChip() throws Exception {
+        var s = setup();
+
+        var result = partial(s.sub(), "?ui=1&chars=1&character=" + UUID.randomUUID());
+
+        assertThat(text(result)).contains("Character: a character that is no longer linked");
+        assertThat(text(result)).doesNotContainPattern("[0-9a-f]{8}-[0-9a-f]{4}-");
+    }
+
+    @Test
+    void aCharactersColourDoesNotChangeWhenACharacterWithALowerEveIdIsLinkedLater() {
+        var sub = newSub();
+        var viewer = viewerFor(sub);
+        var first = link(viewer, "First Linked");
+        store(first, asset(1, TRITANIUM, 100, JITA, "Hangar"));
+        var before = colourOf(viewer, "First Linked");
+
+        // a character with a lower EVE id, linked later: it must not take the first one's place
+        var later = link(viewer, "Linked Later");
+        jdbc.sql("UPDATE character SET eve_character_id = 1000 WHERE public_id = :id").param("id", later).update();
+        jdbc.sql("UPDATE character SET linked_at = now() + interval '1 minute' WHERE public_id = :id")
+                .param("id", later).update();
+        store(later, asset(1, TRITANIUM, 50, JITA, "Hangar"));
+
+        assertThat(colourOf(viewer, "First Linked")).isEqualTo(before);
+        assertThat(colourOf(viewer, "Linked Later")).isNotEqualTo(before);
+    }
+
+    private int colourOf(Viewer viewer, String character) {
+        return browse.browse(viewer, BrowseFilter.none()).items().stream().flatMap(item -> item.segments().stream())
+                .filter(segment -> segment.character().equals(character)).findFirst().orElseThrow().color();
     }
 
     @Test

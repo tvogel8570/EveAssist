@@ -106,7 +106,12 @@ public class AssetFetcher {
             result = esi.characterAssets(character.eveCharacterId());
         } catch (RuntimeException e) {
             log.warn("Fetching the assets of a character failed: {}", e.getClass().getSimpleName());
-            assets.recordFailure(character.id(), now, "The fetch failed unexpectedly");
+            try {
+                assets.recordFailure(character.id(), now, "The fetch failed unexpectedly");
+            } catch (DataIntegrityViolationException gone) {
+                // the character was removed while ESI was being asked, and there is nothing left to record on
+                log.debug("A character was removed during its asset fetch");
+            }
             return;
         }
         try {

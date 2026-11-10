@@ -51,7 +51,8 @@
                   th:text="#{inventory.summary(${view.itemTypes}, ${view.units})}">3 item types, 12 units</span>
             <span class="grow"></span>
             <button type="button" id="copy-lines" class="btn btn-ghost btn-xs" data-copy-lines
-                    th:attr="data-copied=#{inventory.copied}" th:text="#{inventory.copy}">Copy as text</button>
+                    th:attr="data-copied=#{inventory.copied},data-url=@{'/inventory/export.txt?' + ${view.exportQuery}}"
+                    th:text="#{inventory.copy}">Copy as text</button>
             <a id="export-csv" class="btn btn-ghost btn-xs" th:href="@{'/inventory/export.csv?' + ${view.exportQuery}}"
                th:text="#{inventory.export}">Export CSV</a>
         </div>
@@ -108,6 +109,9 @@
                 </tbody>
             </table>
         </div>
+
+        <p id="capped" class="text-center text-sm opacity-80 mt-3" th:if="${view.capped}"
+           th:text="#{inventory.capped(${#lists.size(view.items)})}">Showing the first 1,000 item types.</p>
 
         <div class="text-center mt-3" th:if="${view.more}">
             <a id="show-more" class="btn btn-sm btn-outline" th:href="@{'/inventory?' + ${view.moreQuery}}"

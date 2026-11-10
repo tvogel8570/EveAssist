@@ -131,24 +131,27 @@
         });
     });
 
-    // Copy as text: one line for each item in the list, the name and the total, with a tab between.
+    // Copy as text: one line for each item type the filter lets through, the name and the total with a tab between.
+    // The server gives the whole list, because the page shows only the first of it.
     document.addEventListener('click', event => {
         const button = event.target.closest('[data-copy-lines]');
         if (!button) {
             return;
         }
-        const lines = [...document.querySelectorAll('#browse tr[data-item]')]
-            .map(row => `${row.dataset.item}\t${row.dataset.total}`).join('\n');
         const done = () => {
             const label = button.textContent;
             button.textContent = button.dataset.copied;
             setTimeout(() => { button.textContent = label; }, 1500);
         };
-        if (navigator.clipboard?.writeText) {
-            navigator.clipboard.writeText(lines).then(done, () => selectText(lines));
-        } else {
-            selectText(lines);
-        }
+        fetch(button.dataset.url, {credentials: 'same-origin'})
+            .then(response => response.ok ? response.text() : Promise.reject(new Error('copy')))
+            .then(lines => {
+                if (navigator.clipboard?.writeText) {
+                    return navigator.clipboard.writeText(lines).then(done, () => selectText(lines));
+                }
+                selectText(lines);
+            })
+            .catch(() => showError('failed'));
     });
 
     // Some browsers refuse the clipboard. The text is put in a box and selected, so Ctrl+C still works.
@@ -157,6 +160,8 @@
         box.value = text;
         box.setAttribute('aria-label', 'Copy this text');
         box.className = 'textarea textarea-bordered w-full h-32 mt-2';
+        box.dataset.copyBox = 'true';
+        document.querySelectorAll('[data-copy-box]').forEach(old => old.remove());
         document.getElementById('browse').prepend(box);
         box.select();
     }

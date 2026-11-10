@@ -384,6 +384,65 @@ class BrowseQueriesIT extends IntegrationTest {
                 .satisfies(l -> assertThat(l.character()).isEqualTo(two));
     }
 
+    @Test
+    void theExportHonoursTheMinimumOnAnItemTypesTotal() {
+        var viewer = viewerFor(newSub());
+        var one = link(viewer, "Alt One");
+        var two = link(viewer, "Alt Two");
+        store(one, asset(1, TRITANIUM, 300, JITA, "Hangar"), asset(2, PILOTS_MINERAL, 20, JITA, "Hangar"));
+        store(two, asset(1, TRITANIUM, 300, AMARR, "Hangar"), asset(2, PILOTS_MINERAL, 30, AMARR, "Hangar"));
+        var both = ids(one, two);
+
+        // Tritanium is 600 in all and Pilot's Mineral 50: a minimum of 100 keeps every Tritanium line, from both characters
+        var lines = queries.export(both, filter().withMinimum(100));
+
+        assertThat(lines).extracting(BrowseQueries.ExportRow::item).containsOnly("Tritanium");
+        assertThat(lines).hasSize(2);
+        assertThat(queries.export(both, filter().withMinimum(10_000))).isEmpty();
+        assertThat(queries.export(both, filter())).hasSize(4);
+        assertThat(queries.typesAtLeastMinimum(both, filter().withMinimum(100))).containsExactly(TRITANIUM);
+    }
+
+    @Test
+    void theListsOfValuesCountOnlyTheItemTypesThatReachTheMinimum() {
+        var viewer = viewerFor(newSub());
+        var one = link(viewer, "Alt One");
+        store(one, asset(1, TRITANIUM, 600, JITA, "Hangar"), asset(2, HAULER, 1, AMARR, "Hangar"));
+        var both = ids(one);
+
+        var without = queries.facet(both, Dimension.CATEGORY, filter());
+        var withMinimum = queries.facet(both, Dimension.CATEGORY, filter().withMinimum(100));
+
+        assertThat(without).extracting(BrowseQueries.Facet::label).containsExactly("Material", "Ship");
+        assertThat(withMinimum).extracting(BrowseQueries.Facet::label).containsExactly("Material");
+        assertThat(queries.facet(both, Dimension.CATEGORY, filter().withMinimum(100_000))).isEmpty();
+    }
+
+    @Test
+    void aListOfValuesCanBeSearchedInTheDatabaseSoALongListStaysReachable() {
+        var viewer = viewerFor(newSub());
+        var one = link(viewer, "Alt One");
+        store(one, asset(1, TRITANIUM, 1, JITA, "Hangar"), asset(2, HAULER, 1, AMARR, "Hangar"));
+
+        var searched = queries.facet(ids(one), Dimension.PLACE, filter(), "amarr");
+
+        assertThat(searched).extracting(BrowseQueries.Facet::value).containsExactly(String.valueOf(AMARR));
+        assertThat(queries.facet(ids(one), Dimension.PLACE, filter(), "%")).isEmpty();
+        assertThat(queries.facet(ids(one), Dimension.PLACE, filter(), "")).hasSize(2);
+        assertThat(queries.facet(ids(one), Dimension.PLACE, filter(), null)).hasSize(2);
+    }
+
+    @Test
+    void theCopyOfTheWholeListIsNotLimitedByThePageSize() {
+        var viewer = viewerFor(newSub());
+        var one = link(viewer, "Alt One");
+        store(one, asset(1, TRITANIUM, 5, JITA, "Hangar"), asset(2, HAULER, 1, JITA, "Hangar"),
+                asset(3, PILOTS_MINERAL, 3, JITA, "Hangar"));
+
+        assertThat(queries.items(ids(one), sorted(BrowseFilter.Sort.TOTAL, 2))).hasSize(2);
+        assertThat(queries.items(ids(one), sorted(BrowseFilter.Sort.TOTAL, 2), 100)).hasSize(3);
+    }
+
     private static List<Integer> types(List<BrowseQueries.ItemRow> rows) {
         return rows.stream().map(BrowseQueries.ItemRow::typeId).toList();
     }
