@@ -95,7 +95,7 @@ class BrowseQueriesIT extends IntegrationTest {
         assertThat(tritanium.name()).isEqualTo("Tritanium");
         assertThat(tritanium.groupName()).isEqualTo("Mineral");
         assertThat(tritanium.categoryName()).isEqualTo("Material");
-        assertThat(queries.summary(ids(one, two), filter())).isEqualTo(new BrowseQueries.Summary(1, 550));
+        assertThat(queries.summary(ids(one, two), filter())).isEqualTo(new BrowseQueries.Summary(1, 3, 550));
     }
 
     @Test
@@ -165,7 +165,7 @@ class BrowseQueriesIT extends IntegrationTest {
             assertThat(r.total()).isEqualTo(10);
             assertThat(r.holders()).containsExactly(one);
         });
-        assertThat(queries.summary(both, narrowed)).isEqualTo(new BrowseQueries.Summary(1, 10));
+        assertThat(queries.summary(both, narrowed)).isEqualTo(new BrowseQueries.Summary(1, 1, 10));
     }
 
     @Test

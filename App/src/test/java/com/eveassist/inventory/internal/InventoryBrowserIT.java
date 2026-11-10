@@ -142,7 +142,7 @@ class InventoryBrowserIT extends IntegrationTest {
         addFilter("Character");
         page.locator("#filter-list label", new Page.LocatorOptions().setHasText("Alt Two")).locator("input").check();
 
-        assertThat(page.locator("#summary")).containsText("2 item types, 520 units");
+        assertThat(page.locator("#summary")).containsText("2 item types in 2 stacks with 520 units");
         assertThat(page.locator("#chips")).containsText("Category: Material");
         assertThat(page.locator("#chips")).containsText("Character: Alt Two");
         assertThat(page.url()).contains("category=4").contains("character=" + two);
@@ -151,7 +151,7 @@ class InventoryBrowserIT extends IntegrationTest {
 
         page.locator("#chips a[aria-label^='Remove the filter Character']").click();
 
-        assertThat(page.locator("#summary")).containsText("2 item types, 2,020 units");
+        assertThat(page.locator("#summary")).containsText("2 item types in 3 stacks with 2,020 units");
         assertThat(page.locator("#chips")).not().containsText("Character");
         assertThat(page.locator("#chips")).containsText("Category: Material");
         assertThat(page.locator("#filter-list")).hasCount(0);
@@ -274,7 +274,7 @@ class InventoryBrowserIT extends IntegrationTest {
         page.locator("#minimum-input").fill("100");
         page.locator("#minimum-input").press("Enter");
 
-        assertThat(page.locator("#summary")).containsText("1 item type, 2,000 units");
+        assertThat(page.locator("#summary")).containsText("1 item type in 2 stacks with 2,000 units");
         assertThat(page.locator("#chips")).containsText("Total at least: 100");
     }
 

@@ -46,6 +46,11 @@ Decided with the developer on 2026-11-10, from mockups (`documentation/mockups/i
   status line is one line ("21 characters: 19 up to date, 2 need authorization") that opens into a table. EVE does not
   say which game account a character is on, so grouping characters by account would need tags the user sets. That is
   not built.
+- **The summary** above the list says how much the filters leave: "X item types in Y stacks with Z units". A **stack** is
+  one row of ESI's asset list: a stack of identical items in one place, or one assembled item (a ship or a container).
+  The same item type in two places, or held by two characters, is two stacks, and items in containers, fitted modules
+  and items in a ship's hold count too, so the "not fitted or in ships" shortcut gives the number of things to look
+  through. Units are the total quantity, which bulk items such as ore and ammunition dominate.
 - **Search and Add filter.** The search waits for a 2-second pause (Enter and leaving the field apply at once) and typing
   replaces the address entry instead of adding one (see [UI conventions](../architecture/ui-conventions.md)). The search matches item, group and category. Add filter asks for a column and then shows
   its values to tick, each with the number of item types it would leave. The columns are category, group, character,

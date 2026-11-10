@@ -48,7 +48,7 @@
     <div th:if="${view.hasAssets}">
         <div class="flex flex-wrap items-center gap-3 text-sm mb-2">
             <span id="summary" class="opacity-80"
-                  th:text="#{inventory.summary(${view.itemTypes}, ${view.units})}">3 item types, 12 units</span>
+                  th:text="#{inventory.summary(${view.itemTypes}, ${view.stacks}, ${view.units})}">3 item types in 5 stacks with 12 units</span>
             <span class="grow"></span>
             <button type="button" id="copy-lines" class="btn btn-ghost btn-xs" data-copy-lines
                     th:attr="data-copied=#{inventory.copied},data-url=@{'/inventory/export.txt?' + ${view.exportQuery}}"
