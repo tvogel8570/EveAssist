@@ -92,8 +92,7 @@
   the whole section is drawn again after any change.
 -->
 <section th:fragment="runs(runs, oob)" id="runs-section" th:attr="hx-swap-oob=${oob ? 'true' : null}">
-    <h2 class="font-semibold mt-5 mb-1"><span th:text="#{plan.runs}">Runs needed</span>
-        <span class="badge badge-sm" th:text="${#lists.size(runs)}">0</span></h2>
+    <h2 class="font-semibold mt-5 mb-1" th:text="#{plan.runs}">Runs needed</h2>
     <p class="text-xs opacity-70 mb-1" th:text="#{plan.runsHint}">Runs</p>
     <p id="no-runs" class="opacity-70 my-2" th:if="${#lists.isEmpty(runs)}" th:text="#{plan.runsNone}">Nothing is built yet.</p>
     <div class="overflow-x-auto" th:unless="${#lists.isEmpty(runs)}">

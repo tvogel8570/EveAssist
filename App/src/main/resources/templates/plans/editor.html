@@ -20,7 +20,8 @@
             </form>
         </details>
     </div>
-    <p class="text-sm opacity-70 mb-3" th:text="#{plan.simplified}">Simplified costing</p>
+    <p class="text-sm opacity-70 mb-1" th:text="#{plan.simplified}">Simplified costing</p>
+    <p id="plan-prices-note" class="text-sm opacity-70 mb-3" th:text="#{plan.allPricesJita}">All prices are Jita 4-4 only.</p>
     <input th:replace="~{plans/fragments :: version(${plan.version}, false)}">
     <div th:replace="~{plans/fragments :: total(${plan.totalCost}, ${plan.unpricedLines}, ${plan.pricesAsOf}, false)}"></div>
 
