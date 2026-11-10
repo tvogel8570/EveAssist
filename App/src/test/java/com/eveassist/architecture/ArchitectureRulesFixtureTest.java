@@ -37,6 +37,7 @@ class ArchitectureRulesFixtureTest {
                 rule(ArchitectureRules::moduleInternalsUseOnlyDataFromTheirBasePackage, "UnmarkedPortUser"),
                 rule(ArchitectureRules::everyUseCaseMethodTakesTheViewerFirst, "UnannotatedUseCases"),
                 rule(ArchitectureRules::everyUseCaseMethodTakesTheViewerFirst, "ViewerLastUseCases"),
+                rule(ArchitectureRules::everyUseCaseMethodTakesTheViewerFirst, "VisitorLastUseCases"),
                 rule(ArchitectureRules::everyRepositoryMethodTakesTheViewerFirst, "PlanRepository"),
                 rule(ArchitectureRules::everyRepositoryMethodTakesTheViewerFirst, "JdbcPlanRepository"),
                 rule(ArchitectureRules::queriesAndWritesDoNotStartFetches, "FetchingQueries"),

@@ -131,7 +131,11 @@ They therefore meet at the use cases, not at the controllers or the facade:
 - **The `api` module and other modules** call the facade, which delegates to the same use cases.
 - **Types and queries only pages use** stay under `internal`, so a screen change cannot widen the module's API or change
   the JSON contract (see [Use case results](#use-case-results)).
-- **Every public use case method takes the `Viewer` as its first parameter.**
+- **Every public use case method takes the `Viewer` as its first parameter, or a `Visitor` when nobody is signed in.**
+  A `Visitor` (the address a request came from) is used only for a plan tried without an account (`TryPlans`), which
+  stores nothing and reads no account's data. No repository takes one, and the build still fails for a repository
+  method without a `Viewer`, so a visitor cannot reach an account's records. This widens a rule that is still
+  **proposed**, so the developer should confirm it.
 - **Every public repository method takes the `Viewer` as its first parameter, and its SQL filters on it.** A use case
   cannot get or change a record without one, so the build fails when a new repository method leaves it out. The
   developer chose this over a viewer-checking class such as `VisiblePlans`, which the spike used, because the check then

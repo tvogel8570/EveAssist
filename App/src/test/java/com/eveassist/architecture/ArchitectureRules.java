@@ -74,7 +74,7 @@ final class ArchitectureRules {
     /** Applies to every class that holds use cases, not only those annotated with a particular stereotype. */
     ArchRule everyUseCaseMethodTakesTheViewerFirst() {
         return classes().that(areUseCaseClasses())
-                .should(havePublicMethodsTakingTheViewerFirst())
+                .should(havePublicMethodsTakingWhoActsFirst(base + ".identity.Viewer", base + ".identity.Visitor"))
                 .allowEmptyShould(true);
     }
 
@@ -84,7 +84,7 @@ final class ArchitectureRules {
      */
     ArchRule everyRepositoryMethodTakesTheViewerFirst() {
         return classes().that(areRepositoriesIn(base + ".industry.internal"))
-                .should(havePublicMethodsTakingTheViewerFirst())
+                .should(havePublicMethodsTakingWhoActsFirst(base + ".identity.Viewer"))
                 .allowEmptyShould(true);
     }
 
@@ -112,26 +112,31 @@ final class ArchitectureRules {
                 && !c.getSimpleName().equals("package-info"));
     }
 
-    private ArchCondition<JavaClass> havePublicMethodsTakingTheViewerFirst() {
-        var viewer = base + ".identity.Viewer";
-        return new ArchCondition<>("have public methods taking the Viewer as first parameter") {
+    /**
+     * A use case acts for a signed-in {@code Viewer}, or for a {@code Visitor} when nobody is (a plan tried without an
+     * account). A repository takes only a {@code Viewer}, so a visitor can never reach an account's records.
+     */
+    private ArchCondition<JavaClass> havePublicMethodsTakingWhoActsFirst(String... whoActs) {
+        return new ArchCondition<>("have public methods taking who acts as first parameter") {
             @Override
             public void check(JavaClass useCases, ConditionEvents events) {
                 for (JavaMethod method : useCases.getMethods()) {
                     if (method.getModifiers().contains(JavaModifier.PUBLIC)
                             && !method.getModifiers().contains(JavaModifier.STATIC)
                             && !method.getModifiers().contains(JavaModifier.SYNTHETIC)
-                            && !takesViewerFirst(method, viewer)) {
-                        events.add(violated(useCases, method.getFullName() + " does not take the Viewer first"));
+                            && !takesWhoActsFirst(method, whoActs)) {
+                        events.add(violated(useCases, method.getFullName() + " does not take the "
+                                + String.join(" or ", java.util.Arrays.stream(whoActs)
+                                        .map(name -> name.substring(name.lastIndexOf('.') + 1)).toList()) + " first"));
                     }
                 }
             }
         };
     }
 
-    private static boolean takesViewerFirst(JavaMethod method, String viewer) {
+    private static boolean takesWhoActsFirst(JavaMethod method, String... whoActs) {
         var parameters = method.getRawParameterTypes();
-        return !parameters.isEmpty() && parameters.getFirst().getName().equals(viewer);
+        return !parameters.isEmpty() && java.util.Arrays.asList(whoActs).contains(parameters.getFirst().getName());
     }
 
     private ArchCondition<JavaClass> dependOnOnlyDataInOwnBasePackage() {

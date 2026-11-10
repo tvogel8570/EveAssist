@@ -68,6 +68,14 @@ public class MarketService {
         return new JitaQuotes(PriceQuoting.quotes(current, orders), failed);
     }
 
+    /**
+     * The Jita prices already stored, however old, for the items that have any. It never asks ESI, so the caller sees
+     * which items are missing and decides whether to fetch them (see {@link #currentPrices}).
+     */
+    public JitaQuotes storedPrices(Collection<TypeId> types) {
+        return new JitaQuotes(PriceQuoting.quotes(types.stream().distinct().toList(), orders), Map.of());
+    }
+
     private static EsiResult<List<MarketOrder>> result(Future<EsiResult<List<MarketOrder>>> future) {
         try {
             return future.get();

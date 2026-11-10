@@ -177,6 +177,14 @@ it (flags `CorpSAG1` to `CorpSAG7`); the office is not stored, and the division 
 - The `market-order` group allows 12,000 tokens per 15 minutes per IP address for all users together, so the shared
   store matters in phase 3. A refresh of a large plan fetches only the items whose stored orders have expired.
 
+- **Visitors without an account** (the `/try` page, see the requirements) never refresh prices. `TryPlans` reads the
+  stored prices through `MarketService.storedPrices`, however old, and asks ESI only for items that have none, through
+  `currentPrices`. `PriceFetchLimits` allows each visitor (by remote address) 200 such fetches per hour and all visitors
+  together 1,500 per 15 minutes, a quarter of the allowance above, and keeps its counts in memory, so they restart with
+  the app and are not shared between instances. An item over the limit is listed on the page as not priced. The limits
+  are starting values to be tuned. Behind a proxy the remote address is the proxy's unless forwarded headers are
+  configured, so that has to be set up before deployment, or all visitors count as one.
+
 Why ESI rather than Fuzzwork's market aggregates: the aggregates are fixed at the best 5% of volume, while the
 requirements make the share a user setting, and they would add a third-party service with no uptime promise.
 
