@@ -143,6 +143,14 @@
         }
     });
 
+    // The x on a message (the undo bar) takes the message away. Nothing is sent to the server.
+    document.addEventListener('click', event => {
+        const button = event.target.closest('[data-dismiss="alert"]');
+        if (button) {
+            button.closest('.alert')?.remove();
+        }
+    });
+
     // A drop-down menu made of <details> closes when something in it is chosen or when the page is clicked elsewhere.
     document.addEventListener('click', event => {
         document.querySelectorAll('details[data-autoclose][open]').forEach(menu => {

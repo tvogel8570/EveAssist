@@ -393,6 +393,21 @@ class PlanEditorBrowserIT extends IntegrationTest {
     // ---- removing a product
 
     @Test
+    void theXOnTheUndoBarDismissesItAndTheProductStaysRemoved() {
+        page.navigate(url("/plans"));
+        createPlanWithHauler();
+
+        page.click("#remove-1001");
+        assertThat(page.locator("#undo-bar")).containsText("Removed Test Hauler (1 unit).");
+
+        page.click("#undo-dismiss");
+
+        assertThat(page.locator("#undo-bar")).not().containsText("Removed");
+        assertThat(page.locator("#undo-remove")).hasCount(0);
+        assertThat(page.locator("#no-products")).isVisible();
+    }
+
+    @Test
     void removingAProductTakesItOutAndUpdatesTheTotalAndUndoBringsItBack() {
         page.navigate(url("/plans"));
         createPlanWithHauler();

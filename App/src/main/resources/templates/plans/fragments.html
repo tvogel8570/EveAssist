@@ -173,6 +173,8 @@
             <input type="hidden" name="quantity" th:value="${removed.quantity}">
             <button type="submit" id="undo-remove" class="btn btn-sm" th:text="#{plan.undo}">Undo</button>
         </form>
+        <button type="button" id="undo-dismiss" class="btn btn-ghost btn-xs" data-dismiss="alert"
+                th:aria-label="#{plan.undoDismiss}" th:title="#{plan.undoDismiss}">&#10005;</button>
     </div>
 </div>
 
