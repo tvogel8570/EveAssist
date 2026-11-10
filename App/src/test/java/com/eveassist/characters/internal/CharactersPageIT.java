@@ -277,6 +277,109 @@ class CharactersPageIT extends IntegrationTest {
     }
 
     @Test
+    void corporationAssetsTurnsInventoryOnWithItAndInventoryOffTurnsItOff() throws Exception {
+        var sub = newSub();
+        var viewer = viewerFor(sub);
+
+        mvc.perform(post("/characters/features/CORPORATION_ASSETS").param("on", "true").header("HX-Request", "true")
+                        .with(signedInAs(sub)).with(csrf()))
+                .andExpect(status().isNoContent());
+        assertThat(features.turnedOn(viewer.accountId()))
+                .containsExactlyInAnyOrder(Feature.INVENTORY, Feature.CORPORATION_ASSETS);
+
+        // the corporation permissions are asked for with the inventory ones, and nothing else is
+        assertThat(Feature.CORPORATION_ASSETS.scopes()).containsExactlyInAnyOrder(
+                "esi-assets.read_corporation_assets.v1", "esi-corporations.read_divisions.v1",
+                "esi-characters.read_corporation_roles.v1");
+
+        // turning the corporation feature off leaves inventory on
+        mvc.perform(post("/characters/features/CORPORATION_ASSETS").header("HX-Request", "true")
+                        .with(signedInAs(sub)).with(csrf()))
+                .andExpect(status().isNoContent());
+        assertThat(features.turnedOn(viewer.accountId())).containsExactly(Feature.INVENTORY);
+
+        // and turning inventory off takes the corporation feature with it
+        mvc.perform(post("/characters/features/CORPORATION_ASSETS").param("on", "true").header("HX-Request", "true")
+                        .with(signedInAs(sub)).with(csrf()))
+                .andExpect(status().isNoContent());
+        mvc.perform(post("/characters/features/INVENTORY").header("HX-Request", "true")
+                        .with(signedInAs(sub)).with(csrf()))
+                .andExpect(status().isNoContent());
+        assertThat(features.turnedOn(viewer.accountId())).isEmpty();
+    }
+
+    @Test
+    void thePageOffersTheCorporationFeatureAndListsItsPermissions() throws Exception {
+        var sub = newSub();
+        viewerFor(sub);
+
+        var page = text(mvc.perform(get("/characters").with(signedInAs(sub))).andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString());
+
+        assertThat(page).contains("Corporation assets").contains("esi-assets.read_corporation_assets.v1")
+                .contains("esi-corporations.read_divisions.v1").contains("esi-characters.read_corporation_roles.v1");
+    }
+
+    @Test
+    void aCharacterThatGrantedOnlyInventoryIsToldToAddTheCorporationPermissions() throws Exception {
+        var sub = newSub();
+        var viewer = viewerFor(sub);
+        features.turnOn(viewer.accountId(), Feature.INVENTORY);
+        features.turnOn(viewer.accountId(), Feature.CORPORATION_ASSETS);
+        var eveId = newEveId();
+        characters.link(viewer.accountId(), eveId, "Old Token", "hash", BOTH, cipher.encrypt(eveId, "refresh"));
+
+        var page = text(mvc.perform(get("/characters").with(signedInAs(sub))).andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString());
+
+        assertThat(page).contains("Missing: corporation assets, corporation roles, corporation hangar names");
+    }
+
+    @Test
+    void strikesThroughTheDirectorOnlyPermissionsOfACharacterKnownNotToBeADirector() throws Exception {
+        var sub = newSub();
+        var viewer = viewerFor(sub);
+        features.turnOn(viewer.accountId(), Feature.INVENTORY);
+        features.turnOn(viewer.accountId(), Feature.CORPORATION_ASSETS);
+        var all = new java.util.HashSet<>(BOTH);
+        all.addAll(Feature.CORPORATION_ASSETS.scopes());
+        var boss = link(sub, "Cass Director", all);
+        var member = link(sub, "Henre Member", all);
+        var unknown = link(sub, "Not Yet Read", all);
+        var bossId = publicId(boss);
+        var memberId = publicId(member);
+        for (var entry : java.util.Map.of(bossId, true, memberId, false).entrySet()) {
+            jdbc.sql("""
+                    INSERT INTO character_corporation (character_id, eve_corporation_id, director, checked_at,
+                        corporation_checked_at) VALUES (:id, 98000001, :director, now(), now())
+                    """).param("id", entry.getKey()).param("director", entry.getValue()).update();
+        }
+
+        var html = mvc.perform(get("/characters").with(signedInAs(sub))).andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+
+        var memberCard = card(html, memberId);
+        assertThat(memberCard).contains("line-through");
+        assertThat(memberCard).contains("title=\"This character is not a Director");
+        // both Director-only permissions are struck, and the others are not
+        assertThat(memberCard.split("line-through", -1)).hasSize(3);
+        assertThat(card(html, bossId)).doesNotContain("line-through");
+        assertThat(card(html, publicId(unknown))).doesNotContain("line-through");
+    }
+
+    private java.util.UUID publicId(long eveId) {
+        return jdbc.sql("SELECT public_id FROM character WHERE eve_character_id = :eve").param("eve", eveId)
+                .query(java.util.UUID.class).single();
+    }
+
+    /** The part of the page for one character's card. */
+    private static String card(String html, java.util.UUID id) {
+        var start = html.indexOf("id=\"character-" + id + "\"");
+        var end = html.indexOf("id=\"character-", start + 10);
+        return html.substring(start, end < 0 ? html.length() : end);
+    }
+
+    @Test
     void turningAFeatureOnWithoutHtmxRedirectsBackToThePage() throws Exception {
         var sub = newSub();
         viewerFor(sub);

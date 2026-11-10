@@ -5,6 +5,9 @@ import com.eveassist.characters.LinkedCharacters;
 import com.eveassist.esi.EsiClient;
 import com.eveassist.esi.EsiResult;
 import com.eveassist.identity.Viewer;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import jakarta.annotation.PreDestroy;
 import java.time.Clock;
 import java.time.Instant;
@@ -15,6 +18,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Semaphore;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
@@ -69,9 +73,24 @@ public class AssetFetcher {
     private final StructureRepository structures;
     private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
     private final Set<UUID> running = ConcurrentHashMap.newKeySet();
+    /**
+     * Storing a character's assets is one transaction that holds a pooled connection while thousands of rows are
+     * replaced. With 20 characters all fetched at once, those transactions used up the whole pool of 10 for 30 s and
+     * the page itself could not get a connection (seen 2026-11-10). So only this many characters are fetched at a time
+     * and the rest wait their turn, which leaves connections for requests. See
+     * documentation/runbooks/concurrency-tuning.md.
+     */
+    static final int MOST_CONCURRENT_FETCHES = 3;
+    private final Semaphore turns = new Semaphore(MOST_CONCURRENT_FETCHES);
+    /** From queued to done for one character: the wait for a turn and the fetch. It grows when users queue up. */
+    private final Timer turnaround;
 
     AssetFetcher(LinkedCharacters linked, EsiClient esi, AssetRepository assets, Clock clock,
-            StructureResolver resolver, StructureRepository structures) {
+            StructureResolver resolver, StructureRepository structures, MeterRegistry meters) {
+        this.turnaround = Timer.builder("eveassist.asset.fetch.turnaround")
+                .description("Time from a character's assets being queued to the fetch being done").register(meters);
+        Gauge.builder("eveassist.asset.fetch.waiting", turns, Semaphore::getQueueLength)
+                .description("Characters whose assets wait for one of the fetch turns").register(meters);
         this.resolver = resolver;
         this.structures = structures;
         this.linked = linked;
@@ -87,11 +106,18 @@ public class AssetFetcher {
     public void refresh(Viewer viewer) {
         for (var character : linked.of(viewer)) {
             if (canFetch(character) && running.add(character.id())) {
+                var queued = Timer.start();
                 executor.execute(() -> {
                     try {
-                        fetch(character);
+                        turns.acquireUninterruptibly();
+                        try {
+                            fetch(character);
+                        } finally {
+                            turns.release();
+                        }
                     } finally {
                         running.remove(character.id());
+                        queued.stop(turnaround);
                     }
                 });
             }

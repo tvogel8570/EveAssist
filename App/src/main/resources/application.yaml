@@ -1,3 +1,10 @@
+# Actuator: only the metrics the concurrency runbook uses, on the app's own port, and only for an admin signed in (see
+# SecurityConfig). Health is not exposed until a deployment needs it.
+management:
+  endpoints:
+    web:
+      exposure:
+        include: metrics
 spring:
   application:
     name: eveassist

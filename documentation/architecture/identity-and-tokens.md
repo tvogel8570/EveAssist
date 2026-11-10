@@ -133,8 +133,10 @@ character cascades to its token and, later, to its ESI data.
 **Features and scopes.** A `Feature` enum in `characters` maps each feature to its read-only scopes. The first is
 `INVENTORY`: `esi-assets.read_assets.v1` and `esi-universe.read_structures.v1`. `CORPORATION_ASSETS` (added 2026-11-10)
 asks for `esi-assets.read_corporation_assets.v1`, `esi-corporations.read_divisions.v1` and
-`esi-characters.read_corporation_roles.v1`, and needs `INVENTORY` on. Only a Director's token can read the data, so the
-page offers the feature's re-authorization to every character but says which ones are Directors. The account turns features on and off
+`esi-characters.read_corporation_roles.v1`, and needs `INVENTORY`: turning it on turns `INVENTORY` on too, and turning
+`INVENTORY` off turns it off (`Feature.requires()`). A character that lacks the permissions is marked as missing them
+and the Characters page offers re-authorization, as for any feature. The roles scope is what lets the app tell which
+characters are Directors, because only a Director's token can read a corporation's assets. The account turns features on and off
 (the developer decided on 2026-11-09 to build the toggle now). An authorization request asks for the union of the
 scopes of the turned-on features. Turning a feature on marks each linked character that lacks its scopes as needing
 them, and the Characters page offers re-authorization. The EVE developer application is registered with the scopes of

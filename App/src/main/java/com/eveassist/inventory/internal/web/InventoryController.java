@@ -5,6 +5,7 @@ import com.eveassist.inventory.internal.AssetFetcher;
 import com.eveassist.inventory.internal.BrowseFilter;
 import com.eveassist.inventory.internal.BrowseFilter.Dimension;
 import com.eveassist.inventory.internal.BrowseService;
+import com.eveassist.inventory.internal.CorporationFetcher;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -42,13 +43,21 @@ class InventoryController {
     private static final String MINIMUM = "min";
 
     private final AssetFetcher fetcher;
+    private final CorporationFetcher corporationFetcher;
     private final BrowseService browse;
     private final MessageSource messages;
 
-    InventoryController(AssetFetcher fetcher, BrowseService browse, MessageSource messages) {
+    InventoryController(AssetFetcher fetcher, CorporationFetcher corporationFetcher, BrowseService browse,
+            MessageSource messages) {
         this.fetcher = fetcher;
+        this.corporationFetcher = corporationFetcher;
         this.browse = browse;
         this.messages = messages;
+    }
+
+    /** A corporation's row in the status block: the fetch phase, when, and which Director's token reads it. */
+    public record CorporationRow(java.util.UUID id, String name, String phase, String fetchedAt, Integer itemCount,
+            String problem, String via) {
     }
 
     /** A character's row in the status block: the fetch phase and when, in UTC (the account's time zone comes later). */
@@ -65,8 +74,10 @@ class InventoryController {
         var partial = htmx != null;
         var open = partial ? openList(request) : null;
         if (!partial) {
-            fetcher.refresh(viewer);
+            // The page is answered from what is stored. The fetch starts after it is on screen: the status block asks
+            // for it when it loads (see status), so a slow or busy fetch never holds up the page.
             fillStatus(viewer, model);
+            model.addAttribute("startOnLoad", true);
         }
         fillBrowse(viewer, filter, open, model);
         model.addAttribute("keepOpen", open != null);
@@ -95,10 +106,7 @@ class InventoryController {
         model.addAttribute("hidden", hiddenFields(filter, open));
         var locale = LocaleContextHolder.getLocale();
         var columns = new ArrayList<String[]>();
-        for (var dimension : Dimension.values()) {
-            columns.add(new String[] {dimension.parameter,
-                    messages.getMessage("inventory.filter." + dimension.parameter, null, locale)});
-        }
+        browse.columnTitles(viewer).forEach((dimension, title) -> columns.add(new String[] {dimension.parameter, title}));
         columns.add(new String[] {MINIMUM, messages.getMessage("inventory.filter.min", null, locale)});
         model.addAttribute("columns", columns);
     }
@@ -149,9 +157,18 @@ class InventoryController {
         return "inventory/browse :: where";
     }
 
+    /**
+     * Where the fetches stand. With {@code start} it also queues them first: the page asks that way once it has loaded,
+     * and the fetches are skipped when ESI's copy is still current or one is already running.
+     */
     @GetMapping("/inventory/status")
     String status(Viewer viewer, Model model, HttpServletResponse response,
-            @RequestHeader(value = "HX-Request", required = false) String htmx) {
+            @RequestHeader(value = "HX-Request", required = false) String htmx,
+            @RequestParam(name = "start", required = false) String start) {
+        if (start != null) {
+            fetcher.refresh(viewer);
+            corporationFetcher.refresh(viewer);
+        }
         fillStatus(viewer, model);
         if (htmx != null && !Boolean.TRUE.equals(model.getAttribute("running"))) {
             // the last answer of a poll: tell the list, once, that what it shows may have changed
@@ -163,6 +180,7 @@ class InventoryController {
     @PostMapping("/inventory/refresh")
     String refresh(Viewer viewer) {
         fetcher.refresh(viewer);
+        corporationFetcher.refresh(viewer);
         return "redirect:/inventory";
     }
 
@@ -186,7 +204,7 @@ class InventoryController {
         var out = response.getWriter();
         var header = new String[] {"inventory.csv.item", "inventory.csv.category", "inventory.csv.group",
                 "inventory.csv.character", "inventory.csv.place", "inventory.csv.region", "inventory.csv.how",
-                "inventory.csv.quantity", "inventory.csv.blueprint"};
+                "inventory.csv.quantity", "inventory.csv.blueprint", "inventory.csv.hangar"};
         out.write(csvLine(java.util.Arrays.stream(header).map(key -> messages.getMessage(key, null, key, locale))
                 .toArray(String[]::new)));
         for (var line : browse.export(viewer, filter)) {
@@ -228,6 +246,13 @@ class InventoryController {
         model.addAttribute("failed", counts.getOrDefault(AssetFetcher.Phase.FAILED, 0));
         model.addAttribute("needAttention", counts.getOrDefault(AssetFetcher.Phase.NEEDS_REAUTHORIZATION, 0)
                 + counts.getOrDefault(AssetFetcher.Phase.MISSING_SCOPE, 0));
-        model.addAttribute("running", fetcher.anyRunning(viewer));
+        model.addAttribute("running", fetcher.anyRunning(viewer) || corporationFetcher.anyRunning(viewer));
+        var corporations = corporationFetcher.status(viewer);
+        model.addAttribute("corporationsOn", corporationFetcher.enabled(viewer));
+        model.addAttribute("corporationRows", corporations.stream()
+                .map(status -> new CorporationRow(status.corporationId(), status.name(), status.phase().name(),
+                        status.fetchedAt() == null ? null : UTC.format(status.fetchedAt()), status.itemCount(),
+                        status.problem(), status.via()))
+                .toList());
     }
 }

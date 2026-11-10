@@ -18,7 +18,7 @@ enum Held {
         if ("AssetSafety".equals(locationFlag)) {
             return ASSET_SAFETY;
         }
-        if ("Deliveries".equals(locationFlag)) {
+        if ("Deliveries".equals(locationFlag) || "CorpDeliveries".equals(locationFlag)) {
             return DELIVERIES;
         }
         if (depth == 0) {

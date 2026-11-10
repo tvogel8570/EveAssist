@@ -1,7 +1,10 @@
 package com.eveassist.esi;
 
 /**
- * One item in a character's assets, from {@code GET /characters/{character_id}/assets}.
+ * One item in a character's assets, from {@code GET /characters/{character_id}/assets}. A corporation's assets, from
+ * {@code GET /corporations/{corporation_id}/assets}, have the same fields and use this record too: an office is an
+ * item of type 27 with the flag {@code OfficeFolder}, and the items in it have the flags {@code CorpSAG1} to
+ * {@code CorpSAG7}, one for each hangar division.
  *
  * @param itemId        unique among all items, so a container's contents point at it with their {@code locationId}
  * @param locationId    a station or structure id for an item at the top, a solar system id for an item in space, or

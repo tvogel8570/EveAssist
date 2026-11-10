@@ -93,9 +93,30 @@ client. The corporation id stands in for the character in the fetch state. Other
 other members of a group (phase 2) see the stored data with its age.
 
 Phase 1 reads the assets of the account's own corporations (`/corporations/{id}/assets` and `/divisions`, which need the
-Director role). The account is the owner of the stored rows, and they carry the corporation id, so phase 2 shares them
-with a group without a migration of the data. Which linked character is a Director comes from the character's roles
-(`/characters/{id}/roles`) and is refreshed with each fetch. Status: **proposed**.
+Director role), in `CorporationFetcher` in the `inventory` module, only while the account has the
+`CORPORATION_ASSETS` feature on. The account owns the stored rows (`corporation` has `owner_account_id`, and the assets
+carry the corporation's id), so phase 2 can share them with a group. A run is one account on one virtual thread:
+
+1. For each linked character with the roles scope, ask which corporation it is in (public `GET /characters/{id}`) and
+   its roles (`GET /characters/{id}/roles`). They are kept in `character_corporation` and asked again after ESI's cache
+   times: the roles after an hour, the corporation after a day.
+2. For each corporation any of them is in, create it for the account, named from the public `GET /corporations/{id}`
+   (asked again after a day). A corporation no known character is in is dropped, with its rows. A failed lookup keeps
+   what was known.
+3. For each corporation with a Director that granted the assets and divisions scopes, read the hangar names (after an
+   hour) and the assets with that Director's token. The first Director ESI answers for is used. The assets go through
+   the client's usual cache (`ETag`, `Expires`), so a page opened again within an hour asks nothing.
+4. Name the structures the corporation has items in with the Director's token (see Character assets), and store the
+   name under the Director.
+
+The object routes (a character's corporation and roles, a corporation's name and hangar names) are not cached in
+`HttpEsiClient`: the caller keeps the answer, as for a structure's name, and asks again only after ESI's cache time.
+
+**Known limit.** The client's cache entry for a corporation's assets is keyed by the corporation, not by the account.
+If two accounts both read the same corporation, the second one's ESI call would be answered "unchanged" and it would
+have no rows. This cannot happen with one account (phase 1), and phase 2 removes it by storing the corporation's assets
+once and sharing them. An office is an item (type 27, flag `OfficeFolder`) with the items of each hangar division in
+it (flags `CorpSAG1` to `CorpSAG7`); the office is not stored, and the division is. Status: **proposed**.
 
 ## Jita prices
 

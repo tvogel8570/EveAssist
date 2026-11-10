@@ -20,32 +20,69 @@ final class AssetClassifier {
      * @param rootLocationId  the place at the top of the chain
      * @param depth           0 for an item at the top
      * @param containerTypeId the type of what holds the item directly, null at the top
+     * @param division        the hangar division (1 to 7) of a corporation's item, null for a character's items and
+     *                        for items outside an office
      */
-    record Placed(CharacterAsset asset, long rootLocationId, int depth, Integer containerTypeId, Held held) {
+    record Placed(CharacterAsset asset, long rootLocationId, int depth, Integer containerTypeId, Held held,
+            Integer division) {
     }
+
+    /** A corporation's office, an item that is only a folder for the items in its hangar divisions. */
+    static final String OFFICE_FLAG = "OfficeFolder";
 
     private AssetClassifier() {
     }
 
+    /** A character's assets. */
     static List<Placed> classify(List<CharacterAsset> assets) {
+        return classify(assets, false);
+    }
+
+    /**
+     * A corporation's assets. An office is not a container: it is left out of the result and of the chain, so an item in
+     * it is at the station or structure the office stands in, held in a hangar. The flag of the item, or of the container
+     * directly in the office that holds it, names the hangar division ({@code CorpSAG1} to {@code CorpSAG7}).
+     */
+    static List<Placed> classifyCorporation(List<CharacterAsset> assets) {
+        return classify(assets, true);
+    }
+
+    private static List<Placed> classify(List<CharacterAsset> assets, boolean corporation) {
         Map<Long, CharacterAsset> byItem = new HashMap<>(assets.size() * 2);
         for (var asset : assets) {
             byItem.put(asset.itemId(), asset);
         }
-        return assets.stream().map(asset -> {
+        return assets.stream().filter(asset -> !(corporation && OFFICE_FLAG.equals(asset.locationFlag()))).map(asset -> {
             long at = asset.locationId();
             int depth = 0;
+            int steps = 0;
             Integer container = null;
+            Integer division = null;
+            var child = asset;
             var holder = byItem.get(at);
-            while (holder != null && depth < LONGEST_CHAIN) {
-                if (container == null) {
-                    container = holder.typeId();
+            while (holder != null && steps++ < LONGEST_CHAIN) {
+                if (corporation && OFFICE_FLAG.equals(holder.locationFlag())) {
+                    division = divisionOf(child.locationFlag());
+                } else {
+                    if (container == null) {
+                        container = holder.typeId();
+                    }
+                    depth++;
                 }
-                depth++;
+                child = holder;
                 at = holder.locationId();
                 holder = byItem.get(at);
             }
-            return new Placed(asset, at, depth, container, Held.of(asset.locationFlag(), depth));
+            return new Placed(asset, at, depth, container, Held.of(asset.locationFlag(), depth), division);
         }).toList();
+    }
+
+    /** 1 to 7 for {@code CorpSAG1} to {@code CorpSAG7}, otherwise null. */
+    static Integer divisionOf(String locationFlag) {
+        if (locationFlag != null && locationFlag.length() == 8 && locationFlag.startsWith("CorpSAG")) {
+            var digit = locationFlag.charAt(7) - '0';
+            return digit >= 1 && digit <= 7 ? digit : null;
+        }
+        return null;
     }
 }

@@ -76,7 +76,7 @@ class InventoryPageIT extends IntegrationTest {
     }
 
     @Test
-    void openingThePageFetchesAndALaterOpeningShowsTheResult() throws Exception {
+    void thePageLoadingItsStatusFetchesAndALaterLookShowsTheResult() throws Exception {
         var sub = newSub();
         var viewer = viewerFor(sub);
         var eveId = link(viewer, "Alt One", "ACTIVE", ASSETS);
@@ -84,9 +84,10 @@ class InventoryPageIT extends IntegrationTest {
                 new CharacterAsset(2, 35, 20, 60003760L, "station", "Hangar", false, null)));
 
         mvc.perform(get("/inventory").with(signedInAs(sub))).andExpect(status().isOk());
+        mvc.perform(get("/inventory/status").param("start", "1").with(signedInAs(sub))).andExpect(status().isOk());
         awaitIdle(viewer);
 
-        // the status block does not start a fetch, unlike opening the page, so it shows the settled result
+        // a plain look at the status does not start a fetch, so it shows the settled result
         var page = mvc.perform(get("/inventory/status").with(signedInAs(sub)))
                 .andExpect(content().string(not(containsString("??"))))
                 .andReturn().getResponse().getContentAsString();
@@ -104,7 +105,7 @@ class InventoryPageIT extends IntegrationTest {
                 new CharacterAsset(2, 34, 5, 1_000_000_000_002L, "item", "Hangar", false, null),
                 new CharacterAsset(3, 34, 5, 60003760L, "station", "Hangar", false, null)));
         esi.structure(1_000_000_000_001L, com.eveassist.esi.StructureLookup.found("Alpha", 30000142));
-        mvc.perform(get("/inventory").with(signedInAs(sub)));
+        mvc.perform(get("/inventory/status").param("start", "1").with(signedInAs(sub)));
         awaitIdle(viewer);
 
         mvc.perform(get("/inventory/status").with(signedInAs(sub)))
@@ -125,7 +126,7 @@ class InventoryPageIT extends IntegrationTest {
         link(viewer, "No Scope One", "ACTIVE", "esi-universe.read_structures.v1");
         var broken = link(viewer, "Broken One", "ACTIVE", ASSETS);
         esi.failAssets(broken, "ESI is throttling char-asset for another 9 s");
-        mvc.perform(get("/inventory").with(signedInAs(sub)));
+        mvc.perform(get("/inventory/status").param("start", "1").with(signedInAs(sub)));
         awaitIdle(viewer);
 
         var page = mvc.perform(get("/inventory/status").with(signedInAs(sub)))
@@ -145,7 +146,7 @@ class InventoryPageIT extends IntegrationTest {
         var eveId = link(viewer, "Alt One", "ACTIVE", ASSETS);
         var gate = new CountDownLatch(1);
         esi.holdAssetCalls(gate);
-        mvc.perform(get("/inventory").with(signedInAs(sub)));
+        mvc.perform(get("/inventory/status").param("start", "1").with(signedInAs(sub)));
         await().atMost(5, TimeUnit.SECONDS).until(() -> fetcher.anyRunning(viewer));
 
         mvc.perform(get("/inventory/status").with(signedInAs(sub)))
@@ -159,6 +160,31 @@ class InventoryPageIT extends IntegrationTest {
         mvc.perform(get("/inventory/status").with(signedInAs(sub)))
                 .andExpect(content().string(not(containsString("hx-get"))))
                 .andExpect(content().string(containsString("Up to date")));
+    }
+
+    @Test
+    void openingThePageStartsNoFetchAndAsksForOneOnceItIsOnScreen() throws Exception {
+        var sub = newSub();
+        var viewer = viewerFor(sub);
+        link(viewer, "Alt One", "ACTIVE", ASSETS);
+        var gate = new CountDownLatch(1);
+        esi.holdAssetCalls(gate);
+
+        var page = mvc.perform(get("/inventory").with(signedInAs(sub))).andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+
+        // answered from what is stored, with nothing running and no ESI call made yet
+        assertThat(fetcher.anyRunning(viewer)).isFalse();
+        assertThat(esi.assetsAsked()).isEmpty();
+        // the status block starts the fetch when it loads, and keeps asking while it runs
+        assertThat(page).contains("hx-get=\"/inventory/status?start=1\"").contains("hx-trigger=\"load\"");
+
+        mvc.perform(get("/inventory/status").param("start", "1").with(signedInAs(sub)))
+                .andExpect(content().string(containsString("hx-get=\"/inventory/status\"")))
+                .andExpect(content().string(containsString("hx-trigger=\"every 2s\"")));
+        await().atMost(5, TimeUnit.SECONDS).until(() -> fetcher.anyRunning(viewer));
+        gate.countDown();
+        awaitIdle(viewer);
     }
 
     @Test

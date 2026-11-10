@@ -27,9 +27,16 @@ public class CharacterService {
     private final FeatureRepository features;
     private final TokenRevoker revoker;
     private final CharacterAccessTokens accessTokens;
+    private final org.springframework.beans.factory.ObjectProvider<com.eveassist.characters.CharacterRoles> roles;
+
+    /** Scopes that give nothing to a character that is not a Director of its corporation. */
+    private static final Set<String> DIRECTOR_ONLY = Set.of("esi-assets.read_corporation_assets.v1",
+            "esi-corporations.read_divisions.v1");
 
     CharacterService(CharacterRepository characters, FeatureRepository features, TokenRevoker revoker,
-            CharacterAccessTokens accessTokens) {
+            CharacterAccessTokens accessTokens,
+            org.springframework.beans.factory.ObjectProvider<com.eveassist.characters.CharacterRoles> roles) {
+        this.roles = roles;
         this.accessTokens = accessTokens;
         this.characters = characters;
         this.features = features;
@@ -38,7 +45,10 @@ public class CharacterService {
 
     public List<CharacterView> list(Viewer viewer) {
         var needed = neededScopes(features.turnedOn(viewer.accountId()));
-        return characters.listFor(viewer.accountId()).stream().map(details -> {
+        var all = characters.listFor(viewer.accountId());
+        var known = roles.getIfAvailable() == null ? java.util.Map.<UUID, Boolean>of()
+                : roles.getObject().directors(all.stream().map(CharacterDetails::id).toList());
+        return all.stream().map(details -> {
             var missing = new TreeSet<>(needed);
             missing.removeAll(details.scopes());
             var unused = new TreeSet<>(details.scopes());
@@ -49,7 +59,9 @@ public class CharacterService {
                     : missing.isEmpty() ? CharacterView.Status.ACTIVE : CharacterView.Status.NEEDS_PERMISSIONS;
             return new CharacterView(details.id(), details.name(), status,
                     List.copyOf(new TreeSet<>(details.scopes())), List.copyOf(inUse), List.copyOf(missing),
-                    List.copyOf(unused), details.hasPortrait());
+                    List.copyOf(unused), details.hasPortrait(),
+                    Boolean.FALSE.equals(known.get(details.id()))
+                            ? inUse.stream().filter(DIRECTOR_ONLY::contains).toList() : List.of());
         }).toList();
     }
 
@@ -57,11 +69,23 @@ public class CharacterService {
         return features.turnedOn(viewer.accountId());
     }
 
+    /**
+     * Turns a feature on or off. A feature that builds on another turns that one on with it, and turning a feature off
+     * turns off the features that build on it, so the account never has one on without what it needs.
+     */
     public void setFeature(Viewer viewer, Feature feature, boolean on) {
         if (on) {
+            if (feature.requires() != null) {
+                features.turnOn(viewer.accountId(), feature.requires());
+            }
             features.turnOn(viewer.accountId(), feature);
         } else {
             features.turnOff(viewer.accountId(), feature);
+            for (var other : Feature.values()) {
+                if (other.requires() == feature) {
+                    features.turnOff(viewer.accountId(), other);
+                }
+            }
         }
     }
 

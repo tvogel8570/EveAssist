@@ -48,6 +48,9 @@ class InventoryBrowseIT extends IntegrationTest {
     @Autowired
     BrowseService browse;
 
+    @Autowired
+    CorporationRepository corporations;
+
     private RequestPostProcessor signedInAs(String sub) {
         return oidcLogin().idToken(token -> token.subject(sub)).authorities(new SimpleGrantedAuthority("ROLE_USER"));
     }
@@ -449,7 +452,7 @@ class InventoryBrowseIT extends IntegrationTest {
 
         var lines = csv.split("\r\n");
         assertThat(lines[0]).isEqualTo("\"Item\",\"Category\",\"Group\",\"Character\",\"Where\",\"Region\",\"How held\","
-                + "\"Quantity\",\"Blueprint\"");
+                + "\"Quantity\",\"Blueprint\",\"Hangar\"");
         assertThat(csv).contains("\"Tritanium\",\"Material\",\"Mineral\",\"Alt One\",\"Jita IV - Moon 4 - Caldari Navy "
                 + "Assembly Plant\",\"The Forge\",\"in a hangar\",\"1500\"");
         assertThat(csv).contains("\"Pilot's Mineral\"").doesNotContain("Test Hauler");
@@ -548,5 +551,142 @@ class InventoryBrowseIT extends IntegrationTest {
         mvc.perform(get("/inventory/filter/category")).andExpect(status().is3xxRedirection());
         mvc.perform(get("/inventory/item/34")).andExpect(status().is3xxRedirection());
         mvc.perform(get("/inventory/export.csv")).andExpect(status().is3xxRedirection());
+    }
+
+    // ---- the corporations of the account's own characters
+
+    private static final long OFFICE = 1_050_000_000_001L;
+
+    /**
+     * Turns the Corporation assets feature on and gives the account a corporation with a hangar named "Production",
+     * holding 900 Tritanium in hangar division 2 and a Test Hauler in division 1. The member is a known Director that
+     * granted no corporation permissions, so the page's own background run can neither learn nor read anything.
+     */
+    private UUID corporation(Viewer viewer, UUID member, String name) {
+        for (var feature : List.of("INVENTORY", "CORPORATION_ASSETS")) {
+            jdbc.sql("INSERT INTO account_feature (owner_account_id, feature) VALUES (:owner, :feature) "
+                            + "ON CONFLICT DO NOTHING")
+                    .param("owner", viewer.accountId().value()).param("feature", feature).update();
+        }
+        var eveCorporation = 98_000_000L + ThreadLocalRandom.current().nextInt(1_000_000);
+        var id = corporations.saveCorporation(viewer.accountId().value(), eveCorporation, name, Instant.now());
+        corporations.saveMembership(member, eveCorporation, true, Instant.now(), Instant.now());
+        corporations.replace(id, List.of(
+                new CharacterAsset(OFFICE, 27, 1, JITA, "station", "OfficeFolder", true, null),
+                new CharacterAsset(1, TRITANIUM, 900, OFFICE, "item", "CorpSAG2", false, null),
+                new CharacterAsset(2, HAULER, 1, OFFICE, "item", "CorpSAG1", true, null)), Instant.now());
+        corporations.replaceDivisions(id, java.util.Map.of(2, "Production"), Instant.now());
+        return id;
+    }
+
+    @Test
+    void aCorporationIsAnotherHolderWithItsOwnColourAndItsItemsAreInTheTotals() throws Exception {
+        var s = setup();
+        corporation(s.viewer(), s.one(), "Test Industries");
+
+        var page = whole(s.sub(), "");
+
+        var visible = text(page);
+        // Tritanium: 1,500 + 500 held by characters and 900 by the corporation
+        assertThat(visible).contains("Tritanium", "2,900");
+        assertThat(visible).contains("3 holders, most: Alt One");
+        // two characters have colours 0 and 1, and the corporation comes after them
+        assertThat(page).contains("Test Industries: 900").contains("class=\"seg-2\"");
+        assertThat(page).doesNotContain("style=");
+        // the Add filter menu says the column also lists corporations
+        assertThat(visible).contains("Character or corporation");
+    }
+
+    @Test
+    void theCorporationsOfficeIsNotAnItemAndItsContentsAreAtTheStationInTheNamedHangar() throws Exception {
+        var s = setup();
+        corporation(s.viewer(), s.one(), "Test Industries");
+
+        var where = text(mvc.perform(get("/inventory/item/" + TRITANIUM).param("ui", "1").param("chars", "1")
+                        .with(signedInAs(s.sub())))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+
+        assertThat(where).contains("Test Industries 900").contains("Production").contains("in a hangar");
+        assertThat(where).contains("Alt One 1,500");
+        var hauler = text(mvc.perform(get("/inventory/item/" + HAULER).param("ui", "1").param("chars", "1")
+                        .with(signedInAs(s.sub())))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+        // division 1 has no name stored, so it is called by its number
+        assertThat(hauler).contains("Hangar 1").contains("Test Industries 1");
+        assertThat(text(whole(s.sub(), ""))).doesNotContain("Office");
+    }
+
+    @Test
+    void theCharacterFilterCanKeepOnlyTheCorporationOrLeaveItOut() throws Exception {
+        var s = setup();
+        var corporation = corporation(s.viewer(), s.one(), "Test Industries");
+
+        var only = text(whole(s.sub(), "?ui=1&chars=1&character=" + corporation));
+        var without = text(whole(s.sub(), "?ui=1&chars=1&character=" + s.one() + "&character=" + s.two()));
+
+        assertThat(only).contains("2 item types, 901 units").contains("Character or corporation: Test Industries");
+        assertThat(without).contains("4 item types, 2,026 units");
+        var list = text(mvc.perform(get("/inventory/filter/character").with(signedInAs(s.sub())))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+        assertThat(list).contains("Alt One", "Alt Two", "Test Industries");
+    }
+
+    @Test
+    void withTheFeatureOffTheCorporationIsNeitherShownNorCounted() throws Exception {
+        var s = setup();
+        corporation(s.viewer(), s.one(), "Test Industries");
+        jdbc.sql("DELETE FROM account_feature WHERE owner_account_id = :owner AND feature = 'CORPORATION_ASSETS'")
+                .param("owner", s.viewer().accountId().value()).update();
+
+        var page = whole(s.sub(), "");
+
+        assertThat(text(page)).doesNotContain("Test Industries").contains("4 item types, 2,026 units")
+                .contains("2 characters, most: Alt One");
+        assertThat(page).doesNotContain("id=\"corporation-status\"");
+    }
+
+    @Test
+    void anotherAccountNeverSeesTheCorporationOrItsItems() throws Exception {
+        var s = setup();
+        corporation(s.viewer(), s.one(), "Test Industries");
+        var stranger = newSub();
+        var strangerViewer = viewerFor(stranger);
+        var theirs = link(strangerViewer, "Stranger");
+        store(theirs, asset(1, TRITANIUM, 7, JITA, "Hangar"));
+        jdbc.sql("INSERT INTO account_feature (owner_account_id, feature) VALUES (:owner, 'CORPORATION_ASSETS')")
+                .param("owner", strangerViewer.accountId().value()).update();
+
+        var page = text(whole(stranger, ""));
+
+        assertThat(page).contains("1 item type, 7 units").doesNotContain("Test Industries");
+        var where = text(mvc.perform(get("/inventory/item/" + TRITANIUM).with(signedInAs(stranger)))
+                .andReturn().getResponse().getContentAsString());
+        assertThat(where).doesNotContain("Production").doesNotContain("900");
+    }
+
+    @Test
+    void theStatusListsTheCorporationAndWhyOneCannotBeRead() throws Exception {
+        var s = setup();
+        corporation(s.viewer(), s.one(), "Test Industries");
+
+        var status = text(mvc.perform(get("/inventory/status").with(signedInAs(s.sub()))).andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString());
+
+        // the member is a Director that has not granted the corporation permissions
+        assertThat(status).contains("Test Industries").contains("Director needs authorization");
+    }
+
+    @Test
+    void theCsvHasAHangarColumnAndNamesTheCorporationAsTheHolder() throws Exception {
+        var s = setup();
+        corporation(s.viewer(), s.one(), "Test Industries");
+
+        var csv = mvc.perform(get("/inventory/export.csv").param("ui", "1").param("category", "4")
+                        .with(signedInAs(s.sub())))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+
+        assertThat(csv).contains("\"Test Industries\"").contains("\"900\",\"\",\"Production\"");
+        // a character's line has an empty hangar
+        assertThat(csv).contains("\"1500\",\"\",\"\"");
     }
 }

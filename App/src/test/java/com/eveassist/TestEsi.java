@@ -39,6 +39,12 @@ public class TestEsi implements EsiClient {
         assetsAsked.clear();
         structures.clear();
         structuresAsked.clear();
+        corporationOf.clear();
+        rolesOf.clear();
+        corporationNames.clear();
+        corporationAssets.clear();
+        hangarNames.clear();
+        corporationAssetsAsked.clear();
         assetsGate = null;
         assetsFailure = null;
         sells.put(34, new BigDecimal("5.00"));
@@ -122,6 +128,78 @@ public class TestEsi implements EsiClient {
             throw assetsFailure;
         }
         return assets.getOrDefault(eveCharacterId, EsiResult.updated(List.of(), Instant.now().plusSeconds(3600)));
+    }
+
+    private final Map<Long, Long> corporationOf = new ConcurrentHashMap<>();
+    private final Map<Long, Set<String>> rolesOf = new ConcurrentHashMap<>();
+    private final Map<Long, String> corporationNames = new ConcurrentHashMap<>();
+    private final Map<Long, EsiResult<List<CharacterAsset>>> corporationAssets = new ConcurrentHashMap<>();
+    private final Map<Long, Map<Integer, String>> hangarNames = new ConcurrentHashMap<>();
+    private final List<String> corporationAssetsAsked = new CopyOnWriteArrayList<>();
+
+    /** Puts a character in a corporation with the given roles, as ESI says it. A character not put in one is unknown. */
+    public void inCorporation(long eveCharacterId, long corporationId, String... roles) {
+        corporationOf.put(eveCharacterId, corporationId);
+        rolesOf.put(eveCharacterId, Set.of(roles));
+    }
+
+    public void corporationNamed(long corporationId, String name) {
+        corporationNames.put(corporationId, name);
+    }
+
+    /** What ESI answers for a corporation's assets from now on. */
+    public void corporationAssetsOf(long corporationId, List<CharacterAsset> list) {
+        corporationAssets.put(corporationId, EsiResult.updated(List.copyOf(list), Instant.now().plusSeconds(3600)));
+    }
+
+    public void corporationAssetsUnchanged(long corporationId) {
+        corporationAssets.put(corporationId, EsiResult.unchanged(Instant.now().plusSeconds(3600)));
+    }
+
+    public void failCorporationAssets(long corporationId, String problem) {
+        corporationAssets.put(corporationId, EsiResult.failed(problem));
+    }
+
+    public void hangars(long corporationId, Map<Integer, String> names) {
+        hangarNames.put(corporationId, Map.copyOf(names));
+    }
+
+    /** The corporation asset calls so far, as {@code "<EVE corporation id>:<EVE character id of the token>"}. */
+    public List<String> corporationAssetsAsked() {
+        return List.copyOf(corporationAssetsAsked);
+    }
+
+    @Override
+    public EsiResult<Long> characterCorporationId(long eveCharacterId) {
+        var corporation = corporationOf.get(eveCharacterId);
+        return corporation == null ? EsiResult.failed("test ESI does not know the character")
+                : EsiResult.updated(corporation, Instant.now().plusSeconds(86400));
+    }
+
+    @Override
+    public EsiResult<Set<String>> characterRoles(long eveCharacterId) {
+        var roles = rolesOf.get(eveCharacterId);
+        return roles == null ? EsiResult.failed("test ESI does not know the character")
+                : EsiResult.updated(roles, Instant.now().plusSeconds(3600));
+    }
+
+    @Override
+    public EsiResult<String> corporationName(long eveCorporationId) {
+        var name = corporationNames.get(eveCorporationId);
+        return name == null ? EsiResult.failed("test ESI does not know the corporation")
+                : EsiResult.updated(name, Instant.now().plusSeconds(3600));
+    }
+
+    @Override
+    public EsiResult<List<CharacterAsset>> corporationAssets(long eveCorporationId, long viaEveCharacterId) {
+        corporationAssetsAsked.add(eveCorporationId + ":" + viaEveCharacterId);
+        return corporationAssets.getOrDefault(eveCorporationId,
+                EsiResult.updated(List.of(), Instant.now().plusSeconds(3600)));
+    }
+
+    @Override
+    public EsiResult<Map<Integer, String>> corporationHangars(long eveCorporationId, long viaEveCharacterId) {
+        return EsiResult.updated(hangarNames.getOrDefault(eveCorporationId, Map.of()), Instant.now().plusSeconds(3600));
     }
 
     /** The items ESI has been asked about since the test began, in the order asked. */

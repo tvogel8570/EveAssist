@@ -267,4 +267,126 @@ class HttpEsiClientAssetsTest {
         assertThat(tokens.scopesAsked).isEmpty();
         esi.verify();
     }
+
+    // ---- corporations
+
+    @Test
+    void readsACorporationsAssetsWithTheDirectorsTokenAndTheCorporationScope() {
+        esi.expect(requestTo("https://esi.test/corporations/98000001/assets?page=1"))
+                .andExpect(header("Authorization", "Bearer token-1"))
+                .andRespond(page("""
+                        [{"is_singleton":false,"item_id":1040000000001,"location_flag":"OfficeFolder",
+                          "location_id":60003760,"location_type":"station","quantity":1,"type_id":27},
+                         {"is_singleton":false,"item_id":1040000000002,"location_flag":"CorpSAG2",
+                          "location_id":1040000000001,"location_type":"item","quantity":900,"type_id":34}]
+                        """, "\"c1\"", "Sun, 08 Nov 2026 21:05:00 GMT"));
+
+        var result = client.corporationAssets(98000001L, 90000001L);
+
+        assertThat(result.outcome()).isEqualTo(EsiResult.Outcome.UPDATED);
+        assertThat(result.data()).hasSize(2);
+        assertThat(result.data().get(1).locationFlag()).isEqualTo("CorpSAG2");
+        assertThat(result.data().get(1).quantity()).isEqualTo(900);
+        assertThat(tokens.scopesAsked).containsExactly("esi-assets.read_corporation_assets.v1");
+        esi.verify();
+    }
+
+    @Test
+    void aCorporationsAssetsAreCachedLikeACharactersAndAForbiddenDirectorIsAFailure() {
+        esi.expect(requestTo("https://esi.test/corporations/98000001/assets?page=1"))
+                .andRespond(page("[]", "\"c1\"", "Sun, 08 Nov 2026 21:05:00 GMT"));
+        client.corporationAssets(98000001L, 90000001L);
+        clock.advance(Duration.ofMinutes(1));
+
+        assertThat(client.corporationAssets(98000001L, 90000001L).outcome()).isEqualTo(EsiResult.Outcome.UNCHANGED);
+
+        clock.advance(Duration.ofMinutes(10));
+        esi.reset();
+        esi.expect(requestTo("https://esi.test/corporations/98000001/assets?page=1"))
+                .andRespond(withStatus(HttpStatus.FORBIDDEN));
+        var refused = client.corporationAssets(98000001L, 90000001L);
+
+        assertThat(refused.outcome()).isEqualTo(EsiResult.Outcome.FAILED);
+        assertThat(refused.problem()).contains("403");
+        esi.verify();
+    }
+
+    @Test
+    void readsTheHangarNamesWithTheDirectorsTokenAndTheDivisionsScope() {
+        esi.expect(requestTo("https://esi.test/corporations/98000001/divisions"))
+                .andExpect(header("Authorization", "Bearer token-1"))
+                .andRespond(withSuccess("""
+                        {"hangar":[{"division":1,"name":"Master Wallet"},{"division":2,"name":"Production"},
+                                   {"division":3}],
+                         "wallet":[{"division":1,"name":"Wallet"}]}""", MediaType.APPLICATION_JSON));
+
+        var result = client.corporationHangars(98000001L, 90000001L);
+
+        assertThat(result.outcome()).isEqualTo(EsiResult.Outcome.UPDATED);
+        assertThat(result.data()).containsOnly(Map.entry(1, "Master Wallet"), Map.entry(2, "Production"));
+        assertThat(tokens.scopesAsked).containsExactly("esi-corporations.read_divisions.v1");
+        esi.verify();
+    }
+
+    @Test
+    void readsACharactersRolesWithItsTokenAndTheRolesScope() {
+        esi.expect(requestTo("https://esi.test/characters/90000001/roles"))
+                .andExpect(header("Authorization", "Bearer token-1"))
+                .andRespond(withSuccess("""
+                        {"roles":["Director","Factory_Manager"],"roles_at_base":["Director"]}""",
+                        MediaType.APPLICATION_JSON));
+
+        var result = client.characterRoles(90000001L);
+
+        assertThat(result.data()).containsExactlyInAnyOrder("Director", "Factory_Manager");
+        assertThat(tokens.scopesAsked).containsExactly("esi-characters.read_corporation_roles.v1");
+        esi.verify();
+    }
+
+    @Test
+    void aCharacterWithNoRolesGetsAnEmptySet() {
+        esi.expect(requestTo("https://esi.test/characters/90000001/roles"))
+                .andRespond(withSuccess("{}", MediaType.APPLICATION_JSON));
+
+        assertThat(client.characterRoles(90000001L).data()).isEmpty();
+    }
+
+    @Test
+    void theCorporationOfACharacterAndTheNameOfACorporationArePublicAndCarryNoToken() {
+        esi.expect(requestTo("https://esi.test/characters/90000001"))
+                .andExpect(headerDoesNotExist("Authorization"))
+                .andRespond(withSuccess("""
+                        {"name":"Alt One","corporation_id":98000001,"birthday":"2010-01-01T00:00:00Z"}""",
+                        MediaType.APPLICATION_JSON));
+        esi.expect(requestTo("https://esi.test/corporations/98000001"))
+                .andExpect(headerDoesNotExist("Authorization"))
+                .andRespond(withSuccess("""
+                        {"name":"Test Industries","ticker":"TEST","member_count":9}""", MediaType.APPLICATION_JSON));
+
+        assertThat(client.characterCorporationId(90000001L).data()).isEqualTo(98000001L);
+        assertThat(client.corporationName(98000001L).data()).isEqualTo("Test Industries");
+        assertThat(tokens.scopesAsked).isEmpty();
+        esi.verify();
+    }
+
+    @Test
+    void aRolesCallForACharacterWithoutTheScopeIsNotMade() {
+        tokens.problem = TokenGrant.Problem.MISSING_SCOPE;
+
+        var result = client.characterRoles(90000001L);
+
+        assertThat(result.outcome()).isEqualTo(EsiResult.Outcome.FAILED);
+        assertThat(result.problem()).contains("esi-characters.read_corporation_roles.v1");
+        esi.verify();
+    }
+
+    @Test
+    void aServerErrorOnAnObjectRouteIsAFailureWithAReason() {
+        esi.expect(requestTo("https://esi.test/corporations/98000001")).andRespond(withServerError());
+
+        var result = client.corporationName(98000001L);
+
+        assertThat(result.outcome()).isEqualTo(EsiResult.Outcome.FAILED);
+        assertThat(result.problem()).isNotBlank();
+    }
 }

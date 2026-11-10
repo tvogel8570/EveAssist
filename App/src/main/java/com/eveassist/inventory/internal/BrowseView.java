@@ -12,7 +12,7 @@ import java.util.UUID;
 public record BrowseView(List<ItemView> items, int itemTypes, long units, boolean more, boolean capped,
         boolean showCharacters,
         List<Chip> chips, String clearAllQuery, String exportQuery, String moreQuery, boolean unfiltered,
-        boolean hasAssets) {
+        boolean hasAssets, boolean corporations) {
 
     /** One item type: its total, and who holds it as the pieces of one bar. */
     public record ItemView(int typeId, String name, String groupName, String categoryName, long total, int places,
@@ -50,9 +50,11 @@ public record BrowseView(List<ItemView> items, int itemTypes, long units, boolea
     }
 
     /** One place an item type is held, and how. */
-    public record WhereLine(String place, boolean placeUnknown, String region, String held, String characters, long total) {
+    public record WhereLine(String place, boolean placeUnknown, String region, String held, String hangar,
+            String characters, long total) {
     }
 
-    public record CharacterRef(UUID id, String name, int color) {
+    /** A holder of items, a character or a corporation, with its colour. */
+    public record CharacterRef(UUID id, String name, int color, boolean corporation) {
     }
 }

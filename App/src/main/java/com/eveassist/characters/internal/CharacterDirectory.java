@@ -10,9 +10,16 @@ import org.springframework.stereotype.Component;
 class CharacterDirectory implements LinkedCharacters {
 
     private final CharacterRepository characters;
+    private final FeatureRepository features;
 
-    CharacterDirectory(CharacterRepository characters) {
+    CharacterDirectory(CharacterRepository characters, FeatureRepository features) {
         this.characters = characters;
+        this.features = features;
+    }
+
+    @Override
+    public java.util.Set<com.eveassist.characters.Feature> featuresOn(Viewer viewer) {
+        return features.turnedOn(viewer.accountId());
     }
 
     @Override
