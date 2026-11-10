@@ -194,4 +194,5 @@ Prices, the price basis and fees are defined in [Market and logistics](market-lo
 
 - Updating the stored prices in the background, so that a price is not old when someone opens a plan, is worth
   considering. It would help signed-in plans and the plan without an account. Not decided.
-- How old a price must be before a plan warns that it is stale. The same age could serve both kinds of plan.
+- How old a price must be before a plan warns that it is stale. The same age could serve both kinds of plan. The page
+  without an account uses 24 hours for now.

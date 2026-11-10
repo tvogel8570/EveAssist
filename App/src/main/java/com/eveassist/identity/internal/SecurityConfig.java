@@ -37,9 +37,12 @@ class SecurityConfig {
         return http
                 .authorizeHttpRequests(requests -> requests
                         .requestMatchers("/", "/error", "/css/**", "/js/**").permitAll()
+                        // a plan without an account: open to everyone, stores nothing, so it has no token to protect
+                        .requestMatchers("/try", "/try/**").permitAll()
                         // metrics (heap, pool, queues) are for the operator, never an ordinary user
                         .requestMatchers("/actuator/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/try/**"))
                 .oauth2Login(login -> login
                         .loginPage("/oauth2/authorization/keycloak")
                         .userInfoEndpoint(userInfo -> userInfo.oidcUserService(users)))

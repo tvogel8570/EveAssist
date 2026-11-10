@@ -44,7 +44,8 @@ Status: **agreed** (follows from the requirements).
 ## Sessions
 
 - The browser holds one session cookie: `HttpOnly`, `Secure`, `SameSite=Lax`. This is an essential cookie, so no
-  consent banner is needed. CSRF protection is Spring Security's default.
+  consent banner is needed. CSRF protection is Spring Security's default. The one exception is `/try/**`, the plan for a visitor without an account: it
+  is open to everyone and stores nothing that belongs to anyone, so it has no token to protect and is not asked for one.
 - Sessions are stored in Postgres with Spring Session JDBC. Sessions then survive a restart, a second instance can be
   added later without sticky sessions, and the fetch coordinator can tell which users are signed in.
 - Sign-out ends the Keycloak session (RP-initiated logout), deletes the app session, drops that user's access tokens
