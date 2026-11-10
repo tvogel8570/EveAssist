@@ -87,6 +87,41 @@
     </div>
 </section>
 
+<!--
+  The runs of each blueprint the plan needs, for the products and the parts marked build. It has no input of its own, so
+  the whole section is drawn again after any change.
+-->
+<section th:fragment="runs(runs, oob)" id="runs-section" th:attr="hx-swap-oob=${oob ? 'true' : null}">
+    <h2 class="font-semibold mt-5 mb-1"><span th:text="#{plan.runs}">Runs needed</span>
+        <span class="badge badge-sm" th:text="${#lists.size(runs)}">0</span></h2>
+    <p class="text-xs opacity-70 mb-1" th:text="#{plan.runsHint}">Runs</p>
+    <p id="no-runs" class="opacity-70 my-2" th:if="${#lists.isEmpty(runs)}" th:text="#{plan.runsNone}">Nothing is built yet.</p>
+    <div class="overflow-x-auto" th:unless="${#lists.isEmpty(runs)}">
+        <table class="table table-sm">
+            <thead>
+            <tr>
+                <th th:text="#{plan.item}">Item</th>
+                <th class="num" th:text="#{plan.runsBlueprint}">Runs</th>
+                <th class="num" th:text="#{plan.runsNeeded}">Needed</th>
+                <th class="num" th:text="#{plan.runsMade}">Made</th>
+                <th class="num" th:text="#{plan.runsSurplus}">Surplus</th>
+                <th class="num" th:text="#{plan.runsTime}">Time</th>
+            </tr>
+            </thead>
+            <tbody id="run-lines">
+            <tr th:each="line : ${runs}" th:id="'run-' + ${line.typeId}">
+                <td th:classappend="${line.product} ? 'font-medium'" th:text="${line.name}">Item</td>
+                <td class="num" th:text="${#numbers.formatInteger(line.runs, 1, 'COMMA')}">1</td>
+                <td class="num" th:text="${#numbers.formatInteger(line.quantity, 1, 'COMMA')}">1</td>
+                <td class="num" th:text="${#numbers.formatInteger(line.unitsMade, 1, 'COMMA')}">1</td>
+                <td class="num" th:text="${#numbers.formatInteger(line.surplus, 1, 'COMMA')}">0</td>
+                <td class="num" th:text="${@durations.format(line.seconds)}">1h</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
 <section th:fragment="materials(plan, oob)" id="materials-section" th:attr="hx-swap-oob=${oob ? 'true' : null}">
     <h2 class="font-semibold mt-5 mb-1"><span th:text="#{plan.materials}">Materials</span>
         <span class="badge badge-sm" th:text="${#lists.size(plan.bought)}">0</span></h2>
@@ -121,6 +156,7 @@
     <div th:replace="~{plans/fragments :: priceWarning(${failedItems}, true)}"></div>
     <div th:replace="~{plans/fragments :: total(${plan.totalCost}, ${plan.unpricedLines}, ${plan.pricesAsOf}, true)}"></div>
     <section th:replace="~{plans/fragments :: parts(${plan}, true)}"></section>
+    <section th:replace="~{plans/fragments :: runs(${plan.runs}, true)}"></section>
     <section th:replace="~{plans/fragments :: materials(${plan}, true)}"></section>
 </th:block>
 
@@ -219,6 +255,7 @@
 <th:block th:fragment="change">
     <input th:replace="~{plans/fragments :: version(${change.version}, true)}">
     <div th:replace="~{plans/fragments :: total(${change.totalCost}, ${change.unpricedLines}, ${change.pricesAsOf}, true)}"></div>
+    <section th:replace="~{plans/fragments :: runs(${change.runs}, true)}"></section>
     <span th:id="'saved-' + ${editedTypeId}" hx-swap-oob="true"><span class="saved-cue text-xs text-success" th:text="#{plan.saved}">Saved</span></span>
     <!--/* A row needs its own hx-partial: the browser would drop a bare tr here, because the response starts with an input. */-->
     <hx-partial th:each="line : ${change.changedLines}" th:attr="hx-target='#line-' + ${line.typeId}" hx-swap="outerHTML">

@@ -63,7 +63,17 @@ class PlanCostings {
                                 .thenComparing(PlanLineCosting::name)).toList(),
                 lines.stream().filter(PlanLineCosting::buildable)
                         .sorted(Comparator.comparing(PlanLineCosting::name)).toList(),
+                runs(plan, cost),
                 cost.total(), cost.unpricedLines(), pricesAsOf(cost, inputs), sde.version(), plan.archived());
+    }
+
+    /** Everything the plan builds, the products first, each with the runs of its blueprint. */
+    List<PlanRunLine> runs(Plan plan, PlanCost cost) {
+        return cost.lines().stream().filter(LineCost::built)
+                .map(line -> new PlanRunLine(line.type().value(), name(line.type()), plan.hasProduct(line.type()),
+                        line.quantity(), line.runs(), line.unitsMade(), line.seconds()))
+                .sorted(Comparator.comparing(PlanRunLine::product).reversed().thenComparing(PlanRunLine::name))
+                .toList();
     }
 
     PlanLineCosting describe(LineCost line) {

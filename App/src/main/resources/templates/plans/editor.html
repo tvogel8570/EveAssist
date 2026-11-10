@@ -49,6 +49,7 @@
     </div>
 
     <div th:replace="~{plans/fragments :: parts(${plan}, false)}"></div>
+    <div th:replace="~{plans/fragments :: runs(${plan.runs}, false)}"></div>
     <div th:replace="~{plans/fragments :: materials(${plan}, false)}"></div>
 </main>
 </body>

@@ -10,11 +10,13 @@ public record PlanChangeResult(
         PlanId planId,
         long version,
         List<PlanLineCosting> changedLines,
+        List<PlanRunLine> runs,
         BigDecimal totalCost,
         int unpricedLines,
         Instant pricesAsOf) {
 
     public PlanChangeResult {
         changedLines = List.copyOf(changedLines);
+        runs = List.copyOf(runs);
     }
 }

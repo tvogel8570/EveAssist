@@ -75,6 +75,11 @@ All of these are in scope:
   own and uses more materials, and an item with a small base quantity gets no ME saving at all (a job never uses less
   than one of a material for each run). The page says so. In a project, each built item has its own job size and the
   materials are worked out per job.
+- **Runs needed.** The plan has a section that lists, for each product and each part marked build, the total runs needed:
+  the units the plan needs of it (for a product, the units asked for; for a part, the sum over everything that uses it)
+  divided by the units one run makes, rounded up. Next to the runs it shows the units needed, the units made, the
+  surplus and the time at TE 20 for all the runs. A plan shows no job count, since it assumes one job. Parts marked buy are not in this section, since
+  they have no runs. They are listed with the materials to buy instead.
 
 ### Working with plans
 

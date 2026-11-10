@@ -157,6 +157,7 @@ public class PlanEditing {
                         .filter(line -> !plan.hasProduct(line.type()))
                         .map(costings::describe)
                         .toList(),
+                costings.runs(plan, after),
                 after.total(), after.unpricedLines(), costings.pricesAsOf(after, inputs));
     }
 }
