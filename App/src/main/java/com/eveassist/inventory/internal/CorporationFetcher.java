@@ -39,10 +39,6 @@ public class CorporationFetcher {
 
     private static final Logger log = LoggerFactory.getLogger(CorporationFetcher.class);
 
-    /** How long a character's roles are trusted. ESI caches them for an hour. */
-    static final Duration MEMBERSHIP_TRUSTED_FOR = Duration.ofHours(1);
-    /** How long the corporation a character is in is trusted. ESI caches the public character for a day. */
-    static final Duration CORPORATION_OF_CHARACTER_TRUSTED_FOR = Duration.ofDays(1);
     /** The corporation's name and the names of its hangars change rarely. ESI caches both for an hour. */
     static final Duration NAME_TRUSTED_FOR = Duration.ofDays(1);
     static final Duration DIVISIONS_TRUSTED_FOR = Duration.ofHours(1);
@@ -115,60 +111,21 @@ public class CorporationFetcher {
     /** One run on the calling thread. Used by the background task and by tests. */
     void run(Viewer viewer) {
         var account = viewer.accountId().value();
+        // which corporation each character is in, and who is a Director, as the characters module reads it from ESI
+        linked.learnCorporations(viewer);
         var characters = linked.of(viewer);
-        for (var character : characters) {
-            if (usable(character, EsiClient.ROLES_SCOPE)) {
-                learnMembership(character);
-            }
-        }
-        var memberships = corporations.memberships(characters.stream().map(LinkedCharacter::id).toList());
-        var byCharacter = characters.stream().collect(Collectors.toMap(LinkedCharacter::id, Function.identity()));
         // the corporations of the account are the ones its characters are in, as last learned
-        var members = new LinkedHashMap<Long, List<CorporationRepository.Membership>>();
-        memberships.forEach(m -> members.computeIfAbsent(m.eveCorporationId(), id -> new ArrayList<>()).add(m));
+        var members = new LinkedHashMap<Long, List<LinkedCharacter>>();
+        characters.stream().filter(c -> c.eveCorporationId() != null)
+                .forEach(c -> members.computeIfAbsent(c.eveCorporationId(), id -> new ArrayList<>()).add(c));
         corporations.dropAbandoned(account, members.keySet());
         for (var entry : members.entrySet()) {
             var corporation = learnCorporation(account, entry.getKey());
-            var directors = entry.getValue().stream().filter(CorporationRepository.Membership::director)
-                    .map(m -> byCharacter.get(m.characterId())).filter(c -> c != null && canRead(c)).toList();
+            var directors = entry.getValue().stream().filter(c -> Boolean.TRUE.equals(c.director()) && canRead(c))
+                    .toList();
             if (!directors.isEmpty()) {
                 fetch(corporation, directors);
             }
-        }
-    }
-
-    /** Which corporation the character is in and whether it is a Director there, when that is no longer fresh. */
-    private void learnMembership(LinkedCharacter character) {
-        var now = clock.instant();
-        var known = corporations.membership(character.id());
-        if (known.isPresent() && known.get().checkedAt().plus(MEMBERSHIP_TRUSTED_FOR).isAfter(now)) {
-            return;
-        }
-        try {
-            long corporation;
-            Instant corporationAskedAt;
-            if (known.isPresent()
-                    && known.get().corporationCheckedAt().plus(CORPORATION_OF_CHARACTER_TRUSTED_FOR).isAfter(now)) {
-                corporation = known.get().eveCorporationId();
-                corporationAskedAt = known.get().corporationCheckedAt();
-            } else {
-                var asked = esi.characterCorporationId(character.eveCharacterId());
-                if (asked.outcome() != EsiResult.Outcome.UPDATED) {
-                    log.debug("A character's corporation could not be learned: {}", asked.problem());
-                    return;
-                }
-                corporation = asked.data();
-                corporationAskedAt = now;
-            }
-            var roles = esi.characterRoles(character.eveCharacterId());
-            if (roles.outcome() != EsiResult.Outcome.UPDATED) {
-                log.debug("A character's roles could not be learned: {}", roles.problem());
-                return;
-            }
-            corporations.saveMembership(character.id(), corporation, roles.data().contains("Director"), now,
-                    corporationAskedAt);
-        } catch (DataIntegrityViolationException gone) {
-            log.debug("A character was removed while its corporation was being learned");
         }
     }
 
@@ -242,17 +199,16 @@ public class CorporationFetcher {
             return List.of();
         }
         var characters = linked.of(viewer);
-        var byId = characters.stream().collect(Collectors.toMap(LinkedCharacter::id, Function.identity()));
-        var memberships = corporations.memberships(byId.keySet());
         var list = corporations.listFor(viewer.accountId().value());
         Map<UUID, CorporationRepository.FetchState> states = corporations.state(
                         list.stream().map(CorporationRepository.Corporation::id).toList()).stream()
                 .collect(Collectors.toMap(CorporationRepository.FetchState::corporationId, Function.identity()));
         var isRunning = running.contains(viewer.accountId().value());
         return list.stream().map(corporation -> {
-            var directors = memberships.stream()
-                    .filter(m -> m.eveCorporationId() == corporation.eveCorporationId() && m.director())
-                    .map(m -> byId.get(m.characterId())).filter(c -> c != null).toList();
+            var directors = characters.stream()
+                    .filter(c -> c.eveCorporationId() != null && c.eveCorporationId() == corporation.eveCorporationId()
+                            && Boolean.TRUE.equals(c.director()))
+                    .toList();
             var usable = directors.stream().filter(this::canRead).toList();
             var state = states.get(corporation.id());
             Phase phase;

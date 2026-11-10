@@ -570,7 +570,10 @@ class InventoryBrowseIT extends IntegrationTest {
         }
         var eveCorporation = 98_000_000L + ThreadLocalRandom.current().nextInt(1_000_000);
         var id = corporations.saveCorporation(viewer.accountId().value(), eveCorporation, name, Instant.now());
-        corporations.saveMembership(member, eveCorporation, true, Instant.now(), Instant.now());
+        jdbc.sql("""
+                INSERT INTO character_corporation (character_id, eve_corporation_id, director, checked_at,
+                    corporation_checked_at) VALUES (:id, :corporation, true, now(), now())
+                """).param("id", member).param("corporation", eveCorporation).update();
         corporations.replace(id, List.of(
                 new CharacterAsset(OFFICE, 27, 1, JITA, "station", "OfficeFolder", true, null),
                 new CharacterAsset(1, TRITANIUM, 900, OFFICE, "item", "CorpSAG2", false, null),

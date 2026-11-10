@@ -97,9 +97,13 @@ Director role), in `CorporationFetcher` in the `inventory` module, only while th
 `CORPORATION_ASSETS` feature on. The account owns the stored rows (`corporation` has `owner_account_id`, and the assets
 carry the corporation's id), so phase 2 can share them with a group. A run is one account on one virtual thread:
 
-1. For each linked character with the roles scope, ask which corporation it is in (public `GET /characters/{id}`) and
-   its roles (`GET /characters/{id}/roles`). They are kept in `character_corporation` and asked again after ESI's cache
-   times: the roles after an hour, the corporation after a day.
+1. Ask the `characters` module to learn the corporations (`LinkedCharacters.learnCorporations`). Which corporation a
+   character is in, and whether it is a Director, is a fact about the character, so `characters` owns it
+   (`MembershipLearner` and `character_corporation`). For each linked character with the roles scope it asks which
+   corporation it is in (public `GET /characters/{id}`) and its roles (`GET /characters/{id}/roles`), and asks again
+   after ESI's cache times: the roles after an hour, the corporation after a day. Other modules read the result from
+   `LinkedCharacter.eveCorporationId()` and `director()`, which are null while unknown. The Characters page reads the
+   same table to strike through the permissions that only a Director can use.
 2. For each corporation any of them is in, create it for the account, named from the public `GET /corporations/{id}`
    (asked again after a day). A corporation no known character is in is dropped, with its rows. A failed lookup keeps
    what was known.

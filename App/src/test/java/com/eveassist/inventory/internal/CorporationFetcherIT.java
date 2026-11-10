@@ -78,6 +78,22 @@ class CorporationFetcherIT extends IntegrationTest {
         return new CharacterAsset(itemId, typeId, quantity, OFFICE, "item", division, false, null);
     }
 
+    /** What the characters module has learned about a character's corporation, read straight from its table. */
+    record Learned(long eveCorporationId, boolean director, Instant checkedAt, Instant corporationCheckedAt) {
+    }
+
+    private Learned membership(UUID characterId) {
+        return jdbc.sql("SELECT * FROM character_corporation WHERE character_id = :id").param("id", characterId)
+                .query((rs, row) -> new Learned(rs.getLong("eve_corporation_id"), rs.getBoolean("director"),
+                        rs.getTimestamp("checked_at").toInstant(), rs.getTimestamp("corporation_checked_at").toInstant()))
+                .single();
+    }
+
+    private int membershipCount(UUID characterId) {
+        return jdbc.sql("SELECT count(*) FROM character_corporation WHERE character_id = :id")
+                .param("id", characterId).query(Integer.class).single();
+    }
+
     private int storedRows(UUID corporationId) {
         return jdbc.sql("SELECT count(*) FROM corporation_asset WHERE corporation_id = :id")
                 .param("id", corporationId).query(Integer.class).single();
@@ -373,11 +389,11 @@ class CorporationFetcherIT extends IntegrationTest {
         var boss = linkWithCorporationScopes(viewer, "Boss");
         esi.inCorporation(boss.eveId(), corporationId(), "Director");
         fetcher.run(viewer);
-        assertThat(corporations.membership(boss.id())).isPresent();
+        assertThat(membershipCount(boss.id())).isEqualTo(1);
 
         jdbc.sql("DELETE FROM character WHERE public_id = :id").param("id", boss.id()).update();
 
-        assertThat(corporations.membership(boss.id())).isEmpty();
+        assertThat(membershipCount(boss.id())).isZero();
     }
 
     @Test
@@ -408,7 +424,7 @@ class CorporationFetcherIT extends IntegrationTest {
         esi.inCorporation(boss.eveId(), corporation, "Director");
         esi.corporationNamed(corporation, "Test Industries");
         fetcher.run(viewer);
-        var first = corporations.membership(boss.id()).orElseThrow();
+        var first = membership(boss.id());
 
         // the roles are two hours old and the corporation is not: only the roles are asked for again
         jdbc.sql("UPDATE character_corporation SET checked_at = :old")
@@ -417,7 +433,7 @@ class CorporationFetcherIT extends IntegrationTest {
         esi.inCorporation(boss.eveId(), other);
         fetcher.run(viewer);
 
-        var second = corporations.membership(boss.id()).orElseThrow();
+        var second = membership(boss.id());
         assertThat(second.eveCorporationId()).isEqualTo(corporation);
         assertThat(second.director()).isFalse();
         assertThat(second.corporationCheckedAt()).isEqualTo(first.corporationCheckedAt());
@@ -428,6 +444,6 @@ class CorporationFetcherIT extends IntegrationTest {
                 .param("old", java.sql.Timestamp.from(Instant.now().minusSeconds(90_000))).update();
         esi.corporationNamed(other, "Other Corp");
         fetcher.run(viewer);
-        assertThat(corporations.membership(boss.id()).orElseThrow().eveCorporationId()).isEqualTo(other);
+        assertThat(membership(boss.id()).eveCorporationId()).isEqualTo(other);
     }
 }

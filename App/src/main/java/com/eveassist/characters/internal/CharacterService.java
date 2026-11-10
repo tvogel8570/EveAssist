@@ -27,16 +27,15 @@ public class CharacterService {
     private final FeatureRepository features;
     private final TokenRevoker revoker;
     private final CharacterAccessTokens accessTokens;
-    private final org.springframework.beans.factory.ObjectProvider<com.eveassist.characters.CharacterRoles> roles;
+    private final MembershipRepository memberships;
 
     /** Scopes that give nothing to a character that is not a Director of its corporation. */
     private static final Set<String> DIRECTOR_ONLY = Set.of("esi-assets.read_corporation_assets.v1",
             "esi-corporations.read_divisions.v1");
 
     CharacterService(CharacterRepository characters, FeatureRepository features, TokenRevoker revoker,
-            CharacterAccessTokens accessTokens,
-            org.springframework.beans.factory.ObjectProvider<com.eveassist.characters.CharacterRoles> roles) {
-        this.roles = roles;
+            CharacterAccessTokens accessTokens, MembershipRepository memberships) {
+        this.memberships = memberships;
         this.accessTokens = accessTokens;
         this.characters = characters;
         this.features = features;
@@ -46,8 +45,9 @@ public class CharacterService {
     public List<CharacterView> list(Viewer viewer) {
         var needed = neededScopes(features.turnedOn(viewer.accountId()));
         var all = characters.listFor(viewer.accountId());
-        var known = roles.getIfAvailable() == null ? java.util.Map.<UUID, Boolean>of()
-                : roles.getObject().directors(all.stream().map(CharacterDetails::id).toList());
+        var known = memberships.findAll(all.stream().map(CharacterDetails::id).toList()).stream()
+                .collect(java.util.stream.Collectors.toMap(MembershipRepository.Membership::characterId,
+                        MembershipRepository.Membership::director));
         return all.stream().map(details -> {
             var missing = new TreeSet<>(needed);
             missing.removeAll(details.scopes());

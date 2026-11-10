@@ -18,8 +18,8 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * The corporations of an account's own characters, what is known about who may read them, their assets and the state of
- * the fetch. A corporation belongs to one account, and every method takes that account's id or ids of its own
+ * The corporations of an account's own characters, their hangar names, their assets and the state of the fetch (which
+ * corporation a character is in is the characters module's). A corporation belongs to one account, and every method takes that account's id or ids of its own
  * corporations or characters, so none reaches another account's data.
  */
 @Repository
@@ -40,61 +40,9 @@ class CorporationRepository {
     record Corporation(UUID id, long eveCorporationId, String name, Instant namedAt, Instant divisionsAt) {
     }
 
-    /** What is known about a character's corporation: which it is, and whether the character is a Director there. */
-    record Membership(UUID characterId, long eveCorporationId, boolean director, Instant checkedAt,
-            Instant corporationCheckedAt) {
-    }
-
     /** One fetch of a corporation's assets, as the page shows it. */
     record FetchState(UUID corporationId, Instant fetchedAt, Instant changedAt, Instant attemptedAt, String problem,
             Integer itemCount) {
-    }
-
-    // ---- who belongs to which corporation
-
-    Optional<Membership> membership(UUID characterId) {
-        return jdbc.sql("""
-                SELECT character_id, eve_corporation_id, director, checked_at, corporation_checked_at
-                FROM character_corporation
-                WHERE character_id = :id
-                """).param("id", characterId)
-                .query((rs, row) -> new Membership(rs.getObject("character_id", UUID.class),
-                        rs.getLong("eve_corporation_id"), rs.getBoolean("director"),
-                        rs.getTimestamp("checked_at").toInstant(),
-                        rs.getTimestamp("corporation_checked_at").toInstant()))
-                .optional();
-    }
-
-    List<Membership> memberships(Collection<UUID> characterIds) {
-        if (characterIds.isEmpty()) {
-            return List.of();
-        }
-        return jdbc.sql("""
-                SELECT character_id, eve_corporation_id, director, checked_at, corporation_checked_at
-                FROM character_corporation
-                WHERE character_id = ANY(:ids)
-                """).param("ids", characterIds.toArray(UUID[]::new))
-                .query((rs, row) -> new Membership(rs.getObject("character_id", UUID.class),
-                        rs.getLong("eve_corporation_id"), rs.getBoolean("director"),
-                        rs.getTimestamp("checked_at").toInstant(),
-                        rs.getTimestamp("corporation_checked_at").toInstant()))
-                .list();
-    }
-
-    /** @param corporationAskedAt when ESI was last asked which corporation the character is in */
-    void saveMembership(UUID characterId, long eveCorporationId, boolean director, Instant now,
-            Instant corporationAskedAt) {
-        jdbc.sql("""
-                INSERT INTO character_corporation (character_id, eve_corporation_id, director, checked_at,
-                    corporation_checked_at)
-                VALUES (:id, :corporation, :director, :now, :corporationAt)
-                ON CONFLICT (character_id) DO UPDATE
-                SET eve_corporation_id = :corporation, director = :director, checked_at = :now,
-                    corporation_checked_at = :corporationAt
-                """)
-                .param("id", characterId).param("corporation", eveCorporationId).param("director", director)
-                .param("now", Timestamp.from(now)).param("corporationAt", Timestamp.from(corporationAskedAt))
-                .update();
     }
 
     // ---- the corporations
