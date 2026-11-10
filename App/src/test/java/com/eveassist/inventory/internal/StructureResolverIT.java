@@ -236,7 +236,7 @@ class StructureResolverIT extends IntegrationTest {
     }
 
     @Test
-    void whatOneCharacterLearnedIsNeverUsedForAnother() {
+    void aNameOneCharacterLearnedIsUsedForTheOtherCharactersOfTheSameAccount() {
         var viewer = viewerFor(newSub());
         var first = linkActive(viewer);
         var second = linkActive(viewer);
@@ -247,8 +247,67 @@ class StructureResolverIT extends IntegrationTest {
         resolver.resolve(first);
 
         assertThat(nameOf(first, FIRST + 1)).isEqualTo("Alpha");
-        assertThat(nameOf(second, FIRST + 1)).isNull();
-        assertThat(structures.counts(second.id()).named()).isZero();
+        // the second character has the name through the first, and ESI is not asked again
+        assertThat(structures.counts(second.id())).isEqualTo(new StructureRepository.Counts(1, 1));
+        resolver.resolve(second);
+        assertThat(esi.structuresAsked()).containsExactly(first.eveCharacterId() + ":" + (FIRST + 1));
+    }
+
+    @Test
+    void aCharacterRefusedItsOwnLookupIsNamedByAnotherOfTheSameAccountAndIsNotAskedAgain() {
+        var viewer = viewerFor(newSub());
+        var refused = linkActive(viewer);
+        var docked = linkActive(viewer);
+        itemsIn(refused, FIRST + 1);
+        itemsIn(docked, FIRST + 1);
+        esi.structure(FIRST + 1, StructureLookup.noAccess("{\"error\":\"Forbidden\"}"));
+        resolver.resolve(refused);
+        assertThat(structures.counts(refused.id()).named()).isZero();
+
+        esi.structure(FIRST + 1, StructureLookup.found("Alpha", 30000142));
+        resolver.resolve(docked);
+
+        assertThat(structures.counts(refused.id())).isEqualTo(new StructureRepository.Counts(1, 1));
+        // after the refusal has aged a day the refused character would ask again, but the name is known now
+        backdate(refused, FIRST + 1, 2);
+        resolver.resolve(refused);
+        assertThat(esi.structuresAsked()).hasSize(2);
+    }
+
+    @Test
+    void aNameIsNeverUsedForAnotherAccount() {
+        var first = linkActive(viewerFor(newSub()));
+        var stranger = linkActive(viewerFor(newSub()));
+        itemsIn(first, FIRST + 1);
+        itemsIn(stranger, FIRST + 1);
+        esi.structure(FIRST + 1, StructureLookup.found("Alpha", 30000142));
+
+        resolver.resolve(first);
+
+        assertThat(structures.counts(first.id()).named()).isEqualTo(1);
+        assertThat(structures.counts(stranger.id()).named()).isZero();
+        esi.structure(FIRST + 1, StructureLookup.noAccess());
+        resolver.resolve(stranger);
+        assertThat(esi.structuresAsked()).hasSize(2);
+        assertThat(nameOf(stranger, FIRST + 1)).isNull();
+    }
+
+    @Test
+    void anOldNameIsAskedAgainEvenWhenOnlyAnotherCharacterKnowsIt() {
+        var viewer = viewerFor(newSub());
+        var first = linkActive(viewer);
+        var second = linkActive(viewer);
+        itemsIn(first, FIRST + 1);
+        itemsIn(second, FIRST + 1);
+        esi.structure(FIRST + 1, StructureLookup.found("Old", 30000142));
+        resolver.resolve(first);
+        backdate(first, FIRST + 1, 8);
+        esi.structure(FIRST + 1, StructureLookup.found("New", 30000142));
+
+        resolver.resolve(second);
+
+        // the name is more than a week old, so it is asked again, now by the second character
+        assertThat(nameOf(second, FIRST + 1)).isEqualTo("New");
     }
 
     @Test

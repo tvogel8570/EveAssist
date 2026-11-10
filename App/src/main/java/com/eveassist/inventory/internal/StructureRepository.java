@@ -43,10 +43,16 @@ class StructureRepository {
                                       WHERE p.character_id = a.character_id AND p.item_id = a.location_id)
                 ) s
                 LEFT JOIN character_structure c ON c.character_id = :id AND c.structure_id = s.structure_id
-                WHERE c.structure_id IS NULL
+                WHERE (c.structure_id IS NULL
                    OR (c.status = 'FOUND' AND c.asked_at < :foundBefore)
                    OR (c.status = 'NO_ACCESS' AND c.asked_at < :noAccessBefore)
-                   OR (c.status = 'NOT_FOUND' AND c.asked_at < :notFoundBefore)
+                   OR (c.status = 'NOT_FOUND' AND c.asked_at < :notFoundBefore))
+                  -- a name that another character of the same account learned lately needs no call, and no 403
+                  AND NOT EXISTS (SELECT 1 FROM character_structure k
+                                  JOIN character kc ON kc.public_id = k.character_id
+                                  WHERE kc.owner_account_id = (SELECT owner_account_id FROM character WHERE public_id = :id)
+                                    AND k.structure_id = s.structure_id AND k.status = 'FOUND'
+                                    AND k.asked_at >= :foundBefore)
                 ORDER BY (c.structure_id IS NULL) DESC, s.structure_id
                 LIMIT :limit
                 """)
@@ -76,17 +82,23 @@ class StructureRepository {
                 .update();
     }
 
-    /** How many structures the character has items in, and how many of them have a name. */
+    /**
+     * How many structures the character has items in, and how many of them have a name, whichever character of the
+     * same account learned it.
+     */
     Counts counts(UUID characterId) {
         return jdbc.sql("""
-                SELECT count(*) AS total, count(c.name) AS named FROM (
+                SELECT count(*) AS total,
+                       count(*) FILTER (WHERE EXISTS (
+                           SELECT 1 FROM character_structure k JOIN character kc ON kc.public_id = k.character_id
+                           WHERE kc.owner_account_id = (SELECT owner_account_id FROM character WHERE public_id = :id)
+                             AND k.structure_id = s.structure_id AND k.status = 'FOUND')) AS named
+                FROM (
                     SELECT DISTINCT a.location_id AS structure_id FROM character_asset a
                     WHERE a.character_id = :id AND a.location_id >= :first
                       AND NOT EXISTS (SELECT 1 FROM character_asset p
                                       WHERE p.character_id = a.character_id AND p.item_id = a.location_id)
                 ) s
-                LEFT JOIN character_structure c ON c.character_id = :id AND c.structure_id = s.structure_id
-                    AND c.status = 'FOUND'
                 """)
                 .param("id", characterId).param("first", FIRST_STRUCTURE_ID)
                 .query((rs, row) -> new Counts(rs.getInt("total"), rs.getInt("named")))

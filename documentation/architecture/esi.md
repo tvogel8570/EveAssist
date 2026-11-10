@@ -168,8 +168,11 @@ Status: **proposed** (added 2026-11-09 with the asset fetch).
   ESI said nothing changed, to finish an earlier run) the app asks about the structures where that character has
   top-level items and nothing current is known: at most 25 per run, new ones first, stopping after 5 refusals. A name is
   trusted for 7 days, a refusal for 1 day and a "not found" for 7 days. A failure (throttled, down, no token) stops the
-  run and is not kept. Answers are stored per character (`character_structure`), not shared, because only a character
-  with docking access can learn a name, and they go with the character. Status: **proposed**.
+  run and is not kept. Answers are stored per character (`character_structure`) and go with the character, but a name
+  one character learned is used for every other character of the same account, because it is the same person's data
+  (the developer decided this on 2026-11-09). That also saves calls: a structure that a character of the account has
+  named within the week is not asked about again, so it costs no 403. A name is never used for another account, and an
+  account that cannot dock somewhere never learns the name through another account. Status: **proposed**.
 - **Not yet**: the checkpoint under [Background fetches](#background-fetches) for the `char-asset` group.
 
 ## Alerts
