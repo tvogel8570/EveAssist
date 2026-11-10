@@ -31,7 +31,8 @@ All of these are in scope:
 ## Blueprints
 
 - Owned BPOs and BPCs are imported from ESI for each character, with ME, TE and remaining runs. Corporation blueprints
-  are added in the group phase.
+  of the user's own corporations follow corporation assets (see
+  [Pilot inventory](pilot-inventory.md#corporation-assets-of-your-own-corporations)), and sharing them is for the group phase.
 - The user can also enter blueprints by hand, for example a blueprint they plan to buy or research, so it can be used in
   plans and profit analysis.
 - Imported and hand-entered blueprints must be told apart.

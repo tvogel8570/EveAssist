@@ -8,7 +8,9 @@ these requirements.
 
 The tool is built in phases, and later phases must not need a rewrite of earlier ones:
 
-1. **Single player**: one person with several characters, possibly across several accounts.
+1. **Single player**: one person with several characters, possibly across several accounts. This includes reading the
+   assets of a corporation that the person's own characters belong to (see
+   [Pilot inventory](pilot-inventory.md#corporation-assets-of-your-own-corporations)), with no sharing with others.
 2. **Small group / corporation**: several people who share data, structures and roles.
 3. **Public multi-tenant** (possible): anyone can sign up, and each tenant's data is kept apart.
 

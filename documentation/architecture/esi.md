@@ -86,11 +86,16 @@ pause apply.
 
 Status: **agreed**.
 
-## Corporation data (phase 2)
+## Corporation data
 
 Corporation routes are fetched with a role-holder's token, only while that role-holder is signed in, through the same
-client. The corporation id stands in for the character in the fetch state. Other members see the stored data with its
-age.
+client. The corporation id stands in for the character in the fetch state. Other characters of the account (phase 1) and
+other members of a group (phase 2) see the stored data with its age.
+
+Phase 1 reads the assets of the account's own corporations (`/corporations/{id}/assets` and `/divisions`, which need the
+Director role). The account is the owner of the stored rows, and they carry the corporation id, so phase 2 shares them
+with a group without a migration of the data. Which linked character is a Director comes from the character's roles
+(`/characters/{id}/roles`) and is refreshed with each fetch. Status: **proposed**.
 
 ## Jita prices
 

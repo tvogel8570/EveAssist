@@ -67,6 +67,34 @@ Still wanted, later: shortfall against a plan or project, grouping by market gro
 
 A location tree like the in-game asset window is not wanted for now.
 
+## Corporation assets of your own corporations
+
+Added 2026-11-10. The developer's characters share corporation assets among themselves, so these assets matter in
+phase 1. This is **not** the group phase: the data belongs to the one account, and nothing is shared with other
+users. [Groups and corporations](groups.md) adds sharing later without changing what is stored here.
+
+- **Read through a Director.** ESI gives a corporation's assets only to a character with the Director role
+  (`GET /corporations/{id}/assets`, scope `esi-assets.read_corporation_assets.v1`). The hangar names come from
+  `esi-corporations.read_divisions.v1`, also a Director route. The app learns which linked characters are Directors
+  from `esi-characters.read_corporation_roles.v1`. A corporation whose linked characters include no Director cannot be
+  read, and the page says so.
+- **Its own feature.** The scopes above belong to a separate feature, turned on apart from character inventory, so a
+  user who does not want the app to read corporation data never grants them (see
+  [Gaining players' trust](gain-trust.md#scopes)).
+- **A source beside the characters.** In the browse view each readable corporation is one more holder, with its own
+  colour in the bar. It is shown or hidden with the characters switch, and a filter column **holder** (character or
+  corporation) lets the user leave corporation assets out of, or keep only them in, the totals.
+- **Where it is.** Corporation items sit in an office folder, in a hangar division. A row's place shows the corporation,
+  the station or structure and the division's name (division 1 to 7, as the corporation named them). Items in
+  containers, ships and deliveries are marked as for character assets.
+- **Fetch.** Same rules as [Fetching](#fetching): only while a Director is signed in, within ESI cache times, the
+  latest state only, and the other characters of the account see the stored data with its age. If several characters
+  are Directors, any one of them may fetch it. The corporation id stands in for the character in the fetch state.
+- **Structure names** learned for the corporation are available to all characters of the account, as for character
+  assets.
+- **Not yet.** Corporation blueprints, industry jobs and contracts (a later step, each with its own scope and role), and
+  corporation wallet and orders. Assets in a corporation the account has no Director in.
+
 ## Fetching
 
 - Assets are fetched when the user opens the page or presses Refresh, within ESI cache times, and only while the user is
@@ -85,12 +113,15 @@ Items in transit (in contracts or sell orders) are not in ESI assets, and the de
 
 ## Open questions
 
+Corporation assets: which characters count as the corporation's members when a character leaves it (the
+corporation's stored data would then have no reader until another Director is linked), and whether the stored rows are
+kept or dropped.
+
 Deferred by the developer until the plan step is taken up:
 
 - How the pasted list and ESI assets are added together without counting an item twice (for example the pasted lines
   expire at the next asset fetch, or are matched against it).
 - Whether a project reserves from the combined pool in the same way as the earlier requirements describe.
-- Corporation assets: left to the group phase.
 
 Also open:
 
