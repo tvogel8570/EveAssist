@@ -128,6 +128,32 @@ see what EveAssist does before creating an account.
 - **No characters.** The page reads nothing about the visitor's characters, so it has no materials on hand.
 - **Taking a plan into an account** when the visitor signs in is wanted but not required at first.
 
+### Comparing material efficiency of a product
+
+Decided with the developer on 2026-11-10. Many products are not made from a blueprint at ME 10: a capital ship or a T2
+item is built from a blueprint whose ME is what research gave it, or what invention produced, while its parts are
+made at ME 10. The tool answers which parts the product's ME actually changes, and by how much money.
+
+- **The user enters the product, the runs of the product and two ME levels** to compare, for example 8 and 10.
+- **Only the product's blueprint changes between the levels.** Its parts are taken as a plan takes them: ME 10, TE 20
+  and one job for each part. The parts and their runs are worked out by a plan made from the product, so the user
+  does not enter them.
+- **The result is a list of the product's parts.** For each part it shows the units the product needs at each level
+  and the ISK saved by the higher level over the lower. A part is valued as a plan values it: its Jita sell price when
+  bought, or what it costs to build from its own materials at ME 10 when it is marked build. Parts that the two levels
+  do not change are shown last, and the list says so when none changes. The list is ordered by ISK saved, the biggest
+  first, so that the few parts that matter are at the top.
+- **Rounding is the reason some parts matter and others do not.** A job takes whole units, rounded up once for all its
+  runs, and never less than one for each run (see [Plans](#plans)). A part with a small base quantity, or a product
+  with few runs, often needs the same units at both levels, so for one run only a few parts differ. With more runs the
+  rounding spreads out and more parts differ, so the result is for the runs the user entered.
+- **Only the ISK saved is shown.** The tool does not weigh the research time or the price of a better blueprint against
+  it (see [Research](#research)).
+- **It needs no blueprints of the user's own**, only the levels the user types, and no characters.
+
+Not decided: where it sits (a page of its own, linked from a plan, is the proposal; projects could later open it with the
+ME of the blueprint the user really has), and whether visitors without an account may use it.
+
 ## Research
 
 - ME/TE research jobs on BPOs are tracked (running jobs, slots and finish times) but not planned. The tool does not
@@ -192,6 +218,8 @@ Prices, the price basis and fees are defined in [Market and logistics](market-lo
 
 ## Open questions
 
+- Where the material efficiency comparison sits: a page of its own that a plan links to is the proposal, and a project
+  could open it with the ME of the blueprint the user really has. Whether visitors without an account may use it.
 - Updating the stored prices in the background, so that a price is not old when someone opens a plan, is worth
   considering. It would help signed-in plans and the plan without an account. Not decided.
 - How old a price must be before a plan warns that it is stale. The same age could serve both kinds of plan. The page
