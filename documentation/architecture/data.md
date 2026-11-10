@@ -28,8 +28,8 @@ Status: **agreed**. The `postgres` superuser is kept for set-up and admin tasks,
 `Infrastructure/postgres/sql/init/3-init-eveassist.sh` creates the roles and databases, and can be run again.
 
 The SDE sits in the app's database, as a schema, so that the import can swap a new version in with a schema rename in
-one transaction, and so that queries can join SDE tables to app data when needed. The prototype keeps it in a separate
-`sdeyaml` database, which the new app does not use. Status: **agreed**.
+one transaction, and so that queries can join SDE tables to app data when needed. The prototype kept it in a separate
+`sdeyaml` database, which the new app does not use and the init scripts no longer create. Status: **agreed**.
 
 All times are stored as UTC `timestamptz`. Each user's time zone is applied only when a page shows them.
 
