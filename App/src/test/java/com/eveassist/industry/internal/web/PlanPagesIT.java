@@ -402,4 +402,22 @@ class PlanPagesIT extends IntegrationTest {
                 .andExpect(status().isFound())
                 .andExpect(header().string("Location", containsString("/oauth2/authorization/keycloak")));
     }
+
+    @Test
+    void thePlanPageHasANewButtonThatAsksForANameAndCreatesAPlan() throws Exception {
+        var sub = newSub();
+        var id = planWith(sub, HAULER);
+        var session = signedIn(sub);
+
+        var page = rendered(mvc.perform(get("/plans/" + id.value()).with(session)))
+                .andReturn().getResponse().getContentAsString();
+
+        // a menu with a name box that posts to the same create action as the list, with the CSRF token Thymeleaf adds
+        assertThat(page).contains("id=\"new-plan-menu\"").contains("id=\"new-plan-toggle\"")
+                .contains("action=\"/plans\"").contains("name=\"name\"").contains("autocomplete=\"off\"")
+                .contains("data-focus-on-open").contains("name=\"_csrf\"");
+        mvc.perform(post("/plans").param("name", "From the plan page").with(session).with(csrf()))
+                .andExpect(status().is3xxRedirection());
+        rendered(mvc.perform(get("/plans").with(session))).andExpect(content().string(containsString("From the plan page")));
+    }
 }

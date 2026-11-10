@@ -131,6 +131,17 @@
         });
     });
 
+    // A drop-down menu with a box in it puts the cursor in the box when it opens (details has no autofocus of its own).
+    // The toggle event does not bubble, so it is caught on the way down.
+    document.addEventListener('toggle', event => {
+        const menu = event.target;
+        if (menu instanceof HTMLDetailsElement && menu.open && menu.hasAttribute('data-focus-on-open')) {
+            // The first box that can be typed in: a form made by Thymeleaf starts with a hidden _csrf input, which cannot
+            // take focus, so hidden inputs are skipped.
+            menu.querySelector('input:not([type=hidden]):not([type=checkbox]):not([type=radio]), textarea, select')?.focus();
+        }
+    }, true);
+
     // Copy as text: one line for each item type the filter lets through, the name and the total with a tab between.
     // The server gives the whole list, because the page shows only the first of it.
     document.addEventListener('click', event => {

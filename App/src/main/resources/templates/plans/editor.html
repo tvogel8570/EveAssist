@@ -3,7 +3,18 @@
 <head><title th:text="${plan.name}">Plan</title></head>
 <body>
 <main class="max-w-6xl mx-auto p-4">
-    <h1 class="text-xl font-semibold mb-1" th:text="${plan.name}">Plan</h1>
+    <div class="flex items-start gap-3 mb-1">
+        <h1 class="text-xl font-semibold grow" th:text="${plan.name}">Plan</h1>
+        <!-- a new plan without going back to the list: a name is needed, because plans cannot be renamed yet -->
+        <details id="new-plan-menu" class="dropdown dropdown-end" data-autoclose data-focus-on-open>
+            <summary id="new-plan-toggle" class="btn btn-sm btn-outline" th:text="#{plans.new}">New</summary>
+            <form class="dropdown-content card bg-base-300 shadow z-30 w-72 p-3 gap-2" method="post" th:action="@{/plans}">
+                <input id="new-plan-name-here" class="input input-sm w-full" name="name" required maxlength="100"
+                       pattern=".*\S.*" autocomplete="off" th:placeholder="#{plans.newName}" th:aria-label="#{plans.newName}">
+                <button class="btn btn-primary btn-sm" type="submit" th:text="#{plans.create}">New plan</button>
+            </form>
+        </details>
+    </div>
     <p class="text-sm opacity-70 mb-3" th:text="#{plan.simplified}">Simplified costing</p>
     <input th:replace="~{plans/fragments :: version(${plan.version}, false)}">
     <div th:replace="~{plans/fragments :: total(${plan.totalCost}, ${plan.unpricedLines}, ${plan.pricesAsOf}, false)}"></div>

@@ -357,4 +357,33 @@ class PlanEditorBrowserIT extends IntegrationTest {
 
         assertThat(page.locator("#search-results")).containsText("No items found");
     }
+
+    @Test
+    void theNewButtonOnAPlanPageOpensANameBoxWithFocusAndCreatesAPlan() {
+        page.navigate(url("/plans"));
+        createPlanWithHauler();
+        var first = page.url();
+
+        page.click("#new-plan-toggle");
+
+        // the cursor is already in the name box, so the name can be typed at once
+        assertThat(page.locator("#new-plan-name-here")).isFocused();
+        page.keyboard().type("Second from the editor");
+        page.keyboard().press("Enter");
+        page.waitForURL(u -> !u.equals(first) && u.contains("/plans/"));
+        assertThat(page.locator("h1")).hasText("Second from the editor");
+        assertThat(page.locator("#no-products")).isVisible();
+    }
+
+    @Test
+    void theNewMenuClosesWhenThePageIsClickedElsewhere() {
+        page.navigate(url("/plans"));
+        createPlanWithHauler();
+
+        page.click("#new-plan-toggle");
+        assertThat(page.locator("#new-plan-name-here")).isVisible();
+        page.click("h1");
+
+        assertThat(page.locator("#new-plan-name-here")).not().isVisible();
+    }
 }
