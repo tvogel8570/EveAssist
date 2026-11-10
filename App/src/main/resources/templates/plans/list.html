@@ -13,7 +13,7 @@
     <form id="archive-filter" class="mb-3" method="get" th:action="@{/plans}" th:attr="hx-get=@{/plans}"
           hx-trigger="change" hx-target="#plan-list" hx-select="#plan-list" hx-swap="outerHTML" hx-push-url="true">
         <label class="flex items-center gap-2 text-sm cursor-pointer w-fit">
-            <input id="show-archived" type="checkbox" name="archived" value="1" class="toggle toggle-sm"
+            <input id="show-archived" type="checkbox" name="archived" value="1" class="toggle toggle-sm toggle-primary"
                    th:checked="${showArchived}">
             <span th:text="#{plans.showArchived}">Show archived plans</span>
         </label>

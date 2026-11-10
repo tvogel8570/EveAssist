@@ -14,6 +14,16 @@ Status: **agreed** with the developer (2026-11-10).
 - A test (`TemplateInputsTest`) fails when a text or search box in a template has no `autocomplete`, so a new box cannot
   slip through. Boxes of other types (hidden, checkbox, number, buttons) and boxes made by a fragment are not checked.
 
+## Switches
+
+Status: **agreed** with the developer (2026-11-10).
+
+- **An on/off switch is a DaisyUI `toggle` with `toggle-primary`**, so it is grey when off and blue when on. The plan list's
+  "Show archived plans" switch had no colour and stayed grey either way, which looked different from the switches on the
+  Characters and Inventory pages. Use `toggle-sm` where the switch sits in a row of small controls.
+- Where it lives: `characters/list.html`, `inventory/list.html`, `plans/list.html`. Nothing checks this yet, so a new switch
+  has to follow it by hand.
+
 ## Search boxes that refresh a list
 
 Status: **agreed** with the developer (2026-11-10), after typing in the Inventory search made the list refresh while still
