@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
@@ -56,7 +57,8 @@ class CharacterLinkingIT extends IntegrationTest {
     }
 
     private RequestPostProcessor signedInAs(String sub) {
-        return oidcLogin().idToken(token -> token.subject(sub));
+        return oidcLogin().idToken(token -> token.subject(sub))
+                .authorities(new SimpleGrantedAuthority("ROLE_USER"));
     }
 
     /** Starts linking and returns the browser's session cookie. */

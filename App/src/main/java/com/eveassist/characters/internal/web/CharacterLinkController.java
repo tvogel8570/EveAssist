@@ -3,12 +3,14 @@ package com.eveassist.characters.internal.web;
 import com.eveassist.characters.internal.CharacterLinking;
 import com.eveassist.identity.Viewer;
 import jakarta.servlet.http.HttpSession;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 /** The two addresses of the linking flow. Both are plain redirects, so they need no page of their own. */
 @Controller
+@PreAuthorize("hasRole('USER')")
 class CharacterLinkController {
 
     private static final String STATE = "characters.link.state";

@@ -11,6 +11,7 @@ import java.util.concurrent.TimeUnit;
 import org.springframework.http.CacheControl;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 /** The Characters page: features on top, a card per linked character below. */
 @Controller
+@PreAuthorize("hasRole('USER')")
 class CharactersController {
 
     /** The results the linking flow reports in {@code ?linking=}. Anything else in the address is ignored. */
