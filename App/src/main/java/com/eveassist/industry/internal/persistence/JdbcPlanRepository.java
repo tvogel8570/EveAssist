@@ -50,15 +50,18 @@ class JdbcPlanRepository implements PlanRepository {
 
     @Override
     public Optional<Plan> find(Viewer viewer, PlanId id) {
-        record Row(long id, String name, long version) {
+        record Row(long id, String name, long version, boolean archived) {
         }
-        var row = jdbc.sql("SELECT id, name, version FROM plan WHERE public_id = :id AND owner_account_id = :owner")
+        var row = jdbc.sql("""
+                SELECT id, name, version, archived_at IS NOT NULL AS archived FROM plan
+                WHERE public_id = :id AND owner_account_id = :owner
+                """)
                 .param("id", id.value())
                 .param("owner", viewer.accountId().value())
                 .query(Row.class)
                 .optional();
         return row.map(plan -> new Plan(id, plan.name(), plan.version(), products(plan.id()), boughtParts(plan.id()),
-                prices(plan.id())));
+                prices(plan.id()), plan.archived()));
     }
 
     private List<PlanProduct> products(long planId) {
@@ -190,26 +193,48 @@ class JdbcPlanRepository implements PlanRepository {
     }
 
     @Override
-    public List<PlanOverview> overviews(Viewer viewer, String currentSdeVersion) {
+    public List<PlanOverview> overviews(Viewer viewer, String currentSdeVersion, boolean includeArchived) {
         return jdbc.sql("""
-                SELECT p.public_id, p.name, p.total_cost, p.costed_at,
+                SELECT p.public_id, p.name, p.total_cost, p.costed_at, p.archived_at IS NOT NULL AS archived,
                     (SELECT count(*) FROM plan_product pp WHERE pp.plan_id = p.id) AS product_count,
                     p.costed_at IS NOT NULL AND
                 """ + OUT_OF_DATE + """
                     AS out_of_date
                 FROM plan p
-                WHERE p.owner_account_id = :owner
-                ORDER BY p.name, p.public_id
+                WHERE p.owner_account_id = :owner AND (:includeArchived OR p.archived_at IS NULL)
+                ORDER BY p.archived_at IS NOT NULL, p.name, p.public_id
                 """)
                 .param("owner", viewer.accountId().value())
                 .param("sde", currentSdeVersion)
+                .param("includeArchived", includeArchived)
                 .query((rs, row) -> new PlanOverview(
                         new PlanId(rs.getObject("public_id", UUID.class)),
                         rs.getString("name"),
                         rs.getLong("product_count"),
                         rs.getBigDecimal("total_cost"),
                         rs.getTimestamp("costed_at") == null ? null : rs.getTimestamp("costed_at").toInstant(),
-                        rs.getBoolean("out_of_date")))
+                        rs.getBoolean("out_of_date"),
+                        rs.getBoolean("archived")))
                 .list();
+    }
+
+    @Override
+    public boolean setArchived(Viewer viewer, PlanId id, boolean archived) {
+        return jdbc.sql("""
+                UPDATE plan SET archived_at = CASE WHEN :archived THEN coalesce(archived_at, now()) ELSE NULL END
+                WHERE public_id = :id AND owner_account_id = :owner
+                """)
+                .param("archived", archived)
+                .param("id", id.value())
+                .param("owner", viewer.accountId().value())
+                .update() > 0;
+    }
+
+    @Override
+    public boolean delete(Viewer viewer, PlanId id) {
+        return jdbc.sql("DELETE FROM plan WHERE public_id = :id AND owner_account_id = :owner")
+                .param("id", id.value())
+                .param("owner", viewer.accountId().value())
+                .update() > 0;
     }
 }

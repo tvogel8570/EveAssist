@@ -15,7 +15,8 @@ public record PlanDetails(
         BigDecimal totalCost,
         int unpricedLines,
         Instant pricesAsOf,
-        String sdeVersion) {
+        String sdeVersion,
+        boolean archived) {
 
     public PlanDetails {
         products = List.copyOf(products);

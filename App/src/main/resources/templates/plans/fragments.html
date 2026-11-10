@@ -183,6 +183,37 @@
     <div th:replace="~{plans/fragments :: undoBar(${removed}, true)}"></div>
 </th:block>
 
+<!--
+  Archive or restore a plan, and delete it. Delete asks first, in a small box that opens under the button, because it
+  cannot be undone. from says where the user is (list or plan) and archived keeps the list showing archived plans.
+-->
+<th:block th:fragment="planActions(id, name, archived, from, showArchived)">
+    <form class="inline" method="post" th:if="${!archived}" th:action="@{/plans/{id}/archive(id=${id})}">
+        <input type="hidden" name="from" th:value="${from}">
+        <input type="hidden" name="archived" value="1" th:if="${showArchived}">
+        <button type="submit" class="btn btn-ghost btn-xs" th:id="${from == 'plan'} ? 'archive-plan' : 'archive-' + ${id}"
+                th:text="#{plans.archive}">Archive</button>
+    </form>
+    <form class="inline" method="post" th:if="${archived}" th:action="@{/plans/{id}/restore(id=${id})}">
+        <input type="hidden" name="from" th:value="${from}">
+        <input type="hidden" name="archived" value="1" th:if="${showArchived}">
+        <button type="submit" class="btn btn-ghost btn-xs" th:id="${from == 'plan'} ? 'restore-plan' : 'restore-' + ${id}"
+                th:text="#{plans.restore}">Restore</button>
+    </form>
+    <details class="dropdown dropdown-end inline-block" data-autoclose>
+        <summary class="btn btn-ghost btn-xs text-error" th:id="${from == 'plan'} ? 'delete-plan' : 'delete-' + ${id}"
+                 th:text="#{plans.delete}">Delete</summary>
+        <form class="dropdown-content card bg-base-300 shadow z-30 w-72 p-3 gap-2 text-left whitespace-normal" method="post"
+              th:action="@{/plans/{id}/delete(id=${id})}">
+            <input type="hidden" name="archived" value="1" th:if="${showArchived}">
+            <p class="text-sm" th:text="#{plans.deleteConfirm(${name})}">Delete this plan permanently?</p>
+            <button type="submit" class="btn btn-error btn-sm"
+                    th:id="${from == 'plan'} ? 'delete-plan-confirm' : 'delete-confirm-' + ${id}"
+                    th:text="#{plans.deleteYes}">Delete plan</button>
+        </form>
+    </details>
+</th:block>
+
 <th:block th:fragment="change">
     <input th:replace="~{plans/fragments :: version(${change.version}, true)}">
     <div th:replace="~{plans/fragments :: total(${change.totalCost}, ${change.unpricedLines}, ${change.pricesAsOf}, true)}"></div>

@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.eveassist.IntegrationTest;
@@ -516,5 +517,93 @@ class PlanPagesIT extends IntegrationTest {
                 "/plans/" + id.value() + "/products/1001/remove", "id=\"undo-bar\"", "data-plan-quantity",
                 "data-saved=\"1\"");
         assertThat(page).doesNotContain("Removed Test Hauler");
+    }
+
+    // ---- archiving and deleting from the list and the plan page
+
+    private ResultActions postAs(String path, String sub, String... params) throws Exception {
+        var request = post(path).with(signedIn(sub)).with(csrf());
+        for (int i = 0; i < params.length; i += 2) {
+            request.param(params[i], params[i + 1]);
+        }
+        return mvc.perform(request);
+    }
+
+    @Test
+    void anArchivedPlanIsHiddenFromTheListUntilArchivedPlansAreAskedFor() throws Exception {
+        var sub = newSub();
+        var id = planWith(sub, HAULER);
+        var session = signedIn(sub);
+
+        postAs("/plans/" + id.value() + "/archive", sub).andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/plans"));
+
+        var hidden = rendered(mvc.perform(get("/plans").with(session))).andReturn().getResponse().getContentAsString();
+        assertThat(hidden).doesNotContain("plan-row-" + id.value()).contains("id=\"all-archived\"", "id=\"show-archived\"")
+                .doesNotContain("id=\"no-plans\"");
+        var shown = rendered(mvc.perform(get("/plans").param("archived", "1").with(session)))
+                .andReturn().getResponse().getContentAsString();
+        assertThat(shown).contains("plan-row-" + id.value(), "Archived", "restore-" + id.value())
+                .doesNotContain("archive-" + id.value() + "\"").contains("name=\"archived\" value=\"1\"");
+        assertThat(shown).contains("checked");
+    }
+
+    @Test
+    void restoringBringsThePlanBackToTheListAndTheRightPlaceIsWhereTheUserWas() throws Exception {
+        var sub = newSub();
+        var id = planWith(sub, HAULER);
+        postAs("/plans/" + id.value() + "/archive", sub);
+
+        // from the list, with archived plans shown, the user stays there
+        postAs("/plans/" + id.value() + "/restore", sub, "from", "list", "archived", "1")
+                .andExpect(redirectedUrl("/plans?archived=1"));
+        rendered(mvc.perform(get("/plans").with(signedIn(sub)))).andExpect(content().string(containsString("plan-row-" + id.value())));
+
+        // from the plan's own page the user stays on the plan
+        postAs("/plans/" + id.value() + "/archive", sub);
+        postAs("/plans/" + id.value() + "/restore", sub, "from", "plan").andExpect(redirectedUrl("/plans/" + id.value()));
+    }
+
+    @Test
+    void anArchivedPlanCanBeOpenedAndSaysSoWithRestoreAndDeleteOnItsPage() throws Exception {
+        var sub = newSub();
+        var id = planWith(sub, HAULER);
+        postAs("/plans/" + id.value() + "/archive", sub);
+
+        var page = rendered(mvc.perform(get("/plans/" + id.value()).with(signedIn(sub))))
+                .andReturn().getResponse().getContentAsString();
+
+        assertThat(page).contains("id=\"archived-badge\"", "id=\"restore-plan\"", "id=\"delete-plan\"",
+                "id=\"delete-plan-confirm\"").doesNotContain("id=\"archive-plan\"");
+    }
+
+    @Test
+    void anActivePlanPageOffersArchiveAndDeleteAndEscapesTheNameInTheQuestion() throws Exception {
+        var sub = newSub();
+        var id = planWith(sub, HAULER);
+
+        var page = rendered(mvc.perform(get("/plans/" + id.value()).with(signedIn(sub))))
+                .andReturn().getResponse().getContentAsString();
+
+        assertThat(page).contains("id=\"archive-plan\"", "id=\"delete-plan\"", "id=\"delete-plan-confirm\"",
+                "Delete &quot;My &lt;i&gt;plan&lt;/i&gt;&quot; permanently?").doesNotContain("id=\"archived-badge\"", "My <i>plan</i>");
+    }
+
+    @Test
+    void deletingAPlanRemovesItAndAnotherAccountCannotDeleteOrArchiveIt() throws Exception {
+        var sub = newSub();
+        var id = planWith(sub, HAULER);
+
+        postAs("/plans/" + id.value() + "/delete", newSub()).andExpect(status().isNotFound());
+        postAs("/plans/" + id.value() + "/archive", newSub()).andExpect(status().isNotFound());
+        postAs("/plans/" + id.value() + "/restore", newSub()).andExpect(status().isNotFound());
+        mvc.perform(post("/plans/" + id.value() + "/delete").with(signedIn(sub))).andExpect(status().isForbidden());
+        assertThat(storedProducts(id)).isEqualTo(1);
+
+        postAs("/plans/" + id.value() + "/delete", sub).andExpect(redirectedUrl("/plans"));
+
+        assertThat(storedProducts(id)).isZero();
+        mvc.perform(get("/plans/" + id.value()).with(signedIn(sub))).andExpect(status().isNotFound());
+        postAs("/plans/" + id.value() + "/delete", sub).andExpect(status().isNotFound());
     }
 }

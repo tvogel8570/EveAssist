@@ -63,7 +63,7 @@ class PlanCostings {
                                 .thenComparing(PlanLineCosting::name)).toList(),
                 lines.stream().filter(PlanLineCosting::buildable)
                         .sorted(Comparator.comparing(PlanLineCosting::name)).toList(),
-                cost.total(), cost.unpricedLines(), pricesAsOf(cost, inputs), sde.version());
+                cost.total(), cost.unpricedLines(), pricesAsOf(cost, inputs), sde.version(), plan.archived());
     }
 
     PlanLineCosting describe(LineCost line) {

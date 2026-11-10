@@ -79,6 +79,13 @@ Added 2026-11-10 at the developer's request.
   may be left with no products.
 - **Units** are whole numbers from 1 to 1,000,000. Anything else is refused with the reason (a 0 says to use Remove), and
   the number the plan holds returns to the box, so the box never shows what the plan does not have.
+- **Archive.** An archived plan is hidden from the Plans list until the user ticks **Show archived plans**, where it is
+  marked and can be **restored**. It can still be opened and edited. Archiving is a status, not an edit, so it does not
+  change the plan's version. It is offered on the list and on the plan's own page.
+- **Delete.** A plan can be deleted from the list and from its own page, after a question that names the plan and says
+  that its products and prices go with it. Delete cannot be undone, and the question points to archive as the way to keep it.
+- An archived plan the user has not asked to see is not counted as "no plans yet": a list that is empty only because
+  everything is archived says so.
 
 ## Research
 

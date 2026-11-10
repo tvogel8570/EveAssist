@@ -437,4 +437,113 @@ class PlanEditorBrowserIT extends IntegrationTest {
         assertThat(page.locator("#saved-1001")).containsText("Saved");
         assertThat(page.locator("#plan-total")).not().hasText(quoted);
     }
+
+    // ---- archiving and deleting plans
+
+    private void createPlan(String name) {
+        page.navigate(url("/plans"));
+        page.fill("#new-plan-name", name);
+        page.click("#new-plan");
+        page.waitForURL("**/plans/*");
+    }
+
+    private com.microsoft.playwright.Locator row(String name) {
+        return page.locator("#plan-list tbody tr", new Page.LocatorOptions().setHasText(name));
+    }
+
+    @Test
+    void archivingFromTheListHidesThePlanAndShowArchivedBringsItBackAndRestoreUndoesIt() {
+        createPlan("Old plan");
+        page.navigate(url("/plans"));
+        markPage();
+
+        row("Old plan").getByRole(com.microsoft.playwright.options.AriaRole.BUTTON,
+                new com.microsoft.playwright.Locator.GetByRoleOptions().setName("Archive")).click();
+
+        assertThat(page.locator("#all-archived")).isVisible();
+        assertThat(row("Old plan")).hasCount(0);
+
+        page.check("#show-archived");
+        assertThat(row("Old plan")).hasCount(1);
+        assertThat(row("Old plan")).containsText("Archived");
+        assertThat(page).hasURL(java.util.regex.Pattern.compile(".*/plans\\?archived=1"));
+
+        page.uncheck("#show-archived");
+        assertThat(row("Old plan")).hasCount(0);
+
+        page.check("#show-archived");
+        row("Old plan").getByRole(com.microsoft.playwright.options.AriaRole.BUTTON,
+                new com.microsoft.playwright.Locator.GetByRoleOptions().setName("Restore")).click();
+
+        // back on the list as it was, with archived plans still shown, and the plan active again
+        assertThat(page).hasURL(java.util.regex.Pattern.compile(".*/plans\\?archived=1"));
+        assertThat(row("Old plan")).hasCount(1);
+        assertThat(row("Old plan")).not().containsText("Archived");
+    }
+
+    @Test
+    void deleteAsksForConfirmationNamingThePlanAndOnlyDeletesWhenConfirmed() {
+        createPlan("Doomed plan");
+        page.navigate(url("/plans"));
+
+        row("Doomed plan").locator("summary", new com.microsoft.playwright.Locator.LocatorOptions().setHasText("Delete")).click();
+
+        assertThat(row("Doomed plan")).containsText("Delete \"Doomed plan\" permanently?");
+        // clicking elsewhere closes the question and nothing is deleted
+        page.click("h1");
+        assertThat(row("Doomed plan").locator("form[action$='/delete']")).not().isVisible();
+        assertThat(row("Doomed plan")).hasCount(1);
+
+        row("Doomed plan").locator("summary", new com.microsoft.playwright.Locator.LocatorOptions().setHasText("Delete")).click();
+        row("Doomed plan").getByRole(com.microsoft.playwright.options.AriaRole.BUTTON,
+                new com.microsoft.playwright.Locator.GetByRoleOptions().setName("Delete plan")).click();
+
+        assertThat(page.locator("#no-plans")).isVisible();
+        assertThat(page.locator("#plan-list tbody tr")).hasCount(0);
+    }
+
+    @Test
+    void archivingFromThePlanPageGoesToTheListAndRestoringFromItStaysOnThePlan() {
+        createPlan("Page plan");
+        var address = page.url();
+
+        page.click("#archive-plan");
+
+        assertThat(page).hasURL(java.util.regex.Pattern.compile(".*/plans$"));
+        assertThat(page.locator("#all-archived")).isVisible();
+
+        page.navigate(address);
+        assertThat(page.locator("#archived-badge")).isVisible();
+        assertThat(page.locator("#archive-plan")).hasCount(0);
+        page.click("#restore-plan");
+
+        assertThat(page).hasURL(address);
+        assertThat(page.locator("#archived-badge")).hasCount(0);
+        assertThat(page.locator("#archive-plan")).isVisible();
+    }
+
+    @Test
+    void deletingFromThePlanPageAsksFirstAndThenGoesToTheList() {
+        createPlan("Page doomed");
+
+        page.click("#delete-plan");
+        assertThat(page.locator("#delete-plan-confirm")).isVisible();
+        page.click("#delete-plan-confirm");
+
+        assertThat(page).hasURL(java.util.regex.Pattern.compile(".*/plans$"));
+        assertThat(page.locator("#no-plans")).isVisible();
+    }
+
+    @Test
+    void theNewAndDeleteMenusOpenAboveTheStickyTotalBarSoTheirButtonsCanBeClicked() {
+        page.navigate(url("/plans"));
+        createPlanWithHauler();
+
+        // both open under the header, where the sticky total bar is: a click must reach the button and not the bar
+        page.click("#new-plan-toggle");
+        page.locator("#new-plan-menu button[type=submit]").click(new com.microsoft.playwright.Locator.ClickOptions().setTrial(true));
+        page.click("h1");
+        page.click("#delete-plan");
+        page.locator("#delete-plan-confirm").click(new com.microsoft.playwright.Locator.ClickOptions().setTrial(true));
+    }
 }

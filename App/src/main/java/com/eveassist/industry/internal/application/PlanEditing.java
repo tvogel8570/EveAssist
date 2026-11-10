@@ -30,6 +30,26 @@ public class PlanEditing {
         return plans.create(viewer, command.name());
     }
 
+    /** Hides the plan from the list until archived plans are asked for. It can be restored, and opened meanwhile. */
+    public void archive(Viewer viewer, PlanId id) {
+        if (!plans.setArchived(viewer, id, true)) {
+            throw new PlanNotFoundException();
+        }
+    }
+
+    public void restore(Viewer viewer, PlanId id) {
+        if (!plans.setArchived(viewer, id, false)) {
+            throw new PlanNotFoundException();
+        }
+    }
+
+    /** Deletes the plan for good, with its products, parts and prices. Archiving is the way to keep it. */
+    public void delete(Viewer viewer, PlanId id) {
+        if (!plans.delete(viewer, id)) {
+            throw new PlanNotFoundException();
+        }
+    }
+
     /** Costs before and after and compares, so a line the edit reaches through the material tree cannot be missed. */
     public PlanChangeResult changeQuantity(Viewer viewer, ChangeQuantityCommand command) {
         var plan = loadAt(viewer, command.plan(), command.expectedVersion());

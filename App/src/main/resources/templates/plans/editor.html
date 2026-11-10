@@ -4,7 +4,12 @@
 <body>
 <main class="max-w-6xl mx-auto p-4">
     <div class="flex items-start gap-3 mb-1">
-        <h1 class="text-xl font-semibold grow" th:text="${plan.name}">Plan</h1>
+        <h1 class="text-xl font-semibold grow">
+            <span th:text="${plan.name}">Plan</span>
+            <span id="archived-badge" th:if="${plan.archived}" class="badge badge-ghost badge-sm align-middle ml-1"
+                  th:text="#{plans.archived}">Archived</span>
+        </h1>
+        <th:block th:replace="~{plans/fragments :: planActions(${plan.id.value}, ${plan.name}, ${plan.archived}, 'plan', false)}"></th:block>
         <!-- a new plan without going back to the list: a name is needed, because plans cannot be renamed yet -->
         <details id="new-plan-menu" class="dropdown dropdown-end" data-autoclose data-focus-on-open>
             <summary id="new-plan-toggle" class="btn btn-sm btn-outline" th:text="#{plans.new}">New</summary>
