@@ -10,13 +10,13 @@ import java.util.function.Predicate;
  * contract hard to split into prices, and each kind will need a rule of its own. Until then such contracts are flagged
  * and not looked at again. A contract can carry both flags.
  *
- * @param bpo     a line is a blueprint original (ESI gives it -1 runs)
+ * @param bpo     a line is a blueprint original (see {@link PublicContractItem#blueprintOriginal()})
  * @param abyssal a line is an Abyssal (mutated) item
  */
 record ContractFlags(boolean bpo, boolean abyssal) {
 
     static ContractFlags of(List<PublicContractItem> items, Predicate<TypeId> isAbyssal) {
-        var bpo = items.stream().anyMatch(item -> !item.blueprintCopy() && item.runs() != null && item.runs() == -1);
+        var bpo = items.stream().anyMatch(PublicContractItem::blueprintOriginal);
         var abyssal = items.stream().anyMatch(item -> isAbyssal.test(new TypeId(item.typeId())));
         return new ContractFlags(bpo, abyssal);
     }

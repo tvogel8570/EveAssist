@@ -278,8 +278,7 @@ class HttpEsiClient implements EsiClient {
                         }
                     })
                     .exchange((request, response) -> new Page<E>(response.getStatusCode().value(),
-                            response.getHeaders(),
-                            response.getStatusCode().value() == 200 ? response.bodyTo(type) : null, null));
+                            response.getHeaders(), bodyOf(response, type), null));
             limiter.record(group, page.status(), page.headers());
             return page;
         } catch (RestClientException e) {
@@ -287,6 +286,20 @@ class HttpEsiClient implements EsiClient {
         } finally {
             simultaneous.release();
         }
+    }
+
+    /**
+     * The rows of a 200, or null for any other status. A 200 with no body at all is an empty list: ESI answers that
+     * for some public contracts that are still in the region's list (seen 2026-11-09, content-length 0), and Spring
+     * then reads the body as null.
+     */
+    private static <E> List<E> bodyOf(RestClient.RequestHeadersSpec.ConvertibleClientHttpResponse response,
+                                      ParameterizedTypeReference<List<E>> type) throws java.io.IOException {
+        if (response.getStatusCode().value() != 200) {
+            return null;
+        }
+        var body = response.bodyTo(type);
+        return body == null ? List.of() : body;
     }
 
     private Instant expiresOf(HttpHeaders headers) {

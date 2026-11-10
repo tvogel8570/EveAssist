@@ -12,8 +12,18 @@ package com.eveassist.esi;
  * @param blueprintCopy   true for a blueprint copy
  * @param materialEfficiency only for blueprints, otherwise null
  * @param timeEfficiency  only for blueprints, otherwise null
- * @param runs            runs left on a copy, -1 for an original, null for anything that is not a blueprint
+ * @param runs            runs left on a copy. The spec says -1 for an original, but ESI leaves {@code runs} out for an
+ *                        original (seen 2026-11-09), as it does for anything that is not a blueprint
  */
 public record PublicContractItem(long recordId, int typeId, long quantity, boolean included, boolean blueprintCopy,
                                  Integer materialEfficiency, Integer timeEfficiency, Integer runs) {
+
+    /**
+     * True for a blueprint original. ESI sends ME and TE for every blueprint, copy or original, and for nothing else,
+     * so an original is a line with those levels that is not a copy. Its {@code runs} cannot be used: the spec says -1,
+     * and real ESI sends none.
+     */
+    public boolean blueprintOriginal() {
+        return !blueprintCopy && (materialEfficiency != null || timeEfficiency != null);
+    }
 }

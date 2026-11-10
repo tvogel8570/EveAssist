@@ -75,6 +75,8 @@ flags, which cover one instance, so a second instance first needs each task to c
 
 - Container logs go to CloudWatch Logs through Docker's `awslogs` driver. Logging never writes tokens or secrets: the
   token classes have no readable `toString`, and request logging leaves out `Authorization` headers and token bodies.
+- Correlation ids and other attributes on every log line (MDC) are a later work stream; see
+  [Log context and correlation](logging.md).
 - The app exposes Spring Boot Actuator health. Keycloak exposes its own health endpoint. Both are checked by the
   Compose health checks and by a CloudWatch alarm.
 - CloudWatch metric filters count ERROR log lines and ESI failures (429s, 420s, 5xx). Alarms email the operator when

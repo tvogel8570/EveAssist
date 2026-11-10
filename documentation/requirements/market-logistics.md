@@ -50,13 +50,14 @@ Added 2026-11-09. Blueprint copies (BPCs) are not sold on the market, so their p
 - Only contracts up to 100 m³ are read: a copy takes 0.01 m³, and larger contracts are ships and cargo.
 - The contracts are public data shared by all users. They are read in the background, and no one has to be signed in
   for that: a minute after the app starts, and then every 30 minutes. A region has tens of thousands of
-  contracts and each one's contents need a call of their own, so the first run takes about half an hour to an hour,
+  contracts and each one's contents need a call of their own, so the first run takes about 15 minutes (33,000 contracts at 500 per 12 seconds in the first real run on 2026-11-09),
   and later runs read only the new contracts. The developer decided this on 2026-11-09. The page also has a button
   that reads one more batch, and says how many contracts are still to read, because a price may miss some offers
   until all are read. A progress display is not built yet.
 - Open contracts show what sellers ask, not what buyers pay, and a sold contract leaves the list. Prices from them lean
   high. In The Forge the lean is larger, because ESI cuts the newest contracts off its list when a region has more than
-  35,000 (see [Jita prices](../architecture/esi.md#jita-prices)), so contracts that sell quickly are never seen. Actual
+  35,000 (see [Jita prices](../architecture/esi.md#jita-prices); a known ESI issue since 2026-10-19 with no timeline for a
+  fix), so contracts that sell quickly are never seen. Actual
   sale prices would come from the characters' own finished contracts (see [Contracts](#contracts)).
 - The price is a third source beside Jita sell and buy prices. Using it in plans (as a price basis, and as the fallback
   for an item with no market orders) comes with the plan features that need a BPC, such as invention.

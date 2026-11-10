@@ -22,6 +22,9 @@ class ContractPricesIT extends IntegrationTest {
     @Autowired
     com.eveassist.sde.SdeService sde;
 
+    @Autowired
+    com.eveassist.market.internal.ContractPrices prices;
+
     private static PublicContract contract(long id, String type, String price) {
         return new PublicContract(id, type, new BigDecimal(price), 5, Instant.now().minusSeconds(3600),
                 Instant.now().plusSeconds(86400), 60003760L, 0.01);
@@ -72,7 +75,7 @@ class ContractPricesIT extends IntegrationTest {
     }
 
     @Test
-    void dropsContractsEsiHasNoLinesFor() {
+    void setsAsideContractsEsiHasNoLinesForAndDoesNotAskAgain() {
         esi.contract(contract(9_300_001, "item_exchange", "100"), List.of());
 
         var refresh = market.refreshContracts(10);
@@ -80,6 +83,8 @@ class ContractPricesIT extends IntegrationTest {
         assertThat(refresh.gone()).isEqualTo(1);
         assertThat(refresh.pending()).isZero();
         assertThat(market.bpcPrice(new TypeId(BLUEPRINT + 2), 0, 0)).isEmpty();
+        market.refreshContracts(10);
+        assertThat(esi.contractItemsAsked()).as("not asked again while the list still shows it").hasSize(1);
     }
 
     @Test
@@ -108,7 +113,7 @@ class ContractPricesIT extends IntegrationTest {
         esi.contract(contract(9_800_002, "item_exchange", "10"), List.of(copy(1, blueprint, 0, 0, 10),
                 new PublicContractItem(2, 3001, 1, true, false, null, null, null)));
         esi.contract(contract(9_800_003, "item_exchange", "10"), List.of(copy(1, blueprint, 0, 0, 10),
-                new PublicContractItem(2, blueprint + 1000, 1, true, false, 0, 0, -1)));
+                new PublicContractItem(2, blueprint + 1000, 1, true, false, 0, 0, null)));
 
         market.refreshContracts(10);
 
@@ -117,5 +122,21 @@ class ContractPricesIT extends IntegrationTest {
         var status = market.contractStatus();
         assertThat(status.withAbyssalItems()).isEqualTo(1);
         assertThat(status.withBlueprintOriginals()).isEqualTo(1);
+    }
+
+    @Test
+    void aStopRequestedBetweenChunksKeepsWhatWasReadAndLeavesTheRestPending() {
+        var chunk = com.eveassist.market.internal.ContractPrices.CHUNK;
+        for (long id = 9_960_001; id < 9_960_001 + chunk * 2 + 5; id++) {
+            esi.contract(contract(id, "item_exchange", "100"), List.of(copy(1, BLUEPRINT + 5, 0, 0, 1)));
+        }
+        var asked = new java.util.concurrent.atomic.AtomicInteger();
+
+        var refresh = prices.refresh(com.eveassist.market.internal.ContractPrices.THE_FORGE, 1000,
+                () -> asked.incrementAndGet() > 1); // goes on for the first chunk, then stops
+
+        assertThat(refresh.linesRead()).isEqualTo(chunk);
+        assertThat(refresh.pending()).isEqualTo(chunk + 5);
+        assertThat(esi.contractItemsAsked()).hasSize(chunk);
     }
 }

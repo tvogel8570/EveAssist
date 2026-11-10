@@ -17,6 +17,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.function.BooleanSupplier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 /**
@@ -25,6 +28,8 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class ContractPrices {
+
+    private static final Logger log = LoggerFactory.getLogger(ContractPrices.class);
 
     /** The Forge, the region whose contracts are read. */
     public static final int THE_FORGE = 10000002;
@@ -43,12 +48,24 @@ public class ContractPrices {
         this.clock = clock;
     }
 
+    /** The most contracts whose lines are asked for at once. The stop check comes between two of these. */
+    public static final int CHUNK = 40;
+
     /**
      * Brings the stored contracts of the region up to date, then reads the lines of up to {@code maxContracts} new
      * contracts, newest first. A region has many thousands, so the first refresh leaves most of them pending and each
      * later one reads more.
      */
     public ContractRefresh refresh(int regionId, int maxContracts) {
+        return refresh(regionId, maxContracts, () -> false);
+    }
+
+    /**
+     * As {@link #refresh(int, int)}, reading the lines {@value #CHUNK} contracts at a time and saving each chunk before
+     * the next. {@code stopRequested} is asked before every chunk, so a stop waits for at most one chunk of ESI calls
+     * and what was read is kept.
+     */
+    public ContractRefresh refresh(int regionId, int maxContracts, BooleanSupplier stopRequested) {
         var problems = new ArrayList<String>();
         int added = 0;
         var list = esi.publicContracts(regionId);
@@ -58,26 +75,32 @@ public class ContractPrices {
             case FAILED -> problems.add(list.problem());
         }
         var ids = contracts.pending(regionId, maxContracts);
-        var asked = new HashMap<Long, Future<EsiResult<List<PublicContractItem>>>>();
-        try (var threads = Executors.newVirtualThreadPerTaskExecutor()) {
-            for (var id : ids) {
-                asked.put(id, threads.submit(() -> esi.publicContractItems(id)));
-            }
-        }
         int read = 0;
         int gone = 0;
-        for (var entry : asked.entrySet()) {
-            var result = result(entry.getValue());
-            if (result.outcome() == EsiResult.Outcome.FAILED) {
-                if (!problems.contains(result.problem())) {
-                    problems.add(result.problem());
+        for (int from = 0; from < ids.size() && !stopRequested.getAsBoolean(); from += CHUNK) {
+            var asked = new HashMap<Long, Future<EsiResult<List<PublicContractItem>>>>();
+            try (var threads = Executors.newVirtualThreadPerTaskExecutor()) {
+                for (var id : ids.subList(from, Math.min(from + CHUNK, ids.size()))) {
+                    asked.put(id, threads.submit(() -> esi.publicContractItems(id)));
                 }
-            } else if (result.data() == null || result.data().isEmpty()) {
-                contracts.drop(entry.getKey());
-                gone++;
-            } else {
-                contracts.saveItems(entry.getKey(), result.data(), ContractFlags.of(result.data(), sde::isAbyssal));
-                read++;
+            }
+            for (var entry : asked.entrySet()) {
+                var result = result(entry.getValue());
+                if (result.outcome() == EsiResult.Outcome.FAILED) {
+                    if (!problems.contains(result.problem())) {
+                        problems.add(result.problem());
+                    }
+                } else if (result.data() == null || result.data().isEmpty()) {
+                    // expired, accepted, or one ESI has no lines for. It stays, read and without lines, so that a sync
+                    // does not add it again while the list still shows it
+                    log.info("ESI had no lines for public contract {} (empty answer, 204 or 403); kept as read with no lines",
+                            entry.getKey());
+                    contracts.saveItems(entry.getKey(), List.of(), new ContractFlags(false, false));
+                    gone++;
+                } else {
+                    contracts.saveItems(entry.getKey(), result.data(), ContractFlags.of(result.data(), sde::isAbyssal));
+                    read++;
+                }
             }
         }
         return new ContractRefresh(added, read, gone, contracts.pendingCount(regionId), problems);

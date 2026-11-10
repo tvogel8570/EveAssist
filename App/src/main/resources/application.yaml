@@ -10,6 +10,10 @@ spring:
     url: ${EVEASSIST_DB_URL}
     username: eveassist_app
     password: ${EVEASSIST_APP_PASSWORD}
+    hikari:
+      # Hikari's own default, written down so that it is a visible choice. Symptoms that suggest changing it, and the
+      # other concurrency settings, are in documentation/runbooks/concurrency-tuning.md.
+      maximum-pool-size: 10
   flyway:
     url: ${EVEASSIST_DB_URL}
     user: eveassist_owner

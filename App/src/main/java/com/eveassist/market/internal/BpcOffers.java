@@ -39,11 +39,11 @@ final class BpcOffers {
                     return List.of();
                 }
                 var runs = line.quantity() * line.runs();
-                runsByCopy.merge(new CopyKind(line.typeId(), line.me(), line.te()), runs, Long::sum);
+                runsByCopy.merge(new CopyKind(line.typeId(), line.me() == null ? 0 : line.me(), line.te() == null ? 0 : line.te()), runs, Long::sum);
                 totalRuns += runs;
             } else {
-                if (line.runs() != null) {
-                    return List.of(); // a blueprint original
+                if (line.original()) {
+                    return List.of();
                 }
                 var sell = jitaSell.apply(line.typeId());
                 if (sell == null) {
