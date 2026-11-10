@@ -5,6 +5,7 @@ import com.eveassist.esi.EsiClient;
 import com.eveassist.esi.StructureLookup;
 import java.time.Clock;
 import java.time.Duration;
+import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -37,13 +38,35 @@ class StructureResolver {
     }
 
     void resolve(LinkedCharacter character) {
-        if (character.needsReauthorization() || !character.scopes().contains(EsiClient.STRUCTURES_SCOPE)) {
+        if (!canAsk(character)) {
             return;
         }
         var now = clock.instant();
+        resolve(character, structures.toAsk(character.id(), now, NAME_TRUSTED_FOR, NO_ACCESS_WAIT,
+                NOT_FOUND_WAIT, MOST_ASKED_PER_RUN));
+    }
+
+    /**
+     * Learns the names of the structures where a corporation has items, with the token of one of its Directors, who is
+     * the character that learns each name. A Director may not dock in every structure the corporation has an office in,
+     * and a refused structure is left alone for a day, as for a character's own items.
+     */
+    void resolveForCorporation(UUID corporationId, LinkedCharacter director) {
+        if (!canAsk(director)) {
+            return;
+        }
+        var now = clock.instant();
+        resolve(director, structures.toAskForCorporation(corporationId, director.id(), now, NAME_TRUSTED_FOR,
+                NO_ACCESS_WAIT, NOT_FOUND_WAIT, MOST_ASKED_PER_RUN));
+    }
+
+    private static boolean canAsk(LinkedCharacter character) {
+        return !character.needsReauthorization() && character.scopes().contains(EsiClient.STRUCTURES_SCOPE);
+    }
+
+    private void resolve(LinkedCharacter character, java.util.List<Long> toAsk) {
         var refusals = 0;
-        for (var structureId : structures.toAsk(character.id(), now, NAME_TRUSTED_FOR, NO_ACCESS_WAIT,
-                NOT_FOUND_WAIT, MOST_ASKED_PER_RUN)) {
+        for (var structureId : toAsk) {
             StructureLookup answer;
             try {
                 answer = esi.structure(character.eveCharacterId(), structureId);

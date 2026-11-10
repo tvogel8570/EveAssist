@@ -35,12 +35,34 @@ class StructureRepository {
      */
     List<Long> toAsk(UUID characterId, Instant now, java.time.Duration named, java.time.Duration noAccessWait,
             java.time.Duration notFoundWait, int limit) {
+        return toAsk("""
+                SELECT DISTINCT a.location_id AS structure_id FROM character_asset a
+                WHERE a.character_id = :source AND a.location_id >= :first
+                  AND NOT EXISTS (SELECT 1 FROM character_asset p
+                                  WHERE p.character_id = a.character_id AND p.item_id = a.location_id)
+                """, characterId, characterId, now, named, noAccessWait, notFoundWait, limit);
+    }
+
+    /**
+     * The same for the structures where a corporation has items, asked for with the token of {@code characterId}, a
+     * Director of it, who is the one that learns the name. A corporation's items are placed when they are stored, so the
+     * place is the {@code root_location_id}, which is never an office.
+     */
+    List<Long> toAskForCorporation(UUID corporationId, UUID characterId, Instant now, java.time.Duration named,
+            java.time.Duration noAccessWait, java.time.Duration notFoundWait, int limit) {
+        return toAsk("""
+                SELECT DISTINCT a.root_location_id AS structure_id FROM corporation_asset a
+                WHERE a.corporation_id = :source AND a.root_location_id >= :first
+                """, corporationId, characterId, now, named, noAccessWait, notFoundWait, limit);
+    }
+
+    /** {@code candidates} is one of the fixed queries above, which gives {@code structure_id} for {@code :source}. */
+    private List<Long> toAsk(String candidates, UUID source, UUID characterId, Instant now, java.time.Duration named,
+            java.time.Duration noAccessWait, java.time.Duration notFoundWait, int limit) {
+        var id = characterId;
         return jdbc.sql("""
                 SELECT s.structure_id FROM (
-                    SELECT DISTINCT a.location_id AS structure_id FROM character_asset a
-                    WHERE a.character_id = :id AND a.location_id >= :first
-                      AND NOT EXISTS (SELECT 1 FROM character_asset p
-                                      WHERE p.character_id = a.character_id AND p.item_id = a.location_id)
+                """ + candidates + """
                 ) s
                 LEFT JOIN character_structure c ON c.character_id = :id AND c.structure_id = s.structure_id
                 WHERE (c.structure_id IS NULL
@@ -56,7 +78,7 @@ class StructureRepository {
                 ORDER BY (c.structure_id IS NULL) DESC, s.structure_id
                 LIMIT :limit
                 """)
-                .param("id", characterId).param("first", FIRST_STRUCTURE_ID)
+                .param("id", id).param("source", source).param("first", FIRST_STRUCTURE_ID)
                 .param("foundBefore", Timestamp.from(now.minus(named)))
                 .param("noAccessBefore", Timestamp.from(now.minus(noAccessWait)))
                 .param("notFoundBefore", Timestamp.from(now.minus(notFoundWait)))

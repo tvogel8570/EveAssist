@@ -40,7 +40,9 @@ class FakeEveSso implements EveSso {
     RefreshedAccess nextRefresh;
     /** A refresh fails with this instead, when set. */
     SsoException refreshFailure;
-    final List<String> refreshed = new ArrayList<>();
+    final List<String> refreshed = java.util.Collections.synchronizedList(new ArrayList<>());
+    /** What a refresh with a given refresh token gives, for tests where many characters refresh at once. */
+    final java.util.Map<String, RefreshedAccess> answers = new java.util.concurrent.ConcurrentHashMap<>();
 
     /** A refresh answer for a character, with the scopes it still holds. */
     RefreshedAccess access(long characterId, String ownerHash, Set<String> scopes, Instant expiresAt,
@@ -52,6 +54,10 @@ class FakeEveSso implements EveSso {
     @Override
     public RefreshedAccess refresh(String refreshToken) {
         refreshed.add(refreshToken);
+        var own = answers.get(refreshToken);
+        if (own != null) {
+            return own;
+        }
         if (refreshFailure != null) {
             throw refreshFailure;
         }

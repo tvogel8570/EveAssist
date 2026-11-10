@@ -11,20 +11,44 @@ character's assets are stored, `AssetClassifier` walks each chain to its top and
 
 - `root_location_id`: the station, solar system or structure at the top of the chain;
 - `depth` and `container_type_id`: how deep it is, and the type of what holds it directly;
-- `held`: `HANGAR`, `IN_CONTAINER`, `IN_SHIP`, `FITTED`, `DELIVERIES` or `ASSET_SAFETY`, from the location flag and the
-  depth. Asset safety and deliveries are decided by the flag at any depth, because items inside an asset safety wrap
-  are still in asset safety.
+- `held`: `HANGAR`, `IN_CONTAINER`, `IN_SHIP`, `FITTED`, `DELIVERIES`, `ASSET_SAFETY` or `IMPOUNDED`, from the location
+  flag and the depth. Asset safety and deliveries (every flag ESI gives to something delivered and not yet taken) are
+  decided by the flag at any depth, because items inside an asset safety wrap are still in asset safety. Everything in a
+  corporation's impounded office (type Office, flag `Impounded`) is `IMPOUNDED`, and the office itself is a folder like any
+  other and is not stored.
 
 The walk never uses `location_type`, because real ESI types an item in a structure as `item` (see
 [Character assets](esi.md#character-assets)). Doing this once at store time keeps every page request a plain query, and
 means a chain is never walked for a user who only looks. Existing rows were dropped by the migration and are read again.
+
+## Corporation assets
+
+Status: proposed (added 2026-11-10). A corporation's items are stored in `corporation_asset`, like a character's, with a
+`division` (1 to 7) as well. `AssetClassifier.classifyCorporation` treats an office (flag `OfficeFolder`) as a folder: it
+is left out, it adds no depth, and the flag of the item (or container) directly in it names the division. So an item in an
+office is at the station or structure, held in a hangar. The view `holder_asset` puts the items of characters and of
+corporations in one set of columns under `holder_id`, and every browse query reads that view, still limited to the ids
+of the viewer's own characters and corporations. A corporation has a public id like a character, so the bar, the colours,
+the character filter and the where-lines work on a holder without caring which kind it is. Corporations are included only
+while the account has the `CORPORATION_ASSETS` feature on. The fetch is described in
+[ESI access](esi.md#corporation-data).
+
+## Container names
+
+Status: proposed (added 2026-11-10). A container or ship is an asset too, and the items in it point at it. The view
+`holder_asset` also gives `container_id` (the item that holds this one directly, null at the top and in a corporation's
+office), `container_type_id` and the item's own `name`. The where-lines query joins the view to itself on
+`(holder_id, item_id = container_id)` for the container's name, and to the SDE for its type, and groups by `container_id`,
+so each container is a line of its own. `BrowseService` words the "how held" badge from that: the name in quotes, or the
+type, or the plain wording when neither is known. Names come from the extra ESI call described in
+[ESI access](esi.md#character-assets).
 
 ## One page, one address, two answers
 
 `GET /inventory` is the whole page for a browser and only the list for htmx, told apart by the `HX-Request` header, with
 `Vary: HX-Request` so that a cached page is never shown for a list or the other way round. The whole filter is in the
 query string (`BrowseFilter`), and htmx pushes it, so a view can be reloaded, bookmarked and sent, and the back button
-works. Only a full page visit starts a fetch. A filter change never does.
+works. A full page visit is answered from what is stored and starts no fetch. The status block asks for the fetch when it has loaded (`GET /inventory/status?start=1`), so the page is on screen first and a slow or busy fetch never holds it up. A filter change never starts one.
 
 The filter is a form. Its hidden fields hold every chosen value. A column's list, opened by Add filter, holds that
 column's choices in its own checkboxes, so while it is open the hidden fields for that column are left out (the `open`

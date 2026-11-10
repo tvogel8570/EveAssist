@@ -75,7 +75,7 @@
                 </div>
                 <p class="text-sm" th:unless="${#lists.isEmpty(character.inUse)}">
                     <span class="opacity-70" th:text="#{characters.permissions}">Permissions:</span>
-                    <span th:each="scope, it : ${character.inUse}"><span th:text="#{'scope.' + ${scope}}">scope</span><span th:unless="${it.last}">, </span></span>
+                    <span th:each="scope, it : ${character.inUse}"><span th:if="${#lists.contains(character.noAccess, scope)}" class="line-through opacity-60" th:title="#{characters.notDirector}" th:text="#{'scope.' + ${scope}}">scope</span><span th:unless="${#lists.contains(character.noAccess, scope)}" th:text="#{'scope.' + ${scope}}">scope</span><span th:unless="${it.last}">, </span></span>
                 </p>
                 <p class="text-sm" th:unless="${#lists.isEmpty(character.unused)}">
                     <span class="opacity-70" th:text="#{characters.unused}">Not in use:</span>

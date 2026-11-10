@@ -5,6 +5,9 @@ import com.eveassist.characters.LinkedCharacters;
 import com.eveassist.esi.EsiClient;
 import com.eveassist.esi.EsiResult;
 import com.eveassist.identity.Viewer;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import jakarta.annotation.PreDestroy;
 import java.time.Clock;
 import java.time.Instant;
@@ -15,6 +18,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Semaphore;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
@@ -69,9 +73,24 @@ public class AssetFetcher {
     private final StructureRepository structures;
     private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
     private final Set<UUID> running = ConcurrentHashMap.newKeySet();
+    /**
+     * Storing a character's assets is one transaction that holds a pooled connection while thousands of rows are
+     * replaced. With 20 characters all fetched at once, those transactions used up the whole pool of 10 for 30 s and
+     * the page itself could not get a connection (seen 2026-11-10). So only this many characters are fetched at a time
+     * and the rest wait their turn, which leaves connections for requests. See
+     * documentation/runbooks/concurrency-tuning.md.
+     */
+    static final int MOST_CONCURRENT_FETCHES = 3;
+    private final Semaphore turns = new Semaphore(MOST_CONCURRENT_FETCHES);
+    /** From queued to done for one character: the wait for a turn and the fetch. It grows when users queue up. */
+    private final Timer turnaround;
 
     AssetFetcher(LinkedCharacters linked, EsiClient esi, AssetRepository assets, Clock clock,
-            StructureResolver resolver, StructureRepository structures) {
+            StructureResolver resolver, StructureRepository structures, MeterRegistry meters) {
+        this.turnaround = Timer.builder("eveassist.asset.fetch.turnaround")
+                .description("Time from a character's assets being queued to the fetch being done").register(meters);
+        Gauge.builder("eveassist.asset.fetch.waiting", turns, Semaphore::getQueueLength)
+                .description("Characters whose assets wait for one of the fetch turns").register(meters);
         this.resolver = resolver;
         this.structures = structures;
         this.linked = linked;
@@ -85,13 +104,28 @@ public class AssetFetcher {
      * needs re-authorization or lacks the scope is not asked about: ESI would answer 403, which counts as an error.
      */
     public void refresh(Viewer viewer) {
+        refresh(viewer, false);
+    }
+
+    /**
+     * As above. With {@code rereadNames} the names of containers are asked for again even when ESI says the asset list is
+     * unchanged, which is what the Refresh button wants: a container renamed in game does not change the list.
+     */
+    public void refresh(Viewer viewer, boolean rereadNames) {
         for (var character : linked.of(viewer)) {
             if (canFetch(character) && running.add(character.id())) {
+                var queued = Timer.start();
                 executor.execute(() -> {
                     try {
-                        fetch(character);
+                        turns.acquireUninterruptibly();
+                        try {
+                            fetch(character, rereadNames);
+                        } finally {
+                            turns.release();
+                        }
                     } finally {
                         running.remove(character.id());
+                        queued.stop(turnaround);
                     }
                 });
             }
@@ -100,6 +134,10 @@ public class AssetFetcher {
 
     /** Fetches one character now, on the calling thread. Used by the background task and by tests. */
     void fetch(LinkedCharacter character) {
+        fetch(character, false);
+    }
+
+    void fetch(LinkedCharacter character, boolean rereadNames) {
         var now = clock.instant();
         EsiResult<List<com.eveassist.esi.CharacterAsset>> result;
         try {
@@ -116,8 +154,13 @@ public class AssetFetcher {
         }
         try {
             switch (result.outcome()) {
-                case UPDATED -> assets.replace(character.id(), result.data(), now);
-                case UNCHANGED -> assets.recordUnchanged(character.id(), now);
+                case UPDATED -> assets.replace(character.id(), result.data(), namesOf(character, result.data()), now);
+                case UNCHANGED -> {
+                    assets.recordUnchanged(character.id(), now);
+                    if (rereadNames) {
+                        rereadNames(character);
+                    }
+                }
                 case FAILED -> assets.recordFailure(character.id(), now, result.problem());
             }
             if (result.outcome() != EsiResult.Outcome.FAILED) {
@@ -127,6 +170,55 @@ public class AssetFetcher {
         } catch (DataIntegrityViolationException gone) {
             // the character was removed while ESI was being asked, and its rows went with it
             log.debug("A character was removed during its asset fetch");
+        }
+    }
+
+    /**
+     * The names players gave to the containers and ships that hold items. Asked after the assets and before they are
+     * stored, so no connection is held while ESI is asked. A failure leaves the items without names, and the page then
+     * says what kind of container it is.
+     */
+    private Map<Long, String> namesOf(LinkedCharacter character, List<com.eveassist.esi.CharacterAsset> list) {
+        var candidates = AssetClassifier.namedCandidates(list);
+        if (candidates.isEmpty()) {
+            return Map.of();
+        }
+        try {
+            var names = esi.characterAssetNames(character.eveCharacterId(), candidates);
+            if (names.outcome() == EsiResult.Outcome.UPDATED) {
+                log.info("Container names of a character: asked for {}, {} have a name", candidates.size(),
+                        names.data().size());
+                return names.data();
+            }
+            log.warn("Names of a character's containers could not be read (asked for {}): {}", candidates.size(),
+                    names.problem());
+        } catch (RuntimeException e) {
+            log.warn("Asking for the names of a character's containers failed: {}", e.getClass().getSimpleName());
+        }
+        return Map.of();
+    }
+
+    /**
+     * Asks again for the names of the containers already stored and updates them in place. A failed call keeps the names
+     * that are there, so a throttled ESI never wipes them.
+     */
+    private void rereadNames(LinkedCharacter character) {
+        var holders = assets.holderItemIds(character.id());
+        if (holders.isEmpty()) {
+            return;
+        }
+        try {
+            var names = esi.characterAssetNames(character.eveCharacterId(), holders);
+            if (names.outcome() == EsiResult.Outcome.UPDATED) {
+                assets.updateNames(character.id(), holders, names.data());
+                log.info("Container names of a character read again: asked for {}, {} have a name", holders.size(),
+                        names.data().size());
+            } else {
+                log.warn("Names of a character's containers could not be read again (asked for {}): {}",
+                        holders.size(), names.problem());
+            }
+        } catch (RuntimeException e) {
+            log.warn("Asking again for the names of a character's containers failed: {}", e.getClass().getSimpleName());
         }
     }
 

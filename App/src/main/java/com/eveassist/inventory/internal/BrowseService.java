@@ -36,15 +36,22 @@ public class BrowseService {
 
     private final LinkedCharacters linked;
     private final BrowseQueries queries;
+    private final CorporationRepository corporations;
     private final MessageSource messages;
 
-    BrowseService(LinkedCharacters linked, BrowseQueries queries, MessageSource messages) {
+    BrowseService(LinkedCharacters linked, BrowseQueries queries, CorporationRepository corporations,
+            MessageSource messages) {
         this.linked = linked;
         this.queries = queries;
+        this.corporations = corporations;
         this.messages = messages;
     }
 
-    /** The viewer's characters with their colours, in the order that fixes the colours. */
+    /**
+     * The holders of the viewer's items with their colours: the characters in the order they were linked, which fixes
+     * their colours, and then the corporations by name, when the account has the Corporation assets feature on. The
+     * name of the method is older than the corporations: it holds both, and the page says "holder" where it must.
+     */
     private Map<UUID, BrowseView.CharacterRef> characters(Viewer viewer) {
         var sorted = linked.of(viewer).stream()
                 .sorted(Comparator.comparing(LinkedCharacter::linkedAt).thenComparingLong(LinkedCharacter::eveCharacterId))
@@ -52,7 +59,14 @@ public class BrowseService {
         var result = new java.util.LinkedHashMap<UUID, BrowseView.CharacterRef>();
         for (int i = 0; i < sorted.size(); i++) {
             result.put(sorted.get(i).id(), new BrowseView.CharacterRef(sorted.get(i).id(), sorted.get(i).name(),
-                    i % COLORS));
+                    i % COLORS, false));
+        }
+        if (!sorted.isEmpty() && linked.featuresOn(viewer).contains(com.eveassist.characters.Feature.CORPORATION_ASSETS)) {
+            var own = corporations.listFor(viewer.accountId().value());
+            for (int i = 0; i < own.size(); i++) {
+                result.put(own.get(i).id(), new BrowseView.CharacterRef(own.get(i).id(), own.get(i).name(),
+                        (sorted.size() + i) % COLORS, true));
+            }
         }
         return result;
     }
@@ -66,7 +80,7 @@ public class BrowseService {
         var ids = characters.keySet().toArray(UUID[]::new);
         if (ids.length == 0) {
             return new BrowseView(List.of(), 0, 0, false, false, filter.showCharacters(), List.of(), none(filter), "",
-                    "", filter.unfiltered(), false);
+                    "", filter.unfiltered(), false, false);
         }
         var rows = queries.items(ids, filter);
         var summary = queries.summary(ids, filter);
@@ -74,7 +88,8 @@ public class BrowseService {
         return new BrowseView(items, summary.itemTypes(), summary.units(),
                 moreAvailable(summary.itemTypes(), items.size(), filter.limit()),
                 capped(summary.itemTypes(), items.size(), filter.limit()), filter.showCharacters(), chips(ids, characters, filter), none(filter), filter.toQuery(),
-                filter.withLimit(filter.limit() + BrowseFilter.FIRST_PAGE).toQuery(), filter.unfiltered(), true);
+                filter.withLimit(filter.limit() + BrowseFilter.FIRST_PAGE).toQuery(), filter.unfiltered(), true,
+                characters.values().stream().anyMatch(BrowseView.CharacterRef::corporation));
     }
 
     /** More item types than shown, and a bigger page would show them. */
@@ -130,7 +145,7 @@ public class BrowseService {
                 default -> queries.labels(ids, dimension, values);
             };
             var worded = values.stream().map(value -> names.getOrDefault(value, unknown(dimension, value))).toList();
-            chips.add(new Chip(dimension.parameter, chipText(text("inventory.filter." + dimension.parameter), worded),
+            chips.add(new Chip(dimension.parameter, chipText(title(dimension, characters), worded),
                     filter.without(dimension).toQuery()));
         }
         if (filter.minTotal() > 0) {
@@ -138,6 +153,23 @@ public class BrowseService {
                     List.of(String.format(Locale.ROOT, "%,d", filter.minTotal()))), filter.withoutMinimum().toQuery()));
         }
         return chips;
+    }
+
+    /** The name of a filter column. The character column also lists corporations when the account has any. */
+    private String title(Dimension dimension, Map<UUID, BrowseView.CharacterRef> holders) {
+        var corporations = dimension == Dimension.CHARACTER
+                && holders.values().stream().anyMatch(BrowseView.CharacterRef::corporation);
+        return text("inventory.filter." + dimension.parameter + (corporations ? ".withCorporations" : ""));
+    }
+
+    /** The names of all the filter columns for the Add filter menu, with one look at the viewer's holders. */
+    public Map<Dimension, String> columnTitles(Viewer viewer) {
+        var holders = characters(viewer);
+        var titles = new java.util.EnumMap<Dimension, String>(Dimension.class);
+        for (var dimension : Dimension.values()) {
+            titles.put(dimension, title(dimension, holders));
+        }
+        return titles;
     }
 
     /** "Category: Module or Charge", or "Character: 6 selected" when there are too many to read. */
@@ -174,6 +206,8 @@ public class BrowseService {
         if (characters.isEmpty()) {
             return List.of();
         }
+        var hangars = corporations.divisionNames(characters.values().stream().filter(BrowseView.CharacterRef::corporation)
+                .map(BrowseView.CharacterRef::id).toList());
         return queries.where(characters.keySet().toArray(UUID[]::new), filter, typeId).stream().map(row -> {
             var who = row.byCharacter().entrySet().stream().filter(e -> characters.containsKey(e.getKey()))
                     .sorted((a, b) -> Long.compare(b.getValue(), a.getValue()))
@@ -183,14 +217,50 @@ public class BrowseService {
                     : String.join(", ", who);
             var place = placeName(row.placeName(), String.valueOf(row.locationId()));
             return new WhereLine(place, row.placeName() == null, row.regionName() == null ? "" : row.regionName(),
-                    text("inventory.held." + row.held().name()), shown, row.total());
+                    howHeld(row), row.held().name(), hangar(row.division(), row.byCharacter().keySet(), hangars), shown,
+                    row.total());
         }).toList();
+    }
+
+    /**
+     * How an item is held. An item in a container says which one: the name the player gave it, in quotes, or else what
+     * kind of container it is. Anything else, and a container whose type is not known, gets the plain wording.
+     */
+    private String howHeld(BrowseQueries.WhereRow row) {
+        if (row.held() == Held.IN_CONTAINER) {
+            var name = row.containerName();
+            // exactly as the player typed it, spaces included: they use them to control how the game sorts
+            if (name != null && !name.isEmpty()) {
+                return text("inventory.where.inContainer", "\"" + name + "\"");
+            }
+            if (row.containerType() != null) {
+                return text("inventory.where.inContainer", row.containerType());
+            }
+        }
+        return text("inventory.held." + row.held().name());
+    }
+
+    /**
+     * "Production hangar" for a corporation's division, named as the corporation named it, or "Hangar 3" when it gave no
+     * name. Empty for a character's items. A line with a division holds one corporation's items (see {@link BrowseQueries}).
+     */
+    private String hangar(Integer division, java.util.Set<UUID> holders, Map<UUID, Map<Integer, String>> names) {
+        if (division == null) {
+            return "";
+        }
+        for (var holder : holders) {
+            var name = names.getOrDefault(holder, Map.of()).get(division);
+            if (name != null && !name.isEmpty()) {
+                return name;
+            }
+        }
+        return text("inventory.hangar.number", division);
     }
 
     /** The values a column offers, for the list opened by Add filter. */
     public FacetView facet(Viewer viewer, Dimension dimension, BrowseFilter filter, String search) {
         var characters = characters(viewer);
-        var title = text("inventory.filter." + dimension.parameter);
+        var title = title(dimension, characters);
         if (characters.isEmpty()) {
             return new FacetView(dimension.parameter, title, List.of(), true, false);
         }
@@ -246,12 +316,16 @@ public class BrowseService {
         if (characters.isEmpty()) {
             return lines;
         }
+        var hangars = corporations.divisionNames(characters.values().stream().filter(BrowseView.CharacterRef::corporation)
+                .map(BrowseView.CharacterRef::id).toList());
         var rows = queries.export(characters.keySet().toArray(UUID[]::new), filter);
         for (var row : rows) {
             var character = characters.get(row.character());
             lines.add(new String[] {row.item(), row.category(), row.group(), character == null ? "" : character.name(),
                     row.place(), row.region(), text("inventory.held." + row.held().name()),
-                    String.valueOf(row.quantity()), row.blueprint()});
+                    String.valueOf(row.quantity()), row.blueprint(),
+                    hangar(row.division(), java.util.Set.of(row.character()), hangars),
+                    row.container() == null ? "" : row.container()});
         }
         if (cutShort(rows.size(), BrowseQueries.MOST_EXPORT_ROWS)) {
             lines.add(new String[] {text("inventory.csv.cut", BrowseQueries.MOST_EXPORT_ROWS)});

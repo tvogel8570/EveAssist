@@ -48,6 +48,9 @@ class InventoryBrowseIT extends IntegrationTest {
     @Autowired
     BrowseService browse;
 
+    @Autowired
+    CorporationRepository corporations;
+
     private RequestPostProcessor signedInAs(String sub) {
         return oidcLogin().idToken(token -> token.subject(sub)).authorities(new SimpleGrantedAuthority("ROLE_USER"));
     }
@@ -298,7 +301,7 @@ class InventoryBrowseIT extends IntegrationTest {
                 .andExpect(status().isOk()).andExpect(content().string(not(containsString("??"))))
                 .andReturn().getResponse().getContentAsString();
         assertThat(text(how)).contains("in a hangar").contains("Not fitted or in ships");
-        assertThat(how).contains("/inventory?ui=1&amp;how=ASSET_SAFETY&amp;how=DELIVERIES&amp;how=HANGAR&amp;how=IN_CONTAINER");
+        assertThat(how).contains("/inventory?ui=1&amp;how=ASSET_SAFETY&amp;how=DELIVERIES&amp;how=HANGAR&amp;how=IMPOUNDED&amp;how=IN_CONTAINER");
 
         var minimum = mvc.perform(get("/inventory/filter/min").param("ui", "1").param("min", "250")
                         .with(signedInAs(s.sub())))
@@ -449,7 +452,7 @@ class InventoryBrowseIT extends IntegrationTest {
 
         var lines = csv.split("\r\n");
         assertThat(lines[0]).isEqualTo("\"Item\",\"Category\",\"Group\",\"Character\",\"Where\",\"Region\",\"How held\","
-                + "\"Quantity\",\"Blueprint\"");
+                + "\"Quantity\",\"Blueprint\",\"Hangar\",\"Container\"");
         assertThat(csv).contains("\"Tritanium\",\"Material\",\"Mineral\",\"Alt One\",\"Jita IV - Moon 4 - Caldari Navy "
                 + "Assembly Plant\",\"The Forge\",\"in a hangar\",\"1500\"");
         assertThat(csv).contains("\"Pilot's Mineral\"").doesNotContain("Test Hauler");
@@ -548,5 +551,323 @@ class InventoryBrowseIT extends IntegrationTest {
         mvc.perform(get("/inventory/filter/category")).andExpect(status().is3xxRedirection());
         mvc.perform(get("/inventory/item/34")).andExpect(status().is3xxRedirection());
         mvc.perform(get("/inventory/export.csv")).andExpect(status().is3xxRedirection());
+    }
+
+    // ---- the corporations of the account's own characters
+
+    private static final long OFFICE = 1_050_000_000_001L;
+
+    /**
+     * Turns the Corporation assets feature on and gives the account a corporation with a hangar named "Production",
+     * holding 900 Tritanium in hangar division 2 and a Test Hauler in division 1. The member is a known Director that
+     * granted no corporation permissions, so the page's own background run can neither learn nor read anything.
+     */
+    private UUID corporation(Viewer viewer, UUID member, String name) {
+        for (var feature : List.of("INVENTORY", "CORPORATION_ASSETS")) {
+            jdbc.sql("INSERT INTO account_feature (owner_account_id, feature) VALUES (:owner, :feature) "
+                            + "ON CONFLICT DO NOTHING")
+                    .param("owner", viewer.accountId().value()).param("feature", feature).update();
+        }
+        var eveCorporation = 98_000_000L + ThreadLocalRandom.current().nextInt(1_000_000);
+        var id = corporations.saveCorporation(viewer.accountId().value(), eveCorporation, name, Instant.now());
+        jdbc.sql("""
+                INSERT INTO character_corporation (character_id, eve_corporation_id, director, checked_at,
+                    corporation_checked_at) VALUES (:id, :corporation, true, now(), now())
+                """).param("id", member).param("corporation", eveCorporation).update();
+        corporations.replace(id, List.of(
+                new CharacterAsset(OFFICE, 27, 1, JITA, "station", "OfficeFolder", true, null),
+                new CharacterAsset(1, TRITANIUM, 900, OFFICE, "item", "CorpSAG2", false, null),
+                new CharacterAsset(2, HAULER, 1, OFFICE, "item", "CorpSAG1", true, null)), Instant.now());
+        corporations.replaceDivisions(id, java.util.Map.of(2, "Production"), Instant.now());
+        return id;
+    }
+
+    @Test
+    void aCorporationIsAnotherHolderWithItsOwnColourAndItsItemsAreInTheTotals() throws Exception {
+        var s = setup();
+        corporation(s.viewer(), s.one(), "Test Industries");
+
+        var page = whole(s.sub(), "");
+
+        var visible = text(page);
+        // Tritanium: 1,500 + 500 held by characters and 900 by the corporation
+        assertThat(visible).contains("Tritanium", "2,900");
+        assertThat(visible).contains("3 holders, most: Alt One");
+        // two characters have colours 0 and 1, and the corporation comes after them
+        assertThat(page).contains("Test Industries: 900").contains("class=\"seg-2\"");
+        assertThat(page).doesNotContain("style=");
+        // the Add filter menu says the column also lists corporations
+        assertThat(visible).contains("Character or corporation");
+    }
+
+    @Test
+    void theCorporationsOfficeIsNotAnItemAndItsContentsAreAtTheStationInTheNamedHangar() throws Exception {
+        var s = setup();
+        corporation(s.viewer(), s.one(), "Test Industries");
+
+        var where = text(mvc.perform(get("/inventory/item/" + TRITANIUM).param("ui", "1").param("chars", "1")
+                        .with(signedInAs(s.sub())))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+
+        assertThat(where).contains("Test Industries 900").contains("Production").contains("in a hangar");
+        assertThat(where).contains("Alt One 1,500");
+        var hauler = text(mvc.perform(get("/inventory/item/" + HAULER).param("ui", "1").param("chars", "1")
+                        .with(signedInAs(s.sub())))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+        // division 1 has no name stored, so it is called by its number
+        assertThat(hauler).contains("Hangar 1").contains("Test Industries 1");
+        assertThat(text(whole(s.sub(), ""))).doesNotContain("Office");
+    }
+
+    @Test
+    void theCharacterFilterCanKeepOnlyTheCorporationOrLeaveItOut() throws Exception {
+        var s = setup();
+        var corporation = corporation(s.viewer(), s.one(), "Test Industries");
+
+        var only = text(whole(s.sub(), "?ui=1&chars=1&character=" + corporation));
+        var without = text(whole(s.sub(), "?ui=1&chars=1&character=" + s.one() + "&character=" + s.two()));
+
+        assertThat(only).contains("2 item types, 901 units").contains("Character or corporation: Test Industries");
+        assertThat(without).contains("4 item types, 2,026 units");
+        var list = text(mvc.perform(get("/inventory/filter/character").with(signedInAs(s.sub())))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+        assertThat(list).contains("Alt One", "Alt Two", "Test Industries");
+    }
+
+    @Test
+    void withTheFeatureOffTheCorporationIsNeitherShownNorCounted() throws Exception {
+        var s = setup();
+        corporation(s.viewer(), s.one(), "Test Industries");
+        jdbc.sql("DELETE FROM account_feature WHERE owner_account_id = :owner AND feature = 'CORPORATION_ASSETS'")
+                .param("owner", s.viewer().accountId().value()).update();
+
+        var page = whole(s.sub(), "");
+
+        assertThat(text(page)).doesNotContain("Test Industries").contains("4 item types, 2,026 units")
+                .contains("2 characters, most: Alt One");
+        assertThat(page).doesNotContain("id=\"corporation-status\"");
+    }
+
+    @Test
+    void anotherAccountNeverSeesTheCorporationOrItsItems() throws Exception {
+        var s = setup();
+        corporation(s.viewer(), s.one(), "Test Industries");
+        var stranger = newSub();
+        var strangerViewer = viewerFor(stranger);
+        var theirs = link(strangerViewer, "Stranger");
+        store(theirs, asset(1, TRITANIUM, 7, JITA, "Hangar"));
+        jdbc.sql("INSERT INTO account_feature (owner_account_id, feature) VALUES (:owner, 'CORPORATION_ASSETS')")
+                .param("owner", strangerViewer.accountId().value()).update();
+
+        var page = text(whole(stranger, ""));
+
+        assertThat(page).contains("1 item type, 7 units").doesNotContain("Test Industries");
+        var where = text(mvc.perform(get("/inventory/item/" + TRITANIUM).with(signedInAs(stranger)))
+                .andReturn().getResponse().getContentAsString());
+        assertThat(where).doesNotContain("Production").doesNotContain("900");
+    }
+
+    @Test
+    void theStatusListsTheCorporationAndWhyOneCannotBeRead() throws Exception {
+        var s = setup();
+        corporation(s.viewer(), s.one(), "Test Industries");
+
+        var status = text(mvc.perform(get("/inventory/status").with(signedInAs(s.sub()))).andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString());
+
+        // the member is a Director that has not granted the corporation permissions
+        assertThat(status).contains("Test Industries").contains("Director needs authorization");
+    }
+
+    @Test
+    void theCsvHasAHangarColumnAndNamesTheCorporationAsTheHolder() throws Exception {
+        var s = setup();
+        corporation(s.viewer(), s.one(), "Test Industries");
+
+        var csv = mvc.perform(get("/inventory/export.csv").param("ui", "1").param("category", "4")
+                        .with(signedInAs(s.sub())))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+
+        assertThat(csv).contains("\"Test Industries\"").contains("\"900\",\"\",\"Production\"");
+        // a character's line has an empty hangar
+        assertThat(csv).contains("\"1500\",\"\",\"\"");
+    }
+
+    // ---- the container that holds an item
+
+    private static CharacterAsset box(long itemId) {
+        return new CharacterAsset(itemId, HAULER, 1, JITA, "station", "Hangar", true, null);
+    }
+
+    private static CharacterAsset in(long itemId, int type, long quantity, long containerId) {
+        return new CharacterAsset(itemId, type, quantity, containerId, "item", "Unlocked", false, null);
+    }
+
+    private String whereText(String sub, int type) throws Exception {
+        return text(mvc.perform(get("/inventory/item/" + type).param("ui", "1").param("chars", "1")
+                        .with(signedInAs(sub)))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+    }
+
+    @Test
+    void anItemInANamedContainerSaysWhichOneAndAnUnnamedOneSaysWhatKind() throws Exception {
+        var sub = newSub();
+        var viewer = viewerFor(sub);
+        var one = link(viewer, "Alt One");
+        assets.replace(one, List.of(box(10), in(11, TRITANIUM, 300, 10), box(20), in(21, TRITANIUM, 40, 20),
+                asset(30, TRITANIUM, 5, JITA, "Hangar")), java.util.Map.of(10L, "Mining gear"), Instant.now());
+
+        var where = whereText(sub, TRITANIUM);
+
+        // one line for each place the stack is: the named container, the unnamed one (by its kind), and the hangar
+        assertThat(where).contains("in \"Mining gear\"").contains("in Test Hauler").contains("in a hangar");
+        assertThat(where).doesNotContain("in a container");
+        assertThat(where.indexOf("in \"Mining gear\"")).isLessThan(where.indexOf("in Test Hauler"));
+    }
+
+    @Test
+    void aContainerNameFromTheGameIsEscaped() throws Exception {
+        var sub = newSub();
+        var viewer = viewerFor(sub);
+        var one = link(viewer, "Alt One");
+        assets.replace(one, List.of(box(10), in(11, TRITANIUM, 300, 10)),
+                java.util.Map.of(10L, "<img src=x onerror=alert(1)>"), Instant.now());
+
+        var raw = mvc.perform(get("/inventory/item/" + TRITANIUM).param("ui", "1").param("chars", "1")
+                        .with(signedInAs(sub)))
+                .andReturn().getResponse().getContentAsString();
+
+        assertThat(raw).doesNotContain("<img src=x").contains("&lt;img src=x onerror=alert(1)&gt;");
+    }
+
+    @Test
+    void anItemInAContainerInACorporationHangarShowsTheContainerAndTheHangarAsTwoBadges() throws Exception {
+        var s = setup();
+        var corporation = corporation(s.viewer(), s.one(), "Test Industries");
+        corporations.replace(corporation, List.of(
+                new CharacterAsset(OFFICE, 27, 1, JITA, "station", "OfficeFolder", true, null),
+                new CharacterAsset(50, HAULER, 1, OFFICE, "item", "CorpSAG2", true, null),
+                new CharacterAsset(51, PILOTS_MINERAL, 8, 50, "item", "Unlocked", false, null)),
+                java.util.Map.of(50L, "Ammo"), Instant.now());
+
+        var raw = mvc.perform(get("/inventory/item/" + PILOTS_MINERAL).param("ui", "1").param("chars", "1")
+                        .with(signedInAs(s.sub())))
+                .andReturn().getResponse().getContentAsString();
+
+        assertThat(raw).contains("badge badge-sm badge-ghost");
+        assertThat(text(raw)).contains("in \"Ammo\"").contains("Production").contains("Test Industries 8");
+        // the container takes the "how held" badge and the hangar keeps its own
+        assertThat(raw.indexOf("in &quot;Ammo&quot;")).isLessThan(raw.indexOf("Production"));
+    }
+
+    @Test
+    void theCsvNamesTheContainerOrItsKind() throws Exception {
+        var sub = newSub();
+        var viewer = viewerFor(sub);
+        var one = link(viewer, "Alt One");
+        assets.replace(one, List.of(box(10), in(11, TRITANIUM, 300, 10), box(20), in(21, TRITANIUM, 40, 20),
+                asset(30, TRITANIUM, 5, JITA, "Hangar")), java.util.Map.of(10L, "Mining gear"), Instant.now());
+
+        var csv = mvc.perform(get("/inventory/export.csv").param("ui", "1").param("category", "4")
+                        .with(signedInAs(sub))).andReturn().getResponse().getContentAsString();
+
+        assertThat(csv).contains("\"300\",\"\",\"\",\"Mining gear\"").contains("\"40\",\"\",\"\",\"Test Hauler\"")
+                .contains("\"5\",\"\",\"\",\"\"");
+    }
+
+    @Test
+    void containerNamesKeepTheirSpacesOnThePageAndInTheCsv() throws Exception {
+        var sub = newSub();
+        var viewer = viewerFor(sub);
+        var one = link(viewer, "Alt One");
+        assets.replace(one, List.of(box(10), in(11, TRITANIUM, 300, 10), box(20), in(21, TRITANIUM, 40, 20)),
+                java.util.Map.of(10L, "   PI - T1 ", 20L, " "), Instant.now());
+
+        var raw = mvc.perform(get("/inventory/item/" + TRITANIUM).param("ui", "1").param("chars", "1")
+                        .with(signedInAs(sub))).andReturn().getResponse().getContentAsString();
+        var csv = mvc.perform(get("/inventory/export.csv").param("ui", "1").param("category", "4")
+                        .with(signedInAs(sub))).andReturn().getResponse().getContentAsString();
+
+        // the spaces are in the page and drawn as typed, and a name of only spaces is still a name, not the container's kind
+        assertThat(raw).contains("in &quot;   PI - T1 &quot;").contains("in &quot; &quot;")
+                .doesNotContain("in Test Hauler");
+        assertThat(raw).contains("whitespace-pre");
+        assertThat(csv).contains("\"   PI - T1 \"").contains("\" \"");
+    }
+
+    @Test
+    void aCorporationHangarNameKeepsItsSpacesToo() throws Exception {
+        var s = setup();
+        var corporation = corporation(s.viewer(), s.one(), "Test Industries");
+        corporations.replaceDivisions(corporation, java.util.Map.of(2, "  Prod "), Instant.now());
+
+        var raw = mvc.perform(get("/inventory/item/" + TRITANIUM).param("ui", "1").param("chars", "1")
+                        .with(signedInAs(s.sub()))).andReturn().getResponse().getContentAsString();
+
+        assertThat(raw).contains(">  Prod <");
+    }
+
+    @Test
+    void theHowHeldBadgeOfItemsInDeliveriesHasItsOwnColourAndNoOtherDoes() throws Exception {
+        var sub = newSub();
+        var viewer = viewerFor(sub);
+        var one = link(viewer, "Alt One");
+        assets.replace(one, List.of(asset(1, TRITANIUM, 500, JITA, "Hangar"),
+                asset(2, TRITANIUM, 40, AMARR, "Deliveries")), Instant.now());
+
+        var raw = mvc.perform(get("/inventory/item/" + TRITANIUM).param("ui", "1").param("chars", "1")
+                        .with(signedInAs(sub))).andReturn().getResponse().getContentAsString();
+
+        // one badge says "in deliveries" and is coloured, the "in a hangar" one is not
+        var deliveries = raw.substring(raw.lastIndexOf("<span", raw.indexOf("in deliveries")), raw.indexOf("in deliveries"));
+        var hangar = raw.substring(raw.lastIndexOf("<span", raw.indexOf("in a hangar")), raw.indexOf("in a hangar"));
+        assertThat(deliveries).contains("text-warning");
+        assertThat(hangar).doesNotContain("text-warning");
+        assertThat(raw.split("text-warning", -1)).hasSize(2);
+    }
+
+    @Test
+    void assetSafetyAndImpoundedShareAColourThatDiffersFromDeliveries() throws Exception {
+        var s = setup();
+        var corporation = corporation(s.viewer(), s.one(), "Test Industries");
+        assets.replace(s.two(), List.of(asset(40, TRITANIUM, 7, JITA, "AssetSafety"),
+                asset(41, TRITANIUM, 8, AMARR, "Deliveries")), Instant.now());
+        corporations.replace(corporation, List.of(
+                new CharacterAsset(OFFICE, 27, 1, JITA, "station", "Impounded", true, null),
+                new CharacterAsset(60, TRITANIUM, 9, OFFICE, "item", "CorpSAG1", false, null)), Instant.now());
+
+        var raw = mvc.perform(get("/inventory/item/" + TRITANIUM).param("ui", "1").param("chars", "1")
+                        .with(signedInAs(s.sub()))).andReturn().getResponse().getContentAsString();
+
+        assertThat(badgeBefore(raw, "in asset safety")).contains("text-error").doesNotContain("text-warning");
+        assertThat(badgeBefore(raw, "in an impounded office")).contains("text-error").doesNotContain("text-warning");
+        assertThat(badgeBefore(raw, "in deliveries")).contains("text-warning").doesNotContain("text-error");
+        assertThat(badgeBefore(raw, "in a hangar")).doesNotContain("text-warning").doesNotContain("text-error");
+        // the impounded office is a folder, not an item, and is not listed as one
+        assertThat(text(whole(s.sub(), ""))).doesNotContain("Office");
+    }
+
+    /** The opening tag of the badge whose text is the given words. */
+    private static String badgeBefore(String html, String words) {
+        var at = html.indexOf(words);
+        assertThat(at).as(words).isGreaterThanOrEqualTo(0);
+        return html.substring(html.lastIndexOf("<span", at), at);
+    }
+
+    @Test
+    void theHowHeldFilterOffersImpoundedAndTheLoosePresetKeepsIt() throws Exception {
+        var s = setup();
+        var corporation = corporation(s.viewer(), s.one(), "Test Industries");
+        corporations.replace(corporation, List.of(
+                new CharacterAsset(OFFICE, 27, 1, JITA, "station", "Impounded", true, null),
+                new CharacterAsset(60, TRITANIUM, 9, OFFICE, "item", "CorpSAG1", false, null)), Instant.now());
+
+        var list = text(mvc.perform(get("/inventory/filter/how").param("ui", "1").with(signedInAs(s.sub())))
+                .andReturn().getResponse().getContentAsString());
+        var only = text(whole(s.sub(), "?ui=1&chars=1&how=impounded"));
+
+        assertThat(list).contains("in an impounded office");
+        assertThat(only).contains("1 item type, 9 units").contains("How held: in an impounded office");
+        assertThat(BrowseFilter.none().looseOnly().held()).contains(Held.IMPOUNDED, Held.ASSET_SAFETY, Held.DELIVERIES);
     }
 }

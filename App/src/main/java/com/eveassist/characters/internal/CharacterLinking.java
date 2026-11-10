@@ -37,19 +37,17 @@ public class CharacterLinking {
     private final CharacterRepository characters;
     private final TokenCipher cipher;
     private final PortraitSource portraits;
-    private final TokenRevoker revoker;
     private final CharacterAccessTokens accessTokens;
     private final SecureRandom random = new SecureRandom();
 
     CharacterLinking(EveSso sso, FeatureRepository features, CharacterRepository characters, TokenCipher cipher,
-            PortraitSource portraits, TokenRevoker revoker, CharacterAccessTokens accessTokens) {
+            PortraitSource portraits, CharacterAccessTokens accessTokens) {
         this.accessTokens = accessTokens;
         this.sso = sso;
         this.features = features;
         this.characters = characters;
         this.cipher = cipher;
         this.portraits = portraits;
-        this.revoker = revoker;
     }
 
     /** Asks for the scopes of the turned-on features and nothing else. Empty when no feature is on. */
@@ -82,17 +80,16 @@ public class CharacterLinking {
             return Result.REFUSED;
         }
         var identity = link.identity();
-        // only the owner's own token is looked up, so a refused link can never revoke someone else's access
-        var previous = characters.findToken(viewer.accountId(), identity.characterId());
         var outcome = characters.link(viewer.accountId(), identity.characterId(), identity.name(),
                 identity.ownerHash(), identity.scopes(), cipher.encrypt(identity.characterId(), link.refreshToken()));
         if (outcome != CharacterRepository.LinkOutcome.ON_ANOTHER_ACCOUNT) {
             // the scopes and the token are new, so a cached access token must not be used
             accessTokens.forget(identity.characterId());
         }
-        if (outcome == CharacterRepository.LinkOutcome.RENEWED) {
-            previous.ifPresent(old -> revoker.revoke(identity.characterId(), old));
-        }
+        // The previous refresh token is deliberately not revoked here. Revoking it at EVE also ended the new one:
+        // five characters linked again while their old tokens were still valid were refused at their first refresh
+        // (seen 2026-11-10), and only characters whose old token was already dead kept a working new one. See
+        // identity-and-tokens.md, Revocation.
         if (outcome != CharacterRepository.LinkOutcome.ON_ANOTHER_ACCOUNT) {
             portraits.fetch(identity.characterId())
                     .ifPresent(portrait -> characters.storePortrait(identity.characterId(), portrait));

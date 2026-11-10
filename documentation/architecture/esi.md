@@ -86,11 +86,41 @@ pause apply.
 
 Status: **agreed**.
 
-## Corporation data (phase 2)
+## Corporation data
 
 Corporation routes are fetched with a role-holder's token, only while that role-holder is signed in, through the same
-client. The corporation id stands in for the character in the fetch state. Other members see the stored data with its
-age.
+client. The corporation id stands in for the character in the fetch state. Other characters of the account (phase 1) and
+other members of a group (phase 2) see the stored data with its age.
+
+Phase 1 reads the assets of the account's own corporations (`/corporations/{id}/assets` and `/divisions`, which need the
+Director role), in `CorporationFetcher` in the `inventory` module, only while the account has the
+`CORPORATION_ASSETS` feature on. The account owns the stored rows (`corporation` has `owner_account_id`, and the assets
+carry the corporation's id), so phase 2 can share them with a group. A run is one account on one virtual thread:
+
+1. Ask the `characters` module to learn the corporations (`LinkedCharacters.learnCorporations`). Which corporation a
+   character is in, and whether it is a Director, is a fact about the character, so `characters` owns it
+   (`MembershipLearner` and `character_corporation`). For each linked character with the roles scope it asks which
+   corporation it is in (public `GET /characters/{id}`) and its roles (`GET /characters/{id}/roles`), and asks again
+   after ESI's cache times: the roles after an hour, the corporation after a day. Other modules read the result from
+   `LinkedCharacter.eveCorporationId()` and `director()`, which are null while unknown. The Characters page reads the
+   same table to strike through the permissions that only a Director can use.
+2. For each corporation any of them is in, create it for the account, named from the public `GET /corporations/{id}`
+   (asked again after a day). A corporation no known character is in is dropped, with its rows. A failed lookup keeps
+   what was known.
+3. For each corporation with a Director that granted the assets and divisions scopes, read the hangar names (after an
+   hour) and the assets with that Director's token. The first Director ESI answers for is used. The assets go through
+   the client's usual cache (`ETag`, `Expires`), so a page opened again within an hour asks nothing.
+4. Name the structures the corporation has items in with the Director's token (see Character assets), and store the
+   name under the Director.
+
+The object routes (a character's corporation and roles, a corporation's name and hangar names) are not cached in
+`HttpEsiClient`: the caller keeps the answer, as for a structure's name, and asks again only after ESI's cache time.
+
+**Known limit.** The client's cache entry for a corporation's assets is keyed by the corporation, not by the account.
+If two accounts both read the same corporation, the second one's ESI call would be answered "unchanged" and it would
+have no rows. This cannot happen with one account (phase 1), and phase 2 removes it by storing the corporation's assets
+once and sharing them. An office is an item (type 27, flag `OfficeFolder`) with the items of each hangar division in
+it (flags `CorpSAG1` to `CorpSAG7`); the office is not stored, and the division is. Status: **proposed**.
 
 ## Jita prices
 
@@ -155,6 +185,21 @@ Status: **agreed** (follows from the requirements).
 ## Character assets
 
 Status: **proposed** (added 2026-11-09 with the asset fetch).
+
+- **Container names** (added 2026-11-10): after the assets are read, the fetcher asks for the names players gave to the
+  containers and ships that hold something, with `POST /characters/{character_id}/assets/names` (same scope, same
+  `char-asset` group; for a corporation `POST /corporations/{corporation_id}/assets/names` with a Director's token and the
+  `corp-asset` group). Only assembled items that some other item sits in are asked about, and a corporation's office never
+  is, whatever its flag: ESI refuses a whole call that has one in it (`404 Invalid IDs in the request`), and an impounded
+  office is an item of type Office with the flag `Impounded`, so offices are recognised by type. The call takes at most 1,000 ids, so the client asks in chunks and one failed chunk fails the whole result. It is made
+  between the asset call and the storing transaction, so no connection is held while ESI is asked. The ids go out as a JSON
+  array with an explicit length, not a chunked stream, because ESI answered some calls with `400 too few items for
+  'item_ids'`, as if the body had not arrived (seen 2026-11-10; unconfirmed whether this fixes it). A failure leaves the
+  items without names and the page says what kind of container it is. ESI is not documented to say what an unnamed item
+  returns; "None" and an empty name are treated as no name (to be checked against real data). A name is never trimmed:
+  players put spaces first to control how the game sorts their containers and ships, so a name of only spaces is a name. The names are stored in
+  `name` on the container's own row, so they are replaced with the assets, and they are asked only when the asset list
+  changed.
 
 - **Route and scope**: `GET /characters/{character_id}/assets` needs `esi-assets.read_assets.v1` and is in the
   `char-asset` group (1,800 tokens per 15 minutes per character). The client reads it through its pages like other

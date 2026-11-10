@@ -43,6 +43,13 @@ class HttpEsiClient implements EsiClient {
     private static final String CHARACTER_ASSET_GROUP = "char-asset";
     /** ESI's OpenAPI spec names no rate-limit group for this route, so only the error limit applies. */
     private static final String STRUCTURE_GROUP = "universe-structure";
+    /** 1,800 tokens per 15 minutes per corporation, from ESI's OpenAPI spec. */
+    private static final String CORPORATION_ASSET_GROUP = "corp-asset";
+    /** The spec puts the divisions route in the wallet group (300 tokens per 15 minutes). */
+    private static final String CORPORATION_DIVISIONS_GROUP = "corp-wallet";
+    private static final String CHARACTER_DETAIL_GROUP = "char-detail";
+    /** The spec names no group for the public character and corporation routes, so only the error limit applies. */
+    private static final String PUBLIC_DETAIL_GROUP = "public-detail";
     /** ESI's OpenAPI spec names no rate-limit group for the public contract routes, so only the error limit applies. */
     private static final String PUBLIC_CONTRACT_GROUP = "contracts-public";
     /** Used when ESI sends neither {@code Expires} nor {@code max-age}. */
@@ -109,10 +116,159 @@ class HttpEsiClient implements EsiClient {
     }
 
     @Override
+    public EsiResult<Long> characterCorporationId(long eveCharacterId) {
+        var answer = object(PUBLIC_DETAIL_GROUP, "/characters/%d".formatted(eveCharacterId), null, EsiCharacter.class);
+        if (answer.data() != null && answer.data().corporationId() <= 0) {
+            // an answer without a corporation (an unexpected shape) must not become corporation 0
+            return EsiResult.failed("ESI gave no corporation for character " + eveCharacterId);
+        }
+        return answer.map(character -> character.corporationId());
+    }
+
+    @Override
+    public EsiResult<java.util.Set<String>> characterRoles(long eveCharacterId) {
+        return object(CHARACTER_DETAIL_GROUP, "/characters/%d/roles".formatted(eveCharacterId),
+                new Auth(eveCharacterId, ROLES_SCOPE), EsiRoles.class)
+                .map(roles -> roles.roles() == null ? java.util.Set.<String>of() : java.util.Set.copyOf(roles.roles()));
+    }
+
+    @Override
+    public EsiResult<String> corporationName(long eveCorporationId) {
+        return object(PUBLIC_DETAIL_GROUP, "/corporations/%d".formatted(eveCorporationId), null, EsiCorporation.class)
+                .map(corporation -> corporation.name());
+    }
+
+    @Override
+    public EsiResult<List<CharacterAsset>> corporationAssets(long eveCorporationId, long viaEveCharacterId) {
+        return paged(CORPORATION_ASSET_GROUP, "/corporations/%d/assets".formatted(eveCorporationId), true, false,
+                new ParameterizedTypeReference<List<EsiAsset>>() { },
+                new Auth(viaEveCharacterId, CORPORATION_ASSETS_SCOPE))
+                .map(assets -> assets.stream().map(HttpEsiClient::toCharacterAsset).toList());
+    }
+
+    @Override
+    public EsiResult<java.util.Map<Long, String>> characterAssetNames(long eveCharacterId, List<Long> itemIds) {
+        return names(CHARACTER_ASSET_GROUP, "/characters/%d/assets/names".formatted(eveCharacterId),
+                new Auth(eveCharacterId, ASSETS_SCOPE), itemIds);
+    }
+
+    @Override
+    public EsiResult<java.util.Map<Long, String>> corporationAssetNames(long eveCorporationId, long viaEveCharacterId,
+            List<Long> itemIds) {
+        return names(CORPORATION_ASSET_GROUP, "/corporations/%d/assets/names".formatted(eveCorporationId),
+                new Auth(viaEveCharacterId, CORPORATION_ASSETS_SCOPE), itemIds);
+    }
+
+    /** ESI takes at most this many item ids in one names call. */
+    private static final int MOST_NAMES_PER_CALL = 1000;
+
+    /**
+     * Asks for the names in chunks of {@link #MOST_NAMES_PER_CALL}. One failed chunk fails the whole result, so the
+     * caller never mistakes "some names" for "all names". ESI answers an item that has no name of its own with the word
+     * "None", which is left out here as well as an empty one. Spaces are never trimmed.
+     */
+    private EsiResult<java.util.Map<Long, String>> names(String group, String uri, Auth auth, List<Long> itemIds) {
+        var result = new java.util.LinkedHashMap<Long, String>();
+        for (int from = 0; from < itemIds.size(); from += MOST_NAMES_PER_CALL) {
+            var chunk = itemIds.subList(from, Math.min(from + MOST_NAMES_PER_CALL, itemIds.size()));
+            var answer = postNames(group, uri, auth, chunk);
+            if (answer.problem() != null) {
+                return EsiResult.failed(answer.problem());
+            }
+            if (answer.status() != 200 || answer.body() == null) {
+                // ESI's own words say why, for example which ids it refused. They hold no token.
+                return EsiResult.failed("ESI answered " + answer.status() + " for " + uri.replaceFirst("^/", "")
+                        + (answer.error() == null ? "" : ": " + answer.error()));
+            }
+            for (var entry : answer.body()) {
+                // a name is kept exactly as the player typed it: players put spaces first to control how the game
+                // sorts their containers and ships, so only an empty name, or ESI's word for "no name", means unnamed
+                if (entry.name() != null && !entry.name().isEmpty() && !"None".equals(entry.name())) {
+                    result.put(entry.itemId(), entry.name());
+                }
+            }
+        }
+        return EsiResult.updated(result, clock.instant());
+    }
+
+    private Single<List<EsiName>> postNames(String group, String uri, Auth auth, List<Long> ids) {
+        var answer = postNamesOnce(group, uri, auth, ids);
+        if (answer.status() == 401) {
+            tokens.invalidate(auth.eveCharacterId());
+            answer = postNamesOnce(group, uri, auth, ids);
+        }
+        return answer;
+    }
+
+    private Single<List<EsiName>> postNamesOnce(String group, String uri, Auth auth, List<Long> ids) {
+        var wait = limiter.before(group);
+        if (wait.isPresent()) {
+            return Single.problem(wait.get());
+        }
+        var grant = tokens.accessToken(auth.eveCharacterId(), auth.scope());
+        if (grant.problem() != null) {
+            return Single.problem(why(grant, auth));
+        }
+        simultaneous.acquireUninterruptibly();
+        try {
+            // The body is written out here and sent with its length, not streamed in chunks: ESI answered some calls with
+            // "too few items for 'item_ids'", as if the body had not arrived (seen 2026-11-10).
+            var json = ids.stream().map(String::valueOf).collect(java.util.stream.Collectors.joining(",", "[", "]"))
+                    .getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            var answer = http.post().uri(uri)
+                    .headers(headers -> headers.setBearerAuth(grant.token()))
+                    .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                    .contentLength(json.length)
+                    .body(json)
+                    .exchange((request, response) -> new Single<List<EsiName>>(response.getStatusCode().value(),
+                            response.getHeaders(),
+                            response.getStatusCode().value() == 200
+                                    ? response.bodyTo(new ParameterizedTypeReference<List<EsiName>>() { }) : null,
+                            null, response.getStatusCode().value() == 200 ? null : errorText(response)));
+            limiter.record(group, answer.status(), answer.headers());
+            return answer;
+        } catch (RestClientException e) {
+            return Single.problem("ESI could not be reached: " + e.getMessage());
+        } finally {
+            simultaneous.release();
+        }
+    }
+
+    @Override
+    public EsiResult<java.util.Map<Integer, String>> corporationHangars(long eveCorporationId,
+                                                                      long viaEveCharacterId) {
+        return object(CORPORATION_DIVISIONS_GROUP, "/corporations/%d/divisions".formatted(eveCorporationId),
+                new Auth(viaEveCharacterId, DIVISIONS_SCOPE), EsiDivisions.class)
+                .map(divisions -> {
+                    var names = new java.util.TreeMap<Integer, String>();
+                    if (divisions.hangar() != null) {
+                        divisions.hangar().stream().filter(h -> h.name() != null)
+                                .forEach(h -> names.put(h.division(), h.name()));
+                    }
+                    return (java.util.Map<Integer, String>) names;
+                });
+    }
+
+    /**
+     * One object route, not cached here: the caller keeps the answer and asks again after a while (see esi.md). A
+     * missing token or a status other than 200 is a failure with a reason that holds no token.
+     */
+    private <T> EsiResult<T> object(String group, String uri, Auth auth, Class<T> type) {
+        var answer = getObject(group, uri, auth, type);
+        if (answer.problem() != null) {
+            return EsiResult.failed(answer.problem());
+        }
+        if (answer.status() != 200 || answer.body() == null) {
+            return EsiResult.failed("ESI answered " + answer.status() + " for " + uri.replaceFirst("^/", ""));
+        }
+        return EsiResult.updated(answer.body(), expiresOf(answer.headers()));
+    }
+
+    @Override
     public StructureLookup structure(long eveCharacterId, long structureId) {
         var auth = new Auth(eveCharacterId, STRUCTURES_SCOPE);
         var uri = "/universe/structures/%d".formatted(structureId);
-        var answer = getObject(uri, auth);
+        var answer = getObject(STRUCTURE_GROUP, uri, auth, EsiStructure.class);
         if (answer.problem() != null) {
             return StructureLookup.failed(answer.problem());
         }
@@ -127,33 +283,43 @@ class HttpEsiClient implements EsiClient {
     }
 
     /** One object route, asked with a token, and once more after a 401. */
-    private Single getObject(String uri, Auth auth) {
-        var answer = getObjectOnce(uri, auth);
-        if (answer.status() == 401) {
+    private <T> Single<T> getObject(String group, String uri, Auth auth, Class<T> type) {
+        var answer = getObjectOnce(group, uri, auth, type);
+        if (answer.status() == 401 && auth != null) {
             tokens.invalidate(auth.eveCharacterId());
-            answer = getObjectOnce(uri, auth);
+            answer = getObjectOnce(group, uri, auth, type);
         }
         return answer;
     }
 
-    private Single getObjectOnce(String uri, Auth auth) {
-        var wait = limiter.before(STRUCTURE_GROUP);
+    /** With no {@code auth} the route is public and is asked without a token. */
+    private <T> Single<T> getObjectOnce(String group, String uri, Auth auth, Class<T> type) {
+        var wait = limiter.before(group);
         if (wait.isPresent()) {
             return Single.problem(wait.get());
         }
-        var grant = tokens.accessToken(auth.eveCharacterId(), auth.scope());
-        if (grant.problem() != null) {
-            return Single.problem(why(grant, auth));
+        String bearer = null;
+        if (auth != null) {
+            var grant = tokens.accessToken(auth.eveCharacterId(), auth.scope());
+            if (grant.problem() != null) {
+                return Single.problem(why(grant, auth));
+            }
+            bearer = grant.token();
         }
+        var bearerToken = bearer;
         simultaneous.acquireUninterruptibly();
         try {
             var answer = http.get().uri(uri)
-                    .headers(headers -> headers.setBearerAuth(grant.token()))
-                    .exchange((request, response) -> new Single(response.getStatusCode().value(),
+                    .headers(headers -> {
+                        if (bearerToken != null) {
+                            headers.setBearerAuth(bearerToken);
+                        }
+                    })
+                    .exchange((request, response) -> new Single<T>(response.getStatusCode().value(),
                             response.getHeaders(),
-                            response.getStatusCode().value() == 200 ? response.bodyTo(EsiStructure.class) : null,
+                            response.getStatusCode().value() == 200 ? response.bodyTo(type) : null,
                             null, response.getStatusCode().value() == 200 ? null : errorText(response)));
-            limiter.record(STRUCTURE_GROUP, answer.status(), answer.headers());
+            limiter.record(group, answer.status(), answer.headers());
             return answer;
         } catch (RestClientException e) {
             return Single.problem("ESI could not be reached: " + e.getMessage());
@@ -359,9 +525,33 @@ class HttpEsiClient implements EsiClient {
             @JsonProperty("solar_system_id") int solarSystemId) {
     }
 
-    private record Single(int status, HttpHeaders headers, EsiStructure body, String problem, String error) {
-        static Single problem(String problem) {
-            return new Single(0, null, null, problem, null);
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private record EsiName(@JsonProperty("item_id") long itemId, @JsonProperty("name") String name) {
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private record EsiCharacter(@JsonProperty("corporation_id") long corporationId) {
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private record EsiCorporation(@JsonProperty("name") String name) {
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private record EsiRoles(@JsonProperty("roles") List<String> roles) {
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private record EsiDivisions(@JsonProperty("hangar") List<EsiHangar> hangar) {
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private record EsiHangar(@JsonProperty("division") int division, @JsonProperty("name") String name) {
+    }
+
+    private record Single<T>(int status, HttpHeaders headers, T body, String problem, String error) {
+        static <T> Single<T> problem(String problem) {
+            return new Single<>(0, null, null, problem, null);
         }
     }
 

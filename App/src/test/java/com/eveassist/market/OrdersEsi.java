@@ -31,4 +31,41 @@ interface OrdersEsi extends EsiClient {
     default StructureLookup structure(long eveCharacterId, long structureId) {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    default EsiResult<Long> characterCorporationId(long eveCharacterId) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    default EsiResult<java.util.Set<String>> characterRoles(long eveCharacterId) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    default EsiResult<String> corporationName(long eveCorporationId) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    default EsiResult<List<CharacterAsset>> corporationAssets(long eveCorporationId, long viaEveCharacterId) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    default EsiResult<java.util.Map<Long, String>> characterAssetNames(long eveCharacterId, List<Long> itemIds) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    default EsiResult<java.util.Map<Long, String>> corporationAssetNames(long eveCorporationId,
+            long viaEveCharacterId, List<Long> itemIds) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    default EsiResult<java.util.Map<Integer, String>> corporationHangars(long eveCorporationId,
+            long viaEveCharacterId) {
+        throw new UnsupportedOperationException();
+    }
 }
