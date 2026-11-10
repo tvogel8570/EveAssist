@@ -97,14 +97,14 @@ class PlanEditorBrowserIT extends IntegrationTest {
     @Test
     void anEditUpdatesChangedRowsAndTotalWithoutReloading() {
         createPlanWithHauler();
-        assertThat(page.locator("#plan-total-value")).hasText("700 ISK");
+        assertThat(page.locator("#plan-total-value")).hasText("630 ISK");
         markPage();
 
         page.fill("#quantity-1001", "2");
         page.press("#quantity-1001", "Tab");
 
-        assertThat(page.locator("#plan-total-value")).hasText("1,400 ISK");
-        assertThat(page.locator("#line-34 td").nth(2)).hasText("240");
+        assertThat(page.locator("#plan-total-value")).hasText("1,260 ISK");
+        assertThat(page.locator("#line-34 td").nth(2)).hasText("216");
         assertThat(page.locator("#line-1002 td").nth(2)).hasText("4");
         assertThat(page.locator("#saved-1001")).containsText("Saved");
         assertThat(page.locator("#material-lines > #line-34")).hasCount(1);
@@ -116,13 +116,13 @@ class PlanEditorBrowserIT extends IntegrationTest {
     void refreshingPricesUpdatesTheTotalWithoutReloadingAndLeavesAnotherPlanAlone() {
         createPlanWithHauler();
         var planUrl = page.url();
-        assertThat(page.locator("#plan-total-value")).hasText("700 ISK");
+        assertThat(page.locator("#plan-total-value")).hasText("630 ISK");
         markPage();
         esi.sell(34, "6.00");
 
         page.click("#refresh-prices");
 
-        assertThat(page.locator("#plan-total-value")).hasText("820 ISK");
+        assertThat(page.locator("#plan-total-value")).hasText("738 ISK");
         assertThat(page.locator("#refresh-prices")).isEnabled();
         assertThat(page.locator("#price-warning .alert")).hasCount(0);
         assertNotReloaded();
@@ -134,7 +134,7 @@ class PlanEditorBrowserIT extends IntegrationTest {
         addProduct("hauler", "Test Hauler");
         esi.sell(34, "7.00");
         page.navigate(planUrl);
-        assertThat(page.locator("#plan-total-value")).hasText("820 ISK");
+        assertThat(page.locator("#plan-total-value")).hasText("738 ISK");
     }
 
     @Test
@@ -145,7 +145,7 @@ class PlanEditorBrowserIT extends IntegrationTest {
 
         page.click("#refresh-prices");
 
-        assertThat(page.locator("#plan-total-value")).hasText("820 ISK");
+        assertThat(page.locator("#plan-total-value")).hasText("738 ISK");
         assertThat(page.locator("#price-warning .alert")).containsText("Could not refresh");
         assertThat(page.locator("#price-warning .alert")).containsText("Pilot's Mineral");
 
@@ -167,7 +167,7 @@ class PlanEditorBrowserIT extends IntegrationTest {
         page.fill("#quantity-1001", "3");
         page.press("#quantity-1001", "Enter");
 
-        assertThat(page.locator("#plan-total-value")).hasText("2,100 ISK");
+        assertThat(page.locator("#plan-total-value")).hasText("1,890 ISK");
         assertThat(posts).hasSize(1);
     }
 
@@ -185,6 +185,9 @@ class PlanEditorBrowserIT extends IntegrationTest {
         assertThat(page.locator("#line-36")).hasAttribute("data-original", "yes");
     }
 
+    /** What a plan of that many Test Haulers costs at ME 10, worked out by hand: materials are rounded up once per job. */
+    private static final Map<Integer, Integer> TOTALS_AT_ME_10 = Map.of(2, 1_260, 3, 1_890, 4, 2_520);
+
     @Test
     void repeatedEditsUseTheNewVersionAndFocusStays() {
         createPlanWithHauler();
@@ -192,7 +195,7 @@ class PlanEditorBrowserIT extends IntegrationTest {
         for (int quantity = 2; quantity <= 4; quantity++) {
             page.fill("#quantity-1001", String.valueOf(quantity));
             page.press("#quantity-1001", "Enter");
-            assertThat(page.locator("#plan-total-value")).hasText(String.format("%,d ISK", quantity * 700));
+            assertThat(page.locator("#plan-total-value")).hasText(String.format("%,d ISK", TOTALS_AT_ME_10.get(quantity)));
             assertThat(page.locator("#quantity-1001")).isFocused();
         }
         assertThat(page.locator("#error-toast")).isHidden();
@@ -214,7 +217,7 @@ class PlanEditorBrowserIT extends IntegrationTest {
         page.fill("#quantity-1004", "200");
         page.press("#quantity-1004", "Tab");
 
-        assertThat(page.locator("#line-34 td").nth(2)).hasText("242");
+        assertThat(page.locator("#line-34 td").nth(2)).hasText("218");
         assertThat(page.locator("#error-toast")).isHidden();
         page.reload();
         assertThat(page.locator("#quantity-1001")).hasValue("2");
@@ -233,7 +236,7 @@ class PlanEditorBrowserIT extends IntegrationTest {
         // unitsTheBoxCannotHoldAreRefusedWithAReasonAndTheOldNumberReturns)
         assertThat(page.locator("#error-toast")).containsText("at least 1");
         assertThat(page.locator("#quantity-1001")).hasValue("1");
-        assertThat(page.locator("#plan-total-value")).hasText("700 ISK");
+        assertThat(page.locator("#plan-total-value")).hasText("630 ISK");
         assertNotReloaded();
     }
 
@@ -244,13 +247,13 @@ class PlanEditorBrowserIT extends IntegrationTest {
         other.navigate(page.url());
         other.fill("#quantity-1001", "5");
         other.press("#quantity-1001", "Tab");
-        assertThat(other.locator("#plan-total-value")).hasText("3,500 ISK");
+        assertThat(other.locator("#plan-total-value")).hasText("3,065 ISK");
 
         page.fill("#quantity-1001", "2");
         page.press("#quantity-1001", "Tab");
 
         assertThat(page.locator("#error-toast")).containsText("changed elsewhere");
-        assertThat(page.locator("#plan-total-value")).hasText("700 ISK");
+        assertThat(page.locator("#plan-total-value")).hasText("630 ISK");
     }
 
     @Test
@@ -274,15 +277,15 @@ class PlanEditorBrowserIT extends IntegrationTest {
 
         page.click("#buy-1002");
 
-        assertThat(page.locator("#plan-total-value")).hasText("700 ISK");
+        assertThat(page.locator("#plan-total-value")).hasText("650 ISK");
         assertThat(page.locator("#line-35")).hasCount(0);
-        assertThat(page.locator("#line-34 td").nth(2)).hasText("100");
+        assertThat(page.locator("#line-34 td").nth(2)).hasText("90");
         assertThat(page.locator("#buy-1002")).hasAttribute("aria-pressed", "true");
 
         page.click("#build-1002");
 
         assertThat(page.locator("#line-35")).hasCount(1);
-        assertThat(page.locator("#line-34 td").nth(2)).hasText("120");
+        assertThat(page.locator("#line-34 td").nth(2)).hasText("108");
         assertNotReloaded();
 
         page.click("#buy-1002");
@@ -342,7 +345,7 @@ class PlanEditorBrowserIT extends IntegrationTest {
         page.fill("#quantity-1001", "2");
         page.press("#quantity-1001", "Tab");
 
-        assertThat(page.locator("#plan-total-value")).hasText("1,500 ISK");
+        assertThat(page.locator("#plan-total-value")).hasText("1,355 ISK");
         assertThat(page.locator("#material-lines tr").first()).hasId("line-36");
         assertThat(page.locator("#material-lines tr").last()).hasId("line-34");
 

@@ -67,6 +67,14 @@ All of these are in scope:
   tool splits it into several jobs, and the user can change the split.
 - Surplus from rounding and batch sizes (extra components, extra units) is listed for each plan and credited at market
   value in its cost.
+- **Blueprint levels in a plan.** A plan costs every product, and every part marked build, as built from a blueprint
+  with ME 10 and TE 20. It is a plan, not a record of what the user owns, so it does not look at the user's blueprints.
+  Other levels are for projects and for the facility and skill effects described above.
+- **One job per item in a plan.** A plan assumes each built item is made in a single job, so the materials are rounded
+  up once for all its runs. This is the cheapest case. A job that is split into several smaller ones rounds up on its
+  own and uses more materials, and an item with a small base quantity gets no ME saving at all (a job never uses less
+  than one of a material for each run). The page says so. In a project, each built item has its own job size and the
+  materials are worked out per job.
 
 ### Working with plans
 

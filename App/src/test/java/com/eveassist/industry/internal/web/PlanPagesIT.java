@@ -80,7 +80,7 @@ class PlanPagesIT extends IntegrationTest {
         rendered(mvc.perform(get("/plans").with(signedIn(sub))))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("Not costed")))
-                .andExpect(content().string(containsString("700 ISK")))
+                .andExpect(content().string(containsString("630 ISK")))
                 .andExpect(content().string(containsString("My &lt;i&gt;plan&lt;/i&gt;")));
     }
 
@@ -98,10 +98,10 @@ class PlanPagesIT extends IntegrationTest {
 
         rendered(mvc.perform(get("/plans").with(session)))
                 .andExpect(content().string(containsString("Out of date")))
-                .andExpect(content().string(containsString("700 ISK")));
+                .andExpect(content().string(containsString("630 ISK")));
 
         rendered(mvc.perform(get("/plans/" + id.value()).with(session)))
-                .andExpect(content().string(containsString("700 ISK")));
+                .andExpect(content().string(containsString("630 ISK")));
         rendered(mvc.perform(get("/plans").with(session)))
                 .andExpect(content().string(not(containsString("Out of date"))));
     }
@@ -115,17 +115,17 @@ class PlanPagesIT extends IntegrationTest {
         esi.sell(34, "6.00");
 
         rendered(mvc.perform(get("/plans/" + id.value()).with(session)))
-                .andExpect(content().string(containsString("700 ISK")));
+                .andExpect(content().string(containsString("630 ISK")));
         rendered(mvc.perform(get("/plans").with(session)))
                 .andExpect(content().string(not(containsString("Out of date"))))
-                .andExpect(content().string(containsString("700 ISK")));
+                .andExpect(content().string(containsString("630 ISK")));
 
         rendered(mvc.perform(post("/plans/{id}/prices/refresh", id.value()).with(session).with(csrf())))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("id=\"plan-total-value\"")))
-                .andExpect(content().string(containsString("820 ISK")));
+                .andExpect(content().string(containsString("738 ISK")));
         rendered(mvc.perform(get("/plans/" + id.value()).with(session)))
-                .andExpect(content().string(containsString("820 ISK")));
+                .andExpect(content().string(containsString("738 ISK")));
     }
 
     @Test
@@ -140,9 +140,9 @@ class PlanPagesIT extends IntegrationTest {
                 .andExpect(status().isOk());
 
         rendered(mvc.perform(get("/plans/" + quoted.value()).with(session)))
-                .andExpect(content().string(containsString("700 ISK")));
+                .andExpect(content().string(containsString("630 ISK")));
         rendered(mvc.perform(get("/plans/" + refreshed.value()).with(session)))
-                .andExpect(content().string(containsString("820 ISK")));
+                .andExpect(content().string(containsString("738 ISK")));
     }
 
     @Test
@@ -160,7 +160,7 @@ class PlanPagesIT extends IntegrationTest {
         assertThat(body).contains("id=\"price-warning\"", "Could not refresh", "Pilot&#39;s Mineral");
         // Tritanium rose by 1 on 120 units; the failed item kept its price of 10
         rendered(mvc.perform(get("/plans/" + id.value()).with(session)))
-                .andExpect(content().string(containsString("820 ISK")));
+                .andExpect(content().string(containsString("738 ISK")));
     }
 
     @Test
@@ -176,7 +176,7 @@ class PlanPagesIT extends IntegrationTest {
         assertThat(asked).as("Tritanium is already priced, so it is not asked about again")
                 .doesNotContain(34).contains(1003);
         rendered(mvc.perform(get("/plans/" + id.value()).with(signedIn(sub))))
-                .andExpect(content().string(not(containsString("820 ISK"))));
+                .andExpect(content().string(not(containsString("738 ISK"))));
     }
 
     @Test

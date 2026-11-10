@@ -45,6 +45,12 @@ INSERT INTO sde."industryActivityProducts" VALUES
     (2001, 1, 1001, 1), (2002, 1, 1002, 1), (2003, 1, 1003, 1), (2004, 1, 1004, 100),
     (2005, 1, 1005, 1), (2006, 1, 1006, 1), (2007, 1, 1007, 1);
 
+-- Seconds a manufacturing run takes at TE 0
+CREATE TABLE sde."industryActivity" ("typeID" integer, "activityID" integer, time integer);
+INSERT INTO sde."industryActivity" VALUES
+    (2001, 1, 6000), (2002, 1, 3000), (2003, 1, 600), (2004, 1, 1200),
+    (2005, 1, 600), (2006, 1, 600), (2007, 1, 600);
+
 CREATE TABLE sde."industryActivityMaterials" ("typeID" integer, "activityID" integer, "materialTypeID" integer, quantity integer);
 INSERT INTO sde."industryActivityMaterials" VALUES
     (2001, 1, 1002, 2), (2001, 1, 34, 100),
