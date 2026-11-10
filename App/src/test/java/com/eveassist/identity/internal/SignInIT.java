@@ -41,6 +41,33 @@ class SignInIT extends IntegrationTest {
     }
 
     @Test
+    void homePageGuidesANewVisitor() throws Exception {
+        var page = mvc.perform(get("/")).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+
+        assertThat(page).contains("id=\"hero-sign-in\"", "id=\"first-steps\"", "id=\"faq\"");
+        for (var n = 1; n <= 6; n++) {
+            assertThat(page).contains("id=\"step-" + n + "\"");
+        }
+        assertThat(page).contains("What is EveAssist?", "Can EveAssist change anything in the game?",
+                "What are item types, stacks and units?", "What is a plan?");
+        assertThat(page).contains("href=\"/characters\"");
+        assertThat(page).doesNotContain("??");
+    }
+
+    @Test
+    void homePageForASignedInUserHasNoSignInButton() throws Exception {
+        var sub = UUID.randomUUID().toString();
+        accounts.signedIn(sub, "Returning Player");
+
+        mvc.perform(get("/").with(oidcLogin()
+                        .idToken(token -> token.subject(sub))
+                        .authorities(new SimpleGrantedAuthority("ROLE_USER"))))
+                .andExpect(status().isOk())
+                .andExpect(content().string(Matchers.not(Matchers.containsString("id=\"hero-sign-in\""))))
+                .andExpect(content().string(Matchers.containsString("id=\"first-steps\"")));
+    }
+
+    @Test
     void otherPagesSendAVisitorToSignIn() throws Exception {
         mvc.perform(get("/account"))
                 .andExpect(status().isFound())

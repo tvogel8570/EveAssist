@@ -1,10 +1,72 @@
 <!doctype html>
-<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: page(~{::title}, ~{::main})}">
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout :: page(~{::title}, ~{::main})}">
 <head><title th:text="#{app.name}">EveAssist</title></head>
 <body>
-<main class="max-w-6xl mx-auto p-4">
-    <h1 class="text-3xl font-semibold mb-2" th:text="#{app.name}">EveAssist</h1>
-    <p th:text="#{home.welcome}">Welcome</p>
+<main class="max-w-4xl mx-auto p-4">
+
+    <section id="welcome" class="mb-8">
+        <h1 class="text-3xl font-semibold mb-2" th:text="#{app.name}">EveAssist</h1>
+        <p class="text-lg mb-1" th:text="#{home.welcome}">Welcome</p>
+        <p class="mb-4" th:text="#{home.intro}">Intro</p>
+        <p sec:authorize="isAuthenticated()" class="mb-4" th:text="#{home.signedIn}">Signed in</p>
+        <div class="flex flex-wrap gap-2">
+            <a sec:authorize="isAnonymous()" id="hero-sign-in" class="btn btn-primary" href="/account"
+               th:text="#{home.signIn}">Sign in with EVE</a>
+            <a class="btn" href="#first-steps" th:text="#{home.jump.steps}">First steps</a>
+            <a class="btn" href="#faq" th:text="#{home.jump.faq}">Questions</a>
+        </div>
+    </section>
+
+    <section id="first-steps" class="mb-10">
+        <h2 class="text-2xl font-semibold mb-1" th:text="#{home.steps.title}">Your first steps</h2>
+        <p class="mb-4" th:text="#{home.steps.intro}">Intro</p>
+        <ol class="grid gap-4 sm:grid-cols-2">
+            <li th:each="n : ${#numbers.sequence(1, 6)}" th:id="|step-${n}|" class="card bg-base-200 shadow-sm">
+                <div class="card-body">
+                    <p class="text-sm opacity-70" th:text="#{home.step(${n})}">Step</p>
+                    <h3 class="card-title" th:text="#{|help.step${n}.title|}">Title</h3>
+                    <p th:text="#{|help.step${n}.text|}">Text</p>
+                    <div class="card-actions justify-end">
+                        <th:block th:switch="${n}">
+                            <th:block th:case="1">
+                                <a sec:authorize="isAnonymous()" class="btn btn-primary btn-sm" href="/account"
+                                   th:text="#{help.step1.signIn}">Sign in</a>
+                                <a sec:authorize="isAuthenticated()" class="btn btn-sm" href="/account"
+                                   th:text="#{help.step1.account}">Your account</a>
+                            </th:block>
+                            <a th:case="2" class="btn btn-primary btn-sm" href="/characters#features"
+                               th:text="#{help.step2.button}">Open</a>
+                            <a th:case="3" class="btn btn-primary btn-sm" href="/characters"
+                               th:text="#{help.step3.button}">Open</a>
+                            <a th:case="4" class="btn btn-primary btn-sm" href="/inventory"
+                               th:text="#{help.step4.button}">Open</a>
+                            <a th:case="5" class="btn btn-primary btn-sm" href="/plans"
+                               th:text="#{help.step5.button}">Open</a>
+                            <a th:case="6" class="btn btn-primary btn-sm" href="/market/blueprint-copies"
+                               th:text="#{help.step6.button}">Open</a>
+                        </th:block>
+                    </div>
+                </div>
+            </li>
+        </ol>
+    </section>
+
+    <section id="faq" class="mb-10">
+        <h2 class="text-2xl font-semibold mb-4" th:text="#{home.faq.title}">Questions and answers</h2>
+        <th:block th:each="group : ${#strings.arraySplit('start,safety,inventory,plans', ',')}">
+            <h3 class="text-lg font-semibold mt-6 mb-2" th:id="|faq-${group}|" th:text="#{|home.faq.${group}|}">Group</h3>
+            <th:block th:each="n : ${#numbers.sequence(1, 30)}">
+                <th:block th:with="q=${#messages.msgOrNull('help.faq.' + group + '.' + n + '.q')}">
+                    <details th:if="${q != null}" class="collapse collapse-arrow bg-base-200 mb-2">
+                        <summary class="collapse-title font-medium" th:text="${q}">Question</summary>
+                        <div class="collapse-content"
+                             th:utext="${#messages.msgOrNull('help.faq.' + group + '.' + n + '.a')}">Answer</div>
+                    </details>
+                </th:block>
+            </th:block>
+        </th:block>
+    </section>
 </main>
 </body>
 </html>

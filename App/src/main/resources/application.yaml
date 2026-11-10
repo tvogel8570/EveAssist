@@ -15,6 +15,9 @@ management:
 spring:
   application:
     name: eveassist
+  messages:
+    # The text of the home page (first steps and FAQs) is long, so it has a bundle of its own beside messages.properties.
+    basename: messages,help
   profiles:
     default: dev
   config:
