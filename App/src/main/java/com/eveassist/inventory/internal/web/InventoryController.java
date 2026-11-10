@@ -179,8 +179,9 @@ class InventoryController {
 
     @PostMapping("/inventory/refresh")
     String refresh(Viewer viewer) {
-        fetcher.refresh(viewer);
-        corporationFetcher.refresh(viewer);
+        // the button also asks for container names again: renaming one does not change the asset list
+        fetcher.refresh(viewer, true);
+        corporationFetcher.refresh(viewer, true);
         return "redirect:/inventory";
     }
 

@@ -132,6 +132,12 @@ class CorporationRepository {
      */
     @Transactional
     void replace(UUID corporationId, List<CharacterAsset> assets, Instant now) {
+        replace(corporationId, assets, java.util.Map.of(), now);
+    }
+
+    /** As above, with the names players gave to some of the items (containers and ships), by item id. */
+    @Transactional
+    void replace(UUID corporationId, List<CharacterAsset> assets, java.util.Map<Long, String> names, Instant now) {
         jdbc.sql("DELETE FROM corporation_asset WHERE corporation_id = :id").param("id", corporationId).update();
         var placed = AssetClassifier.classifyCorporation(assets);
         for (int from = 0; from < placed.size(); from += BATCH) {
@@ -139,8 +145,8 @@ class CorporationRepository {
             template.batchUpdate("""
                     INSERT INTO corporation_asset (corporation_id, item_id, type_id, quantity, location_id,
                         location_type, location_flag, is_singleton, blueprint_copy, root_location_id, depth,
-                        container_type_id, held, division)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        container_type_id, held, division, name)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """, new BatchPreparedStatementSetter() {
                 @Override
                 public void setValues(PreparedStatement statement, int i) throws SQLException {
@@ -172,6 +178,7 @@ class CorporationRepository {
                     } else {
                         statement.setInt(14, item.division());
                     }
+                    statement.setString(15, names.get(asset.itemId()));
                 }
 
                 @Override
@@ -181,6 +188,36 @@ class CorporationRepository {
             });
         }
         saveState(corporationId, now, now, null, placed.size());
+    }
+
+    /** The stored items that hold something (containers, ships), whose names are worth asking for. */
+    List<Long> holderItemIds(UUID corporationId) {
+        return jdbc.sql("""
+                SELECT a.item_id FROM corporation_asset a
+                WHERE a.corporation_id = :id AND a.is_singleton AND a.type_id <> 27
+                  AND EXISTS (SELECT 1 FROM corporation_asset c WHERE c.corporation_id = a.corporation_id
+                              AND c.location_id = a.item_id)
+                ORDER BY a.item_id
+                """).param("id", corporationId).query(Long.class).list();
+    }
+
+    /** Sets or clears the name of each of the given items, without replacing any row. */
+    @Transactional
+    void updateNames(UUID corporationId, List<Long> itemIds, java.util.Map<Long, String> names) {
+        template.batchUpdate("UPDATE corporation_asset SET name = ? WHERE corporation_id = ? AND item_id = ?",
+                new BatchPreparedStatementSetter() {
+                    @Override
+                    public void setValues(PreparedStatement statement, int i) throws SQLException {
+                        statement.setString(1, names.get(itemIds.get(i)));
+                        statement.setObject(2, corporationId);
+                        statement.setLong(3, itemIds.get(i));
+                    }
+
+                    @Override
+                    public int getBatchSize() {
+                        return itemIds.size();
+                    }
+                });
     }
 
     /** ESI said the stored copy is still current. */

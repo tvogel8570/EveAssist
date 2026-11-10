@@ -213,4 +213,37 @@ class AssetClassifierTest {
         assertThat(AssetClassifier.divisionOf("Hangar")).isNull();
         assertThat(AssetClassifier.divisionOf(null)).isNull();
     }
+
+    // ---- which items are worth asking a name for
+
+    @Test
+    void onlyAssembledItemsThatHoldSomethingAreAskedForTheirName() {
+        var assets = List.of(
+                new CharacterAsset(10, 3296, 1, STATION, "station", "Hangar", true, null),       // a container with contents
+                item(11, 34, 10, "item", "Unlocked"),                                            // its contents
+                new CharacterAsset(12, 3296, 1, STATION, "station", "Hangar", true, null),       // an empty container
+                new CharacterAsset(13, 587, 1, STATION, "station", "Hangar", true, null),        // a ship with a module
+                item(14, 2048, 13, "item", "HiSlot0"),
+                item(15, 34, STATION, "station", "Hangar"));                                     // a stack at the top
+
+        assertThat(AssetClassifier.namedCandidates(assets)).containsExactlyInAnyOrder(10L, 13L);
+    }
+
+    @Test
+    void aCorporationsOfficeIsNeverAskedForAName() {
+        var office = new CharacterAsset(OFFICE, 27, 1, STRUCTURE, "other", "OfficeFolder", true, null);
+        var assets = List.of(office, item(1, 34, OFFICE, "item", "CorpSAG1"));
+
+        assertThat(AssetClassifier.namedCandidates(assets)).isEmpty();
+    }
+
+    @Test
+    void anImpoundedOfficeIsNeverAskedForAName() {
+        // an office a corporation lost has the flag Impounded, not OfficeFolder, and is still a folder
+        var impounded = new CharacterAsset(OFFICE, 27, 1, STATION, "station", "Impounded", true, null);
+        var assets = List.of(impounded, item(1, 34, OFFICE, "item", "Unlocked"),
+                new CharacterAsset(10, 3296, 1, STATION, "station", "CorpSAG1", true, null), item(11, 34, 10, "item", "Unlocked"));
+
+        assertThat(AssetClassifier.namedCandidates(assets)).containsExactly(10L);
+    }
 }

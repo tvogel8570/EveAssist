@@ -29,7 +29,8 @@ class BrowseQueries {
 
     /** One place an item type is held, how, and by whom. */
     record WhereRow(long locationId, String placeName, String placeKind, String regionName, Held held,
-            Integer division, Map<UUID, Long> byCharacter, long total) {
+            Integer division, Long containerId, String containerName, String containerType,
+            Map<UUID, Long> byCharacter, long total) {
     }
 
     /** One value of a column that can be filtered, and how many item types it would leave. */
@@ -38,7 +39,7 @@ class BrowseQueries {
 
     /** One line of the export: an item type in one place, held one way by one character. */
     record ExportRow(String item, String category, String group, UUID character, String place, String region,
-            Held held, Integer division, long quantity, String blueprint) {
+            Held held, Integer division, String container, long quantity, String blueprint) {
     }
 
     private static final long FIRST_STRUCTURE_ID = StructureRepository.FIRST_STRUCTURE_ID;
@@ -67,6 +68,12 @@ class BrowseQueries {
                 ORDER BY k.asked_at DESC LIMIT 1) cs ON a.root_location_id >= :firstStructure
             LEFT JOIN sde."mapSolarSystems" csy ON csy."solarSystemID" = cs.solar_system_id
             LEFT JOIN sde."mapRegions" rg ON rg."regionID" = COALESCE(st."regionID", sy."regionID", csy."regionID")
+            """;
+
+    /** What names the container that holds an item: its own row for the name, and the SDE for its type. */
+    private static final String CONTAINER_JOINS = """
+            LEFT JOIN holder_asset ct ON ct.holder_id = a.holder_id AND ct.item_id = a.container_id
+            LEFT JOIN sde."invTypes" cty ON cty."typeID" = a.container_type_id
             """;
 
     private final JdbcClient jdbc;
@@ -189,24 +196,29 @@ class BrowseQueries {
         params.put("type", typeId);
         var rows = jdbc.sql("SELECT a.root_location_id, " + PLACE_NAME + " AS place_name, " + PLACE_KIND
                         + " AS place_kind, rg.\"regionName\" AS region_name, a.held, a.division, a.holder_id, "
-                        + "sum(a.quantity) AS quantity " + FROM + where.sql() + " AND a.type_id = :type "
+                        + "a.container_id, ct.name AS container_name, cty.\"typeName\" AS container_type, "
+                        + "sum(a.quantity) AS quantity " + FROM + CONTAINER_JOINS + where.sql()
+                        + " AND a.type_id = :type "
                         + "GROUP BY a.root_location_id, place_name, place_kind, region_name, a.held, a.division, "
-                        + "a.holder_id")
+                        + "a.holder_id, a.container_id, ct.name, cty.\"typeName\"")
                 .params(params)
                 .query((rs, row) -> new Object[] {rs.getLong("root_location_id"), rs.getString("place_name"),
                         rs.getString("place_kind"), rs.getString("region_name"), Held.valueOf(rs.getString("held")),
                         rs.getObject("holder_id", UUID.class), rs.getLong("quantity"),
-                        (Integer) rs.getObject("division")})
+                        (Integer) rs.getObject("division"), (Long) rs.getObject("container_id"),
+                        rs.getString("container_name"), rs.getString("container_type")})
                 .list();
         var grouped = new LinkedHashMap<String, WhereRow>();
         for (var r : rows) {
             // a corporation's hangar is a line of its own: the name of a division is the corporation's
-            var key = r[0] + "|" + r[4] + "|" + (r[7] == null ? "" : r[7] + "|" + r[5]);
+            // each container is a line of its own, because each is a different place for the stack
+            var key = r[0] + "|" + r[4] + "|" + (r[7] == null ? "" : r[7] + "|" + r[5]) + "|" + (r[8] == null ? "" : r[8]);
             var existing = grouped.get(key);
             var by = existing == null ? new LinkedHashMap<UUID, Long>() : new LinkedHashMap<>(existing.byCharacter());
             by.merge((UUID) r[5], (Long) r[6], Long::sum);
             grouped.put(key, new WhereRow((Long) r[0], (String) r[1], (String) r[2], (String) r[3], (Held) r[4],
-                    (Integer) r[7], by, by.values().stream().mapToLong(Long::longValue).sum()));
+                    (Integer) r[7], (Long) r[8], (String) r[9], (String) r[10], by,
+                    by.values().stream().mapToLong(Long::longValue).sum()));
         }
         return grouped.values().stream().sorted((x, y) -> Long.compare(y.total(), x.total())).toList();
     }
@@ -312,11 +324,13 @@ class BrowseQueries {
         }
         return jdbc.sql("SELECT ty.\"typeName\" AS item, cat.\"categoryName\" AS category, g.\"groupName\" AS grp, "
                         + "a.holder_id, " + PLACE_NAME + " AS place_name, a.root_location_id, "
-                        + "rg.\"regionName\" AS region_name, a.held, a.division, sum(a.quantity) AS quantity, "
+                        + "rg.\"regionName\" AS region_name, a.held, a.division, "
+                        + "COALESCE(ct.name, cty.\"typeName\") AS container, sum(a.quantity) AS quantity, "
                         + "CASE WHEN a.blueprint_copy IS TRUE THEN 'copy' WHEN cat.\"categoryID\" = 9 THEN 'original' "
-                        + "ELSE '' END AS blueprint " + FROM + sql
+                        + "ELSE '' END AS blueprint " + FROM + CONTAINER_JOINS + sql
                         + " GROUP BY item, category, grp, a.holder_id, place_name, a.root_location_id, region_name, "
-                        + "a.held, a.division, blueprint ORDER BY item, a.holder_id, a.root_location_id, a.division "
+                        + "a.held, a.division, container, blueprint "
+                        + "ORDER BY item, a.holder_id, a.root_location_id, a.division, container "
                         + "LIMIT " + MOST_EXPORT_ROWS)
                 .params(params)
                 .query((rs, row) -> new ExportRow(rs.getString("item"), rs.getString("category"), rs.getString("grp"),
@@ -326,7 +340,7 @@ class BrowseQueries {
                                         : "Unknown location ") + rs.getLong("root_location_id"),
                         rs.getString("region_name") == null ? "" : rs.getString("region_name"),
                         Held.valueOf(rs.getString("held")), (Integer) rs.getObject("division"),
-                        rs.getLong("quantity"), rs.getString("blueprint")))
+                        rs.getString("container"), rs.getLong("quantity"), rs.getString("blueprint")))
                 .list();
     }
 }

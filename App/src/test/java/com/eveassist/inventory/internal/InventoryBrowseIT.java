@@ -452,7 +452,7 @@ class InventoryBrowseIT extends IntegrationTest {
 
         var lines = csv.split("\r\n");
         assertThat(lines[0]).isEqualTo("\"Item\",\"Category\",\"Group\",\"Character\",\"Where\",\"Region\",\"How held\","
-                + "\"Quantity\",\"Blueprint\",\"Hangar\"");
+                + "\"Quantity\",\"Blueprint\",\"Hangar\",\"Container\"");
         assertThat(csv).contains("\"Tritanium\",\"Material\",\"Mineral\",\"Alt One\",\"Jita IV - Moon 4 - Caldari Navy "
                 + "Assembly Plant\",\"The Forge\",\"in a hangar\",\"1500\"");
         assertThat(csv).contains("\"Pilot's Mineral\"").doesNotContain("Test Hauler");
@@ -691,5 +691,119 @@ class InventoryBrowseIT extends IntegrationTest {
         assertThat(csv).contains("\"Test Industries\"").contains("\"900\",\"\",\"Production\"");
         // a character's line has an empty hangar
         assertThat(csv).contains("\"1500\",\"\",\"\"");
+    }
+
+    // ---- the container that holds an item
+
+    private static CharacterAsset box(long itemId) {
+        return new CharacterAsset(itemId, HAULER, 1, JITA, "station", "Hangar", true, null);
+    }
+
+    private static CharacterAsset in(long itemId, int type, long quantity, long containerId) {
+        return new CharacterAsset(itemId, type, quantity, containerId, "item", "Unlocked", false, null);
+    }
+
+    private String whereText(String sub, int type) throws Exception {
+        return text(mvc.perform(get("/inventory/item/" + type).param("ui", "1").param("chars", "1")
+                        .with(signedInAs(sub)))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+    }
+
+    @Test
+    void anItemInANamedContainerSaysWhichOneAndAnUnnamedOneSaysWhatKind() throws Exception {
+        var sub = newSub();
+        var viewer = viewerFor(sub);
+        var one = link(viewer, "Alt One");
+        assets.replace(one, List.of(box(10), in(11, TRITANIUM, 300, 10), box(20), in(21, TRITANIUM, 40, 20),
+                asset(30, TRITANIUM, 5, JITA, "Hangar")), java.util.Map.of(10L, "Mining gear"), Instant.now());
+
+        var where = whereText(sub, TRITANIUM);
+
+        // one line for each place the stack is: the named container, the unnamed one (by its kind), and the hangar
+        assertThat(where).contains("in \"Mining gear\"").contains("in Test Hauler").contains("in a hangar");
+        assertThat(where).doesNotContain("in a container");
+        assertThat(where.indexOf("in \"Mining gear\"")).isLessThan(where.indexOf("in Test Hauler"));
+    }
+
+    @Test
+    void aContainerNameFromTheGameIsEscaped() throws Exception {
+        var sub = newSub();
+        var viewer = viewerFor(sub);
+        var one = link(viewer, "Alt One");
+        assets.replace(one, List.of(box(10), in(11, TRITANIUM, 300, 10)),
+                java.util.Map.of(10L, "<img src=x onerror=alert(1)>"), Instant.now());
+
+        var raw = mvc.perform(get("/inventory/item/" + TRITANIUM).param("ui", "1").param("chars", "1")
+                        .with(signedInAs(sub)))
+                .andReturn().getResponse().getContentAsString();
+
+        assertThat(raw).doesNotContain("<img src=x").contains("&lt;img src=x onerror=alert(1)&gt;");
+    }
+
+    @Test
+    void anItemInAContainerInACorporationHangarShowsTheContainerAndTheHangarAsTwoBadges() throws Exception {
+        var s = setup();
+        var corporation = corporation(s.viewer(), s.one(), "Test Industries");
+        corporations.replace(corporation, List.of(
+                new CharacterAsset(OFFICE, 27, 1, JITA, "station", "OfficeFolder", true, null),
+                new CharacterAsset(50, HAULER, 1, OFFICE, "item", "CorpSAG2", true, null),
+                new CharacterAsset(51, PILOTS_MINERAL, 8, 50, "item", "Unlocked", false, null)),
+                java.util.Map.of(50L, "Ammo"), Instant.now());
+
+        var raw = mvc.perform(get("/inventory/item/" + PILOTS_MINERAL).param("ui", "1").param("chars", "1")
+                        .with(signedInAs(s.sub())))
+                .andReturn().getResponse().getContentAsString();
+
+        assertThat(raw).contains("badge badge-sm badge-ghost");
+        assertThat(text(raw)).contains("in \"Ammo\"").contains("Production").contains("Test Industries 8");
+        // the container takes the "how held" badge and the hangar keeps its own
+        assertThat(raw.indexOf("in &quot;Ammo&quot;")).isLessThan(raw.indexOf("Production"));
+    }
+
+    @Test
+    void theCsvNamesTheContainerOrItsKind() throws Exception {
+        var sub = newSub();
+        var viewer = viewerFor(sub);
+        var one = link(viewer, "Alt One");
+        assets.replace(one, List.of(box(10), in(11, TRITANIUM, 300, 10), box(20), in(21, TRITANIUM, 40, 20),
+                asset(30, TRITANIUM, 5, JITA, "Hangar")), java.util.Map.of(10L, "Mining gear"), Instant.now());
+
+        var csv = mvc.perform(get("/inventory/export.csv").param("ui", "1").param("category", "4")
+                        .with(signedInAs(sub))).andReturn().getResponse().getContentAsString();
+
+        assertThat(csv).contains("\"300\",\"\",\"\",\"Mining gear\"").contains("\"40\",\"\",\"\",\"Test Hauler\"")
+                .contains("\"5\",\"\",\"\",\"\"");
+    }
+
+    @Test
+    void containerNamesKeepTheirSpacesOnThePageAndInTheCsv() throws Exception {
+        var sub = newSub();
+        var viewer = viewerFor(sub);
+        var one = link(viewer, "Alt One");
+        assets.replace(one, List.of(box(10), in(11, TRITANIUM, 300, 10), box(20), in(21, TRITANIUM, 40, 20)),
+                java.util.Map.of(10L, "   PI - T1 ", 20L, " "), Instant.now());
+
+        var raw = mvc.perform(get("/inventory/item/" + TRITANIUM).param("ui", "1").param("chars", "1")
+                        .with(signedInAs(sub))).andReturn().getResponse().getContentAsString();
+        var csv = mvc.perform(get("/inventory/export.csv").param("ui", "1").param("category", "4")
+                        .with(signedInAs(sub))).andReturn().getResponse().getContentAsString();
+
+        // the spaces are in the page and drawn as typed, and a name of only spaces is still a name, not the container's kind
+        assertThat(raw).contains("in &quot;   PI - T1 &quot;").contains("in &quot; &quot;")
+                .doesNotContain("in Test Hauler");
+        assertThat(raw).contains("whitespace-pre");
+        assertThat(csv).contains("\"   PI - T1 \"").contains("\" \"");
+    }
+
+    @Test
+    void aCorporationHangarNameKeepsItsSpacesToo() throws Exception {
+        var s = setup();
+        var corporation = corporation(s.viewer(), s.one(), "Test Industries");
+        corporations.replaceDivisions(corporation, java.util.Map.of(2, "  Prod "), Instant.now());
+
+        var raw = mvc.perform(get("/inventory/item/" + TRITANIUM).param("ui", "1").param("chars", "1")
+                        .with(signedInAs(s.sub()))).andReturn().getResponse().getContentAsString();
+
+        assertThat(raw).contains(">  Prod <");
     }
 }

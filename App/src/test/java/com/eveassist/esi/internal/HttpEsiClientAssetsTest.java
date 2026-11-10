@@ -389,4 +389,116 @@ class HttpEsiClientAssetsTest {
         assertThat(result.outcome()).isEqualTo(EsiResult.Outcome.FAILED);
         assertThat(result.problem()).isNotBlank();
     }
+
+    // ---- the names players gave to containers and ships
+
+    @Test
+    void asksForTheNamesOfItemsWithACharactersTokenAndLeavesOutItemsWithoutOne() {
+        esi.expect(requestTo("https://esi.test/characters/90000001/assets/names"))
+                .andExpect(org.springframework.test.web.client.match.MockRestRequestMatchers
+                        .method(org.springframework.http.HttpMethod.POST))
+                .andExpect(header("Authorization", "Bearer token-1"))
+                .andExpect(org.springframework.test.web.client.match.MockRestRequestMatchers.content()
+                        .string("[1000000000002,1000000000003,1000000000004]"))
+                // sent with its length, not as a chunked stream
+                .andExpect(header("Content-Length", "43"))
+                .andExpect(headerDoesNotExist("Transfer-Encoding"))
+                .andRespond(withSuccess("""
+                        [{"item_id":1000000000002,"name":"Mining gear"},
+                         {"item_id":1000000000003,"name":"None"},
+                         {"item_id":1000000000004,"name":"  "}]""", MediaType.APPLICATION_JSON));
+
+        var result = client.characterAssetNames(90000001L, List.of(1000000000002L, 1000000000003L, 1000000000004L));
+
+        assertThat(result.outcome()).isEqualTo(EsiResult.Outcome.UPDATED);
+        // "None" is ESI's word for no name, and a name of only spaces is a name
+        assertThat(result.data()).containsOnly(Map.entry(1000000000002L, "Mining gear"),
+                Map.entry(1000000000004L, "  "));
+        assertThat(tokens.scopesAsked).containsExactly("esi-assets.read_assets.v1");
+        esi.verify();
+    }
+
+    @Test
+    void asksForACorporationsNamesWithTheDirectorsTokenAndTheCorporationScope() {
+        esi.expect(requestTo("https://esi.test/corporations/98000001/assets/names"))
+                .andExpect(header("Authorization", "Bearer token-1"))
+                .andRespond(withSuccess("""
+                        [{"item_id":7,"name":"Ammo"}]""", MediaType.APPLICATION_JSON));
+
+        var result = client.corporationAssetNames(98000001L, 90000001L, List.of(7L));
+
+        assertThat(result.data()).containsOnly(Map.entry(7L, "Ammo"));
+        assertThat(tokens.scopesAsked).containsExactly("esi-assets.read_corporation_assets.v1");
+        esi.verify();
+    }
+
+    @Test
+    void asksInChunksOfAThousandAndOneFailedChunkFailsTheWholeResult() {
+        var ids = new ArrayList<Long>();
+        for (long id = 1; id <= 1500; id++) {
+            ids.add(id);
+        }
+        esi.expect(requestTo("https://esi.test/characters/90000001/assets/names"))
+                .andRespond(withSuccess("[{\"item_id\":1,\"name\":\"First\"}]", MediaType.APPLICATION_JSON));
+        esi.expect(requestTo("https://esi.test/characters/90000001/assets/names"))
+                .andRespond(withServerError());
+
+        var result = client.characterAssetNames(90000001L, ids);
+
+        // two calls were made (1000, then 500), and a half answer is not given as if it were whole
+        assertThat(result.outcome()).isEqualTo(EsiResult.Outcome.FAILED);
+        assertThat(result.data()).isNull();
+        esi.verify();
+    }
+
+    @Test
+    void aNamesCallAfterA401UsesANewTokenOnceAndNeverLoops() {
+        esi.expect(requestTo("https://esi.test/characters/90000001/assets/names"))
+                .andExpect(header("Authorization", "Bearer token-1")).andRespond(withStatus(HttpStatus.UNAUTHORIZED));
+        esi.expect(requestTo("https://esi.test/characters/90000001/assets/names"))
+                .andExpect(header("Authorization", "Bearer token-2")).andRespond(withStatus(HttpStatus.UNAUTHORIZED));
+
+        var result = client.characterAssetNames(90000001L, List.of(1L));
+
+        assertThat(result.outcome()).isEqualTo(EsiResult.Outcome.FAILED);
+        assertThat(tokens.invalidated).hasSize(1);
+        esi.verify();
+    }
+
+    @Test
+    void aNamesCallForACharacterWithoutTheScopeIsNotMade() {
+        tokens.problem = TokenGrant.Problem.MISSING_SCOPE;
+
+        var result = client.characterAssetNames(90000001L, List.of(1L));
+
+        assertThat(result.outcome()).isEqualTo(EsiResult.Outcome.FAILED);
+        esi.verify();
+    }
+
+    @Test
+    void namesKeepEverySpaceTheyWereTypedWithBecausePlayersUseThemToOrderTheirLists() {
+        esi.expect(requestTo("https://esi.test/characters/90000001/assets/names"))
+                .andRespond(withSuccess("""
+                        [{"item_id":1,"name":"   PI - T1 "},{"item_id":2,"name":" "},{"item_id":3,"name":""},
+                         {"item_id":4,"name":"None"},{"item_id":5,"name":"Raven  Prime"}]""",
+                        MediaType.APPLICATION_JSON));
+
+        var result = client.characterAssetNames(90000001L, List.of(1L, 2L, 3L, 4L, 5L));
+
+        // an empty name and ESI's "None" mean no name, nothing else does, and nothing is trimmed or squeezed
+        assertThat(result.data()).containsOnly(Map.entry(1L, "   PI - T1 "), Map.entry(2L, " "),
+                Map.entry(5L, "Raven  Prime"));
+    }
+
+    @Test
+    void aRefusedNamesCallCarriesEsisOwnWordsSoTheCauseCanBeSeen() {
+        esi.expect(requestTo("https://esi.test/characters/90000001/assets/names"))
+                .andRespond(withStatus(HttpStatus.BAD_REQUEST).contentType(MediaType.APPLICATION_JSON)
+                        .body("{\"error\":\"Invalid IDs: [1000000000002]\"}"));
+
+        var result = client.characterAssetNames(90000001L, List.of(1000000000002L));
+
+        assertThat(result.outcome()).isEqualTo(EsiResult.Outcome.FAILED);
+        assertThat(result.problem()).contains("400").contains("Invalid IDs: [1000000000002]");
+    }
 }

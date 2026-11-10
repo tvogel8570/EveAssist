@@ -77,6 +77,24 @@ final class AssetClassifier {
         }).toList();
     }
 
+    /** The item type of an office. An office is a folder, whatever flag it has (an impounded one is {@code Impounded}). */
+    static final int OFFICE_TYPE_ID = 27;
+
+    /**
+     * The items whose names are worth asking for: assembled (singleton) items that hold something, such as a container or
+     * a ship with cargo. A corporation's office is left out, because it is a folder and cannot be renamed: ESI refuses a
+     * whole names call that has one in it ("Invalid IDs in the request"), and an impounded office, which has the flag
+     * {@code Impounded}, is not recognised by its flag, so it is recognised by its type.
+     */
+    static List<Long> namedCandidates(List<CharacterAsset> assets) {
+        var holders = new java.util.HashSet<Long>();
+        assets.forEach(asset -> holders.add(asset.locationId()));
+        return assets.stream()
+                .filter(asset -> asset.singleton() && holders.contains(asset.itemId())
+                        && !OFFICE_FLAG.equals(asset.locationFlag()) && asset.typeId() != OFFICE_TYPE_ID)
+                .map(CharacterAsset::itemId).toList();
+    }
+
     /** 1 to 7 for {@code CorpSAG1} to {@code CorpSAG7}, otherwise null. */
     static Integer divisionOf(String locationFlag) {
         if (locationFlag != null && locationFlag.length() == 8 && locationFlag.startsWith("CorpSAG")) {

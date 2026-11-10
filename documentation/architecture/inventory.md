@@ -31,6 +31,16 @@ the character filter and the where-lines work on a holder without caring which k
 while the account has the `CORPORATION_ASSETS` feature on. The fetch is described in
 [ESI access](esi.md#corporation-data).
 
+## Container names
+
+Status: proposed (added 2026-11-10). A container or ship is an asset too, and the items in it point at it. The view
+`holder_asset` also gives `container_id` (the item that holds this one directly, null at the top and in a corporation's
+office), `container_type_id` and the item's own `name`. The where-lines query joins the view to itself on
+`(holder_id, item_id = container_id)` for the container's name, and to the SDE for its type, and groups by `container_id`,
+so each container is a line of its own. `BrowseService` words the "how held" badge from that: the name in quotes, or the
+type, or the plain wording when neither is known. Names come from the extra ESI call described in
+[ESI access](esi.md#character-assets).
+
 ## One page, one address, two answers
 
 `GET /inventory` is the whole page for a browser and only the list for htmx, told apart by the `HX-Request` header, with

@@ -44,14 +44,21 @@ class AssetRepository {
      */
     @Transactional
     void replace(UUID characterId, List<CharacterAsset> assets, Instant now) {
+        replace(characterId, assets, java.util.Map.of(), now);
+    }
+
+    /** As above, with the names players gave to some of the items (containers and ships), by item id. */
+    @Transactional
+    void replace(UUID characterId, List<CharacterAsset> assets, java.util.Map<Long, String> names, Instant now) {
         jdbc.sql("DELETE FROM character_asset WHERE character_id = :id").param("id", characterId).update();
         var placed = AssetClassifier.classify(assets);
         for (int from = 0; from < placed.size(); from += BATCH) {
             var chunk = placed.subList(from, Math.min(from + BATCH, placed.size()));
             template.batchUpdate("""
                     INSERT INTO character_asset (character_id, item_id, type_id, quantity, location_id, location_type,
-                        location_flag, is_singleton, blueprint_copy, root_location_id, depth, container_type_id, held)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        location_flag, is_singleton, blueprint_copy, root_location_id, depth, container_type_id, held,
+                        name)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """, new BatchPreparedStatementSetter() {
                 @Override
                 public void setValues(PreparedStatement statement, int i) throws SQLException {
@@ -78,6 +85,7 @@ class AssetRepository {
                         statement.setInt(12, item.containerTypeId());
                     }
                     statement.setString(13, item.held().name());
+                    statement.setString(14, names.get(asset.itemId()));
                 }
 
                 @Override
@@ -87,6 +95,39 @@ class AssetRepository {
             });
         }
         saveState(characterId, now, now, null, assets.size());
+    }
+
+    /** The stored items that hold something (containers, ships), whose names are worth asking for. */
+    List<Long> holderItemIds(UUID characterId) {
+        return jdbc.sql("""
+                SELECT a.item_id FROM character_asset a
+                WHERE a.character_id = :id AND a.is_singleton AND a.type_id <> 27
+                  AND EXISTS (SELECT 1 FROM character_asset c WHERE c.character_id = a.character_id
+                              AND c.location_id = a.item_id)
+                ORDER BY a.item_id
+                """).param("id", characterId).query(Long.class).list();
+    }
+
+    /**
+     * Sets the name of each of the given items to what ESI said, and clears it for an item ESI gave no name, which is how a
+     * name the player removed goes away. Rows are not replaced.
+     */
+    @Transactional
+    void updateNames(UUID characterId, List<Long> itemIds, java.util.Map<Long, String> names) {
+        template.batchUpdate("UPDATE character_asset SET name = ? WHERE character_id = ? AND item_id = ?",
+                new BatchPreparedStatementSetter() {
+                    @Override
+                    public void setValues(PreparedStatement statement, int i) throws SQLException {
+                        statement.setString(1, names.get(itemIds.get(i)));
+                        statement.setObject(2, characterId);
+                        statement.setLong(3, itemIds.get(i));
+                    }
+
+                    @Override
+                    public int getBatchSize() {
+                        return itemIds.size();
+                    }
+                });
     }
 
     /** ESI said the stored copy is still current. */

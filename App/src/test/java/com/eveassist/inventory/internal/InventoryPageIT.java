@@ -274,4 +274,33 @@ class InventoryPageIT extends IntegrationTest {
         viewerFor(sub);
         mvc.perform(post("/inventory/refresh").with(signedInAs(sub))).andExpect(status().isForbidden());
     }
+
+    @Test
+    void theRefreshButtonAsksForContainerNamesAgainAndOpeningThePageDoesNot() throws Exception {
+        var sub = newSub();
+        var viewer = viewerFor(sub);
+        var eveId = link(viewer, "Alt One", "ACTIVE", ASSETS);
+        esi.assetsOf(eveId, List.of(
+                new CharacterAsset(10, 1001, 1, 60003760L, "station", "Hangar", true, null),
+                new CharacterAsset(11, 34, 5, 10, "item", "Unlocked", false, null)));
+        esi.itemNamed(10, "Old name");
+        mvc.perform(get("/inventory/status").param("start", "1").with(signedInAs(sub)));
+        awaitIdle(viewer);
+        esi.assetsUnchanged(eveId);
+        esi.itemNamed(10, "New name");
+        var callsBefore = esi.namesAsked().size();
+
+        // opening the page asks for the fetch, and an unchanged list means no names call
+        mvc.perform(get("/inventory/status").param("start", "1").with(signedInAs(sub)));
+        awaitIdle(viewer);
+        assertThat(esi.namesAsked()).hasSize(callsBefore);
+
+        mvc.perform(post("/inventory/refresh").with(signedInAs(sub)).with(csrf()))
+                .andExpect(redirectedUrl("/inventory"));
+        awaitIdle(viewer);
+
+        assertThat(esi.namesAsked()).hasSize(callsBefore + 1);
+        assertThat(jdbc.sql("SELECT name FROM character_asset WHERE item_id = 10").query(String.class).list())
+                .contains("New name");
+    }
 }

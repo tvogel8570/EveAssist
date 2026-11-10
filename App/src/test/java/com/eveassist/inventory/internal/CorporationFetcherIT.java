@@ -446,4 +446,84 @@ class CorporationFetcherIT extends IntegrationTest {
         fetcher.run(viewer);
         assertThat(membership(boss.id()).eveCorporationId()).isEqualTo(other);
     }
+
+    @Test
+    void storesTheNameOfACorporationContainerAndNeverAsksForTheOffice() {
+        var viewer = viewerFor(newSub());
+        turnOn(viewer);
+        var corporation = corporationId();
+        var boss = linkWithCorporationScopes(viewer, "The Director");
+        esi.inCorporation(boss.eveId(), corporation, "Director");
+        esi.corporationNamed(corporation, "Test Industries");
+        esi.corporationAssetsOf(corporation, List.of(office(),
+                new CharacterAsset(20, 1001, 1, OFFICE, "item", "CorpSAG2", true, null),
+                new CharacterAsset(21, 34, 9, 20, "item", "Unlocked", false, null)));
+        esi.itemNamed(20, "Ammo");
+        esi.itemNamed(OFFICE, "An office cannot be named");
+
+        fetcher.run(viewer);
+
+        var id = only(viewer).corporationId();
+        assertThat(jdbc.sql("SELECT name FROM corporation_asset WHERE corporation_id = :id AND item_id = 20")
+                .param("id", id).query(String.class).single()).isEqualTo("Ammo");
+        assertThat(esi.namesAsked()).containsExactly(corporation + ":[20]");
+    }
+
+    @Test
+    void aRunThatRereadsNamesUpdatesACorporationContainerWhenTheListIsUnchanged() {
+        var viewer = viewerFor(newSub());
+        turnOn(viewer);
+        var corporation = corporationId();
+        var boss = linkWithCorporationScopes(viewer, "The Director");
+        esi.inCorporation(boss.eveId(), corporation, "Director");
+        esi.corporationNamed(corporation, "Test Industries");
+        esi.corporationAssetsOf(corporation, List.of(office(),
+                new CharacterAsset(20, 1001, 1, OFFICE, "item", "CorpSAG2", true, null),
+                new CharacterAsset(21, 34, 9, 20, "item", "Unlocked", false, null)));
+        esi.itemNamed(20, "Ammo");
+        fetcher.run(viewer);
+        var id = only(viewer).corporationId();
+        var callsBefore = esi.namesAsked().size();
+
+        esi.corporationAssetsUnchanged(corporation);
+        esi.itemNamed(20, "Ammo (renamed)");
+        fetcher.run(viewer, false);
+        assertThat(esi.namesAsked()).hasSize(callsBefore);
+        assertThat(nameOfCorporationItem(id, 20)).isEqualTo("Ammo");
+
+        fetcher.run(viewer, true);
+        assertThat(nameOfCorporationItem(id, 20)).isEqualTo("Ammo (renamed)");
+        // the office was never stored, so it is never asked about
+        assertThat(esi.namesAsked()).last().isEqualTo(corporation + ":[20]");
+    }
+
+    private String nameOfCorporationItem(UUID corporationId, long itemId) {
+        return jdbc.sql("SELECT name FROM corporation_asset WHERE corporation_id = :id AND item_id = :item")
+                .param("id", corporationId).param("item", itemId).query(String.class).single();
+    }
+
+    @Test
+    void anImpoundedOfficeIsNeverAskedForAName() {
+        var viewer = viewerFor(newSub());
+        turnOn(viewer);
+        var corporation = corporationId();
+        var boss = linkWithCorporationScopes(viewer, "The Director");
+        esi.inCorporation(boss.eveId(), corporation, "Director");
+        esi.corporationNamed(corporation, "Test Industries");
+        // an office the corporation lost: type Office, flag Impounded, with items still in it. ESI refuses a names call
+        // that has it in it.
+        esi.corporationAssetsOf(corporation, List.of(
+                new CharacterAsset(OFFICE, 27, 1, STATION, "station", "Impounded", true, null),
+                new CharacterAsset(30, 34, 5, OFFICE, "item", "CorpSAG1", false, null),
+                new CharacterAsset(20, 1001, 1, STATION, "station", "CorpSAG2", true, null),
+                new CharacterAsset(21, 34, 9, 20, "item", "Unlocked", false, null)));
+        esi.itemNamed(20, "Ammo");
+
+        fetcher.run(viewer);
+        esi.corporationAssetsUnchanged(corporation);
+        fetcher.run(viewer, true);
+
+        // asked on the first fetch and again on the forced one, each time without the office
+        assertThat(esi.namesAsked()).containsExactly(corporation + ":[20]", corporation + ":[20]");
+    }
 }

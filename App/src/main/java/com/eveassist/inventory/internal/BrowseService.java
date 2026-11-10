@@ -217,9 +217,26 @@ public class BrowseService {
                     : String.join(", ", who);
             var place = placeName(row.placeName(), String.valueOf(row.locationId()));
             return new WhereLine(place, row.placeName() == null, row.regionName() == null ? "" : row.regionName(),
-                    text("inventory.held." + row.held().name()), hangar(row.division(), row.byCharacter().keySet(),
-                            hangars), shown, row.total());
+                    howHeld(row), hangar(row.division(), row.byCharacter().keySet(), hangars), shown, row.total());
         }).toList();
+    }
+
+    /**
+     * How an item is held. An item in a container says which one: the name the player gave it, in quotes, or else what
+     * kind of container it is. Anything else, and a container whose type is not known, gets the plain wording.
+     */
+    private String howHeld(BrowseQueries.WhereRow row) {
+        if (row.held() == Held.IN_CONTAINER) {
+            var name = row.containerName();
+            // exactly as the player typed it, spaces included: they use them to control how the game sorts
+            if (name != null && !name.isEmpty()) {
+                return text("inventory.where.inContainer", "\"" + name + "\"");
+            }
+            if (row.containerType() != null) {
+                return text("inventory.where.inContainer", row.containerType());
+            }
+        }
+        return text("inventory.held." + row.held().name());
     }
 
     /**
@@ -232,7 +249,7 @@ public class BrowseService {
         }
         for (var holder : holders) {
             var name = names.getOrDefault(holder, Map.of()).get(division);
-            if (name != null && !name.isBlank()) {
+            if (name != null && !name.isEmpty()) {
                 return name;
             }
         }
@@ -306,7 +323,8 @@ public class BrowseService {
             lines.add(new String[] {row.item(), row.category(), row.group(), character == null ? "" : character.name(),
                     row.place(), row.region(), text("inventory.held." + row.held().name()),
                     String.valueOf(row.quantity()), row.blueprint(),
-                    hangar(row.division(), java.util.Set.of(row.character()), hangars)});
+                    hangar(row.division(), java.util.Set.of(row.character()), hangars),
+                    row.container() == null ? "" : row.container()});
         }
         if (cutShort(rows.size(), BrowseQueries.MOST_EXPORT_ROWS)) {
             lines.add(new String[] {text("inventory.csv.cut", BrowseQueries.MOST_EXPORT_ROWS)});

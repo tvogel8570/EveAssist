@@ -91,6 +91,11 @@ public class CorporationFetcher {
 
     /** Queues a run for the viewer's account and returns at once. */
     public void refresh(Viewer viewer) {
+        refresh(viewer, false);
+    }
+
+    /** As above. With {@code rereadNames} container names are asked for again even when the asset list is unchanged. */
+    public void refresh(Viewer viewer, boolean rereadNames) {
         if (!enabled(viewer)) {
             return;
         }
@@ -98,7 +103,7 @@ public class CorporationFetcher {
         if (running.add(account)) {
             executor.execute(() -> {
                 try {
-                    run(viewer);
+                    run(viewer, rereadNames);
                 } catch (RuntimeException e) {
                     log.warn("Reading the corporation assets of an account failed: {}", e.getClass().getSimpleName());
                 } finally {
@@ -110,6 +115,10 @@ public class CorporationFetcher {
 
     /** One run on the calling thread. Used by the background task and by tests. */
     void run(Viewer viewer) {
+        run(viewer, false);
+    }
+
+    void run(Viewer viewer, boolean rereadNames) {
         var account = viewer.accountId().value();
         // which corporation each character is in, and who is a Director, as the characters module reads it from ESI
         linked.learnCorporations(viewer);
@@ -124,7 +133,7 @@ public class CorporationFetcher {
             var directors = entry.getValue().stream().filter(c -> Boolean.TRUE.equals(c.director()) && canRead(c))
                     .toList();
             if (!directors.isEmpty()) {
-                fetch(corporation, directors);
+                fetch(corporation, directors, rereadNames);
             }
         }
     }
@@ -147,7 +156,8 @@ public class CorporationFetcher {
     }
 
     /** Reads the hangar names and the assets with the first Director that gets an answer. */
-    private void fetch(CorporationRepository.Corporation corporation, List<LinkedCharacter> directors) {
+    private void fetch(CorporationRepository.Corporation corporation, List<LinkedCharacter> directors,
+            boolean rereadNames) {
         for (var director : directors) {
             var now = clock.instant();
             EsiResult<List<com.eveassist.esi.CharacterAsset>> result;
@@ -169,8 +179,14 @@ public class CorporationFetcher {
             }
             try {
                 switch (result.outcome()) {
-                    case UPDATED -> corporations.replace(corporation.id(), result.data(), now);
-                    case UNCHANGED -> corporations.recordUnchanged(corporation.id(), now);
+                    case UPDATED -> corporations.replace(corporation.id(), result.data(),
+                            namesOf(corporation, director, result.data()), now);
+                    case UNCHANGED -> {
+                        corporations.recordUnchanged(corporation.id(), now);
+                        if (rereadNames) {
+                            rereadNames(corporation, director);
+                        }
+                    }
                     case FAILED -> corporations.recordFailure(corporation.id(), now, result.problem());
                 }
                 if (result.outcome() != EsiResult.Outcome.FAILED) {
@@ -183,6 +199,50 @@ public class CorporationFetcher {
             }
             // this Director failed (it may have lost the role): the next one gets its turn
         }
+    }
+
+    /** Asks again for the names of the containers already stored and updates them in place. A failed call keeps them. */
+    private void rereadNames(CorporationRepository.Corporation corporation, LinkedCharacter director) {
+        var holders = corporations.holderItemIds(corporation.id());
+        if (holders.isEmpty()) {
+            return;
+        }
+        try {
+            var names = esi.corporationAssetNames(corporation.eveCorporationId(), director.eveCharacterId(), holders);
+            if (names.outcome() == EsiResult.Outcome.UPDATED) {
+                corporations.updateNames(corporation.id(), holders, names.data());
+                log.info("Container names of corporation {} read again: asked for {}, {} have a name",
+                        corporation.eveCorporationId(), holders.size(), names.data().size());
+            } else {
+                log.warn("Names of the containers of corporation {} could not be read again (asked for {}): {}",
+                        corporation.eveCorporationId(), holders.size(), names.problem());
+            }
+        } catch (RuntimeException e) {
+            log.warn("Asking again for the names of a corporation's containers failed: {}", e.getClass().getSimpleName());
+        }
+    }
+
+    /** The names players gave to the corporation's containers and ships, asked with the Director's token. */
+    private java.util.Map<Long, String> namesOf(CorporationRepository.Corporation corporation, LinkedCharacter director,
+            List<com.eveassist.esi.CharacterAsset> list) {
+        var candidates = AssetClassifier.namedCandidates(list);
+        if (candidates.isEmpty()) {
+            return java.util.Map.of();
+        }
+        try {
+            var names = esi.corporationAssetNames(corporation.eveCorporationId(), director.eveCharacterId(),
+                    candidates);
+            if (names.outcome() == EsiResult.Outcome.UPDATED) {
+                log.info("Container names of corporation {}: asked for {}, {} have a name",
+                        corporation.eveCorporationId(), candidates.size(), names.data().size());
+                return names.data();
+            }
+            log.warn("Names of the containers of corporation {} could not be read (asked for {}): {}",
+                    corporation.eveCorporationId(), candidates.size(), names.problem());
+        } catch (RuntimeException e) {
+            log.warn("Asking for the names of a corporation's containers failed: {}", e.getClass().getSimpleName());
+        }
+        return java.util.Map.of();
     }
 
     private void recordFailure(UUID corporationId, Instant now, String problem) {

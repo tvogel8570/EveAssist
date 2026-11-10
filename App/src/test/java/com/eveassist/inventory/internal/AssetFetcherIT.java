@@ -283,4 +283,170 @@ class AssetFetcherIT extends IntegrationTest {
         assertThat(storedRows(gone.id())).isZero();
         assertThat(fetcher.status(viewer)).isEmpty();
     }
+
+    // ---- container names
+
+    private static CharacterAsset container(long itemId) {
+        return new CharacterAsset(itemId, 1001, 1, 60003760L, "station", "Hangar", true, null);
+    }
+
+    private static CharacterAsset inside(long itemId, long containerId) {
+        return new CharacterAsset(itemId, 34, 5, containerId, "item", "Unlocked", false, null);
+    }
+
+    private String nameOf(UUID characterId, long itemId) {
+        return jdbc.sql("SELECT name FROM character_asset WHERE character_id = :id AND item_id = :item")
+                .param("id", characterId).param("item", itemId).query(String.class).optional().orElse(null);
+    }
+
+    @Test
+    void storesThePlayersNameForAContainerAndAsksOnlyAboutItemsThatHoldSomething() {
+        var viewer = viewerFor(newSub());
+        var character = linkActive(viewer, "Alt One");
+        esi.assetsOf(character.eveId(), List.of(container(10), inside(11, 10), container(12), stack(13, 34, 7)));
+        esi.itemNamed(10, "Mining gear");
+        esi.itemNamed(12, "Never asked: it holds nothing");
+
+        fetcher.refresh(viewer);
+        awaitIdle(viewer);
+
+        assertThat(nameOf(character.id(), 10)).isEqualTo("Mining gear");
+        assertThat(nameOf(character.id(), 11)).isNull();
+        assertThat(nameOf(character.id(), 12)).isNull();
+        assertThat(esi.namesAsked()).containsExactly(character.eveId() + ":[10]");
+    }
+
+    @Test
+    void aFailedNamesCallStillStoresTheAssetsWithoutNames() {
+        var viewer = viewerFor(newSub());
+        var character = linkActive(viewer, "Alt One");
+        esi.assetsOf(character.eveId(), List.of(container(10), inside(11, 10)));
+        esi.itemNamed(10, "Mining gear");
+        esi.failNames("ESI is throttling char-asset for another 9 s");
+
+        fetcher.refresh(viewer);
+        awaitIdle(viewer);
+
+        assertThat(storedRows(character.id())).isEqualTo(2);
+        assertThat(nameOf(character.id(), 10)).isNull();
+        assertThat(statusOf(viewer, character.id()).phase()).isEqualTo(Phase.CURRENT);
+    }
+
+    @Test
+    void aFetchWithNothingThatHoldsAnythingAsksForNoNames() {
+        var viewer = viewerFor(newSub());
+        var character = linkActive(viewer, "Alt One");
+        esi.assetsOf(character.eveId(), List.of(stack(1, 34, 10), stack(2, 35, 20)));
+
+        fetcher.refresh(viewer);
+        awaitIdle(viewer);
+
+        assertThat(esi.namesAsked()).isEmpty();
+    }
+
+    // ---- the Refresh button asks for container names again
+
+    private void fetchOnce(Viewer viewer, boolean rereadNames) {
+        fetcher.refresh(viewer, rereadNames);
+        awaitIdle(viewer);
+    }
+
+    @Test
+    void refreshAsksForNamesAgainWhenTheListIsUnchangedAndAPlainOpeningDoesNot() {
+        var viewer = viewerFor(newSub());
+        var character = linkActive(viewer, "Alt One");
+        esi.assetsOf(character.eveId(), List.of(container(10), inside(11, 10)));
+        esi.itemNamed(10, "Old name");
+        fetchOnce(viewer, false);
+        assertThat(nameOf(character.id(), 10)).isEqualTo("Old name");
+
+        // renamed in game: the asset list is the same, so ESI says so
+        esi.assetsUnchanged(character.eveId());
+        esi.itemNamed(10, "New name");
+        var callsBefore = esi.namesAsked().size();
+
+        fetchOnce(viewer, false);
+        assertThat(nameOf(character.id(), 10)).isEqualTo("Old name");
+        assertThat(esi.namesAsked()).hasSize(callsBefore);
+
+        fetchOnce(viewer, true);
+        assertThat(nameOf(character.id(), 10)).isEqualTo("New name");
+        assertThat(esi.namesAsked()).hasSize(callsBefore + 1);
+        // the rows themselves were not replaced
+        assertThat(storedRows(character.id())).isEqualTo(2);
+    }
+
+    @Test
+    void aNameThePlayerRemovedGoesAwayOnRefresh() {
+        var viewer = viewerFor(newSub());
+        var character = linkActive(viewer, "Alt One");
+        esi.assetsOf(character.eveId(), List.of(container(10), inside(11, 10)));
+        esi.itemNamed(10, "Mining gear");
+        fetchOnce(viewer, false);
+
+        esi.assetsUnchanged(character.eveId());
+        esi.itemUnnamed(10);
+        fetchOnce(viewer, true);
+
+        // ESI gave no name of its own for it any more, so the page falls back to the kind of container
+        assertThat(nameOf(character.id(), 10)).isNull();
+    }
+
+    @Test
+    void aFailedNamesCallOnRefreshKeepsTheNamesThatAreThere() {
+        var viewer = viewerFor(newSub());
+        var character = linkActive(viewer, "Alt One");
+        esi.assetsOf(character.eveId(), List.of(container(10), inside(11, 10)));
+        esi.itemNamed(10, "Mining gear");
+        fetchOnce(viewer, false);
+
+        esi.assetsUnchanged(character.eveId());
+        esi.failNames("ESI is throttling char-asset for another 9 s");
+        fetchOnce(viewer, true);
+
+        assertThat(nameOf(character.id(), 10)).isEqualTo("Mining gear");
+        assertThat(statusOf(viewer, character.id()).phase()).isEqualTo(Phase.CURRENT);
+    }
+
+    @Test
+    void allOfACharactersContainersAreAskedInOneCall() {
+        var viewer = viewerFor(newSub());
+        var character = linkActive(viewer, "Alt One");
+        esi.assetsOf(character.eveId(), List.of(container(10), inside(11, 10), container(12), inside(13, 12),
+                container(14), inside(15, 14)));
+
+        fetchOnce(viewer, false);
+        assertThat(esi.namesAsked()).containsExactly(character.eveId() + ":[10, 12, 14]");
+
+        esi.assetsUnchanged(character.eveId());
+        fetchOnce(viewer, true);
+        assertThat(esi.namesAsked()).hasSize(2).last().isEqualTo(character.eveId() + ":[10, 12, 14]");
+    }
+
+    @Test
+    void refreshAsksNothingForACharacterWithNoContainers() {
+        var viewer = viewerFor(newSub());
+        var character = linkActive(viewer, "Alt One");
+        esi.assetsOf(character.eveId(), List.of(stack(1, 34, 10)));
+        fetchOnce(viewer, false);
+
+        esi.assetsUnchanged(character.eveId());
+        fetchOnce(viewer, true);
+
+        assertThat(esi.namesAsked()).isEmpty();
+    }
+
+    @Test
+    void aNameIsStoredExactlyAsTheplayerTypedItSpacesIncluded() {
+        var viewer = viewerFor(newSub());
+        var character = linkActive(viewer, "Alt One");
+        esi.assetsOf(character.eveId(), List.of(container(10), inside(11, 10), container(12), inside(13, 12)));
+        esi.itemNamed(10, "   PI - T1 ");
+        esi.itemNamed(12, " ");
+
+        fetchOnce(viewer, false);
+
+        assertThat(nameOf(character.id(), 10)).isEqualTo("   PI - T1 ");
+        assertThat(nameOf(character.id(), 12)).isEqualTo(" ");
+    }
 }

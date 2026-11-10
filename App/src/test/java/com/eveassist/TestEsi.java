@@ -45,6 +45,9 @@ public class TestEsi implements EsiClient {
         corporationAssets.clear();
         hangarNames.clear();
         corporationAssetsAsked.clear();
+        itemNames.clear();
+        namesAsked.clear();
+        namesFailure = null;
         assetsGate = null;
         assetsFailure = null;
         sells.put(34, new BigDecimal("5.00"));
@@ -200,6 +203,55 @@ public class TestEsi implements EsiClient {
     @Override
     public EsiResult<Map<Integer, String>> corporationHangars(long eveCorporationId, long viaEveCharacterId) {
         return EsiResult.updated(hangarNames.getOrDefault(eveCorporationId, Map.of()), Instant.now().plusSeconds(3600));
+    }
+
+    private final Map<Long, String> itemNames = new ConcurrentHashMap<>();
+    private final List<String> namesAsked = new CopyOnWriteArrayList<>();
+    private volatile String namesFailure;
+
+    /** Gives an item a name, as a player does to a container or ship. Any item id, whoever holds it. */
+    public void itemNamed(long itemId, String name) {
+        itemNames.put(itemId, name);
+    }
+
+    /** Takes a name away again, as a player does when they clear it: ESI then gives no name for the item. */
+    public void itemUnnamed(long itemId) {
+        itemNames.remove(itemId);
+    }
+
+    /** Makes every names call fail with this problem. */
+    public void failNames(String problem) {
+        namesFailure = problem;
+    }
+
+    /** The names calls so far, as {@code "<EVE character or corporation id>:<item ids>"}, in the order made. */
+    public List<String> namesAsked() {
+        return List.copyOf(namesAsked);
+    }
+
+    private EsiResult<Map<Long, String>> namesOf(long owner, List<Long> itemIds) {
+        namesAsked.add(owner + ":" + itemIds);
+        if (namesFailure != null) {
+            return EsiResult.failed(namesFailure);
+        }
+        var found = new java.util.LinkedHashMap<Long, String>();
+        itemIds.forEach(id -> {
+            if (itemNames.containsKey(id)) {
+                found.put(id, itemNames.get(id));
+            }
+        });
+        return EsiResult.updated(found, Instant.now());
+    }
+
+    @Override
+    public EsiResult<Map<Long, String>> characterAssetNames(long eveCharacterId, List<Long> itemIds) {
+        return namesOf(eveCharacterId, itemIds);
+    }
+
+    @Override
+    public EsiResult<Map<Long, String>> corporationAssetNames(long eveCorporationId, long viaEveCharacterId,
+            List<Long> itemIds) {
+        return namesOf(eveCorporationId, itemIds);
     }
 
     /** The items ESI has been asked about since the test began, in the order asked. */

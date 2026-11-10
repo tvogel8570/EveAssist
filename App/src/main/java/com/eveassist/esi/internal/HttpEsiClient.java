@@ -147,6 +147,94 @@ class HttpEsiClient implements EsiClient {
     }
 
     @Override
+    public EsiResult<java.util.Map<Long, String>> characterAssetNames(long eveCharacterId, List<Long> itemIds) {
+        return names(CHARACTER_ASSET_GROUP, "/characters/%d/assets/names".formatted(eveCharacterId),
+                new Auth(eveCharacterId, ASSETS_SCOPE), itemIds);
+    }
+
+    @Override
+    public EsiResult<java.util.Map<Long, String>> corporationAssetNames(long eveCorporationId, long viaEveCharacterId,
+            List<Long> itemIds) {
+        return names(CORPORATION_ASSET_GROUP, "/corporations/%d/assets/names".formatted(eveCorporationId),
+                new Auth(viaEveCharacterId, CORPORATION_ASSETS_SCOPE), itemIds);
+    }
+
+    /** ESI takes at most this many item ids in one names call. */
+    private static final int MOST_NAMES_PER_CALL = 1000;
+
+    /**
+     * Asks for the names in chunks of {@link #MOST_NAMES_PER_CALL}. One failed chunk fails the whole result, so the
+     * caller never mistakes "some names" for "all names". ESI answers an item that has no name of its own with the word
+     * "None", which is left out here as well as an empty one. Spaces are never trimmed.
+     */
+    private EsiResult<java.util.Map<Long, String>> names(String group, String uri, Auth auth, List<Long> itemIds) {
+        var result = new java.util.LinkedHashMap<Long, String>();
+        for (int from = 0; from < itemIds.size(); from += MOST_NAMES_PER_CALL) {
+            var chunk = itemIds.subList(from, Math.min(from + MOST_NAMES_PER_CALL, itemIds.size()));
+            var answer = postNames(group, uri, auth, chunk);
+            if (answer.problem() != null) {
+                return EsiResult.failed(answer.problem());
+            }
+            if (answer.status() != 200 || answer.body() == null) {
+                // ESI's own words say why, for example which ids it refused. They hold no token.
+                return EsiResult.failed("ESI answered " + answer.status() + " for " + uri.replaceFirst("^/", "")
+                        + (answer.error() == null ? "" : ": " + answer.error()));
+            }
+            for (var entry : answer.body()) {
+                // a name is kept exactly as the player typed it: players put spaces first to control how the game
+                // sorts their containers and ships, so only an empty name, or ESI's word for "no name", means unnamed
+                if (entry.name() != null && !entry.name().isEmpty() && !"None".equals(entry.name())) {
+                    result.put(entry.itemId(), entry.name());
+                }
+            }
+        }
+        return EsiResult.updated(result, clock.instant());
+    }
+
+    private Single<List<EsiName>> postNames(String group, String uri, Auth auth, List<Long> ids) {
+        var answer = postNamesOnce(group, uri, auth, ids);
+        if (answer.status() == 401) {
+            tokens.invalidate(auth.eveCharacterId());
+            answer = postNamesOnce(group, uri, auth, ids);
+        }
+        return answer;
+    }
+
+    private Single<List<EsiName>> postNamesOnce(String group, String uri, Auth auth, List<Long> ids) {
+        var wait = limiter.before(group);
+        if (wait.isPresent()) {
+            return Single.problem(wait.get());
+        }
+        var grant = tokens.accessToken(auth.eveCharacterId(), auth.scope());
+        if (grant.problem() != null) {
+            return Single.problem(why(grant, auth));
+        }
+        simultaneous.acquireUninterruptibly();
+        try {
+            // The body is written out here and sent with its length, not streamed in chunks: ESI answered some calls with
+            // "too few items for 'item_ids'", as if the body had not arrived (seen 2026-11-10).
+            var json = ids.stream().map(String::valueOf).collect(java.util.stream.Collectors.joining(",", "[", "]"))
+                    .getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            var answer = http.post().uri(uri)
+                    .headers(headers -> headers.setBearerAuth(grant.token()))
+                    .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                    .contentLength(json.length)
+                    .body(json)
+                    .exchange((request, response) -> new Single<List<EsiName>>(response.getStatusCode().value(),
+                            response.getHeaders(),
+                            response.getStatusCode().value() == 200
+                                    ? response.bodyTo(new ParameterizedTypeReference<List<EsiName>>() { }) : null,
+                            null, response.getStatusCode().value() == 200 ? null : errorText(response)));
+            limiter.record(group, answer.status(), answer.headers());
+            return answer;
+        } catch (RestClientException e) {
+            return Single.problem("ESI could not be reached: " + e.getMessage());
+        } finally {
+            simultaneous.release();
+        }
+    }
+
+    @Override
     public EsiResult<java.util.Map<Integer, String>> corporationHangars(long eveCorporationId,
                                                                       long viaEveCharacterId) {
         return object(CORPORATION_DIVISIONS_GROUP, "/corporations/%d/divisions".formatted(eveCorporationId),
@@ -435,6 +523,10 @@ class HttpEsiClient implements EsiClient {
     private record EsiStructure(
             @JsonProperty("name") String name,
             @JsonProperty("solar_system_id") int solarSystemId) {
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private record EsiName(@JsonProperty("item_id") long itemId, @JsonProperty("name") String name) {
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)

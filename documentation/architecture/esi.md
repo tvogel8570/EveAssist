@@ -186,6 +186,21 @@ Status: **agreed** (follows from the requirements).
 
 Status: **proposed** (added 2026-11-09 with the asset fetch).
 
+- **Container names** (added 2026-11-10): after the assets are read, the fetcher asks for the names players gave to the
+  containers and ships that hold something, with `POST /characters/{character_id}/assets/names` (same scope, same
+  `char-asset` group; for a corporation `POST /corporations/{corporation_id}/assets/names` with a Director's token and the
+  `corp-asset` group). Only assembled items that some other item sits in are asked about, and a corporation's office never
+  is, whatever its flag: ESI refuses a whole call that has one in it (`404 Invalid IDs in the request`), and an impounded
+  office is an item of type Office with the flag `Impounded`, so offices are recognised by type. The call takes at most 1,000 ids, so the client asks in chunks and one failed chunk fails the whole result. It is made
+  between the asset call and the storing transaction, so no connection is held while ESI is asked. The ids go out as a JSON
+  array with an explicit length, not a chunked stream, because ESI answered some calls with `400 too few items for
+  'item_ids'`, as if the body had not arrived (seen 2026-11-10; unconfirmed whether this fixes it). A failure leaves the
+  items without names and the page says what kind of container it is. ESI is not documented to say what an unnamed item
+  returns; "None" and an empty name are treated as no name (to be checked against real data). A name is never trimmed:
+  players put spaces first to control how the game sorts their containers and ships, so a name of only spaces is a name. The names are stored in
+  `name` on the container's own row, so they are replaced with the assets, and they are asked only when the asset list
+  changed.
+
 - **Route and scope**: `GET /characters/{character_id}/assets` needs `esi-assets.read_assets.v1` and is in the
   `char-asset` group (1,800 tokens per 15 minutes per character). The client reads it through its pages like other
   routes, caches it per character and route (`ETag`, `Expires`), and sends the character's access token as a bearer

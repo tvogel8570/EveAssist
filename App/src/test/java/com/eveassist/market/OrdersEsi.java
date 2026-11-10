@@ -53,6 +53,17 @@ interface OrdersEsi extends EsiClient {
     }
 
     @Override
+    default EsiResult<java.util.Map<Long, String>> characterAssetNames(long eveCharacterId, List<Long> itemIds) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    default EsiResult<java.util.Map<Long, String>> corporationAssetNames(long eveCorporationId,
+            long viaEveCharacterId, List<Long> itemIds) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     default EsiResult<java.util.Map<Integer, String>> corporationHangars(long eveCorporationId,
             long viaEveCharacterId) {
         throw new UnsupportedOperationException();

@@ -51,6 +51,13 @@ Decided with the developer on 2026-11-10, from mockups (`documentation/mockups/i
   where, region and how held, and a minimum total. **Filters from different columns all apply, and several values in
   one column mean any of them.** Each chosen filter is a chip that can be taken away, and the chips can be cleared at
   once.
+- **Which container.** An item in a container says which one in its place line, in the "how held" badge: the name the
+  player gave the container, in quotes (`in "Mining gear"`), or else what kind it is (`in Station Container`). Each container
+  is a line of its own, because each is a different place for the stack. A corporation's item in a container keeps its
+  hangar as a second badge, so it reads `in "Ammo"` and `Production`. Only the container that holds the item directly is
+  named. Ships (an item in a ship's hold, or fitted) keep their plain wording for now. The CSV has a Container column
+  (name, or kind when there is no name). Names from the game are shown exactly as typed, spaces included (players use them to
+  order their lists in the game), and so are the names of a corporation's hangars. Ships' names are kept the same way.
 - **How held** says whether an item is in a hangar, in a container, in a ship's hold, fitted to a ship, in deliveries or
   in asset safety. All of them count in the totals unless the filter leaves them out. A shortcut leaves out what is fitted
   or in ships.
@@ -62,6 +69,10 @@ Decided with the developer on 2026-11-10, from mockups (`documentation/mockups/i
 - **Places.** A place is a station or solar system named from the SDE, or a structure named by any character of the
   account. A structure no character of the account can name shows as an unknown structure with its id.
 - **Blueprints** are tagged BPC or BPO and say that ME and TE are not read yet.
+
+Container names are read with the assets and are refreshed only when the asset list changes, because ESI's asset list
+does not carry names: a container renamed in game keeps its old name here until its items move. If ESI cannot give the
+names, the page says what kind of container it is.
 
 Still wanted, later: shortfall against a plan or project, grouping by market group, and value in ISK.
 

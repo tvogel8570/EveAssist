@@ -86,4 +86,20 @@ public interface EsiClient {
     EsiResult<java.util.Map<Integer, String>> corporationHangars(long eveCorporationId, long viaEveCharacterId);
 
     String DIVISIONS_SCOPE = "esi-corporations.read_divisions.v1";
+
+    /**
+     * The names players gave to some of a character's items (containers and ships), from
+     * {@code POST /characters/{character_id}/assets/names}, in as many calls as the 1,000 ids each takes. It needs the
+     * scope {@value #ASSETS_SCOPE}. The map holds only items that have a name: an item without one is left out. Not
+     * cached here, because the caller asks after the assets and keeps the answer with them. A failed call is a
+     * {@link EsiResult.Outcome#FAILED} result and the caller goes on without names.
+     */
+    EsiResult<java.util.Map<Long, String>> characterAssetNames(long eveCharacterId, List<Long> itemIds);
+
+    /**
+     * The same for a corporation's items, from {@code POST /corporations/{corporation_id}/assets/names}, asked with a
+     * Director's token. It needs the scope {@value #CORPORATION_ASSETS_SCOPE}.
+     */
+    EsiResult<java.util.Map<Long, String>> corporationAssetNames(long eveCorporationId, long viaEveCharacterId,
+            List<Long> itemIds);
 }
