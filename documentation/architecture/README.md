@@ -13,6 +13,7 @@ for review under [Open questions](#open-questions).
 
 ## Files
 
+- [Inventory](inventory.md): how assets are stored and browsed, the filter and the page's two answers
 - [Identity and ESI tokens](identity-and-tokens.md): sign-in, character linking, token storage and refresh
 - [ESI access](esi.md): the ESI client, background fetches, freshness, prices and alerts
 - [Data and ownership](data.md): database layout, ownership and sharing, SDE import and versioning
@@ -96,6 +97,7 @@ Module boundaries inside the application are enforced (with Spring Modulith, see
 | `characters` | Linked characters, ESI tokens, scopes and re-authorization state |
 | `esi` | The ESI client: caching, rate limits, error limit, pagination |
 | `sde` | Read-only access to the SDE and the SDE import |
+| `inventory` | What the user's characters own, read from ESI: assets, their fetch state and the inventory pages (added 2026-11-09, see [Pilot inventory](../requirements/pilot-inventory.md)) |
 | `industry` | Blueprints, facilities, plans, costing, projects, invention and job tracking |
 | `market` | Prices, orders, wallet transactions, contracts, shopping lists and volumes |
 | `alerts` | Stored alerts, the SSE stream, job-finish and contract timers |

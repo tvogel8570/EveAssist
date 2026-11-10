@@ -1,0 +1,154 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- The filter as hidden fields, except for a column whose list is open, which holds its own choices in its checkboxes. -->
+<div th:fragment="state(oob)" id="filter-state" th:attr="hx-swap-oob=${oob} ? 'true' : null">
+    <input type="hidden" th:each="field : ${hidden}" th:name="${field[0]}" th:value="${field[1]}">
+</div>
+
+<!-- What a filter change answers to htmx: the list, the new hidden fields, and the open list closed unless it is meant to stay. -->
+<th:block th:fragment="partial">
+    <th:block th:replace="~{inventory/browse :: results}"></th:block>
+    <div th:replace="~{inventory/browse :: state(true)}"></div>
+    <div th:unless="${keepOpen}" id="filter-pop" hx-swap-oob="innerHTML"></div>
+</th:block>
+
+<!-- One bar for an item type: a piece for each character, in the character's own colour, widest first. -->
+<div th:fragment="bar(item, width)">
+    <svg th:class="'h-3 max-w-full rounded ' + ${width}" viewBox="0 0 100 12" preserveAspectRatio="none" role="img"
+         th:attr="aria-label=#{inventory.holders(${item.holderCount}, ${item.biggestHolder})}">
+        <rect x="0" y="0" width="100" height="12" class="seg-rest"/>
+        <rect th:each="segment : ${item.segments}" y="0" height="12" th:attr="x=${segment.start},width=${segment.width}"
+              th:class="'seg-' + ${segment.color}">
+            <title th:text="${segment.character} + ': ' + ${#numbers.formatInteger(segment.quantity, 1, 'COMMA')}">Name: 1</title>
+        </rect>
+    </svg>
+    <div class="text-xs opacity-70" th:text="#{inventory.holders(${item.holderCount}, ${item.biggestHolder})}">4 characters</div>
+</div>
+
+<div th:fragment="results">
+    <div id="chips" class="flex flex-wrap gap-2 items-center mb-2" th:unless="${#lists.isEmpty(view.chips)}">
+        <span class="text-xs opacity-70" th:text="#{inventory.chips}">Filters, all of them apply:</span>
+        <span class="badge badge-primary badge-outline gap-1 py-3" th:each="chip : ${view.chips}">
+            <a class="hover:underline cursor-pointer" th:text="${chip.text}"
+               th:attr="hx-get=@{/inventory/filter/{column}(column=${chip.dimension})}" hx-include="#browse-form"
+               hx-target="#filter-pop" hx-swap="innerHTML">Category: Module</a>
+            <a class="px-1" th:aria-label="#{inventory.removeFilter(${chip.text})}"
+               th:href="@{'/inventory?' + ${chip.removeQuery}}"
+               th:attr="hx-get=@{'/inventory?' + ${chip.removeQuery}}" hx-target="#browse" hx-push-url="true">&#10005;</a>
+        </span>
+        <a class="btn btn-ghost btn-xs" th:if="${#lists.size(view.chips) > 1}" th:href="@{'/inventory?' + ${view.clearAllQuery}}"
+           th:attr="hx-get=@{'/inventory?' + ${view.clearAllQuery}}" hx-target="#browse" hx-push-url="true"
+           th:text="#{inventory.clearAll}">Clear all</a>
+    </div>
+
+    <p id="no-assets" class="opacity-70 text-center py-6" th:unless="${view.hasAssets}" th:text="#{inventory.noCharacters}">No characters.</p>
+
+    <div th:if="${view.hasAssets}">
+        <div class="flex flex-wrap items-center gap-3 text-sm mb-2">
+            <span id="summary" class="opacity-80"
+                  th:text="#{inventory.summary(${view.itemTypes}, ${view.units})}">3 item types, 12 units</span>
+            <span class="grow"></span>
+            <button type="button" id="copy-lines" class="btn btn-ghost btn-xs" data-copy-lines
+                    th:attr="data-copied=#{inventory.copied},data-url=@{'/inventory/export.txt?' + ${view.exportQuery}}"
+                    th:text="#{inventory.copy}">Copy as text</button>
+            <a id="export-csv" class="btn btn-ghost btn-xs" th:href="@{'/inventory/export.csv?' + ${view.exportQuery}}"
+               th:text="#{inventory.export}">Export CSV</a>
+        </div>
+
+        <div id="nothing-yet" class="card bg-base-200" th:if="${view.itemTypes == 0 and view.unfiltered}">
+            <div class="card-body items-center text-center"><p th:text="#{inventory.nothingYet}">Nothing to show yet.</p></div>
+        </div>
+        <div id="no-match" class="card bg-base-200" th:if="${view.itemTypes == 0 and not view.unfiltered}">
+            <div class="card-body items-center text-center">
+                <p th:text="#{inventory.noMatch}">No items match these filters.</p>
+                <a class="btn btn-sm" th:href="@{'/inventory?' + ${view.clearAllQuery}}"
+                   th:attr="hx-get=@{'/inventory?' + ${view.clearAllQuery}}" hx-target="#browse" hx-push-url="true"
+                   th:text="#{inventory.clearAll}">Clear all</a>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto" th:if="${not #lists.isEmpty(view.items)}">
+            <table class="table" id="items">
+                <thead>
+                <tr>
+                    <th class="w-6 px-1"></th>
+                    <th th:text="#{inventory.col.item}">Item</th>
+                    <th class="num" th:text="#{inventory.col.total}">Total</th>
+                    <th class="hidden md:table-cell" th:if="${view.showCharacters}" th:text="#{inventory.col.heldBy}">Held by</th>
+                    <th class="hidden lg:table-cell" th:text="#{inventory.col.category}">Category</th>
+                    <th class="num hidden md:table-cell" th:text="#{inventory.col.places}">Places</th>
+                </tr>
+                </thead>
+                <tbody th:each="item : ${view.items}">
+                <tr class="hover cursor-pointer" th:attr="data-expand=${'where-' + item.typeId},data-item=${item.name},data-total=${item.total},hx-get=@{/inventory/item/{type}(type=${item.typeId})},hx-target=${'#where-body-' + item.typeId}"
+                    hx-include="#browse-form" hx-trigger="click once" hx-swap="innerHTML">
+                    <td class="px-1"><span data-expander>&#9656;</span></td>
+                    <td>
+                        <span class="font-medium" th:text="${item.name}">Item</span>
+                        <span class="badge badge-sm badge-secondary" th:if="${item.blueprintCopy}" th:text="#{inventory.bpc}">BPC</span>
+                        <span class="badge badge-sm badge-secondary" th:if="${item.blueprintOriginal}" th:text="#{inventory.bpo}">BPO</span>
+                        <span class="text-xs opacity-60" th:if="${item.blueprintCopy or item.blueprintOriginal}" th:text="#{inventory.noMeTe}">ME/TE not read yet</span>
+                        <div class="text-xs opacity-60"><span th:text="${item.groupName}">Group</span><span class="lg:hidden"> &middot; <span th:text="${item.categoryName}">Category</span></span></div>
+                        <div class="md:hidden mt-1" th:if="${view.showCharacters}">
+                            <div th:replace="~{inventory/browse :: bar(${item}, 'w-40')}"></div>
+                        </div>
+                    </td>
+                    <td class="num font-semibold align-top" th:text="${#numbers.formatInteger(item.total, 1, 'COMMA')}">1</td>
+                    <td class="hidden md:table-cell" th:if="${view.showCharacters}">
+                        <div th:replace="~{inventory/browse :: bar(${item}, 'w-44')}"></div>
+                    </td>
+                    <td class="opacity-70 hidden lg:table-cell" th:text="${item.categoryName}">Category</td>
+                    <td class="num hidden md:table-cell" th:text="${item.places}">1</td>
+                </tr>
+                <tr hidden th:id="${'where-' + item.typeId}">
+                    <td></td>
+                    <td colspan="5" class="pb-4"><div th:id="${'where-body-' + item.typeId}"></div></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <p id="capped" class="text-center text-sm opacity-80 mt-3" th:if="${view.capped}"
+           th:text="#{inventory.capped(${#lists.size(view.items)})}">Showing the first 1,000 item types.</p>
+
+        <div class="text-center mt-3" th:if="${view.more}">
+            <a id="show-more" class="btn btn-sm btn-outline" th:href="@{'/inventory?' + ${view.moreQuery}}"
+               th:attr="hx-get=@{'/inventory?' + ${view.moreQuery}}" hx-target="#browse" hx-push-url="true"
+               th:text="#{inventory.showMore}">Show more</a>
+        </div>
+    </div>
+</div>
+
+<!-- Where one item type is, for the row that was opened. -->
+<div th:fragment="where">
+    <p class="text-sm opacity-70" th:if="${#lists.isEmpty(lines)}" th:text="#{inventory.where.none}">Nothing here with these filters.</p>
+    <table class="table table-sm bg-base-300 rounded-box" th:unless="${#lists.isEmpty(lines)}">
+        <thead>
+        <tr>
+            <th th:text="#{inventory.where.place}">Where</th>
+            <th class="hidden sm:table-cell" th:text="#{inventory.where.region}">Region</th>
+            <th th:text="#{inventory.where.how}">How</th>
+            <th class="hidden md:table-cell" th:if="${showCharacters}" th:text="#{inventory.where.characters}">Characters</th>
+            <th class="num" th:text="#{inventory.where.units}">Units</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="line : ${lines}">
+            <td>
+                <span th:text="${line.place}">Place</span>
+                <span class="badge badge-sm badge-warning tooltip tooltip-right" th:if="${line.placeUnknown}"
+                      th:attr="data-tip=#{inventory.place.unknownTip}" th:text="#{inventory.place.nameUnknown}">name unknown</span>
+            </td>
+            <td class="opacity-70 hidden sm:table-cell" th:text="${line.region}">Region</td>
+            <td><span class="badge badge-sm badge-ghost" th:text="${line.held}">in a hangar</span></td>
+            <td class="text-xs hidden md:table-cell" th:if="${showCharacters}" th:text="${line.characters}">Characters</td>
+            <td class="num" th:text="${#numbers.formatInteger(line.total, 1, 'COMMA')}">1</td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+</body>
+</html>

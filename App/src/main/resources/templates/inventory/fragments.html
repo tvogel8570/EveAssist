@@ -1,0 +1,59 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!--
+  Where each character's assets stand, as one line that opens into a table. While a fetch runs it asks for itself again
+  every two seconds, and its last answer tells the list to look again.
+-->
+<div id="fetch-status" th:fragment="status" class="mb-3" th:attr="hx-get=${running} ? @{/inventory/status} : null"
+     hx-trigger="every 2s" hx-swap="outerHTML">
+    <details class="bg-base-200 rounded-box" th:unless="${#lists.isEmpty(rows)}">
+        <summary class="px-3 py-2 cursor-pointer flex flex-wrap gap-2 items-center">
+            <span class="text-sm" th:text="#{inventory.status.title(${#lists.size(rows)})}">3 characters:</span>
+            <span class="badge badge-success badge-outline py-3" th:if="${current > 0}" th:text="#{inventory.status.current(${current})}">3 up to date</span>
+            <span class="badge badge-info badge-outline py-3 gap-1" th:if="${waiting > 0}">
+                <span class="loading loading-spinner loading-xs" th:if="${running}"></span>
+                <span th:text="#{inventory.status.waiting(${waiting})}">1 updating</span>
+            </span>
+            <span class="badge badge-warning badge-outline py-3" th:if="${failed > 0}" th:text="#{inventory.status.failed(${failed})}">1 could not update</span>
+            <span class="badge badge-error badge-outline py-3" th:if="${needAttention > 0}" th:text="#{inventory.status.attention(${needAttention})}">1 needs authorization</span>
+        </summary>
+        <div class="overflow-x-auto px-3 pb-3">
+            <table class="table table-sm">
+                <thead>
+                <tr>
+                    <th th:text="#{inventory.character}">Character</th>
+                    <th th:text="#{inventory.state}">State</th>
+                    <th class="num" th:text="#{inventory.items}">Items</th>
+                    <th class="hidden sm:table-cell" th:text="#{inventory.fetched}">Last answer from EVE</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="row : ${rows}" th:id="'asset-row-' + ${row.id}">
+                    <td th:text="${row.name}">Name</td>
+                    <td>
+                        <span class="badge badge-sm"
+                              th:classappend="${row.phase == 'CURRENT'} ? 'badge-success' : (${row.phase == 'RUNNING' or row.phase == 'NEVER'} ? 'badge-info' : (${row.phase == 'FAILED'} ? 'badge-warning' : 'badge-error'))"
+                              th:text="#{'inventory.phase.' + ${row.phase}}">State</span>
+                        <span class="loading loading-spinner loading-xs ml-1" th:if="${row.phase == 'RUNNING'}"></span>
+                        <span class="block text-xs opacity-70" th:if="${row.problem != null and row.phase == 'FAILED'}" th:text="${row.problem}">Problem</span>
+                        <a class="link text-xs" th:if="${row.phase == 'NEEDS_REAUTHORIZATION' or row.phase == 'MISSING_SCOPE'}"
+                           th:href="@{/characters}" th:text="#{inventory.fixOnCharacters}">Characters page</a>
+                    </td>
+                    <td class="num">
+                        <span th:text="${row.itemCount != null} ? ${#numbers.formatInteger(row.itemCount, 1, 'COMMA')} : '-'">0</span>
+                        <span class="block text-xs opacity-70" th:if="${row.structures > 0}"
+                              th:text="#{inventory.structures(${row.structuresNamed}, ${row.structures})}">3 of 5 structures named</span>
+                    </td>
+                    <td class="hidden sm:table-cell">
+                        <span th:if="${row.fetchedAt != null}" th:text="${row.fetchedAt} + ' UTC'">time</span>
+                        <span class="opacity-60" th:unless="${row.fetchedAt != null}" th:text="#{inventory.never}">Never</span>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </details>
+</div>
+</body>
+</html>

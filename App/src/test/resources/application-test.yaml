@@ -16,6 +16,9 @@ spring:
             client-secret: test-secret
             redirect-uri: "{baseUrl}/login/oauth2/code/keycloak"
 eveassist:
+  characters:
+    # a fixed key for tests only: 32 bytes of 0x01
+    token-data-key: AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE=
   market:
     contracts:
       # tests call the loader themselves, so nothing else asks the test ESI in the background

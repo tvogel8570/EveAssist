@@ -58,15 +58,24 @@ token is never accepted on the pages. Status: **agreed** (part of the API ground
 
 ## Linking a character
 
-- Linking goes straight from the app to EVE SSO, separate from sign-in, with the authorization code flow, a random
-  `state` and PKCE. The redirect comes back to the app.
+- Linking goes straight from the app to EVE SSO, separate from sign-in, with the authorization code flow and a random
+  `state`. The redirect comes back to the app. The app is a confidential client with a secret, so it uses the secret
+  (HTTP Basic at the token endpoint) and not PKCE: the EVE documentation presents the two as alternatives, PKCE being
+  for clients that cannot keep a secret. The first build changed this from "state and PKCE" on 2026-11-09.
+  **PKCE comes back if EveAssist ever has a client that cannot keep a secret**: a React or other single-page front
+  end, a mobile or desktop app, or anything that runs the linking flow itself against the [REST API](api.md) (which
+  already uses PKCE for third-party applications). Then the authorization request adds `code_challenge` and
+  `code_challenge_method=S256`, and the token request sends `code_verifier` and `client_id` in place of the secret. The
+  EVE developer application for such a client is registered as a separate public application, not by weakening this
+  one. Until then the server-rendered pages keep the secret flow.
 - It uses its own EVE developer application, registered with every scope that any feature uses, separate from the
   application that Keycloak uses for "sign in with EVE". Each authorization request asks only for the scopes of the
   features that are turned on. Signing in then never asks for scopes, and linking never creates a Keycloak
   identity.
 - After the code exchange, the access token is validated as the EVE SSO documentation says. The JWKS URL is read from
   `https://login.eveonline.com/.well-known/oauth-authorization-server` and cached. `iss` must be
-  `https://login.eveonline.com/` or `login.eveonline.com`, `aud` must contain both the client id and `"EVE Online"`,
+  `https://login.eveonline.com/`, `https://login.eveonline.com` or `login.eveonline.com` (the EVE documentation's text
+  names the first and last, and its own validation example accepts the second, found 2026-11-09), `aud` must contain both the client id and `"EVE Online"`,
   and `exp` is checked. The character id comes from `sub` (`CHARACTER:EVE:<id>`), the granted scopes from `scp` and
   the owner hash from `owner`.
 - The `character` row is unique on the EVE character id, so a character that is on another account is refused.
@@ -110,6 +119,69 @@ Status: **agreed**.
   marks the character as missing it, and only the features that need it ask for re-authorization.
 
 Status: **agreed** (follows from the requirements).
+
+## First build: linking for pilot inventory
+
+Added 2026-11-09 for [Pilot inventory](../requirements/pilot-inventory.md). It builds the parts above that inventory
+needs, in their final shape, and none of the rest (no KMS, no admin unlink, no owner-hash alert). Status: **proposed**.
+
+**Module and tables.** The `characters` module holds `character` (account, EVE character id unique, name, owner hash,
+granted scopes, state: active or needs re-authorization, linked at), `character_token` (character, encrypted refresh
+token, nonce, key id, replaced at each refresh) and `account_feature` (account, feature, turned on at). Deleting a
+character cascades to its token and, later, to its ESI data.
+
+**Features and scopes.** A `Feature` enum in `characters` maps each feature to its read-only scopes. The first is
+`INVENTORY`: `esi-assets.read_assets.v1` and `esi-universe.read_structures.v1`. The account turns features on and off
+(the developer decided on 2026-11-09 to build the toggle now). An authorization request asks for the union of the
+scopes of the turned-on features. Turning a feature on marks each linked character that lacks its scopes as needing
+them, and the Characters page offers re-authorization. The EVE developer application is registered with the scopes of
+every planned feature, which is allowed because a request may ask for fewer than the registration lists.
+
+**The Characters page.** A page of its own, with a card per character (portrait, name, state, granted scopes, Remove),
+a Link a character button and the feature toggles. It grows into the scope page and fetch log in
+[Gaining players' trust](../requirements/gain-trust.md).
+
+**Dropping permissions.** A token's scopes are fixed when the player consents, and the EVE documentation describes no way
+to narrow them. Turning a feature off therefore only stops using it and changes what the next link asks for. The
+character's card lists the scopes it granted that no turned-on feature uses as "not in use", and offers **Drop unused
+permissions**: EveAssist revokes the refresh token at EVE, deletes its own copy, marks the character as needing
+re-authorization (its stored data stays) and sends the browser straight on to link it again with only the scopes the
+turned-on features need. The developer chose this on 2026-11-09 over revoking automatically when a feature is turned
+off, which one click could turn into re-linking every character.
+
+Revocation uses the `revocation_endpoint` in EVE SSO's metadata (`https://login.eveonline.com/v2/oauth/revoke`),
+authenticated like the token endpoint, with `token` and `token_type_hint=refresh_token`. The EVE documentation pages do
+not describe it (found 2026-11-09). The same call is made when a character is **removed** and when it is **linked
+again**, so the old token does not stay valid at EVE after our copy is gone. Our own deletion never waits for EVE: when
+EVE does not confirm, the page says the old access may still be valid and where to revoke it by hand. A refused link
+(a character on another account) never revokes anything, because only the owner's own token is looked up.
+
+**Portraits.** Pages load nothing from third parties, so the server downloads a character's 128 px portrait from EVE's
+image server once, when the character is linked or re-linked, and stores it in the `character` row (about 10 KB). The
+page serves it from `GET /characters/{id}/portrait`, to the owner only, with a private one-day cache header. The image
+server is not ESI, takes no token and sends nothing about the user. When it does not answer, the card shows initials.
+The portrait is deleted with the character. The developer chose this on 2026-11-09 over a cache fetched on demand.
+
+**The flow.** `GET /characters/link` creates a random `state`, keeps it in the session, and redirects to
+`https://login.eveonline.com/v2/oauth/authorize`. `GET /characters/link/callback` checks `state`, exchanges the code
+once (the state is used up by the first callback), with the client secret, validates the token as described under
+[Linking a character](#linking-a-character), and stores the character and the encrypted refresh token. A character on
+another account is refused with a message. Linking a character already on this account renews its token and scopes.
+It is a normal request, not a background task. The client id and secret are `EVE_LINK_CLIENT_ID` and
+`EVE_LINK_CLIENT_SECRET`.
+
+**Encryption in dev.** `EVE_TOKEN_DATA_KEY` (32 random bytes, base64) in `Infrastructure/.env` is the data key. The
+code reads it through a `DataKeyProvider` with the key id. The KMS version is a second implementation later, so no
+stored format changes.
+
+**How `esi` gets a token.** `esi` must not depend on `characters`, so it owns a small port, `AccessTokens`
+(`accessToken(characterId, requiredScope)`), which `characters` implements. It refreshes under the advisory lock when
+fewer than 60 seconds are left, refuses a call whose scope the character lacks, and marks the character as needing
+re-authorization on `invalid_grant`. `EsiClient` gets authenticated methods that take a character id, with the same
+cache, limits and error handling as the public ones, the cache keyed by character and route. Assets are the first.
+
+**Tests.** Unit tests cover the token rules with a fake EVE SSO. An integration test covers the callback, with the
+refusal of a character on another account and the cascade on removal. Template tests cover the Characters page.
 
 ## Admins
 

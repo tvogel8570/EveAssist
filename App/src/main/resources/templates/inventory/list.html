@@ -1,0 +1,70 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: page(~{::title}, ~{::main})}">
+<head><title th:text="#{inventory.title}">Inventory</title></head>
+<body>
+<main class="max-w-7xl mx-auto p-3 sm:p-4">
+    <div class="flex flex-wrap items-center gap-2 mb-3">
+        <h1 class="text-xl font-semibold" th:text="#{inventory.title}">Inventory</h1>
+        <span class="grow"></span>
+        <form method="post" th:action="@{/inventory/refresh}">
+            <button id="refresh-assets" class="btn btn-primary btn-sm" type="submit" th:text="#{inventory.refresh}">Refresh</button>
+        </form>
+    </div>
+    <p class="text-sm opacity-70 mb-3" th:text="#{inventory.note}">EVE keeps its copy for a while, so a refresh may find nothing new.</p>
+
+    <th:block th:replace="~{inventory/fragments :: status}"></th:block>
+
+    <!--
+      The filter is a form that asks for this same address. Each change comes back as the list only, and the address is
+      pushed, so the page can be reloaded, bookmarked and sent. A tick, the sort and a typed number ask when they change;
+      the search also asks after a pause in typing, and Enter asks too instead of reloading the page.
+    -->
+    <form id="browse-form" method="get" th:action="@{/inventory}" class="card bg-base-200 mb-3" th:if="${view.hasAssets}"
+          th:attr="hx-get=@{/inventory}" hx-target="#browse" hx-push-url="true" hx-sync="this:replace"
+          hx-indicator="#request-indicator"
+          hx-trigger="change, submit">
+        <div class="card-body p-3 gap-2">
+            <input type="hidden" name="ui" value="1">
+            <div th:replace="~{inventory/browse :: state(false)}"></div>
+            <div class="flex flex-wrap gap-2 items-center">
+                <input id="inventory-search" type="search" name="q" th:value="${search}" autocomplete="off"
+                       class="input input-sm grow min-w-40" th:placeholder="#{inventory.search}"
+                       th:aria-label="#{inventory.search}"
+                       th:attr="hx-get=@{/inventory}" hx-include="#browse-form" hx-target="#browse"
+                       hx-push-url="true" hx-trigger="input changed delay:300ms, search" hx-sync="#browse-form:replace">
+                <details id="add-filter" class="dropdown dropdown-end" data-autoclose>
+                    <summary class="btn btn-sm btn-outline" th:text="#{inventory.addFilter}">+ Add filter</summary>
+                    <ul class="menu dropdown-content bg-base-300 rounded-box z-30 w-56 p-2 shadow">
+                        <li th:each="column : ${columns}">
+                            <a th:attr="hx-get=@{/inventory/filter/{column}(column=${column[0]})}" hx-include="#browse-form"
+                               hx-target="#filter-pop" hx-swap="innerHTML" th:text="${column[1]}">Category</a>
+                        </li>
+                    </ul>
+                </details>
+            </div>
+            <div class="flex flex-wrap gap-x-4 gap-y-2 items-center">
+                <label class="flex items-center gap-2 text-sm cursor-pointer">
+                    <input id="show-characters" type="checkbox" name="chars" value="1" class="toggle toggle-sm toggle-primary"
+                           th:checked="${filter.showCharacters}">
+                    <span th:text="#{inventory.showCharacters}">Show characters</span>
+                </label>
+                <label class="flex items-center gap-2 text-sm">
+                    <span th:text="#{inventory.sort}">Sort</span>
+                    <select id="inventory-sort" name="sort" class="select select-sm">
+                        <option value="total" th:selected="${sort == 'total'}" th:text="#{inventory.sort.total}">Most units</option>
+                        <option value="name" th:selected="${sort == 'name'}" th:text="#{inventory.sort.name}">Name</option>
+                        <option value="category" th:selected="${sort == 'category'}" th:text="#{inventory.sort.category}">Category</option>
+                    </select>
+                </label>
+            </div>
+            <div id="filter-pop"></div>
+        </div>
+    </form>
+
+    <div id="browse" th:attr="hx-get=@{/inventory}" hx-include="#browse-form" hx-trigger="browse-refresh from:body"
+         hx-swap="innerHTML">
+        <th:block th:replace="~{inventory/browse :: results}"></th:block>
+    </div>
+</main>
+</body>
+</html>

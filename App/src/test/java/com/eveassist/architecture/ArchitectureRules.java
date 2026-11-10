@@ -143,6 +143,7 @@ final class ArchitectureRules {
                         .filter(d -> d.getTargetClass().getPackageName().equals(moduleBase))
                         .filter(d -> !isData(d.getTargetClass()))
                         .filter(d -> !isImplementingItsOwnInterface(internal, d.getTargetClass()))
+                        .filter(d -> !isOutboundPort(d.getTargetClass()))
                         .forEach(d -> events.add(violated(internal, d.getDescription())));
             }
         };
@@ -156,6 +157,16 @@ final class ArchitectureRules {
     /** An interface in the base package is the module's API, and its production implementation lives in internal. */
     private static boolean isImplementingItsOwnInterface(JavaClass internal, JavaClass target) {
         return target.isInterface() && internal.isAssignableTo(target.getName());
+    }
+
+    /**
+     * A port that the module calls and another module implements, such as the access tokens the {@code esi} module asks
+     * the {@code characters} module for. It has to be in the base package for the other module to see it, and calling it
+     * is the point, so it is not the facade-called-from-inside case. It must be marked, so that a facade cannot pass as one.
+     */
+    private static boolean isOutboundPort(JavaClass target) {
+        return target.isInterface()
+                && target.isAnnotatedWith(org.jmolecules.architecture.hexagonal.SecondaryPort.class);
     }
 
     private static boolean isData(JavaClass target) {

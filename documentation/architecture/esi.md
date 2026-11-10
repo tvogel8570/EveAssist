@@ -135,6 +135,46 @@ requirements make the share a user setting, and they would add a third-party ser
 
 Status: **agreed** (follows from the requirements).
 
+## Character assets
+
+Status: **proposed** (added 2026-11-09 with the asset fetch).
+
+- **Route and scope**: `GET /characters/{character_id}/assets` needs `esi-assets.read_assets.v1` and is in the
+  `char-asset` group (1,800 tokens per 15 minutes per character). The client reads it through its pages like other
+  routes, caches it per character and route (`ETag`, `Expires`), and sends the character's access token as a bearer
+  token. The token comes from the `AccessTokens` port, which the `characters` module implements (see
+  [Refreshing access tokens](identity-and-tokens.md#refreshing-access-tokens)). The scope is checked before the call,
+  so a character that did not grant it costs no request. After a 401 the token is forgotten and the request is made
+  once more with a fresh one, never in a loop.
+- **When it runs**: opening the inventory page, or its Refresh button, queues one task per character that can be
+  fetched, on virtual threads. ESI's cache time decides whether ESI is asked at all, so opening the page again costs
+  nothing while its copy is current. A character already being fetched is skipped (an in-memory flag per character). The
+  page shows stored data at once and polls a status block every two seconds while a task runs.
+- **Storage**: each fetch replaces the character's rows in one transaction (`character_asset`, no history), after the
+  ESI call and never inside it. `character_fetch` records when ESI last answered, when the rows last changed, how many
+  rows there are and the last problem. A failed fetch keeps the stored rows and their age.
+- **Found 2026-11-09, against real data (not in ESI's documentation)**: the OpenAPI spec lists `location_type` as
+  `station`, `solar_system`, `item` or `other` and says nothing more. For items in a player structure, real ESI answers
+  `item`, not `other`, with the structure's id (above 1,000,000,000,000) as `location_id`. One character had 176 items in
+  15 structures, all typed `item`. So a top-level item is found by its `location_id` not being the `item_id` of another
+  item in the same list, never by `location_type`. NPC stations (about 60,000,000 to 64,000,000) and solar systems
+  (about 30,000,000 to 33,000,000) can be named from the SDE, and a structure id (above 1,000,000,000,000) needs ESI.
+  Blueprint copies have `is_blueprint_copy` true. Originals have no value, like every other item, so a blueprint
+  original is told by the SDE's blueprint category. The `Deliveries` and `AssetSafety` flags also occur in real data.
+- **Structure names**: `GET /universe/structures/{structure_id}` needs `esi-universe.read_structures.v1`, is asked
+  with the character's token and has no rate-limit group in the OpenAPI spec, so only the error limit applies. ESI
+  answers 200 with a name only for a character that may dock there, and 403 (or 404 for a structure that is gone), which
+  the spec does not list. Every 403 counts toward the error limit, so after storing a character's assets (and also when
+  ESI said nothing changed, to finish an earlier run) the app asks about the structures where that character has
+  top-level items and nothing current is known: at most 25 per run, new ones first, stopping after 5 refusals. A name is
+  trusted for 7 days, a refusal for 1 day and a "not found" for 7 days. A failure (throttled, down, no token) stops the
+  run and is not kept. Answers are stored per character (`character_structure`) and go with the character, but a name
+  one character learned is used for every other character of the same account, because it is the same person's data
+  (the developer decided this on 2026-11-09). That also saves calls: a structure that a character of the account has
+  named within the week is not asked about again, so it costs no 403. A name is never used for another account, and an
+  account that cannot dock somewhere never learns the name through another account. Status: **proposed**.
+- **Not yet**: the checkpoint under [Background fetches](#background-fetches) for the `char-asset` group.
+
 ## Alerts
 
 - Every alert is a row in Postgres: account, kind (job finished, project blocked, contract accepted or completed,

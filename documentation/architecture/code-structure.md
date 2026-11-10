@@ -112,6 +112,11 @@ What follows:
   without an interface.
 - **Guardrail**, part of the ArchUnit rules from day 1 (see [Verification](#verification)): a rule that nothing in `industry.internal` depends on the `industry` base package
   except its records and events catches a facade that is called from inside its own module, which Modulith misses.
+  The one exception is an **outbound port**: an interface in the base package marked with jMolecules' `@SecondaryPort`
+  that the module calls and another module implements, such as `esi`'s `AccessTokens`, which `characters` implements so
+  that `esi` depends on nothing. It has to be in the base package for the other module to see it. The mark is required,
+  so a facade cannot pass as a port, and a fixture in the rule's own tests proves both. This was added on 2026-11-09 for
+  the asset fetch and is **proposed**, because it loosens a check the developer agreed.
 
 ### Pages, the API and the facade
 

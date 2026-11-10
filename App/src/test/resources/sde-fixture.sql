@@ -1,8 +1,24 @@
 CREATE TABLE sde.sde_version (name text NOT NULL, imported_at timestamptz NOT NULL DEFAULT now());
 INSERT INTO sde.sde_version (name) VALUES ('test-sde');
 
-CREATE TABLE sde."invGroups" ("groupID" integer PRIMARY KEY, "groupName" varchar(100));
-INSERT INTO sde."invGroups" VALUES (1, 'Ship'), (2, 'Component'), (3, 'Mineral'), (4, 'Blueprint');
+CREATE TABLE sde."invCategories" ("categoryID" integer PRIMARY KEY, "categoryName" varchar(100));
+INSERT INTO sde."invCategories" VALUES (4, 'Material'), (6, 'Ship'), (9, 'Blueprint'), (17, 'Commodity');
+
+CREATE TABLE sde."invGroups" ("groupID" integer PRIMARY KEY, "categoryID" integer, "groupName" varchar(100));
+INSERT INTO sde."invGroups" VALUES (1, 6, 'Ship'), (2, 17, 'Component'), (3, 4, 'Mineral'), (4, 9, 'Blueprint');
+
+-- Where assets can be: real ids and names, a few of each, for the inventory page
+CREATE TABLE sde."mapRegions" ("regionID" integer PRIMARY KEY, "regionName" varchar(100));
+INSERT INTO sde."mapRegions" VALUES (10000002, 'The Forge'), (10000043, 'Domain');
+
+CREATE TABLE sde."mapSolarSystems" ("solarSystemID" integer PRIMARY KEY, "regionID" integer, "solarSystemName" varchar(100));
+INSERT INTO sde."mapSolarSystems" VALUES (30000142, 10000002, 'Jita'), (30002187, 10000043, 'Amarr');
+
+CREATE TABLE sde."staStations" ("stationID" bigint PRIMARY KEY, "solarSystemID" integer, "regionID" integer,
+    "stationName" varchar(100));
+INSERT INTO sde."staStations" VALUES
+    (60003760, 30000142, 10000002, 'Jita IV - Moon 4 - Caldari Navy Assembly Plant'),
+    (60008494, 30002187, 10000043, 'Amarr VIII (Oris) - Emperor Family Academy');
 
 CREATE TABLE sde."invTypes" ("typeID" integer PRIMARY KEY, "groupID" integer, "typeName" varchar(100), published boolean);
 INSERT INTO sde."invTypes" VALUES
