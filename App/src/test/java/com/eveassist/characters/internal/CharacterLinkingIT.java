@@ -111,7 +111,7 @@ class CharacterLinkingIT extends IntegrationTest {
     }
 
     @Test
-    void linkingAgainRevokesTheOldTokenAtEveAndKeepsTheNewOne() throws Exception {
+    void linkingAgainKeepsTheNewTokenAndDoesNotRevokeTheOldOneBecauseThatEndsTheNewOneToo() throws Exception {
         var sub = newSub();
         var viewer = viewerFor(sub);
         features.turnOn(viewer.accountId(), Feature.INVENTORY);
@@ -124,7 +124,7 @@ class CharacterLinkingIT extends IntegrationTest {
                         .with(signedInAs(sub)).cookie(session))
                 .andExpect(redirectedUrl("/characters?linking=RENEWED"));
 
-        assertThat(sso.revoked).containsExactly("old-token");
+        assertThat(sso.revoked).isEmpty();
         assertThat(cipher.decrypt(eveId, characters.findToken(eveId).orElseThrow())).isEqualTo("new-token");
     }
 
