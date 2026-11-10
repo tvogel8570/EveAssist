@@ -204,7 +204,7 @@ class InventoryController {
         var out = response.getWriter();
         var header = new String[] {"inventory.csv.item", "inventory.csv.category", "inventory.csv.group",
                 "inventory.csv.character", "inventory.csv.place", "inventory.csv.region", "inventory.csv.how",
-                "inventory.csv.quantity", "inventory.csv.blueprint", "inventory.csv.hangar"};
+                "inventory.csv.quantity", "inventory.csv.blueprint", "inventory.csv.hangar", "inventory.csv.container"};
         out.write(csvLine(java.util.Arrays.stream(header).map(key -> messages.getMessage(key, null, key, locale))
                 .toArray(String[]::new)));
         for (var line : browse.export(viewer, filter)) {
@@ -231,6 +231,13 @@ class InventoryController {
         return line.append("\r\n").toString();
     }
 
+    /** The names of the characters in any of the phases, in alphabetical order. */
+    private static List<String> namesIn(List<AssetFetcher.CharacterAssets> statuses, AssetFetcher.Phase... phases) {
+        var wanted = java.util.EnumSet.copyOf(java.util.Arrays.asList(phases));
+        return statuses.stream().filter(status -> wanted.contains(status.phase()))
+                .map(AssetFetcher.CharacterAssets::name).sorted(String.CASE_INSENSITIVE_ORDER).toList();
+    }
+
     private void fillStatus(Viewer viewer, Model model) {
         var statuses = fetcher.status(viewer);
         model.addAttribute("rows", statuses.stream()
@@ -246,6 +253,10 @@ class InventoryController {
         model.addAttribute("failed", counts.getOrDefault(AssetFetcher.Phase.FAILED, 0));
         model.addAttribute("needAttention", counts.getOrDefault(AssetFetcher.Phase.NEEDS_REAUTHORIZATION, 0)
                 + counts.getOrDefault(AssetFetcher.Phase.MISSING_SCOPE, 0));
+        // who the two failure badges count, for their hover
+        model.addAttribute("failedNames", namesIn(statuses, AssetFetcher.Phase.FAILED));
+        model.addAttribute("needAttentionNames", namesIn(statuses, AssetFetcher.Phase.NEEDS_REAUTHORIZATION,
+                AssetFetcher.Phase.MISSING_SCOPE));
         model.addAttribute("running", fetcher.anyRunning(viewer) || corporationFetcher.anyRunning(viewer));
         var corporations = corporationFetcher.status(viewer);
         model.addAttribute("corporationsOn", corporationFetcher.enabled(viewer));

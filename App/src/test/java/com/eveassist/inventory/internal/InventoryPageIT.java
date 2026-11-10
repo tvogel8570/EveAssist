@@ -140,6 +140,51 @@ class InventoryPageIT extends IntegrationTest {
     }
 
     @Test
+    void theFailureBadgesNameTheCharactersTheyCountOnHover() throws Exception {
+        var sub = newSub();
+        var viewer = viewerFor(sub);
+        link(viewer, "Zed Refused", "NEEDS_REAUTHORIZATION", ASSETS);
+        link(viewer, "Amy No Scope", "ACTIVE", "esi-universe.read_structures.v1");
+        link(viewer, "Evil <b>\"Name\"", "NEEDS_REAUTHORIZATION", ASSETS);
+        var broken = link(viewer, "Fay Failed", "ACTIVE", ASSETS);
+        link(viewer, "Fine One", "ACTIVE", ASSETS);
+        esi.failAssets(broken, "ESI is throttling char-asset for another 9 s");
+        mvc.perform(get("/inventory/status").param("start", "1").with(signedInAs(sub)));
+        awaitIdle(viewer);
+
+        var page = mvc.perform(get("/inventory/status").with(signedInAs(sub)))
+                .andExpect(status().isOk())
+                .andExpect(content().string(not(containsString("??"))))
+                .andReturn().getResponse().getContentAsString();
+
+        // the badge for characters that need authorization lists them, sorted, with a name from the game escaped
+        assertThat(page).contains("title=\"Amy No Scope, Evil &lt;b&gt;&quot;Name&quot;, Zed Refused\"");
+        assertThat(page).contains("aria-label=\"3 need authorization: Amy No Scope, Evil &lt;b&gt;&quot;Name&quot;, Zed Refused\"");
+        // the badge for a failed fetch lists its character
+        assertThat(page).contains("title=\"Fay Failed\"");
+        // no markup from a name gets into the page, and the badge keeps its words and classes
+        assertThat(page).doesNotContain("<b>\"Name\"");
+        assertThat(page).contains("badge badge-error badge-outline py-3").contains("3 need authorization")
+                .contains("1 could not update");
+        // the badge for characters that are fine has no list
+        assertThat(page).doesNotContain("Fine One, ").doesNotContain("title=\"Fine One\"");
+    }
+
+    @Test
+    void aBadgeWithNoNamesIsPlain() throws Exception {
+        var sub = newSub();
+        var viewer = viewerFor(sub);
+        link(viewer, "Only One", "ACTIVE", ASSETS);
+        mvc.perform(get("/inventory/status").param("start", "1").with(signedInAs(sub)));
+        awaitIdle(viewer);
+
+        var page = mvc.perform(get("/inventory/status").with(signedInAs(sub))).andReturn().getResponse()
+                .getContentAsString();
+
+        assertThat(page).doesNotContain("need authorization").doesNotContain("could not update");
+    }
+
+    @Test
     void keepsPollingOnlyWhileAFetchRuns() throws Exception {
         var sub = newSub();
         var viewer = viewerFor(sub);

@@ -16,8 +16,13 @@
                 <span class="loading loading-spinner loading-xs" th:if="${running}"></span>
                 <span th:text="#{inventory.status.waiting(${waiting})}">1 updating</span>
             </span>
-            <span class="badge badge-warning badge-outline py-3" th:if="${failed > 0}" th:text="#{inventory.status.failed(${failed})}">1 could not update</span>
-            <span class="badge badge-error badge-outline py-3" th:if="${needAttention > 0}" th:text="#{inventory.status.attention(${needAttention})}">1 needs authorization</span>
+            <!-- th:replace runs before th:if on one element, so the condition is on a block around it -->
+            <th:block th:if="${failed > 0}">
+                <span th:replace="~{fragments/badges :: withNames('badge badge-warning badge-outline py-3', #{inventory.status.failed(${failed})}, ${failedNames})}">1 could not update</span>
+            </th:block>
+            <th:block th:if="${needAttention > 0}">
+                <span th:replace="~{fragments/badges :: withNames('badge badge-error badge-outline py-3', #{inventory.status.attention(${needAttention})}, ${needAttentionNames})}">1 needs authorization</span>
+            </th:block>
         </summary>
         <div class="overflow-x-auto px-3 pb-3">
             <table class="table table-sm">
