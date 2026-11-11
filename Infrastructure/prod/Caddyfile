@@ -1,0 +1,31 @@
+# Prod proxy: ends TLS with Let's Encrypt certificates and forwards to the app and to Keycloak. The names come from
+# prod.env. Caddy sets X-Forwarded-For, -Proto and -Host itself and discards any the client sent.
+{
+	email {$ACME_EMAIL}
+}
+
+(security_headers) {
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		X-Frame-Options DENY
+		-Server
+	}
+}
+
+{$DOMAIN} {
+	import security_headers
+	encode zstd gzip
+	reverse_proxy app:7444
+}
+
+{$AUTH_DOMAIN} {
+	import security_headers
+	# The admin console and the master realm are for the operator and are reached through a tunnel to the instance
+	# (see documentation/runbooks/initial-deployment.md), never from the internet.
+	@operator path /admin /admin/* /realms/master /realms/master/* /metrics /metrics/*
+	respond @operator 404
+	encode zstd gzip
+	reverse_proxy keycloak:8080
+}

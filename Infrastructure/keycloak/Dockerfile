@@ -28,3 +28,6 @@ COPY --from=ubi-micro-build /mnt/rootfs /
 # continue with snc specific files
 USER 1000
 COPY --from=builder /opt/keycloak/ /opt/keycloak/
+# the realm is imported when the database holds none. Dev bind-mounts the same file over this one. Prod relies on this copy,
+# so an image and the realm it imports are one version. The file has placeholders only; the secrets come from the environment.
+COPY --chown=1000:0 EveAssist-realm-export.json /opt/keycloak/data/import/EveAssist-realm-export.json

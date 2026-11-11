@@ -35,7 +35,7 @@
   "duplicateEmailsAllowed": true,
   "resetPasswordAllowed": false,
   "editUsernameAllowed": false,
-  "bruteForceProtected": false,
+  "bruteForceProtected": true,
   "permanentLockout": false,
   "maxTemporaryLockouts": 0,
   "bruteForceStrategy": "MULTIPLE",

@@ -111,3 +111,22 @@ eveassist:
   dev:
     # Keycloak's dev certificate comes from a private CA, so the JVM does not trust it by default
     trusted-certificate: ../Infrastructure/keycloak/dev.eveassist.com.crt
+---
+# Prod runs behind Caddy, which ends TLS (see documentation/architecture/deployment.md). Nothing publishes the app's port,
+# so only containers on the Compose network reach it.
+spring:
+  config:
+    activate:
+      on-profile: prod
+server:
+  # "native" is Tomcat's RemoteIpValve. Unlike "framework" it also replaces the remote address with the one Caddy puts in
+  # X-Forwarded-For, which /try limits visitors by. It trusts that header only from private addresses (the Compose network).
+  forward-headers-strategy: native
+management:
+  server:
+    # A port of its own, not published and not proxied: the health check and the operator's tunnel reach it, nobody else.
+    port: 8081
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics
