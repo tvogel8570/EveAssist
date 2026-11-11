@@ -48,6 +48,7 @@ class TryPlanPagesIT extends IntegrationTest {
                 .andExpect(content().string(containsString("We do not keep your plan")))
                 .andExpect(content().string(containsString("All prices are Jita 4-4 only")))
                 .andExpect(content().string(containsString("id=\"try-state\"")))
+                .andExpect(content().string(containsString("id=\"try-sign-in\"")))
                 .andExpect(content().string(not(containsString("refresh-prices"))))
                 .andExpect(content().string(not(containsString("new-plan"))));
     }
