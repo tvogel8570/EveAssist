@@ -18,6 +18,19 @@
         </div>
     </section>
 
+    <!--/* For anyone without Plans in the top bar (that needs the USER role): a visitor, or someone signed in without it. */-->
+    <section id="try-plan" sec:authorize="!hasRole('USER')" class="mb-8">
+        <div class="card bg-base-200 shadow-sm">
+            <div class="card-body">
+                <h2 class="card-title text-2xl" th:text="#{home.try.title}">Try a plan without signing in</h2>
+                <p th:text="#{home.try.text}">Text</p>
+                <div class="card-actions">
+                    <a id="try-plan-button" class="btn btn-primary" th:href="@{/try}" th:text="#{home.try.button}">Try a plan</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <section id="first-steps" class="mb-10">
         <h2 class="text-2xl font-semibold mb-1" th:text="#{home.steps.title}">Your first steps</h2>
         <p class="mb-4" th:text="#{home.steps.intro}">Intro</p>

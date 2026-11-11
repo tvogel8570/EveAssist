@@ -3,6 +3,7 @@ package com.eveassist.industry.internal.web;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.oidcLogin;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -14,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.jdbc.core.simple.JdbcClient;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
@@ -43,11 +45,32 @@ class TryPlanPagesIT extends IntegrationTest {
         mvc.perform(get("/try"))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("Try a plan")))
-                .andExpect(content().string(containsString("Nothing here is saved on our server")))
+                .andExpect(content().string(containsString("We do not keep your plan")))
                 .andExpect(content().string(containsString("All prices are Jita 4-4 only")))
                 .andExpect(content().string(containsString("id=\"try-state\"")))
                 .andExpect(content().string(not(containsString("refresh-prices"))))
                 .andExpect(content().string(not(containsString("new-plan"))));
+    }
+
+    @Test
+    void theLandingPageOffersTheTryPageToAnyoneWithoutThePlansLink() throws Exception {
+        mvc.perform(get("/"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("id=\"try-plan\"")))
+                .andExpect(content().string(containsString("id=\"try-plan-button\"")))
+                .andExpect(content().string(containsString("Try a plan without signing in")));
+
+        // signed in but without the USER role: no Plans link in the top bar, so the card is still the way in
+        mvc.perform(get("/").with(oidcLogin().idToken(token -> token.subject("no-role-sub"))))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("id=\"try-plan-button\"")));
+
+        accounts.signedIn("landing-sub", "Test Pilot");
+        mvc.perform(get("/").with(oidcLogin().idToken(token -> token.subject("landing-sub"))
+                        .authorities(new SimpleGrantedAuthority("ROLE_USER"))))
+                .andExpect(status().isOk())
+                .andExpect(content().string(not(containsString("id=\"try-plan\""))))
+                .andExpect(content().string(not(containsString("id=\"try-plan-button\""))));
     }
 
     @Test
