@@ -19,6 +19,7 @@
         <spring-modulith.version>2.1.2</spring-modulith.version>
         <jmolecules-bom.version>2025.0.2</jmolecules-bom.version>
         <archunit.version>1.5.1</archunit.version>
+        <aws-sdk.version>2.57.6</aws-sdk.version>
         <playwright.version>1.64.0</playwright.version>
         <frontend-maven-plugin.version>2.0.2</frontend-maven-plugin.version>
         <node.version>v26.13.0</node.version>
@@ -40,6 +41,13 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>bom</artifactId>
+                <version>${aws-sdk.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -47,6 +55,33 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webmvc</artifactId>
+        </dependency>
+        <!-- Unwraps the token data key in prod (KmsDataKeyProvider), once at start-up. The SDK must not bring Apache HttpClient:
+             Spring's RestClient picks it whenever it is on the classpath, and its default of 5 connections per route would
+             cap every ESI call below the configured simultaneous calls (HttpEsiClientConcurrencyTest fails then). The SDK
+             renamed its Apache artifact once (apache-client, now apache5-client), so after an SDK upgrade check that
+             `./mvnw dependency:tree` still lists no httpclient5. -->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>kms</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>software.amazon.awssdk</groupId>
+                    <artifactId>apache-client</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>software.amazon.awssdk</groupId>
+                    <artifactId>apache5-client</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>software.amazon.awssdk</groupId>
+                    <artifactId>netty-nio-client</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>url-connection-client</artifactId>
         </dependency>
         <!-- Metrics for the concurrency triggers in documentation/runbooks/concurrency-tuning.md. Admin only. -->
         <dependency>

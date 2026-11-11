@@ -64,7 +64,10 @@ spring:
       read-timeout: 30s
 eveassist:
   characters:
+    # dev: the key itself. prod: the key wrapped by KMS and the KMS key that wrapped it (see KmsDataKeyProvider)
     token-data-key: ${EVE_TOKEN_DATA_KEY:}
+    token-data-key-wrapped: ${EVE_TOKEN_DATA_KEY_WRAPPED:}
+    kms-key-id: ${EVE_KMS_KEY_ID:}
     sso:
       client-id: ${EVE_LINK_CLIENT_ID:}
       client-secret: ${EVE_LINK_CLIENT_SECRET:}

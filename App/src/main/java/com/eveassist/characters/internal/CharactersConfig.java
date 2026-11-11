@@ -4,18 +4,23 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
+import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
+import software.amazon.awssdk.services.kms.KmsClient;
 
 @Configuration
 @EnableConfigurationProperties(EveSsoProperties.class)
 class CharactersConfig {
 
     @Bean
-    DataKeyProvider dataKeyProvider(@Value("${eveassist.characters.token-data-key:}") String base64Key) {
-        if (base64Key.isBlank()) {
-            throw new IllegalStateException(
-                    "Set EVE_TOKEN_DATA_KEY (32 random bytes in base64, for example from `openssl rand -base64 32`)");
-        }
-        return new EnvDataKeyProvider(base64Key);
+    DataKeyProvider dataKeyProvider(Environment environment,
+            @Value("${eveassist.characters.token-data-key:}") String envKey,
+            @Value("${eveassist.characters.token-data-key-wrapped:}") String wrappedKey,
+            @Value("${eveassist.characters.kms-key-id:}") String kmsKeyId) {
+        return DataKeyProviders.choose(envKey, wrappedKey, kmsKeyId, environment.acceptsProfiles(Profiles.of("prod")),
+                // credentials from the instance role, the region from AWS_REGION
+                () -> KmsClient.builder().httpClient(UrlConnectionHttpClient.create()).build());
     }
 
     @Bean

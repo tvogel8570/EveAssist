@@ -92,8 +92,12 @@ Status: **agreed** (separate application); the validation rules follow the EVE S
 - Each refresh token is encrypted in the app with AES-256-GCM before it is written. Each token gets a random 96-bit
   nonce, and the character id and key id are the associated data, so a ciphertext copied to another row does not
   decrypt.
-- The data key is wrapped by an AWS KMS key. At startup the app asks KMS to unwrap it once and holds it in memory. In
-  dev the data key comes from `env.properties`, which is not committed, as `CLAUDE.md` describes.
+- The data key is wrapped by an AWS KMS key. At startup the app asks KMS to unwrap it once and holds it in memory
+  (`KmsDataKeyProvider`), and a start-up that cannot reach KMS fails. The wrapped key is made with the encryption context
+  `purpose=eveassist-refresh-tokens`, which KMS checks again on every unwrap and records in CloudTrail. The key id stored with
+  each token is derived from the wrapped key (`kms-` and twelve hex digits of its SHA-256), so it is the same at every start. In
+  dev the data key comes from `env.properties`, which is not committed, as `CLAUDE.md` describes. The prod profile refuses a
+  plain key from the environment, so a prod start with a mistaken setting fails instead of weakening the protection.
 - Each stored token records the id of the key that encrypted it. To rotate, a new data key is added and used for new
   writes. A refresh stores the newest refresh token EVE returns, but EVE returned the same token every time when this was
   checked (2026-11-10), so use alone does not move a token to the new key. Tokens left on the old key are re-encrypted by

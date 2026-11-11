@@ -76,7 +76,7 @@ On the instance (`/opt/eveassist`):
 - [ ] Open the specific feature changed, in its normal and error cases.
 - [ ] `/try` still answers and its limits still count per visitor.
 - [ ] Log lines: no new ERROR pattern, no `Connection is not available`, no ESI 420 or 429 in the first 15 minutes.
-- [ ] `/actuator/metrics/hikaricp.connections.pending` is near 0 (signed in as admin).
+- [ ] `hikaricp.connections.pending` is near 0 (`/actuator/metrics/` on management port 8081, through the tunnel in the initial runbook, step 9).
 
 ## 7. Record
 

@@ -43,7 +43,10 @@ If none of these fit and the app is slow, do not change settings first. Look at 
 Added 2026-11-10. The app exposes a few metrics through Spring Boot Actuator, on its own address and port, for a signed-in
 user with the admin role only. Nothing else of the actuator is exposed (no health, environment or heap dump), and an
 ordinary user or a signed-out visitor is refused. Open them in the browser while signed in as an admin, or ask for the
-list at `/actuator/metrics`:
+list at `/actuator/metrics`. In dev that is the app's own port. In prod (the `prod` profile) the actuator is on management
+port 8081, which nothing publishes and which has no sign-in: forward the port through an SSM session (initial-deployment.md,
+step 9) and open `http://localhost:8081/actuator/metrics`. Health (`/actuator/health`) is exposed there too, and only there.
+The metrics:
 
 | Metric (`/actuator/metrics/<name>`) | What it says |
 |---|---|

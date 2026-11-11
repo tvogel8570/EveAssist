@@ -87,6 +87,10 @@ services:
       EVE_LINK_CLIENT_ID: ${EVE_LINK_CLIENT_ID:-}
       EVE_LINK_CLIENT_SECRET: ${EVE_LINK_CLIENT_SECRET:-}
       ESI_CONTACT_EMAIL: ${ESI_CONTACT_EMAIL:?}
+      # the token data key: wrapped by KMS, unwrapped once at start with the instance role. No plain key anywhere.
+      EVE_TOKEN_DATA_KEY_WRAPPED: ${EVE_TOKEN_DATA_KEY_WRAPPED:?}
+      EVE_KMS_KEY_ID: ${EVE_KMS_KEY_ID:?}
+      AWS_REGION: ${AWS_DEFAULT_REGION:?}
     mem_limit: 1280m
     healthcheck:
       # the health endpoint is on the management port, which nothing publishes; the image has no curl, so bash opens the socket
