@@ -1,0 +1,3 @@
+# the build needs only the realm file; keep the dev key, certificates and exports out of the build context
+*
+!EveAssist-realm-export.json
