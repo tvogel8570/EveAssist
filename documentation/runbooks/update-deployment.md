@@ -30,15 +30,24 @@ Downtime during a deploy is accepted. Do it at a quiet time and say so on the si
 
 ## 2. Rehearse
 
-1. Restore a snapshot of prod to a private, temporary RDS instance and run the new build against it **inside AWS**, as the restore test of
-   2026-11-12 did (see "Restoring the database" below; deploy-log.md has the example). Do not copy a dump of prod to the dev machine: the
-   privacy policy says the data is kept at AWS, and a file on a laptop is also in its backups and disk images. On the dev machine use the
-   dev database with generated data. Let Flyway migrate the copy.
-2. Open the pages the change touches, plus sign-in, Characters, Inventory and `/try`.
-3. Time the migration. A table rewrite on a large table (assets, price rows, contracts) is the thing to look for.
+1. Restore the snapshot of step 4 to a private, temporary RDS instance, as "Restoring the database" below describes, with
+   `--backup-retention-period 0 --no-deletion-protection` (a throwaway copy of real data must not make backups of its own, and must be
+   deletable). Do not copy a dump of prod to the dev machine: the privacy policy says the data is kept at AWS, and a file on a laptop is also
+   in its backups and disk images. On the dev machine use the dev database with generated data.
+2. On the instance, run the new build against the copy: `sudo ./rehearse-app.sh <endpoint of the copy> <new app image@sha256:...>`
+   (`Infrastructure/prod/rehearse-app.sh`; copy it to the instance like the other scripts). It starts one throwaway container of the new image on
+   the Compose network, memory capped at 900 MB, with Docker's own log driver (so its lines cannot trip the prod alarms) and no published
+   port, waits up to 3 minutes for the health endpoint, prints the Flyway and start-up lines, and removes the container. Check `free -m`
+   first: stop if less than about 1,200 MB is available, because the prod stack keeps running. **A pass** is health `UP`,
+   "Successfully validated N migrations", and either "No migration necessary" or the new migration applied in the time you expect.
+   The copy holds the same linked characters and tokens as prod, so the rehearsal may make one round of ESI calls for them.
+3. What this does not test: the Keycloak image (to rehearse a Keycloak change, start its image the same way against the copy's `keycloak`
+   database: the 2026-11-12 release skipped that on purpose), and anything seen in a browser. Those are checked after the deploy (step 6).
+4. Time the migration. A table rewrite on a large table (assets, price rows, contracts) is the thing to look for.
    More than a couple of minutes means a different migration (add column nullable, backfill in batches, then constrain
    in a later release).
-4. Delete the throwaway database. It holds real users' data, so do not keep it.
+5. Delete the throwaway database (`--skip-final-snapshot --delete-automated-backups`) and check that no instance, snapshot or retained backup
+   of it remains. It holds real users' data, so do not keep it.
 
 ### Migration rules
 
@@ -50,19 +59,32 @@ Downtime during a deploy is accepted. Do it at a quiet time and say so on the si
 
 ## 3. Build and publish the image
 
-1. Tag the release: `git tag -a vX.Y.Z -m "..."` on the commit on `development` (releasing to `main` follows CLAUDE.md:
-   fast-forward push, never squash).
-2. CI builds, tests and pushes `eveassist-app` to ECR **[to build]**. Until then, build locally with
-   `./mvnw verify` and `docker buildx build --platform linux/arm64 -t <ecr>/eveassist-app:vX.Y.Z --push .`.
-3. Note the **image digest**. The instance pins digests, not tags, so what runs is exactly what was tested.
+1. Build from the commit that is the tip of `development`, after `./mvnw verify` passed on it, and do not rewrite history afterwards: the
+   footer shows the commit id, and the id must stay a commit that exists on GitHub (the first release's footer showed an id that a later
+   history rewrite removed).
+2. CI builds, tests and pushes the images to ECR **[to build]**. Until then, build locally for the instance's CPU, tagging
+   `<version>-<short commit>` (ECR tags are immutable, so a tag can be pushed only once):
+   - App, in `App/`: `docker buildx build --builder eveassist-arm --platform linux/arm64 --build-arg GIT_COMMIT=$(git rev-parse --short HEAD) -t <ecr>/eveassist-app:X.Y.Z-<commit> --load .`
+   - Keycloak, in `Infrastructure/keycloak/`: the same without the build argument, tagged `eveassist-keycloak:X.Y.Z-<commit>`.
+3. Before pushing, check what is inside, without running anything: both images are `arm64`, the app image's `GIT_COMMIT` is the commit, the jar in
+   it (`docker create`, `docker cp ...:/app/app.jar`) has the same SHA-256 as `App/target/app-*.jar` from the verify run, and the realm file in the
+   Keycloak image equals the one in git.
+4. Push: `aws ecr get-login-password | docker login --username AWS --password-stdin <ecr>`, then `docker push` both. Read each **digest** back from
+   ECR (`aws ecr describe-images`). The instance pins digests, not tags, so what runs is exactly what was tested.
+5. Tag the release **after** the deploy has been checked: `git tag -a vX.Y.Z <the built commit> -m "..."` (the annotation names the footer
+   id, both digests and anything the images do not show, such as a live realm setting that the image's realm file lacks). Tags `v*` are protected
+   by the GitHub ruleset "release tags" (no deletion, no update, no bypass): to correct a wrong tag, remove that ruleset first.
+   Releasing to `main` follows CLAUDE.md (a pull request with a merge commit).
 
 ## 4. Snapshot
 
-- Take a manual RDS snapshot named `pre-vX.Y.Z` and wait until it is `available`.
+- Take a manual RDS snapshot named `pre-vX-Y-Z` (for v0.2.0: `pre-v0-2-0`) and wait until it is `available`. RDS names may contain only letters, digits and
+  single hyphens, so the dots of the version become hyphens. Tag it with the date by which it must go:
+  `aws rds create-db-snapshot --db-instance-identifier eveassist-prod --db-snapshot-identifier pre-vX-Y-Z --tags Key=purpose,Value=release-vX-Y-Z-delete-by-<date>`.
 - Optional for code-only releases, mandatory when a migration is included.
 - **A manual snapshot never expires.** It keeps every account that exists on the day, including accounts users delete later, and the privacy
   policy promises that deleted data leaves the backups within 28 days. Delete the snapshot when the release is accepted, and within 7 days
-  at the latest (`aws rds delete-db-snapshot --db-snapshot-identifier pre-vX.Y.Z`). The monthly task "list manual snapshots" below catches
+  at the latest (`aws rds delete-db-snapshot --db-snapshot-identifier pre-vX-Y-Z`). The monthly task "list manual snapshots" below catches
   one that was forgotten.
 
 ## 5. Deploy
@@ -102,7 +124,7 @@ Tell testers what changed, and if they must re-authorize characters.
 | Situation | Action |
 |---|---|
 | App starts but is wrong, **no migration** ran, or the migration was backward compatible | Put the previous digest back, `docker compose up -d app`. |
-| Flyway failed halfway | Do **not** start the app on the half-migrated database. Restore the `pre-vX.Y.Z` snapshot to a new RDS instance (see "Restoring the database"), point the stack at it, start the previous digest. Switch the endpoint, then delete the damaged instance after a week. |
+| Flyway failed halfway | Do **not** start the app on the half-migrated database. Restore the `pre-vX-Y-Z` snapshot to a new RDS instance (see "Restoring the database"), point the stack at it, start the previous digest. Switch the endpoint, then delete the damaged instance after a week. |
 | Data was damaged by the release | Same as above. Point-in-time recovery gives a time just before the deploy. Tell users that changes since then are lost. |
 | Keycloak realm import broke sign-in | Follow "If it goes wrong" in [keycloak-realm.md](keycloak-realm.md). |
 
@@ -126,12 +148,13 @@ is used.
 3. Restore with these settings (all of them matter; the values are in `ops.env`, see [Common commands](common-commands.md)):
    ```bash
    aws rds restore-db-instance-from-db-snapshot --db-instance-identifier eveassist-restore \
-     --db-snapshot-identifier pre-vX.Y.Z --db-instance-class db.t4g.small --db-subnet-group-name eveassist-prod \
+     --db-snapshot-identifier pre-vX-Y-Z --db-instance-class db.t4g.small --db-subnet-group-name eveassist-prod \
      --vpc-security-group-ids "$EVEASSIST_RDS_SG" --no-publicly-accessible --no-multi-az --backup-retention-period 7
    ```
    Without `--vpc-security-group-ids` the instance gets the VPC's default group, and without `--no-publicly-accessible` it can be reachable
-   from the internet, which the privacy policy says it is not (the subnets here route to an internet gateway). For a test, add nothing else
-   and delete it afterwards; for a rollback that becomes production also add `--deletion-protection`, and compare the result with
+   from the internet, which the privacy policy says it is not (the subnets here route to an internet gateway). For a test or a rehearsal use
+   `--backup-retention-period 0 --no-deletion-protection` instead of 7 and delete it afterwards (`--skip-final-snapshot --delete-automated-backups`);
+   for a rollback that becomes production keep 7 and also add `--deletion-protection`, and compare the result with
    `aws rds describe-db-instances --db-instance-identifier eveassist-prod` (parameter group, encryption, backup window).
 4. When it is `available`, check `PubliclyAccessible` is `false` and the security group is `eveassist-rds`.
 5. Compare its account ids with the list from step 2. An id that is in the restore and not in the list was deleted after the snapshot: delete

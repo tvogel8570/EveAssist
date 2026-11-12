@@ -119,19 +119,21 @@ the database are not in the clone, so a new host has to copy them from the curre
 
 ## Releasing to main
 
-Decided with the developer on 2026-11-08. Every commit on `development` is kept on `main`, with the same ids.
+Decided with the developer on 2026-11-08, corrected on 2026-11-12 after reading the GitHub rules. Every commit on `development` is kept on
+`main`, with the same ids.
 
-- **Now: fast-forward.** While `main` has nothing that `development` lacks, move it forward without a merge commit, once
-  `./mvnw verify` passes on `development`:
-  `git fetch origin && git push origin origin/development:main`. Git refuses this push if `main` is not an ancestor of
-  `development`, so it cannot overwrite anything. Tag the release if it has a version
-  (`git tag -a vX.Y.Z -m "..." && git push origin vX.Y.Z`).
-- **Later: merge commit, once there is a reason.** Reasons: `main` needs a commit of its own (a hotfix), a release should
-  be one visible commit (`git log --first-parent main` then lists releases), or GitHub refuses the push because `main`
-  is protected and wants a pull request. A pull request offers no fast-forward, so it gives this form. Open a PR from
-  `development` to `main`, merge it with "Create a merge commit", tag the merge, then merge `main` back into
-  `development` so the two stay level.
+- **The route to `main` is a pull request.** The ruleset "primary branches" applies to both `development` and `main`, has no bypass for
+  anyone, and requires pull requests, forbids force pushes and forbids deletion. A direct push is refused, even a fast-forward. Once
+  `./mvnw verify` passes on `development`: open a PR from `development` to `main` and merge it with **"Create a merge commit"** (the
+  ruleset also allows squash and rebase, which are wrong here, see below). Then bring `main` back with a PR from `main` to `development`,
+  also a merge commit, so the two stay level (their trees are identical, the ids differ by the merge commits).
+- **Tag the commit that was built, not the merge.** The image footer shows the commit id, so `git tag -a vX.Y.Z <built commit> -m "..."`
+  goes on that commit, which stays reachable from `main` through the merge. Tag only after the deploy was checked, so that `main` never
+  claims a release that did not run. Tags `v*` are protected by the ruleset "release tags" (no deletion, no update, no bypass): to correct a
+  wrong tag, remove that ruleset first.
 - **Never squash or rebase `development` into `main`.** Either gives the commits new ids, so the two branches diverge,
   PR links point at commits that are not on `main`, and the next release conflicts. Feature PRs into `development` are
   a separate choice from this one.
-- `main` is protected on GitHub (checked 2026-11-08). The rules were not read, so the fast-forward push is untried.
+- Build the release images from the tip of `development` after verify, and do not rewrite history afterwards: the footer shows the commit
+  id, and the id must stay a commit that exists on GitHub (see `documentation/runbooks/update-deployment.md`, step 3).
+

@@ -207,3 +207,36 @@ One entry per build and deploy of prod, newest last. No secrets. The procedure i
 - Running code is the build of commit `a13eb6a`. The repository's `prod-deployment` branch, with the fixes made since (the `start.sh` secrets check,
   the Keycloak token retry, the runbooks), is not pushed and not deployed.
 
+## 2026-11-12: release v0.2.0 (build 3ec2628), the first update of prod
+
+- **What was built:** the tip of `development`, commit `3ec2628` (the merge of pull request #37), after `./mvnw verify` passed on it (BUILD SUCCESS,
+  236 unit tests, 404 integration tests, 2 skipped live-service tests). Both images were built for `linux/arm64` on the developer's machine and checked
+  before pushing: the jar in the app image has the same SHA-256 as the jar from the verify run, `GIT_COMMIT=3ec2628` is in it, and the realm file in the
+  Keycloak image equals the one in git. Tags `0.2.0-3ec2628` (immutable in ECR):
+  - App: `$EVEASSIST_ACCOUNT_ID.dkr.ecr.us-west-2.amazonaws.com/eveassist-app:0.2.0-3ec2628`, digest
+    `sha256:a9efc8993956abc03f3560b4058e6218065ac30f4b7480c51c3d78443f5ff969` (read back from ECR).
+  - Keycloak: `$EVEASSIST_ACCOUNT_ID.dkr.ecr.us-west-2.amazonaws.com/eveassist-keycloak:0.2.0-3ec2628`, digest
+    `sha256:c20bd8558f0a46b7ab3eb0dc86b087676e50420b274dd6d776be8e722f77002e`.
+- **What changed compared with the running build** (`563b081` here, the equivalents of the old ids `a13eb6a` and `6813893`): no migration. App: the Keycloak
+  service-account token is replaced and the deletion tried once more when Keycloak refuses the cached one, a changed message, and the privacy policy
+  additions. Keycloak image: the realm file now has `storeToken` and `addReadTokenRoleOnCreate` off, which the live realm already had from the earlier
+  `kcadm` change, so nothing is imported again. On the instance: the new `start.sh` (stops when a secret cannot be fetched).
+- **Snapshot and rehearsal** (update runbook steps 4 and 2): snapshot `pre-v0-2-0` (the first name tried, `pre-v0.2.0`, was refused because RDS names
+  cannot contain dots). It was restored to `eveassist-rehearsal`: private, the `eveassist-rds` group, no deletion protection, no backups. The new app image
+  ran against it as one throwaway container (`rehearse-app.sh`, 900 MB cap, Docker's log driver): health `UP`, 20 migrations validated, "No migration
+  necessary", started in 19.6 s, 2,091 MB of host memory still available. The Keycloak image was not rehearsed, by decision. The copy was then deleted,
+  and a check found no instance, snapshot, retained backup or security group of it.
+- **Deploy** (about 21:25 UTC, by the developer from a clip): new `start.sh` copied in place (checked by checksum against the repository), `images.env`
+  changed to the two digests (the old file kept as `images.env.bak-v0-1-0`), `sudo ./start.sh app keycloak`. Keycloak logged "Realm 'EveAssist' already
+  exists. Import skipped" (no re-import, nobody signed out), the app validated 20 migrations, needed none and started in 12.8 s. No ERROR line in the
+  prod log group afterwards. The footer shows `build 3ec2628` (browser and curl), the privacy page carries the new wording, `/`, `/try`, `/privacy`,
+  `security.txt` and the realm's discovery document answer 200, `/admin/` on the auth host answers 404, and the developer signed in.
+- **Alarm:** `eveassist-prod-upstream-unreachable` went to ALARM at 21:26:55 UTC, because Caddy could not reach the restarting containers, and back to OK
+  at 21:31:55 UTC by itself. It was not silenced beforehand: the developer ran the deploy before that was done. The developer cannot read the alert mailbox while Outlook is down and
+  accepts the alarms as right. The deploy's own checks do not depend on it.
+- **GitHub rules found on the way:** `main` is covered by the ruleset "primary branches" (shared with `development`, no bypass), which requires pull
+  requests and forbids force pushes and deletion, so the fast-forward push in `CLAUDE.md` could never have worked. `CLAUDE.md` now says a release goes by
+  pull request with a merge commit. A second ruleset, "release tags", protects `v*` tags from deletion and change.
+- **Still to do:** the tag `v0.2.0` on `3ec2628`, the pull requests to `main` and back, and deleting the snapshot `pre-v0-2-0` once the release is
+  accepted, by 2026-11-19. Not obtained: the Hikari pending-connections reading (the one command printed an empty line).
+
