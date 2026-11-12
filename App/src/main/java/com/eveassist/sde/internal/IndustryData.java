@@ -54,11 +54,12 @@ public class IndustryData {
     }
 
     private static Map<TypeId, Recipe> loadRecipes(JdbcClient jdbc) {
-        record Row(int product, int units, int material, long quantity) {
+        record Row(int product, int units, int seconds, int material, long quantity) {
         }
         var rows = jdbc.sql("""
-                SELECT p."productTypeID", p.quantity AS units, m."materialTypeID", m.quantity
+                SELECT p."productTypeID", p.quantity AS units, COALESCE(a.time, 0) AS seconds, m."materialTypeID", m.quantity
                 FROM sde."industryActivityProducts" p
+                LEFT JOIN sde."industryActivity" a ON a."typeID" = p."typeID" AND a."activityID" = p."activityID"
                 JOIN sde."industryActivityMaterials" m ON m."typeID" = p."typeID" AND m."activityID" = p."activityID"
                 JOIN sde."invTypes" blueprint ON blueprint."typeID" = p."typeID" AND blueprint.published
                 WHERE p."activityID" = :activity
@@ -66,18 +67,20 @@ public class IndustryData {
                 """)
                 .param("activity", MANUFACTURING)
                 .query((rs, row) -> new Row(rs.getInt("productTypeID"), rs.getInt("units"),
-                        rs.getInt("materialTypeID"), rs.getLong("quantity")))
+                        rs.getInt("seconds"), rs.getInt("materialTypeID"), rs.getLong("quantity")))
                 .list();
         var materials = new HashMap<Integer, List<RecipeMaterial>>();
         var units = new HashMap<Integer, Integer>();
+        var seconds = new HashMap<Integer, Integer>();
         for (var row : rows) {
             units.put(row.product(), row.units());
+            seconds.put(row.product(), row.seconds());
             materials.computeIfAbsent(row.product(), product -> new ArrayList<>())
                     .add(new RecipeMaterial(new TypeId(row.material()), row.quantity()));
         }
         var result = new HashMap<TypeId, Recipe>();
         materials.forEach((product, list) -> result.put(
-                new TypeId(product), new Recipe(new TypeId(product), units.get(product), list)));
+                new TypeId(product), new Recipe(new TypeId(product), units.get(product), seconds.get(product), list)));
         return result;
     }
 

@@ -52,7 +52,21 @@ An account profile holds:
 
 - A user can delete their own account. This deletes the Keycloak user, the linked characters, their ESI tokens and
   data, and all of the user's plans, projects and settings.
-- An admin can delete an account in the same way.
+- The account page offers it. A page of its own says what will be deleted, with counts, and asks for a ticked box and a
+  button, so that it is not done by accident. Each saved token is revoked at EVE first. The developer decided this on
+  2026-11-11.
+- Deleted data can remain in a database backup until the backup expires (7 days for the daily ones, 28 for the weekly
+  ones), and a backup is never restored to bring back one deleted account. The deletion page and the privacy policy say so.
+- If Keycloak cannot be asked, the data is deleted anyway and the user is told. Signing in again and deleting the empty account
+  that creates finishes it.
+- An admin can delete an account in the same way. This is not built yet: it comes with the admin area.
+
+## Exporting an account's data
+
+- A user can download their data as one JSON file from the account page: the account, the linked characters (never a token),
+  the turned-on features, and the plans with their products and bought parts.
+- The file leaves out the ESI data stored for the characters (assets and the like). EVE holds it, and it is fetched again when
+  a character is linked. The developer decided this on 2026-11-11, and the privacy policy says so.
 
 ## Roles
 

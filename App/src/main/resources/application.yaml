@@ -15,6 +15,9 @@ management:
 spring:
   application:
     name: eveassist
+  messages:
+    # The text of the home page (first steps and FAQs) is long, so it has a bundle of its own beside messages.properties.
+    basename: messages,help
   profiles:
     default: dev
   config:
@@ -60,14 +63,29 @@ spring:
       connect-timeout: 5s
       read-timeout: 30s
 eveassist:
+  operator:
+    # shown in the footer and the privacy policy, and the address security.txt gives for reports
+    name: Vogel Development, LLC
+    contact-email: cass@vogelware.com
+  build:
+    # the short commit id of the image, passed to the Docker build; "dev" when run from source
+    commit: ${GIT_COMMIT:dev}
   characters:
+    # dev: the key itself. prod: the key wrapped by KMS and the KMS key that wrapped it (see KmsDataKeyProvider)
     token-data-key: ${EVE_TOKEN_DATA_KEY:}
+    token-data-key-wrapped: ${EVE_TOKEN_DATA_KEY_WRAPPED:}
+    kms-key-id: ${EVE_KMS_KEY_ID:}
     sso:
       client-id: ${EVE_LINK_CLIENT_ID:}
       client-secret: ${EVE_LINK_CLIENT_SECRET:}
       redirect-uri: ${APP_BASE_URL:https://dev.eveassist.com:7444}/characters/link/callback
   esi:
     contact-email: ${ESI_CONTACT_EMAIL:}
+  keycloak-admin:
+    # Keycloak's address as the app reaches it for the admin API (in prod its own address on the Compose network, because
+    # Caddy answers 404 for /admin on the public name), and the secret of the realm's eveassist-admin service account
+    url: ${KEYCLOAK_ADMIN_URL:}
+    client-secret: ${KC_ADMIN_CLIENT_SECRET:}
 server:
   port: 7444
   servlet:
@@ -108,3 +126,22 @@ eveassist:
   dev:
     # Keycloak's dev certificate comes from a private CA, so the JVM does not trust it by default
     trusted-certificate: ../Infrastructure/keycloak/dev.eveassist.com.crt
+---
+# Prod runs behind Caddy, which ends TLS (see documentation/architecture/deployment.md). Nothing publishes the app's port,
+# so only containers on the Compose network reach it.
+spring:
+  config:
+    activate:
+      on-profile: prod
+server:
+  # "native" is Tomcat's RemoteIpValve. Unlike "framework" it also replaces the remote address with the one Caddy puts in
+  # X-Forwarded-For, which /try limits visitors by. It trusts that header only from private addresses (the Compose network).
+  forward-headers-strategy: native
+management:
+  server:
+    # A port of its own, not published and not proxied: the health check and the operator's tunnel reach it, nobody else.
+    port: 8081
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics

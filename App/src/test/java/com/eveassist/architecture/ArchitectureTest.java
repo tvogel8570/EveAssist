@@ -37,8 +37,8 @@ class ArchitectureTest {
     }
 
     @Test
-    void onlyEsiAndCharactersUseAnHttpClient() {
-        RULES.onlyEsiAndCharactersUseAnHttpClient().check(PRODUCTION);
+    void onlyEsiCharactersAndKeycloakAdminUseAnHttpClient() {
+        RULES.onlyEsiCharactersAndKeycloakAdminUseAnHttpClient().check(PRODUCTION);
     }
 
     @Test

@@ -4,6 +4,7 @@ import com.eveassist.identity.Viewer;
 import com.eveassist.industry.PlanId;
 import com.eveassist.industry.internal.application.AddProductCommand;
 import com.eveassist.industry.internal.application.ChangeQuantityCommand;
+import com.eveassist.industry.internal.application.RemoveProductCommand;
 import com.eveassist.industry.internal.application.ChoosePartSourceCommand;
 import com.eveassist.industry.internal.application.CreatePlanCommand;
 import com.eveassist.industry.internal.application.InvalidPlanNameException;
@@ -44,9 +45,41 @@ class PlanController {
     }
 
     @GetMapping
-    String list(Viewer viewer, Model model) {
-        model.addAttribute("plans", queries.overviews(viewer));
+    String list(Viewer viewer, @RequestParam(name = "archived", required = false) String archived, Model model) {
+        var showArchived = archived != null;
+        var plans = queries.overviews(viewer, showArchived);
+        model.addAttribute("plans", plans);
+        model.addAttribute("showArchived", showArchived);
+        // a list that is empty only because everything is archived says so, instead of "no plans yet"
+        model.addAttribute("allArchived", plans.isEmpty() && !queries.overviews(viewer, true).isEmpty());
         return "plans/list";
+    }
+
+    /** Hides the plan from the list. From its own page the user goes back to the list, which no longer shows it. */
+    @PostMapping("/{id}/archive")
+    String archive(Viewer viewer, @PathVariable UUID id, @RequestParam(required = false) String archived) {
+        editing.archive(viewer, new PlanId(id));
+        return "redirect:" + listAddress(archived);
+    }
+
+    /** Brings an archived plan back. From its own page the user stays on it. */
+    @PostMapping("/{id}/restore")
+    String restore(Viewer viewer, @PathVariable UUID id, @RequestParam(defaultValue = "list") String from,
+            @RequestParam(required = false) String archived) {
+        editing.restore(viewer, new PlanId(id));
+        return from.equals("plan") ? "redirect:/plans/" + id : "redirect:" + listAddress(archived);
+    }
+
+    /** Deletes the plan for good. The page asks for a confirmation before it sends this. */
+    @PostMapping("/{id}/delete")
+    String delete(Viewer viewer, @PathVariable UUID id, @RequestParam(required = false) String archived) {
+        editing.delete(viewer, new PlanId(id));
+        return "redirect:" + listAddress(archived);
+    }
+
+    /** The list as the user had it: with archived plans shown, when they were. */
+    private static String listAddress(String archived) {
+        return archived == null ? "/plans" : "/plans?archived=1";
     }
 
     @PostMapping
@@ -74,6 +107,29 @@ class PlanController {
                 new ChangeQuantityCommand(new PlanId(id), new TypeId(typeId), quantity, expectedVersion)));
         model.addAttribute("editedTypeId", typeId);
         return "plans/fragments :: change";
+    }
+
+    /** Takes the product out and answers with the plan redrawn and an offer to undo it. */
+    @PostMapping("/{id}/products/{typeId}/remove")
+    String removeProduct(Viewer viewer, @PathVariable UUID id, @PathVariable int typeId,
+            @RequestParam long expectedVersion, Model model) {
+        var removal = editing.removeProduct(viewer,
+                new RemoveProductCommand(new PlanId(id), new TypeId(typeId), expectedVersion));
+        model.addAttribute("plan", removal.plan());
+        model.addAttribute("removed", removal);
+        model.addAttribute("failedItems", java.util.List.of());
+        return "plans/fragments :: productsRedraw";
+    }
+
+    /** Puts a removed product back with the units it had, which is what Undo does. */
+    @PostMapping("/{id}/products/{typeId}/restore")
+    String restoreProduct(Viewer viewer, @PathVariable UUID id, @PathVariable int typeId, @RequestParam long quantity,
+            Model model) {
+        entry.addProduct(viewer, new AddProductCommand(new PlanId(id), new TypeId(typeId), quantity));
+        model.addAttribute("plan", entry.open(viewer, new PlanId(id)));
+        model.addAttribute("removed", null);
+        model.addAttribute("failedItems", java.util.List.of());
+        return "plans/fragments :: productsRedraw";
     }
 
     @PostMapping("/{id}/parts/{typeId}/{source:buy|build}")

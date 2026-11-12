@@ -42,6 +42,17 @@ The design must handle the largest number for each phase without a rewrite:
 - Built for desktop browsers first. On a phone, at least the dashboard, alerts and job status must be usable.
 - The UI is in English. Its text is kept out of the code so that other languages can be added later. Item names are
   shown in English from the SDE.
+- **Defaults first, detail on request.** Players differ a lot in how much they know about industry, and the first
+  developer is an experienced player. Every screen starts with the simple view and sensible defaults. Details such as a
+  per-job facility, character assignment or price basis sit in an "Advanced" part that the player opens, and the
+  screen remembers which parts they opened. Nothing is removed for experienced players. Settings that inherit from a
+  higher level (account, plan, project) work without the player touching them.
+- A feature must be useful without the features that sit above it. For example, a plan gives its cost and shopping
+  list without a project being started.
+- Industry terms a new player may not know (ME/TE, BPO/BPC, invention, build or buy) get a short plain-language
+  explanation where they appear.
+- Named experience levels (novice, advanced, expert) are not planned now. They are reconsidered once a second player has
+  used the plans.
 
 ## Privacy
 

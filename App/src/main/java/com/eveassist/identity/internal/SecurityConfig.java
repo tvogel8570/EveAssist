@@ -37,9 +37,17 @@ class SecurityConfig {
         return http
                 .authorizeHttpRequests(requests -> requests
                         .requestMatchers("/", "/error", "/css/**", "/js/**").permitAll()
+                        // the policy and the way to report a vulnerability are for anyone to read
+                        .requestMatchers("/privacy", "/.well-known/security.txt").permitAll()
+                        // a plan without an account: open to everyone, stores nothing, so it has no token to protect
+                        .requestMatchers("/try", "/try/**").permitAll()
+                        // the Compose health check and the alarm cannot sign in. Health shows only UP or DOWN, and exists
+                        // only on the management port, which nothing publishes (the prod profile)
+                        .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                         // metrics (heap, pool, queues) are for the operator, never an ordinary user
                         .requestMatchers("/actuator/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/try/**"))
                 .oauth2Login(login -> login
                         .loginPage("/oauth2/authorization/keycloak")
                         .userInfoEndpoint(userInfo -> userInfo.oidcUserService(users)))

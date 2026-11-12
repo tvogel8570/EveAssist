@@ -67,6 +67,92 @@ All of these are in scope:
   tool splits it into several jobs, and the user can change the split.
 - Surplus from rounding and batch sizes (extra components, extra units) is listed for each plan and credited at market
   value in its cost.
+- **Blueprint levels in a plan.** A plan costs every product, and every part marked build, as built from a blueprint
+  with ME 10 and TE 20. It is a plan, not a record of what the user owns, so it does not look at the user's blueprints.
+  Other levels are for projects and for the facility and skill effects described above.
+- **One job per item in a plan.** A plan assumes each built item is made in a single job, so the materials are rounded
+  up once for all its runs. This is the cheapest case. A job that is split into several smaller ones rounds up on its
+  own and uses more materials, and an item with a small base quantity gets no ME saving at all (a job never uses less
+  than one of a material for each run). The page says so. In a project, each built item has its own job size and the
+  materials are worked out per job.
+- **Runs needed.** The plan has a section that lists, for each product and each part marked build, the total runs needed:
+  the units the plan needs of it (for a product, the units asked for; for a part, the sum over everything that uses it)
+  divided by the units one run makes, rounded up. Next to the runs it shows the units needed, the units made, the
+  surplus and the time at TE 20 for all the runs. A plan shows no job count, since it assumes one job. Parts marked buy are not in this section, since
+  they have no runs. They are listed with the materials to buy instead.
+
+### Working with plans
+
+Added 2026-11-10 at the developer's request.
+
+- **New plan** can be started from the Plans list and from a plan's own page (a New button opens a small box for the
+  name, because plans cannot be renamed yet).
+- **Remove a product.** Each product row has a remove button. The plan is costed again at once, and a message says what
+  was removed and offers **Undo**, which puts it back with the units it had and the prices the plan already had. A plan
+  may be left with no products.
+- **Units** are whole numbers from 1 to 1,000,000. Anything else is refused with the reason (a 0 says to use Remove), and
+  the number the plan holds returns to the box, so the box never shows what the plan does not have.
+- **Archive.** An archived plan is hidden from the Plans list until the user ticks **Show archived plans**, where it is
+  marked and can be **restored**. It can still be opened and edited. Archiving is a status, not an edit, so it does not
+  change the plan's version. It is offered on the list and on the plan's own page.
+- **Delete.** A plan can be deleted from the list and from its own page, after a question that names the plan and says
+  that its products and prices go with it. Delete cannot be undone, and the question points to archive as the way to keep it.
+- An archived plan the user has not asked to see is not counted as "no plans yet": a list that is empty only because
+  everything is archived says so.
+
+### Trying a plan without an account
+
+Decided with the developer on 2026-11-10. A visitor who has not signed in can build and cost a plan, so a new player can
+see what EveAssist does before creating an account.
+
+- **Its own page.** It is separate from the signed-in plan page, and it has no list of plans. The costing, ME 10 and
+  TE 20, the build or buy choice, the runs needed and the total are the same as for a signed-in plan, and the two pages
+  share the parts that show the results.
+- **Nothing is saved on the server.** The plan is kept in the browser's own storage for that site. It survives closing
+  the browser, but it is lost if the visitor clears the site's data or uses another browser or computer, and the page
+  says so. The address is not used to hold the plan, because it is too short for a large plan.
+- **No save, rename, archive, delete or list.** The visitor can start a new plan, which clears the page.
+- **At most 10 products** in a plan, so that one visitor cannot ask for an unlimited amount of work.
+- **Prices.** The page uses the prices the server already holds, however old, and asks for an item's price only when
+  the server holds none. **Refresh prices** is not offered. The page shows how old the prices are and warns when they
+  are stale.
+- **Limits on fetching prices for visitors.** ESI allows 12,000 tokens per 15 minutes for the market orders of the whole
+  app (see [ESI](../architecture/esi.md#jita-prices)), so every user shares one allowance, and a fresh fetch costs 2
+  tokens. A plan of ten large ships needs about 100 to 150 items fetched when nothing is stored, and most plans need
+  under 50. The starting limits, to be tuned against real usage, are:
+  - **One visitor** (identified by network address) can have at most **200 items fetched per hour**. Beyond that the
+    page uses stored prices only and lists the items it could not price.
+  - **All visitors together** can have at most **1,500 items fetched per 15 minutes**, a quarter of the allowance. The
+    rest is kept for signed-in users. Beyond it, visitors get stored prices only, with the same list.
+  - An item whose price is already stored costs nothing against either limit.
+- **No characters.** The page reads nothing about the visitor's characters, so it has no materials on hand.
+- **Taking a plan into an account** when the visitor signs in is wanted but not required at first.
+
+### Comparing material efficiency of a product
+
+Decided with the developer on 2026-11-10. Many products are not made from a blueprint at ME 10: a capital ship or a T2
+item is built from a blueprint whose ME is what research gave it, or what invention produced, while its parts are
+made at ME 10. The tool answers which parts the product's ME actually changes, and by how much money.
+
+- **The user enters the product, the runs of the product and two ME levels** to compare, for example 8 and 10.
+- **Only the product's blueprint changes between the levels.** Its parts are taken as a plan takes them: ME 10, TE 20
+  and one job for each part. The parts and their runs are worked out by a plan made from the product, so the user
+  does not enter them.
+- **The result is a list of the product's parts.** For each part it shows the units the product needs at each level
+  and the ISK saved by the higher level over the lower. A part is valued as a plan values it: its Jita sell price when
+  bought, or what it costs to build from its own materials at ME 10 when it is marked build. Parts that the two levels
+  do not change are shown last, and the list says so when none changes. The list is ordered by ISK saved, the biggest
+  first, so that the few parts that matter are at the top.
+- **Rounding is the reason some parts matter and others do not.** A job takes whole units, rounded up once for all its
+  runs, and never less than one for each run (see [Plans](#plans)). A part with a small base quantity, or a product
+  with few runs, often needs the same units at both levels, so for one run only a few parts differ. With more runs the
+  rounding spreads out and more parts differ, so the result is for the runs the user entered.
+- **Only the ISK saved is shown.** The tool does not weigh the research time or the price of a better blueprint against
+  it (see [Research](#research)).
+- **It needs no blueprints of the user's own**, only the levels the user types, and no characters.
+
+Not decided: where it sits (a page of its own, linked from a plan, is the proposal; projects could later open it with the
+ME of the blueprint the user really has), and whether visitors without an account may use it.
 
 ## Research
 
@@ -132,4 +218,9 @@ Prices, the price basis and fees are defined in [Market and logistics](market-lo
 
 ## Open questions
 
-None at present.
+- Where the material efficiency comparison sits: a page of its own that a plan links to is the proposal, and a project
+  could open it with the ME of the blueprint the user really has. Whether visitors without an account may use it.
+- Updating the stored prices in the background, so that a price is not old when someone opens a plan, is worth
+  considering. It would help signed-in plans and the plan without an account. Not decided.
+- How old a price must be before a plan warns that it is stale. The same age could serve both kinds of plan. The page
+  without an account uses 24 hours for now.

@@ -19,6 +19,45 @@
         }
     });
 
+    // A plan without an account (/try) lives in this browser only. Its state is a short text in the page's #try-state box,
+    // which every answer from the server swaps. It is kept in local storage after each swap. When the page opens with a
+    // plan kept, the box gets it before htmx starts (this script runs after the page is read and before htmx processes
+    // it), and the hidden #try-restore element sends it to the server once the page has loaded. Private windows and
+    // blocked storage throw, so the page works without it, forgetting.
+    const TRY_PLAN_KEY = 'eveassist.try.plan';
+
+    function keepTryPlan() {
+        const box = document.getElementById('try-state');
+        if (box) {
+            try {
+                localStorage.setItem(TRY_PLAN_KEY, box.value);
+            } catch (ignored) {
+                // nothing to do: the plan is just not kept
+            }
+        }
+    }
+
+    (function restoreTryPlan() {
+        const box = document.getElementById('try-state');
+        const restore = document.getElementById('try-restore');
+        if (!box || !restore) {
+            return;
+        }
+        let saved = null;
+        try {
+            saved = localStorage.getItem(TRY_PLAN_KEY);
+        } catch (ignored) {
+            // nothing kept
+        }
+        if (saved && saved !== box.value) {
+            box.value = saved;
+        } else {
+            restore.remove();
+        }
+    })();
+
+    ['htmx:after:swap', 'htmx:after:settle'].forEach(name => document.addEventListener(name, keepTryPlan));
+
     function showError(key) {
         const toast = document.getElementById('error-toast');
         toast.querySelector('span').textContent = toast.dataset[key];
@@ -33,6 +72,27 @@
     });
 
     document.addEventListener('htmx:error', () => showError('failed'));
+
+    // Units of a plan product. A number the plan cannot hold (not whole, below 1 or above the largest) is refused here with
+    // the reason, and the number the plan holds is put back, so the box never shows what the plan does not have. The event
+    // is stopped before htmx sees it, which also keeps the browser's own validation bubble from opening.
+    document.addEventListener('change', event => {
+        const box = event.target;
+        if (!(box instanceof HTMLInputElement) || !box.hasAttribute('data-plan-quantity')) {
+            return;
+        }
+        const text = box.value.trim();
+        const value = Number(text);
+        const low = text === '' || !Number.isInteger(value) || value < Number(box.min);
+        const high = !low && value > Number(box.max);
+        if (low || high) {
+            event.stopImmediatePropagation();
+            box.value = box.dataset.saved;
+            showError(low ? 'unitsLow' : 'unitsHigh');
+            return;
+        }
+        box.dataset.saved = String(value);
+    }, true);
 
     // Up and down arrows move through a search's results, and Enter on a result picks it.
     document.addEventListener('keydown', event => {
@@ -122,6 +182,14 @@
         }
     });
 
+    // The x on a message (the undo bar) takes the message away. Nothing is sent to the server.
+    document.addEventListener('click', event => {
+        const button = event.target.closest('[data-dismiss="alert"]');
+        if (button) {
+            button.closest('.alert')?.remove();
+        }
+    });
+
     // A drop-down menu made of <details> closes when something in it is chosen or when the page is clicked elsewhere.
     document.addEventListener('click', event => {
         document.querySelectorAll('details[data-autoclose][open]').forEach(menu => {
@@ -130,6 +198,17 @@
             }
         });
     });
+
+    // A drop-down menu with a box in it puts the cursor in the box when it opens (details has no autofocus of its own).
+    // The toggle event does not bubble, so it is caught on the way down.
+    document.addEventListener('toggle', event => {
+        const menu = event.target;
+        if (menu instanceof HTMLDetailsElement && menu.open && menu.hasAttribute('data-focus-on-open')) {
+            // The first box that can be typed in: a form made by Thymeleaf starts with a hidden _csrf input, which cannot
+            // take focus, so hidden inputs are skipped.
+            menu.querySelector('input:not([type=hidden]):not([type=checkbox]):not([type=radio]), textarea, select')?.focus();
+        }
+    }, true);
 
     // Copy as text: one line for each item type the filter lets through, the name and the total with a tab between.
     // The server gives the whole list, because the page shows only the first of it.

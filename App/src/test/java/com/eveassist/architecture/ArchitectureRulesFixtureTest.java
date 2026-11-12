@@ -28,7 +28,8 @@ class ArchitectureRulesFixtureTest {
         return Stream.of(
                 rule(ArchitectureRules::domainStaysPlain, "SpringAwarePlan"),
                 rule(ArchitectureRules::domainStaysPlain, "Jackson3AwarePlan"),
-                rule(ArchitectureRules::onlyEsiAndCharactersUseAnHttpClient, "MarketHttpCaller"),
+                rule(ArchitectureRules::onlyEsiCharactersAndKeycloakAdminUseAnHttpClient, "MarketHttpCaller"),
+                rule(ArchitectureRules::onlyEsiCharactersAndKeycloakAdminUseAnHttpClient, "IdentityHttpCaller"),
                 rule(ArchitectureRules::moduleDataTypesAreRecords, "PlanSummaryClass"),
                 rule(ArchitectureRules::namesCarryMeaningNotMechanism, "PlanDto"),
                 rule(ArchitectureRules::namesCarryMeaningNotMechanism, "PlanLookupImpl"),
@@ -37,6 +38,7 @@ class ArchitectureRulesFixtureTest {
                 rule(ArchitectureRules::moduleInternalsUseOnlyDataFromTheirBasePackage, "UnmarkedPortUser"),
                 rule(ArchitectureRules::everyUseCaseMethodTakesTheViewerFirst, "UnannotatedUseCases"),
                 rule(ArchitectureRules::everyUseCaseMethodTakesTheViewerFirst, "ViewerLastUseCases"),
+                rule(ArchitectureRules::everyUseCaseMethodTakesTheViewerFirst, "VisitorLastUseCases"),
                 rule(ArchitectureRules::everyRepositoryMethodTakesTheViewerFirst, "PlanRepository"),
                 rule(ArchitectureRules::everyRepositoryMethodTakesTheViewerFirst, "JdbcPlanRepository"),
                 rule(ArchitectureRules::queriesAndWritesDoNotStartFetches, "FetchingQueries"),

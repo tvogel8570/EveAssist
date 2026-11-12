@@ -13,7 +13,8 @@ Covers the requirements in [Users, accounts and roles](../requirements/users.md)
   page adds and removes them through Keycloak's account linking, so accounts are never merged by email.
 - The roles USER and ADMIN come from Keycloak realm roles in the ID token and are mapped to Spring authorities.
   Group roles (phase 2) are stored in the app, per group, not in Keycloak, because they belong to one group each.
-- Disabling and deleting accounts call the Keycloak admin API with a service account that may manage users only.
+- Disabling and deleting accounts call the Keycloak admin API with a service account that holds the realm's `manage-users` role. That role is broader than deleting
+  users (it also covers role mappings, unless Keycloak's fine-grained admin permissions are used), so its secret is protected like an admin's.
   There are no invites. Each admin action writes an audit log row in the same transaction as the app's change.
 - Audit log rows hold the admin, the action, the account id, the account's display name at the time and when. They
   have no foreign key to the account, so they outlive its deletion, and a daily job deletes rows older than one year.
@@ -44,7 +45,8 @@ Status: **agreed** (follows from the requirements).
 ## Sessions
 
 - The browser holds one session cookie: `HttpOnly`, `Secure`, `SameSite=Lax`. This is an essential cookie, so no
-  consent banner is needed. CSRF protection is Spring Security's default.
+  consent banner is needed. CSRF protection is Spring Security's default. The one exception is `/try/**`, the plan for a visitor without an account: it
+  is open to everyone and stores nothing that belongs to anyone, so it has no token to protect and is not asked for one.
 - Sessions are stored in Postgres with Spring Session JDBC. Sessions then survive a restart, a second instance can be
   added later without sticky sessions, and the fetch coordinator can tell which users are signed in.
 - Sign-out ends the Keycloak session (RP-initiated logout), deletes the app session, drops that user's access tokens
@@ -91,8 +93,12 @@ Status: **agreed** (separate application); the validation rules follow the EVE S
 - Each refresh token is encrypted in the app with AES-256-GCM before it is written. Each token gets a random 96-bit
   nonce, and the character id and key id are the associated data, so a ciphertext copied to another row does not
   decrypt.
-- The data key is wrapped by an AWS KMS key. At startup the app asks KMS to unwrap it once and holds it in memory. In
-  dev the data key comes from `env.properties`, which is not committed, as `CLAUDE.md` describes.
+- The data key is wrapped by an AWS KMS key. At startup the app asks KMS to unwrap it once and holds it in memory
+  (`KmsDataKeyProvider`), and a start-up that cannot reach KMS fails. The wrapped key is made with the encryption context
+  `purpose=eveassist-refresh-tokens`, which KMS checks again on every unwrap and records in CloudTrail. The key id stored with
+  each token is derived from the wrapped key (`kms-` and twelve hex digits of its SHA-256), so it is the same at every start. In
+  dev the data key comes from `env.properties`, which is not committed, as `CLAUDE.md` describes. The prod profile refuses a
+  plain key from the environment, so a prod start with a mistaken setting fails instead of weakening the protection.
 - Each stored token records the id of the key that encrypted it. To rotate, a new data key is added and used for new
   writes. A refresh stores the newest refresh token EVE returns, but EVE returned the same token every time when this was
   checked (2026-11-10), so use alone does not move a token to the new key. Tokens left on the old key are re-encrypted by

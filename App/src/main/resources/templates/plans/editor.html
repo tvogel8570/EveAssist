@@ -3,8 +3,25 @@
 <head><title th:text="${plan.name}">Plan</title></head>
 <body>
 <main class="max-w-6xl mx-auto p-4">
-    <h1 class="text-xl font-semibold mb-1" th:text="${plan.name}">Plan</h1>
-    <p class="text-sm opacity-70 mb-3" th:text="#{plan.simplified}">Simplified costing</p>
+    <div class="flex items-start gap-3 mb-1">
+        <h1 class="text-xl font-semibold grow">
+            <span th:text="${plan.name}">Plan</span>
+            <span id="archived-badge" th:if="${plan.archived}" class="badge badge-ghost badge-sm align-middle ml-1"
+                  th:text="#{plans.archived}">Archived</span>
+        </h1>
+        <th:block th:replace="~{plans/fragments :: planActions(${plan.id.value}, ${plan.name}, ${plan.archived}, 'plan', false)}"></th:block>
+        <!-- a new plan without going back to the list: a name is needed, because plans cannot be renamed yet -->
+        <details id="new-plan-menu" class="dropdown dropdown-end" data-autoclose data-focus-on-open>
+            <summary id="new-plan-toggle" class="btn btn-sm btn-outline" th:text="#{plans.new}">New</summary>
+            <form class="dropdown-content card bg-base-300 shadow z-30 w-72 p-3 gap-2" method="post" th:action="@{/plans}">
+                <input id="new-plan-name-here" class="input input-sm w-full" name="name" required maxlength="100"
+                       pattern=".*\S.*" autocomplete="off" th:placeholder="#{plans.newName}" th:aria-label="#{plans.newName}">
+                <button class="btn btn-primary btn-sm" type="submit" th:text="#{plans.create}">New plan</button>
+            </form>
+        </details>
+    </div>
+    <p class="text-sm opacity-70 mb-1" th:text="#{plan.simplified}">Simplified costing</p>
+    <p id="plan-prices-note" class="text-sm opacity-70 mb-3" th:text="#{plan.allPricesJita}">All prices are Jita 4-4 only.</p>
     <input th:replace="~{plans/fragments :: version(${plan.version}, false)}">
     <div th:replace="~{plans/fragments :: total(${plan.totalCost}, ${plan.unpricedLines}, ${plan.pricesAsOf}, false)}"></div>
 
@@ -20,32 +37,8 @@
     </div>
     <div th:replace="~{plans/fragments :: priceWarning(null, false)}"></div>
 
-    <div id="products">
-        <p id="no-products" th:if="${#lists.isEmpty(plan.products)}" class="opacity-70 my-3" th:text="#{plan.noProducts}">No products</p>
-        <table class="table table-sm" th:unless="${#lists.isEmpty(plan.products)}">
-            <thead>
-            <tr>
-                <th th:text="#{plan.product}">Product</th>
-                <th class="num" th:text="#{plan.units}">Units</th>
-                <th class="w-20"></th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr th:each="product : ${plan.products}">
-                <td class="font-medium" th:text="${product.name}">Name</td>
-                <td class="num">
-                    <input class="input input-sm w-28 text-right" type="number" name="quantity" min="1" max="1000000"
-                           th:id="'quantity-' + ${product.typeId}" th:value="${product.quantity}"
-                           th:aria-label="#{plan.unitsOf(${product.name})}"
-                           th:attr="hx-post=@{/plans/{id}/products/{type}/quantity(id=${plan.id.value},type=${product.typeId})}"
-                           hx-trigger="change" hx-swap="none" hx-include="#plan-version"
-                           hx-sync="#products:queue all" hx-indicator="#request-indicator">
-                </td>
-                <td><span th:id="'saved-' + ${product.typeId}"></span></td>
-            </tr>
-            </tbody>
-        </table>
-    </div>
+    <div th:replace="~{plans/fragments :: undoBar(null, false)}"></div>
+    <div th:replace="~{plans/fragments :: products(${plan}, false)}"></div>
 
     <div class="max-w-md mt-3">
         <input id="product-search" class="input input-sm w-full" type="search" name="q" autocomplete="off"
@@ -57,6 +50,7 @@
     </div>
 
     <div th:replace="~{plans/fragments :: parts(${plan}, false)}"></div>
+    <div th:replace="~{plans/fragments :: runs(${plan.runs}, false)}"></div>
     <div th:replace="~{plans/fragments :: materials(${plan}, false)}"></div>
 </main>
 </body>

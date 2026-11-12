@@ -35,4 +35,17 @@ class AccountRepository {
                         new AccountId(rs.getObject("public_id", UUID.class)), rs.getString("display_name")))
                 .optional();
     }
+
+    /**
+     * Deletes the account. The database removes everything that belongs to it (characters and their tokens and data,
+     * features, plans, corporations) because each of those tables references the account with ON DELETE CASCADE.
+     */
+    void delete(AccountId id) {
+        jdbc.sql("DELETE FROM account WHERE public_id = :id").param("id", id.value()).update();
+    }
+
+    /** Signs the user out everywhere. A session's principal name is the Keycloak subject (user-name-attribute: sub). */
+    void deleteSessions(String keycloakSub) {
+        jdbc.sql("DELETE FROM spring_session WHERE principal_name = :sub").param("sub", keycloakSub).update();
+    }
 }

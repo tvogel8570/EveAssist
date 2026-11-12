@@ -1,0 +1,118 @@
+# Prod: Caddy, the app and Keycloak on one instance. Postgres is RDS. Start it with start.sh, which supplies the secrets.
+# Only Caddy publishes ports to the internet. Keycloak's port is published on the instance's loopback address for the
+# operator's tunnel; nothing else is published.
+name: eveassist
+
+x-logging: &logging
+  driver: awslogs
+  options:
+    awslogs-region: ${AWS_DEFAULT_REGION:?}
+    awslogs-group: /eveassist/prod
+    tag: "{{.Name}}"
+
+services:
+  caddy:
+    image: caddy:2.11.9-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMAIN: ${DOMAIN:?}
+      AUTH_DOMAIN: ${AUTH_DOMAIN:?}
+      ACME_EMAIL: ${ACME_EMAIL:?}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # the certificates: keep them, because Let's Encrypt limits how many it issues
+      - caddy-data:/data
+      - caddy-config:/config
+    networks:
+      default:
+        # inside the network the public names reach Caddy, so the app and Keycloak talk to each other under the names
+        # that appear in tokens, with a valid certificate and without leaving through the Elastic IP
+        aliases:
+          - ${DOMAIN}
+          - ${AUTH_DOMAIN}
+    logging: *logging
+
+  keycloak:
+    image: ${KEYCLOAK_IMAGE:?}
+    restart: unless-stopped
+    command: ["start", "--optimized", "--import-realm"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KC_BOOTSTRAP_ADMIN_USERNAME:?}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_BOOTSTRAP_ADMIN_PASSWORD:?}
+      KC_DB_URL: jdbc:postgresql://${RDS_HOST:?}:5432/keycloak?sslmode=require
+      KC_DB_USERNAME: keycloak_owner
+      KC_DB_PASSWORD: ${KC_DB_PASSWORD:?}
+      KC_DB_SCHEMA: public
+      # Caddy ends TLS and forwards plain HTTP. The URL browsers and the app use, and the token issuer:
+      KC_HOSTNAME: https://${AUTH_DOMAIN}
+      # The admin console is served at this address only, which only the operator's tunnel reaches
+      KC_HOSTNAME_ADMIN: http://localhost:8080
+      KC_HTTP_ENABLED: "true"
+      KC_PROXY_HEADERS: xforwarded
+      JAVA_OPTS_KC_HEAP: -XX:MaxRAMPercentage=65
+      # filled into the realm file when it is imported (first start only)
+      KC_EVE_CLIENT_ID: ${KC_EVE_CLIENT_ID:?}
+      KC_EVE_CLIENT_SECRET: ${KC_EVE_CLIENT_SECRET:?}
+      KC_APP_CLIENT_SECRET: ${KC_APP_CLIENT_SECRET:?}
+      KC_ADMIN_CLIENT_SECRET: ${KC_ADMIN_CLIENT_SECRET:?}
+      APP_BASE_URL: https://${DOMAIN}
+    ports:
+      - "127.0.0.1:8080:8080"
+    mem_limit: 1536m
+    healthcheck:
+      # The realm's discovery document answers only once the realm exists, so the app (which reads it at start-up) never
+      # starts while the first import is still running. /health/live turns green before the import finishes.
+      test: ["CMD-SHELL", "curl -fs http://localhost:8080/realms/EveAssist/.well-known/openid-configuration"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 60s
+    logging: *logging
+
+  app:
+    image: ${APP_IMAGE:?}
+    restart: unless-stopped
+    depends_on:
+      keycloak:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      APP_BASE_URL: https://${DOMAIN}
+      KEYCLOAK_ISSUER_URI: https://${AUTH_DOMAIN}/realms/EveAssist
+      EVEASSIST_DB_URL: jdbc:postgresql://${RDS_HOST:?}:5432/eveassist?sslmode=require
+      EVEASSIST_APP_PASSWORD: ${EVEASSIST_APP_PASSWORD:?}
+      EVEASSIST_OWNER_PASSWORD: ${EVEASSIST_OWNER_PASSWORD:?}
+      KC_APP_CLIENT_SECRET: ${KC_APP_CLIENT_SECRET:?}
+      # deleting an account deletes its Keycloak user: the app calls the admin API on the Compose network
+      KEYCLOAK_ADMIN_URL: http://keycloak:8080
+      KC_ADMIN_CLIENT_SECRET: ${KC_ADMIN_CLIENT_SECRET:?}
+      EVE_LINK_CLIENT_ID: ${EVE_LINK_CLIENT_ID:-}
+      EVE_LINK_CLIENT_SECRET: ${EVE_LINK_CLIENT_SECRET:-}
+      ESI_CONTACT_EMAIL: ${ESI_CONTACT_EMAIL:?}
+      # the token data key: wrapped by KMS, unwrapped once at start with the instance role. No plain key anywhere.
+      EVE_TOKEN_DATA_KEY_WRAPPED: ${EVE_TOKEN_DATA_KEY_WRAPPED:?}
+      EVE_KMS_KEY_ID: ${EVE_KMS_KEY_ID:?}
+      AWS_REGION: ${AWS_DEFAULT_REGION:?}
+    mem_limit: 1280m
+    healthcheck:
+      # The health endpoint is on the management port, which nothing publishes. The image has no curl, so bash opens the
+      # socket. It has to be run as `bash -c`: CMD-SHELL uses /bin/sh, which is dash here and has no /dev/tcp.
+      test:
+        - CMD
+        - bash
+        - -c
+        - >-
+          exec 3<>/dev/tcp/127.0.0.1/8081 && printf 'GET /actuator/health HTTP/1.0\r\n\r\n' >&3 && grep -q '"status":"UP"' <&3
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 90s
+    logging: *logging
+
+volumes:
+  caddy-data:
+  caddy-config:

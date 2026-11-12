@@ -142,7 +142,7 @@ class InventoryBrowserIT extends IntegrationTest {
         addFilter("Character");
         page.locator("#filter-list label", new Page.LocatorOptions().setHasText("Alt Two")).locator("input").check();
 
-        assertThat(page.locator("#summary")).containsText("2 item types, 520 units");
+        assertThat(page.locator("#summary")).containsText("2 item types in 2 stacks with 520 units");
         assertThat(page.locator("#chips")).containsText("Category: Material");
         assertThat(page.locator("#chips")).containsText("Character: Alt Two");
         assertThat(page.url()).contains("category=4").contains("character=" + two);
@@ -151,7 +151,7 @@ class InventoryBrowserIT extends IntegrationTest {
 
         page.locator("#chips a[aria-label^='Remove the filter Character']").click();
 
-        assertThat(page.locator("#summary")).containsText("2 item types, 2,020 units");
+        assertThat(page.locator("#summary")).containsText("2 item types in 3 stacks with 2,020 units");
         assertThat(page.locator("#chips")).not().containsText("Character");
         assertThat(page.locator("#chips")).containsText("Category: Material");
         assertThat(page.locator("#filter-list")).hasCount(0);
@@ -274,7 +274,7 @@ class InventoryBrowserIT extends IntegrationTest {
         page.locator("#minimum-input").fill("100");
         page.locator("#minimum-input").press("Enter");
 
-        assertThat(page.locator("#summary")).containsText("1 item type, 2,000 units");
+        assertThat(page.locator("#summary")).containsText("1 item type in 2 stacks with 2,000 units");
         assertThat(page.locator("#chips")).containsText("Total at least: 100");
     }
 
@@ -339,5 +339,62 @@ class InventoryBrowserIT extends IntegrationTest {
 
         assertThat(page.locator("#export-csv")).hasAttribute("href", Pattern.compile(".*category=6.*"));
         assertThat(page.locator("#copy-lines")).isVisible();
+    }
+
+    // ---- typing in a search box (see documentation/architecture/ui-conventions.md)
+
+    private Object eval(String script) {
+        return page.evaluate(script);
+    }
+
+    @Test
+    void theSearchWaitsForALongPauseKeepsFocusAndTheCaretAndDoesNotAddHistoryEntries() {
+        open();
+        var historyBefore = ((Number) eval("history.length")).intValue();
+        page.locator("#inventory-search").click();
+
+        page.keyboard().type("trit", new com.microsoft.playwright.Keyboard.TypeOptions().setDelay(150));
+
+        // a second after the last key nothing has been applied yet: the pause is longer than that
+        page.waitForTimeout(1000);
+        assertThat(page.locator("#summary")).containsText("4 item types");
+        assertThat(page.url()).doesNotContain("q=");
+        // after the pause the list and the address change, and the box keeps focus with the caret where it was
+        assertThat(page.locator("#summary")).containsText("1 item type");
+        assertThat(page.url()).contains("q=trit");
+        assertThat(page.locator("#inventory-search")).isFocused();
+        assertThat(((Number) eval("document.getElementById('inventory-search').selectionStart")).intValue()).isEqualTo(4);
+        // typing replaces the address entry, so the back button does not step through search terms
+        assertThat(((Number) eval("history.length")).intValue()).isEqualTo(historyBefore);
+    }
+
+    @Test
+    void enterAppliesTheSearchAtOnce() {
+        open();
+        page.locator("#inventory-search").click();
+        page.keyboard().type("trit");
+
+        page.keyboard().press("Enter");
+
+        // well inside the pause: Enter does not wait for it
+        assertThat(page.locator("#summary")).containsText("1 item type",
+                new com.microsoft.playwright.assertions.LocatorAssertions.ContainsTextOptions().setTimeout(1200));
+        assertThat(page.url()).contains("q=trit");
+    }
+
+    @Test
+    void searchingAFilterListKeepsFocusAndTheCaretWhileTheListIsRefreshed() {
+        open();
+        addFilter("Category");
+        var search = page.locator("input[name=fq]");
+        search.click();
+
+        page.keyboard().type("mat", new com.microsoft.playwright.Keyboard.TypeOptions().setDelay(120));
+
+        // the list is narrowed after the pause, and what was typed is still there, in the box that still has focus
+        assertThat(page.locator("#filter-list label")).hasCount(1);
+        assertThat(page.locator("input[name=fq]")).isFocused();
+        assertThat(page.locator("input[name=fq]")).hasValue("mat");
+        assertThat(((Number) eval("document.activeElement.selectionStart")).intValue()).isEqualTo(3);
     }
 }

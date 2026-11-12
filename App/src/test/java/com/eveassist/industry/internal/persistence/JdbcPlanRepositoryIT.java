@@ -279,4 +279,87 @@ class JdbcPlanRepositoryIT extends IntegrationTest {
         assertThat(overview.totalCost()).isNull();
         assertThat(overview.outOfDate()).isFalse();
     }
+
+    // ---- archiving and deleting
+
+    @Test
+    void anArchivedPlanIsLeftOutOfTheListUnlessAskedForAndComesAfterTheActiveOnes() {
+        var owner = viewerFor(newSub());
+        var a = plans.create(owner, "A first");
+        plans.create(owner, "B second");
+
+        assertThat(plans.setArchived(owner, a, true)).isTrue();
+
+        assertThat(plans.overviews(owner, "test-sde")).extracting(o -> o.name()).containsExactly("B second");
+        var all = plans.overviews(owner, "test-sde", true);
+        assertThat(all).extracting(o -> o.name()).containsExactly("B second", "A first");
+        assertThat(all).extracting(o -> o.archived()).containsExactly(false, true);
+        assertThat(plans.find(owner, a).orElseThrow().archived()).isTrue();
+    }
+
+    @Test
+    void archivingAndRestoringAreNotEditsAndRestoringBringsThePlanBack() {
+        var owner = viewerFor(newSub());
+        var id = plans.create(owner, "Mine");
+        var plan = plans.find(owner, id).orElseThrow();
+        plan.addProduct(HAULER, 3);
+        plans.save(owner, plan, TOTAL);
+        var version = plans.find(owner, id).orElseThrow().version();
+
+        plans.setArchived(owner, id, true);
+        plans.setArchived(owner, id, true);
+        assertThat(plans.find(owner, id).orElseThrow().version()).isEqualTo(version);
+        plans.setArchived(owner, id, false);
+
+        assertThat(plans.find(owner, id).orElseThrow().archived()).isFalse();
+        assertThat(plans.find(owner, id).orElseThrow().version()).isEqualTo(version);
+        assertThat(plans.overviews(owner, "test-sde")).extracting(o -> o.name()).containsExactly("Mine");
+    }
+
+    @Test
+    void anAnArchivedPlanCanStillBeEditedAndKeepsItsStatus() {
+        var owner = viewerFor(newSub());
+        var id = plans.create(owner, "Mine");
+        plans.setArchived(owner, id, true);
+        var plan = plans.find(owner, id).orElseThrow();
+        plan.addProduct(HAULER, 2);
+
+        assertThat(plans.save(owner, plan, TOTAL)).isPresent();
+
+        assertThat(plans.find(owner, id).orElseThrow().archived()).isTrue();
+    }
+
+    @Test
+    void deletingAPlanRemovesItWithItsProductsPartsAndPrices() {
+        var owner = viewerFor(newSub());
+        var id = plans.create(owner, "Mine");
+        var plan = plans.find(owner, id).orElseThrow();
+        plan.addProduct(HAULER, 3);
+        plan.buyPart(SECOND_SHIP);
+        plan.setPrice(HAULER, new PlanPrice(new BigDecimal("1.00"), new BigDecimal("0.50"), AS_OF));
+        plans.save(owner, plan, TOTAL);
+
+        assertThat(plans.delete(owner, id)).isTrue();
+
+        assertThat(plans.find(owner, id)).isEmpty();
+        assertThat(plans.overviews(owner, "test-sde", true)).isEmpty();
+        for (var table : new String[] {"plan_product", "plan_bought_part", "plan_price"}) {
+            assertThat(jdbc.sql("SELECT count(*) FROM " + table + " t WHERE NOT EXISTS (SELECT 1 FROM plan p WHERE p.id = t.plan_id)")
+                    .query(Long.class).single()).as(table + " rows with no plan").isZero();
+        }
+        assertThat(plans.delete(owner, id)).as("deleting it again finds nothing").isFalse();
+    }
+
+    @Test
+    void anotherAccountCannotArchiveRestoreOrDeleteAPlan() {
+        var owner = viewerFor(newSub());
+        var other = viewerFor(newSub());
+        var id = plans.create(owner, "Mine");
+
+        assertThat(plans.setArchived(other, id, true)).isFalse();
+        assertThat(plans.delete(other, id)).isFalse();
+
+        assertThat(plans.find(owner, id).orElseThrow().archived()).isFalse();
+        assertThat(plans.overviews(owner, "test-sde")).hasSize(1);
+    }
 }

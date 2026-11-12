@@ -27,11 +27,8 @@
             <input type="hidden" name="ui" value="1">
             <div th:replace="~{inventory/browse :: state(false)}"></div>
             <div class="flex flex-wrap gap-2 items-center">
-                <input id="inventory-search" type="search" name="q" th:value="${search}" autocomplete="off"
-                       class="input input-sm grow min-w-40" th:placeholder="#{inventory.search}"
-                       th:aria-label="#{inventory.search}"
-                       th:attr="hx-get=@{/inventory}" hx-include="#browse-form" hx-target="#browse"
-                       hx-push-url="true" hx-trigger="input changed delay:300ms, search" hx-sync="#browse-form:replace">
+                <input th:replace="~{fragments/search-input :: field('inventory-search', 'q', ${search}, #{inventory.search},
+                       'input input-sm grow min-w-40', @{/inventory}, '#browse', null, null, '#browse-form', '#browse-form:replace', true)}">
                 <details id="add-filter" class="dropdown dropdown-end" data-autoclose>
                     <summary class="btn btn-sm btn-outline" th:text="#{inventory.addFilter}">+ Add filter</summary>
                     <ul class="menu dropdown-content bg-base-300 rounded-box z-30 w-56 p-2 shadow">

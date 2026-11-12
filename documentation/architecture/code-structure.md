@@ -131,7 +131,11 @@ They therefore meet at the use cases, not at the controllers or the facade:
 - **The `api` module and other modules** call the facade, which delegates to the same use cases.
 - **Types and queries only pages use** stay under `internal`, so a screen change cannot widen the module's API or change
   the JSON contract (see [Use case results](#use-case-results)).
-- **Every public use case method takes the `Viewer` as its first parameter.**
+- **Every public use case method takes the `Viewer` as its first parameter, or a `Visitor` when nobody is signed in.**
+  A `Visitor` (the address a request came from) is used only for a plan tried without an account (`TryPlans`), which
+  stores nothing and reads no account's data. No repository takes one, and the build still fails for a repository
+  method without a `Viewer`, so a visitor cannot reach an account's records. This widens a rule that is still
+  **proposed**, so the developer should confirm it.
 - **Every public repository method takes the `Viewer` as its first parameter, and its SQL filters on it.** A use case
   cannot get or change a record without one, so the build fails when a new repository method leaves it out. The
   developer chose this over a viewer-checking class such as `VisiblePlans`, which the spike used, because the check then
@@ -470,7 +474,10 @@ almost nothing, and they never need ArchUnit's frozen-violation baseline (`Freez
 - **EveAssist's own ArchUnit rules**, in the same test run:
   - `domain` packages do not depend on `org.springframework`, `jakarta.persistence`, `com.fasterxml.jackson` or
     `tools.jackson` (Jackson 3, the default in Spring Boot 4).
-  - Only the `esi` and `characters` modules use an HTTP client (ESI, and EVE SSO for character linking).
+  - Only the `esi` and `characters` modules and one class, `identity.internal.KeycloakAdmin`, use an HTTP client (ESI, EVE SSO
+    for character linking, and Keycloak's admin API to delete a user when an account is deleted). The exemption is the class,
+    not the `identity` module, so nothing else there can start an outbound call unnoticed. The developer decided this on
+    2026-11-11; fixtures prove that `KeycloakAdmin` passes and another `identity` class does not.
   - Data types and events in a module's base package are records. No class name ends in `Dto` or `Impl`, and no
     interface name starts with `I` followed by a capital letter.
   - The facade rule from [Facade and visibility](#facade-and-visibility), if that section stands.

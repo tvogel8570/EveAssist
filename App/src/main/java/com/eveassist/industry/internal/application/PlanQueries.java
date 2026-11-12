@@ -21,8 +21,14 @@ public class PlanQueries {
         this.sde = sde;
     }
 
+    /** The viewer's active plans. */
     public List<PlanOverview> overviews(Viewer viewer) {
-        return plans.overviews(viewer, sde.version());
+        return overviews(viewer, false);
+    }
+
+    /** The viewer's plans; with {@code includeArchived} the archived ones too, after the active ones. */
+    public List<PlanOverview> overviews(Viewer viewer, boolean includeArchived) {
+        return plans.overviews(viewer, sde.version(), includeArchived);
     }
 
     public List<ItemType> searchProducts(Viewer viewer, String text) {

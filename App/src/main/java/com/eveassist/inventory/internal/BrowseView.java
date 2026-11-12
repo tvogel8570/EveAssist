@@ -6,10 +6,11 @@ import java.util.UUID;
 /**
  * What the inventory page shows for a filter. Plain data for the templates: every text is already worded.
  *
+ * @param stacks how many asset rows pass the filter: a stack of identical items in one place, or one assembled item
  * @param more   true when there are more item types than are shown and asking for more would show them
  * @param capped true when there are more than the most the page will ever list, so only a narrower filter helps
  */
-public record BrowseView(List<ItemView> items, int itemTypes, long units, boolean more, boolean capped,
+public record BrowseView(List<ItemView> items, int itemTypes, long stacks, long units, boolean more, boolean capped,
         boolean showCharacters,
         List<Chip> chips, String clearAllQuery, String exportQuery, String moreQuery, boolean unfiltered,
         boolean hasAssets, boolean corporations) {

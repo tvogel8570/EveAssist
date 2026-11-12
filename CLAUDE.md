@@ -69,6 +69,11 @@ Real secrets are never committed. Each module has a `template_*` file with empty
 and keystores. `.gitignore` already covers the real filenames. Don't put secrets in code, commits, PR descriptions or
 handoff notes.
 
+The repository is public, so deployment identifiers (AWS account id, instance id, RDS endpoint, security group ids and the like) are not
+committed either. Runbook commands refer to them as `$EVEASSIST_INSTANCE_ID` and so on; the values are in `Infrastructure/prod/ops.env`
+(git-ignored, copy it from `template_ops.env` and load it with `set -a; . Infrastructure/prod/ops.env; set +a`). Real values never go into
+documentation, scripts, commits or issues, and neither do the developer's own IP addresses.
+
 `App/` has no secrets file of its own. It imports `Infrastructure/.env`, so run it with `App/` as the working directory.
 In prod the same names come from real environment variables.
 

@@ -27,9 +27,16 @@ public class Plan {
     private final List<PlanProduct> products;
     private final Set<TypeId> boughtParts;
     private final Map<TypeId, PlanPrice> prices;
+    private final boolean archived;
 
     public Plan(PlanId id, String name, long version, List<PlanProduct> products, Set<TypeId> boughtParts,
             Map<TypeId, PlanPrice> prices) {
+        this(id, name, version, products, boughtParts, prices, false);
+    }
+
+    public Plan(PlanId id, String name, long version, List<PlanProduct> products, Set<TypeId> boughtParts,
+            Map<TypeId, PlanPrice> prices, boolean archived) {
+        this.archived = archived;
         this.id = id;
         this.name = name;
         this.version = version;
@@ -48,6 +55,11 @@ public class Plan {
 
     public long version() {
         return version;
+    }
+
+    /** True for a plan the user archived: hidden from the list, still there to open and restore. */
+    public boolean archived() {
+        return archived;
     }
 
     public List<PlanProduct> products() {
@@ -92,6 +104,11 @@ public class Plan {
     public void changeQuantity(TypeId type, long quantity) {
         check(quantity);
         products.replaceAll(product -> product.type().equals(type) ? new PlanProduct(type, quantity) : product);
+    }
+
+    /** Takes a product out. What it needed is not forgotten: prices stay, so putting it back is quoted as it was. */
+    public void removeProduct(TypeId type) {
+        products.removeIf(product -> product.type().equals(type));
     }
 
     /** Adding a product the plan already has adds to its quantity. */

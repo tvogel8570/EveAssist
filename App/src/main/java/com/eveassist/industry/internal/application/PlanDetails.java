@@ -12,14 +12,17 @@ public record PlanDetails(
         List<PlanProductLine> products,
         List<PlanLineCosting> bought,
         List<PlanLineCosting> parts,
+        List<PlanRunLine> runs,
         BigDecimal totalCost,
         int unpricedLines,
         Instant pricesAsOf,
-        String sdeVersion) {
+        String sdeVersion,
+        boolean archived) {
 
     public PlanDetails {
         products = List.copyOf(products);
         bought = List.copyOf(bought);
         parts = List.copyOf(parts);
+        runs = List.copyOf(runs);
     }
 }

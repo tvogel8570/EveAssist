@@ -31,7 +31,7 @@
     </div>
 
     <form class="flex gap-2 mb-4 max-w-xl" method="get" th:action="@{/market/blueprint-copies}">
-        <input id="bpc-search" class="input input-sm grow" name="q" th:value="${q}" maxlength="100"
+        <input id="bpc-search" class="input input-sm grow" name="q" th:value="${q}" maxlength="100" autocomplete="off"
                th:placeholder="#{bpc.search}" th:aria-label="#{bpc.search}">
         <button class="btn btn-sm" type="submit" th:text="#{bpc.find}">Find</button>
     </form>

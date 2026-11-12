@@ -168,6 +168,19 @@ class CharacterRepository {
                 .optional();
     }
 
+    /** Every stored token of the owner's characters, for revoking them all when the account is deleted. */
+    List<OwnedToken> tokensOf(AccountId owner) {
+        return jdbc.sql("""
+                SELECT c.eve_character_id, t.ciphertext, t.nonce, t.key_id FROM character_token t
+                JOIN character c ON c.id = t.character_id
+                WHERE c.owner_account_id = :owner
+                """)
+                .param("owner", owner.value())
+                .query((rs, row) -> new OwnedToken(rs.getLong("eve_character_id"),
+                        new EncryptedToken(rs.getBytes("ciphertext"), rs.getBytes("nonce"), rs.getString("key_id"))))
+                .list();
+    }
+
     /** Same, found by the EVE character id, for a re-link. */
     Optional<EncryptedToken> findToken(AccountId owner, long eveCharacterId) {
         return jdbc.sql("""

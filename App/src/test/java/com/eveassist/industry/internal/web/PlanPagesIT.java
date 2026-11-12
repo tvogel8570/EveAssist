@@ -9,11 +9,13 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.eveassist.IntegrationTest;
 import com.eveassist.industry.PlanId;
 import com.eveassist.industry.internal.application.AddProductCommand;
+import com.eveassist.industry.internal.application.ChangeQuantityCommand;
 import com.eveassist.industry.internal.application.CreatePlanCommand;
 import com.eveassist.industry.internal.application.PlanEditing;
 import com.eveassist.industry.internal.application.PlanEntry;
@@ -78,7 +80,7 @@ class PlanPagesIT extends IntegrationTest {
         rendered(mvc.perform(get("/plans").with(signedIn(sub))))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("Not costed")))
-                .andExpect(content().string(containsString("700 ISK")))
+                .andExpect(content().string(containsString("630 ISK")))
                 .andExpect(content().string(containsString("My &lt;i&gt;plan&lt;/i&gt;")));
     }
 
@@ -96,10 +98,10 @@ class PlanPagesIT extends IntegrationTest {
 
         rendered(mvc.perform(get("/plans").with(session)))
                 .andExpect(content().string(containsString("Out of date")))
-                .andExpect(content().string(containsString("700 ISK")));
+                .andExpect(content().string(containsString("630 ISK")));
 
         rendered(mvc.perform(get("/plans/" + id.value()).with(session)))
-                .andExpect(content().string(containsString("700 ISK")));
+                .andExpect(content().string(containsString("630 ISK")));
         rendered(mvc.perform(get("/plans").with(session)))
                 .andExpect(content().string(not(containsString("Out of date"))));
     }
@@ -113,17 +115,17 @@ class PlanPagesIT extends IntegrationTest {
         esi.sell(34, "6.00");
 
         rendered(mvc.perform(get("/plans/" + id.value()).with(session)))
-                .andExpect(content().string(containsString("700 ISK")));
+                .andExpect(content().string(containsString("630 ISK")));
         rendered(mvc.perform(get("/plans").with(session)))
                 .andExpect(content().string(not(containsString("Out of date"))))
-                .andExpect(content().string(containsString("700 ISK")));
+                .andExpect(content().string(containsString("630 ISK")));
 
         rendered(mvc.perform(post("/plans/{id}/prices/refresh", id.value()).with(session).with(csrf())))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("id=\"plan-total-value\"")))
-                .andExpect(content().string(containsString("820 ISK")));
+                .andExpect(content().string(containsString("738 ISK")));
         rendered(mvc.perform(get("/plans/" + id.value()).with(session)))
-                .andExpect(content().string(containsString("820 ISK")));
+                .andExpect(content().string(containsString("738 ISK")));
     }
 
     @Test
@@ -138,9 +140,9 @@ class PlanPagesIT extends IntegrationTest {
                 .andExpect(status().isOk());
 
         rendered(mvc.perform(get("/plans/" + quoted.value()).with(session)))
-                .andExpect(content().string(containsString("700 ISK")));
+                .andExpect(content().string(containsString("630 ISK")));
         rendered(mvc.perform(get("/plans/" + refreshed.value()).with(session)))
-                .andExpect(content().string(containsString("820 ISK")));
+                .andExpect(content().string(containsString("738 ISK")));
     }
 
     @Test
@@ -158,7 +160,7 @@ class PlanPagesIT extends IntegrationTest {
         assertThat(body).contains("id=\"price-warning\"", "Could not refresh", "Pilot&#39;s Mineral");
         // Tritanium rose by 1 on 120 units; the failed item kept its price of 10
         rendered(mvc.perform(get("/plans/" + id.value()).with(session)))
-                .andExpect(content().string(containsString("820 ISK")));
+                .andExpect(content().string(containsString("738 ISK")));
     }
 
     @Test
@@ -174,7 +176,7 @@ class PlanPagesIT extends IntegrationTest {
         assertThat(asked).as("Tritanium is already priced, so it is not asked about again")
                 .doesNotContain(34).contains(1003);
         rendered(mvc.perform(get("/plans/" + id.value()).with(signedIn(sub))))
-                .andExpect(content().string(not(containsString("820 ISK"))));
+                .andExpect(content().string(not(containsString("738 ISK"))));
     }
 
     @Test
@@ -401,5 +403,207 @@ class PlanPagesIT extends IntegrationTest {
         mvc.perform(get("/plans"))
                 .andExpect(status().isFound())
                 .andExpect(header().string("Location", containsString("/oauth2/authorization/keycloak")));
+    }
+
+    @Test
+    void thePlanPageHasANewButtonThatAsksForANameAndCreatesAPlan() throws Exception {
+        var sub = newSub();
+        var id = planWith(sub, HAULER);
+        var session = signedIn(sub);
+
+        var page = rendered(mvc.perform(get("/plans/" + id.value()).with(session)))
+                .andReturn().getResponse().getContentAsString();
+
+        // a menu with a name box that posts to the same create action as the list, with the CSRF token Thymeleaf adds
+        assertThat(page).contains("id=\"new-plan-menu\"").contains("id=\"new-plan-toggle\"")
+                .contains("action=\"/plans\"").contains("name=\"name\"").contains("autocomplete=\"off\"")
+                .contains("data-focus-on-open").contains("name=\"_csrf\"");
+        mvc.perform(post("/plans").param("name", "From the plan page").with(session).with(csrf()))
+                .andExpect(status().is3xxRedirection());
+        rendered(mvc.perform(get("/plans").with(session))).andExpect(content().string(containsString("From the plan page")));
+    }
+
+    // ---- removing a product, and putting it back
+
+    private String removeBody(String sub, PlanId id, int type, long version) throws Exception {
+        return rendered(mvc.perform(post("/plans/{id}/products/{type}/remove", id.value(), type)
+                        .param("expectedVersion", String.valueOf(version)).with(signedIn(sub)).with(csrf())))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+    }
+
+    private long storedProducts(PlanId id) {
+        return jdbc.sql("SELECT count(*) FROM plan_product pp JOIN plan p ON p.id = pp.plan_id WHERE p.public_id = :id")
+                .param("id", id.value()).query(Long.class).single();
+    }
+
+    @Test
+    void removingAProductRedrawsThePlanCostsTheRestAndOffersUndo() throws Exception {
+        var sub = newSub();
+        var id = planWith(sub, HAULER);
+
+        var body = removeBody(sub, id, 1001, 1);
+
+        // the products, the totals and the version are replaced, and what was removed can be put back
+        assertThat(body).contains("id=\"products\"", "id=\"no-products\"", "id=\"plan-total\"", "id=\"plan-version\"",
+                "value=\"2\"", "id=\"undo-bar\"", "Removed Test Hauler (1 unit).", "id=\"undo-remove\"",
+                "/plans/" + id.value() + "/products/1001/restore", "name=\"quantity\"");
+        assertThat(body).doesNotContain("id=\"quantity-1001\"", "<html");
+        assertThat(storedProducts(id)).isZero();
+    }
+
+    @Test
+    void aRemovedProductIsOfferedBackWithTheUnitsItHad() throws Exception {
+        var sub = newSub();
+        var id = planWith(sub, HAULER);
+        editing.changeQuantity(viewerFor(sub), new ChangeQuantityCommand(id, HAULER, 3, 1));
+
+        var body = removeBody(sub, id, 1001, 2);
+
+        assertThat(body).contains("Removed Test Hauler (3 units).", "value=\"3\"");
+    }
+
+    @Test
+    void undoPutsTheProductBackWithItsUnitsAndTheQuoteItHad() throws Exception {
+        var sub = newSub();
+        var id = planWith(sub, HAULER);
+        var viewer = viewerFor(sub);
+        editing.changeQuantity(viewer, new ChangeQuantityCommand(id, HAULER, 3, 1));
+        var before = entry.open(viewer, id).totalCost();
+        removeBody(sub, id, 1001, 2);
+
+        var body = rendered(mvc.perform(post("/plans/{id}/products/{type}/restore", id.value(), 1001)
+                        .param("quantity", "3").with(signedIn(sub)).with(csrf())))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+
+        assertThat(body).contains("id=\"quantity-1001\"", "value=\"3\"", "id=\"undo-bar\"");
+        assertThat(body).doesNotContain("Removed Test Hauler", "id=\"no-products\"");
+        var after = entry.open(viewer, id);
+        assertThat(after.products()).singleElement().satisfies(line -> assertThat(line.quantity()).isEqualTo(3));
+        // the plan kept its prices, so it is quoted as before and is not left unpriced
+        assertThat(after.totalCost()).isEqualByComparingTo(before);
+        assertThat(after.unpricedLines()).isZero();
+    }
+
+    @Test
+    void removingFromAPlanThatChangedOrDoesNotHaveTheProductOrIsAnotherAccountsIsRefused() throws Exception {
+        var sub = newSub();
+        var id = planWith(sub, HAULER);
+
+        mvc.perform(post("/plans/{id}/products/{type}/remove", id.value(), 1001)
+                        .param("expectedVersion", "0").with(signedIn(sub)).with(csrf()))
+                .andExpect(status().isConflict());
+        mvc.perform(post("/plans/{id}/products/{type}/remove", id.value(), 34)
+                        .param("expectedVersion", "1").with(signedIn(sub)).with(csrf()))
+                .andExpect(status().isNotFound());
+        mvc.perform(post("/plans/{id}/products/{type}/remove", id.value(), 1001)
+                        .param("expectedVersion", "1").with(signedIn(newSub())).with(csrf()))
+                .andExpect(status().isNotFound());
+        mvc.perform(post("/plans/{id}/products/{type}/remove", id.value(), 1001).param("expectedVersion", "1")
+                        .with(signedIn(sub)))
+                .andExpect(status().isForbidden());
+        // nothing was removed by any of them
+        assertThat(storedProducts(id)).isEqualTo(1);
+    }
+
+    @Test
+    void theEditorOffersARemoveButtonForEachProductAndAnEmptyUndoBar() throws Exception {
+        var sub = newSub();
+        var id = planWith(sub, HAULER);
+
+        var page = rendered(mvc.perform(get("/plans/" + id.value()).with(signedIn(sub))))
+                .andReturn().getResponse().getContentAsString();
+
+        assertThat(page).contains("id=\"remove-1001\"", "aria-label=\"Remove Test Hauler\"",
+                "/plans/" + id.value() + "/products/1001/remove", "id=\"undo-bar\"", "data-plan-quantity",
+                "data-saved=\"1\"");
+        assertThat(page).doesNotContain("Removed Test Hauler");
+    }
+
+    // ---- archiving and deleting from the list and the plan page
+
+    private ResultActions postAs(String path, String sub, String... params) throws Exception {
+        var request = post(path).with(signedIn(sub)).with(csrf());
+        for (int i = 0; i < params.length; i += 2) {
+            request.param(params[i], params[i + 1]);
+        }
+        return mvc.perform(request);
+    }
+
+    @Test
+    void anArchivedPlanIsHiddenFromTheListUntilArchivedPlansAreAskedFor() throws Exception {
+        var sub = newSub();
+        var id = planWith(sub, HAULER);
+        var session = signedIn(sub);
+
+        postAs("/plans/" + id.value() + "/archive", sub).andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/plans"));
+
+        var hidden = rendered(mvc.perform(get("/plans").with(session))).andReturn().getResponse().getContentAsString();
+        assertThat(hidden).doesNotContain("plan-row-" + id.value()).contains("id=\"all-archived\"", "id=\"show-archived\"")
+                .doesNotContain("id=\"no-plans\"");
+        var shown = rendered(mvc.perform(get("/plans").param("archived", "1").with(session)))
+                .andReturn().getResponse().getContentAsString();
+        assertThat(shown).contains("plan-row-" + id.value(), "Archived", "restore-" + id.value())
+                .doesNotContain("archive-" + id.value() + "\"").contains("name=\"archived\" value=\"1\"");
+        assertThat(shown).contains("checked");
+    }
+
+    @Test
+    void restoringBringsThePlanBackToTheListAndTheRightPlaceIsWhereTheUserWas() throws Exception {
+        var sub = newSub();
+        var id = planWith(sub, HAULER);
+        postAs("/plans/" + id.value() + "/archive", sub);
+
+        // from the list, with archived plans shown, the user stays there
+        postAs("/plans/" + id.value() + "/restore", sub, "from", "list", "archived", "1")
+                .andExpect(redirectedUrl("/plans?archived=1"));
+        rendered(mvc.perform(get("/plans").with(signedIn(sub)))).andExpect(content().string(containsString("plan-row-" + id.value())));
+
+        // from the plan's own page the user stays on the plan
+        postAs("/plans/" + id.value() + "/archive", sub);
+        postAs("/plans/" + id.value() + "/restore", sub, "from", "plan").andExpect(redirectedUrl("/plans/" + id.value()));
+    }
+
+    @Test
+    void anArchivedPlanCanBeOpenedAndSaysSoWithRestoreAndDeleteOnItsPage() throws Exception {
+        var sub = newSub();
+        var id = planWith(sub, HAULER);
+        postAs("/plans/" + id.value() + "/archive", sub);
+
+        var page = rendered(mvc.perform(get("/plans/" + id.value()).with(signedIn(sub))))
+                .andReturn().getResponse().getContentAsString();
+
+        assertThat(page).contains("id=\"archived-badge\"", "id=\"restore-plan\"", "id=\"delete-plan\"",
+                "id=\"delete-plan-confirm\"").doesNotContain("id=\"archive-plan\"");
+    }
+
+    @Test
+    void anActivePlanPageOffersArchiveAndDeleteAndEscapesTheNameInTheQuestion() throws Exception {
+        var sub = newSub();
+        var id = planWith(sub, HAULER);
+
+        var page = rendered(mvc.perform(get("/plans/" + id.value()).with(signedIn(sub))))
+                .andReturn().getResponse().getContentAsString();
+
+        assertThat(page).contains("id=\"archive-plan\"", "id=\"delete-plan\"", "id=\"delete-plan-confirm\"",
+                "Delete &quot;My &lt;i&gt;plan&lt;/i&gt;&quot; permanently?").doesNotContain("id=\"archived-badge\"", "My <i>plan</i>");
+    }
+
+    @Test
+    void deletingAPlanRemovesItAndAnotherAccountCannotDeleteOrArchiveIt() throws Exception {
+        var sub = newSub();
+        var id = planWith(sub, HAULER);
+
+        postAs("/plans/" + id.value() + "/delete", newSub()).andExpect(status().isNotFound());
+        postAs("/plans/" + id.value() + "/archive", newSub()).andExpect(status().isNotFound());
+        postAs("/plans/" + id.value() + "/restore", newSub()).andExpect(status().isNotFound());
+        mvc.perform(post("/plans/" + id.value() + "/delete").with(signedIn(sub))).andExpect(status().isForbidden());
+        assertThat(storedProducts(id)).isEqualTo(1);
+
+        postAs("/plans/" + id.value() + "/delete", sub).andExpect(redirectedUrl("/plans"));
+
+        assertThat(storedProducts(id)).isZero();
+        mvc.perform(get("/plans/" + id.value()).with(signedIn(sub))).andExpect(status().isNotFound());
+        postAs("/plans/" + id.value() + "/delete", sub).andExpect(status().isNotFound());
     }
 }

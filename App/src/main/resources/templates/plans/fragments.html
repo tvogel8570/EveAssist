@@ -38,13 +38,13 @@
         <div class="join" role="group" th:aria-label="#{plan.sourceOf(${line.name})}">
             <button type="button" class="btn btn-xs join-item" th:id="'build-' + ${line.typeId}"
                     th:classappend="${line.built} ? 'btn-primary'" th:aria-pressed="${line.built}" th:text="#{plan.build}"
-                    th:attr="hx-post=@{/plans/{id}/parts/{type}/build(id=${planId},type=${line.typeId})}"
-                    hx-trigger="click" hx-swap="none" hx-include="#plan-version"
+                    th:attr="hx-post=${tryMode} ? @{/try/parts/{type}/build(type=${line.typeId})} : @{/plans/{id}/parts/{type}/build(id=${planId},type=${line.typeId})}"
+                    hx-trigger="click" hx-swap="none" hx-include="#plan-version, #try-state"
                     hx-sync="#products:queue all" hx-indicator="#request-indicator">Build</button>
             <button type="button" class="btn btn-xs join-item" th:id="'buy-' + ${line.typeId}"
                     th:classappend="${line.built} ? '' : 'btn-primary'" th:aria-pressed="${!line.built}" th:text="#{plan.buy}"
-                    th:attr="hx-post=@{/plans/{id}/parts/{type}/buy(id=${planId},type=${line.typeId})}"
-                    hx-trigger="click" hx-swap="none" hx-include="#plan-version"
+                    th:attr="hx-post=${tryMode} ? @{/try/parts/{type}/buy(type=${line.typeId})} : @{/plans/{id}/parts/{type}/buy(id=${planId},type=${line.typeId})}"
+                    hx-trigger="click" hx-swap="none" hx-include="#plan-version, #try-state"
                     hx-sync="#products:queue all" hx-indicator="#request-indicator">Buy</button>
         </div>
     </td>
@@ -87,6 +87,40 @@
     </div>
 </section>
 
+<!--
+  The runs of each blueprint the plan needs, for the products and the parts marked build. It has no input of its own, so
+  the whole section is drawn again after any change.
+-->
+<section th:fragment="runs(runs, oob)" id="runs-section" th:attr="hx-swap-oob=${oob ? 'true' : null}">
+    <h2 class="font-semibold mt-5 mb-1" th:text="#{plan.runs}">Runs needed</h2>
+    <p class="text-xs opacity-70 mb-1" th:text="#{plan.runsHint}">Runs</p>
+    <p id="no-runs" class="opacity-70 my-2" th:if="${#lists.isEmpty(runs)}" th:text="#{plan.runsNone}">Nothing is built yet.</p>
+    <div class="overflow-x-auto" th:unless="${#lists.isEmpty(runs)}">
+        <table class="table table-sm">
+            <thead>
+            <tr>
+                <th th:text="#{plan.item}">Item</th>
+                <th class="num" th:text="#{plan.runsBlueprint}">Runs</th>
+                <th class="num" th:text="#{plan.runsNeeded}">Needed</th>
+                <th class="num" th:text="#{plan.runsMade}">Made</th>
+                <th class="num" th:text="#{plan.runsSurplus}">Surplus</th>
+                <th class="num" th:text="#{plan.runsTime}">Time</th>
+            </tr>
+            </thead>
+            <tbody id="run-lines">
+            <tr th:each="line : ${runs}" th:id="'run-' + ${line.typeId}">
+                <td th:classappend="${line.product} ? 'font-medium'" th:text="${line.name}">Item</td>
+                <td class="num" th:text="${#numbers.formatInteger(line.runs, 1, 'COMMA')}">1</td>
+                <td class="num" th:text="${#numbers.formatInteger(line.quantity, 1, 'COMMA')}">1</td>
+                <td class="num" th:text="${#numbers.formatInteger(line.unitsMade, 1, 'COMMA')}">1</td>
+                <td class="num" th:text="${#numbers.formatInteger(line.surplus, 1, 'COMMA')}">0</td>
+                <td class="num" th:text="${@durations.format(line.seconds)}">1h</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
 <section th:fragment="materials(plan, oob)" id="materials-section" th:attr="hx-swap-oob=${oob ? 'true' : null}">
     <h2 class="font-semibold mt-5 mb-1"><span th:text="#{plan.materials}">Materials</span>
         <span class="badge badge-sm" th:text="${#lists.size(plan.bought)}">0</span></h2>
@@ -121,12 +155,106 @@
     <div th:replace="~{plans/fragments :: priceWarning(${failedItems}, true)}"></div>
     <div th:replace="~{plans/fragments :: total(${plan.totalCost}, ${plan.unpricedLines}, ${plan.pricesAsOf}, true)}"></div>
     <section th:replace="~{plans/fragments :: parts(${plan}, true)}"></section>
+    <section th:replace="~{plans/fragments :: runs(${plan.runs}, true)}"></section>
     <section th:replace="~{plans/fragments :: materials(${plan}, true)}"></section>
+</th:block>
+
+<!--
+  The products of a plan: a table with the units of each and a button to remove it, or a note that there are none. It
+  is the whole of #products, so a response that changes the products can replace it (oob).
+-->
+<div th:fragment="products(plan, oob)" id="products" th:attr="hx-swap-oob=${oob ? 'true' : null}">
+        <p id="no-products" th:if="${#lists.isEmpty(plan.products)}" class="opacity-70 my-3" th:text="#{plan.noProducts}">No products</p>
+        <table class="table table-sm" th:unless="${#lists.isEmpty(plan.products)}">
+            <thead>
+            <tr>
+                <th th:text="#{plan.product}">Product</th>
+                <th class="num" th:text="#{plan.units}">Units</th>
+                <th class="w-20"></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="product : ${plan.products}">
+                <td class="font-medium" th:text="${product.name}">Name</td>
+                <td class="num">
+                    <input class="input input-sm w-28 text-right" type="number" name="quantity" min="1" max="1000000"
+                           data-plan-quantity
+                           th:id="'quantity-' + ${product.typeId}" th:value="${product.quantity}"
+                           th:aria-label="#{plan.unitsOf(${product.name})}"
+                           th:attr="data-saved=${product.quantity}, data-type=${product.typeId}, hx-post=${tryMode} ? @{/try/products/{type}/quantity(type=${product.typeId})} : @{/plans/{id}/products/{type}/quantity(id=${plan.id.value},type=${product.typeId})}"
+                           hx-trigger="change" hx-swap="none" hx-include="#plan-version, #try-state"
+                           hx-sync="#products:queue all" hx-indicator="#request-indicator">
+                </td>
+                <td class="whitespace-nowrap">
+                    <span th:id="'saved-' + ${product.typeId}"></span>
+                    <button type="button" class="btn btn-ghost btn-xs" th:id="'remove-' + ${product.typeId}"
+                            th:aria-label="#{plan.remove(${product.name})}" th:title="#{plan.remove(${product.name})}"
+                            th:attr="hx-post=${tryMode} ? @{/try/products/{type}/remove(type=${product.typeId})} : @{/plans/{id}/products/{type}/remove(id=${plan.id.value},type=${product.typeId})}"
+                            hx-include="#plan-version, #try-state" hx-swap="none" hx-sync="#products:queue all"
+                            hx-indicator="#request-indicator">&#10005;</button>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+</div>
+
+<!-- What was just removed, with a button to put it back with the units it had. Empty when nothing was. -->
+<div th:fragment="undoBar(removed, oob)" id="undo-bar" role="status" aria-live="polite" class="min-h-0"
+     th:attr="hx-swap-oob=${oob ? 'true' : null}">
+    <div th:if="${removed != null}" class="alert alert-info alert-soft flex items-center gap-3 my-2 py-2">
+        <span class="grow" th:text="#{plan.removed(${removed.name}, ${removed.quantity})}">Removed Item (3 units).</span>
+        <form th:attr="hx-post=${tryMode} ? @{/try/products/{type}/restore(type=${removed.type.value})} : @{/plans/{id}/products/{type}/restore(id=${plan.id.value},type=${removed.type.value})}"
+              hx-swap="none" hx-sync="#products:queue all" hx-include="#try-state">
+            <input type="hidden" name="quantity" th:value="${removed.quantity}">
+            <button type="submit" id="undo-remove" class="btn btn-sm" th:text="#{plan.undo}">Undo</button>
+        </form>
+        <button type="button" id="undo-dismiss" class="btn btn-ghost btn-xs" data-dismiss="alert"
+                th:aria-label="#{plan.undoDismiss}" th:title="#{plan.undoDismiss}">&#10005;</button>
+    </div>
+</div>
+
+<!-- After a product is removed or put back: the plan redrawn, with the products and the offer to undo. -->
+<th:block th:fragment="productsRedraw">
+    <th:block th:replace="~{plans/fragments :: planRedraw}"></th:block>
+    <div th:replace="~{plans/fragments :: products(${plan}, true)}"></div>
+    <div th:replace="~{plans/fragments :: undoBar(${removed}, true)}"></div>
+</th:block>
+
+<!--
+  Archive or restore a plan, and delete it. Delete asks first, in a small box that opens under the button, because it
+  cannot be undone. from says where the user is (list or plan) and archived keeps the list showing archived plans.
+-->
+<th:block th:fragment="planActions(id, name, archived, from, showArchived)">
+    <form class="inline" method="post" th:if="${!archived}" th:action="@{/plans/{id}/archive(id=${id})}">
+        <input type="hidden" name="from" th:value="${from}">
+        <input type="hidden" name="archived" value="1" th:if="${showArchived}">
+        <button type="submit" class="btn btn-ghost btn-xs" th:id="${from == 'plan'} ? 'archive-plan' : 'archive-' + ${id}"
+                th:text="#{plans.archive}">Archive</button>
+    </form>
+    <form class="inline" method="post" th:if="${archived}" th:action="@{/plans/{id}/restore(id=${id})}">
+        <input type="hidden" name="from" th:value="${from}">
+        <input type="hidden" name="archived" value="1" th:if="${showArchived}">
+        <button type="submit" class="btn btn-ghost btn-xs" th:id="${from == 'plan'} ? 'restore-plan' : 'restore-' + ${id}"
+                th:text="#{plans.restore}">Restore</button>
+    </form>
+    <details class="dropdown dropdown-end inline-block" data-autoclose>
+        <summary class="btn btn-ghost btn-xs text-error" th:id="${from == 'plan'} ? 'delete-plan' : 'delete-' + ${id}"
+                 th:text="#{plans.delete}">Delete</summary>
+        <form class="dropdown-content card bg-base-300 shadow z-30 w-72 p-3 gap-2 text-left whitespace-normal" method="post"
+              th:action="@{/plans/{id}/delete(id=${id})}">
+            <input type="hidden" name="archived" value="1" th:if="${showArchived}">
+            <p class="text-sm" th:text="#{plans.deleteConfirm(${name})}">Delete this plan permanently?</p>
+            <button type="submit" class="btn btn-error btn-sm"
+                    th:id="${from == 'plan'} ? 'delete-plan-confirm' : 'delete-confirm-' + ${id}"
+                    th:text="#{plans.deleteYes}">Delete plan</button>
+        </form>
+    </details>
 </th:block>
 
 <th:block th:fragment="change">
     <input th:replace="~{plans/fragments :: version(${change.version}, true)}">
     <div th:replace="~{plans/fragments :: total(${change.totalCost}, ${change.unpricedLines}, ${change.pricesAsOf}, true)}"></div>
+    <section th:replace="~{plans/fragments :: runs(${change.runs}, true)}"></section>
     <span th:id="'saved-' + ${editedTypeId}" hx-swap-oob="true"><span class="saved-cue text-xs text-success" th:text="#{plan.saved}">Saved</span></span>
     <!--/* A row needs its own hx-partial: the browser would drop a bare tr here, because the response starts with an input. */-->
     <hx-partial th:each="line : ${change.changedLines}" th:attr="hx-target='#line-' + ${line.typeId}" hx-swap="outerHTML">
@@ -138,13 +266,59 @@
 <th:block th:fragment="searchResults">
     <ul id="search-list" class="menu bg-base-200 rounded-box w-full" th:unless="${#lists.isEmpty(items)}">
         <li th:each="item : ${items}">
-            <form method="post" th:action="@{/plans/{id}/products(id=${planId})}">
+            <form method="post" th:unless="${tryMode}" th:action="@{/plans/{id}/products(id=${planId})}">
+                <input type="hidden" name="typeId" th:value="${item.id.value}">
+                <button type="submit" class="w-full text-left" th:text="${item.name}">Item</button>
+            </form>
+            <!--/* A plan without an account has no page to go back to: the answer redraws it. */-->
+            <form th:if="${tryMode}" th:attr="hx-post=@{/try/products}" hx-swap="none" hx-include="#try-state">
                 <input type="hidden" name="typeId" th:value="${item.id.value}">
                 <button type="submit" class="w-full text-left" th:text="${item.name}">Item</button>
             </form>
         </li>
     </ul>
     <p class="text-sm opacity-60 p-2" th:if="${searched and #lists.isEmpty(items)}" th:text="#{plan.noMatches}">No items found</p>
+</th:block>
+
+<!--
+  A plan without an account. The browser keeps the state, a short text, and sends it back with every request. The
+  state box is swapped with each answer so that the browser can read the new text and keep it.
+-->
+<input th:fragment="tryState(state, oob)" type="hidden" id="try-state" name="state" th:value="${state}"
+       th:attr="hx-swap-oob=${oob ? 'true' : null}">
+
+<div th:fragment="tryNotes(unpriced, stale, notice, oob)" id="try-notes" role="status"
+     th:attr="hx-swap-oob=${oob ? 'true' : null}">
+    <div id="try-notice" class="alert alert-info text-sm mb-3" th:if="${notice != null}"
+         th:text="#{|try.notice.${notice}|}">Notice</div>
+    <div id="try-stale" class="alert alert-warning text-sm mb-3" th:if="${stale}" th:text="#{try.stale}">Old prices</div>
+    <div id="try-unpriced" class="alert alert-warning text-sm mb-3" th:if="${!#lists.isEmpty(unpriced)}"
+         th:text="#{try.unpriced(${#strings.listJoin(unpriced, ', ')})}">No price for these</div>
+</div>
+
+<!--/* The search box is drawn again after a product is added, which empties it. */-->
+<div th:fragment="trySearch(oob)" id="try-search" class="max-w-md mt-3" th:attr="hx-swap-oob=${oob ? 'true' : null}">
+    <input id="product-search" class="input input-sm w-full" type="search" name="q" autocomplete="off"
+           th:placeholder="#{plan.addProduct}" th:aria-label="#{plan.addProduct}"
+           th:attr="hx-get=@{/try/product-search}"
+           hx-trigger="input changed delay:250ms, search" hx-target="#search-results" hx-sync="this:replace"
+           hx-indicator="#request-indicator">
+    <div id="search-results" class="mt-1"></div>
+</div>
+
+<!--/* After a change to a quantity or a part: the results and the state, but not the products, so the box keeps focus. */-->
+<th:block th:fragment="tryPlanRedraw">
+    <th:block th:replace="~{plans/fragments :: planRedraw}"></th:block>
+    <div th:replace="~{plans/fragments :: tryNotes(${unpriced}, ${stale}, ${notice}, true)}"></div>
+    <input th:replace="~{plans/fragments :: tryState(${tryState}, true)}">
+</th:block>
+
+<!--/* After a product is added or removed, or the saved plan is drawn: the products as well. */-->
+<th:block th:fragment="tryProductsRedraw">
+    <th:block th:replace="~{plans/fragments :: productsRedraw}"></th:block>
+    <div th:replace="~{plans/fragments :: tryNotes(${unpriced}, ${stale}, ${notice}, true)}"></div>
+    <div th:replace="~{plans/fragments :: trySearch(true)}"></div>
+    <input th:replace="~{plans/fragments :: tryState(${tryState}, true)}">
 </th:block>
 
 <th:block th:fragment="empty"></th:block>

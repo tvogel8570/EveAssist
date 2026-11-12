@@ -29,6 +29,8 @@ public record PlanCost(List<LineCost> lines, BigDecimal total, int unpricedLines
         return other != null
                 && line.quantity() == other.quantity()
                 && line.built() == other.built()
+                && line.runs() == other.runs()
+                && line.seconds() == other.seconds()
                 && sameAmount(line.unitPrice(), other.unitPrice())
                 && sameAmount(line.cost(), other.cost());
     }

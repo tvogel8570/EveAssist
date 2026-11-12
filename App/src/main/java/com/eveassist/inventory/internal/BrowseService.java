@@ -79,13 +79,13 @@ public class BrowseService {
         var characters = characters(viewer);
         var ids = characters.keySet().toArray(UUID[]::new);
         if (ids.length == 0) {
-            return new BrowseView(List.of(), 0, 0, false, false, filter.showCharacters(), List.of(), none(filter), "",
+            return new BrowseView(List.of(), 0, 0, 0, false, false, filter.showCharacters(), List.of(), none(filter), "",
                     "", filter.unfiltered(), false, false);
         }
         var rows = queries.items(ids, filter);
         var summary = queries.summary(ids, filter);
         var items = rows.stream().map(row -> item(row, characters)).toList();
-        return new BrowseView(items, summary.itemTypes(), summary.units(),
+        return new BrowseView(items, summary.itemTypes(), summary.stacks(), summary.units(),
                 moreAvailable(summary.itemTypes(), items.size(), filter.limit()),
                 capped(summary.itemTypes(), items.size(), filter.limit()), filter.showCharacters(), chips(ids, characters, filter), none(filter), filter.toQuery(),
                 filter.withLimit(filter.limit() + BrowseFilter.FIRST_PAGE).toQuery(), filter.unfiltered(), true,

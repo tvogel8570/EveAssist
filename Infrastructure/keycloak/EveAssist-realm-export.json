@@ -35,7 +35,7 @@
   "duplicateEmailsAllowed": true,
   "resetPasswordAllowed": false,
   "editUsernameAllowed": false,
-  "bruteForceProtected": false,
+  "bruteForceProtected": true,
   "permanentLockout": false,
   "maxTemporaryLockouts": 0,
   "bruteForceStrategy": "MULTIPLE",
@@ -891,6 +891,35 @@
         "email"
       ],
       "optionalClientScopes": []
+    },
+    {
+      "id": "0ab03151-a714-4e34-bc9d-50e5527500fd",
+      "clientId": "eveassist-admin",
+      "name": "EveAssist account deletion",
+      "description": "The app's service account. It holds manage-users, which is broader than needed (it also covers role mappings), and only deletes a user when an account is deleted. Since Keycloak 26.8.2 a call to the admin API needs the kc-admin-api scope, which adds the API's audience to the token.",
+      "enabled": true,
+      "alwaysDisplayInConsole": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "${KC_ADMIN_CLIENT_SECRET}",
+      "redirectUris": [],
+      "webOrigins": [],
+      "notBefore": 0,
+      "bearerOnly": false,
+      "consentRequired": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "publicClient": false,
+      "frontchannelLogout": false,
+      "protocol": "openid-connect",
+      "attributes": {},
+      "fullScopeAllowed": true,
+      "nodeReRegistrationTimeout": -1,
+      "defaultClientScopes": [
+        "kc-admin-api"
+      ],
+      "optionalClientScopes": []
     }
   ],
   "clientScopes": [
@@ -1587,6 +1616,30 @@
           }
         }
       ]
+    },
+    {
+      "id": "edeb171c-ae3b-458c-94af-4b16ffee5ded",
+      "name": "kc-admin-api",
+      "description": "Grants access to the Keycloak Admin REST API by adding its required audience to the token",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "false"
+      },
+      "protocolMappers": [
+        {
+          "id": "96f375a7-2194-483b-a67f-981ec515e319",
+          "name": "admin-api-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-admin-api-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "lightweight.claim": "true",
+            "introspection.token.claim": "true",
+            "access.token.claim": "true"
+          }
+        }
+      ]
     }
   ],
   "defaultDefaultClientScopes": [
@@ -1633,8 +1686,8 @@
       "enabled": true,
       "updateProfileFirstLoginMode": "on",
       "trustEmail": false,
-      "storeToken": true,
-      "addReadTokenRoleOnCreate": true,
+      "storeToken": false,
+      "addReadTokenRoleOnCreate": false,
       "authenticateByDefault": false,
       "linkOnly": false,
       "firstBrokerLoginFlowAlias": "eveassist first login",
@@ -2664,5 +2717,22 @@
   "clientPolicies": {
     "policies": []
   },
-  "displayName": "EveAssist"
+  "displayName": "EveAssist",
+  "users": [
+    {
+      "id": "dc5de407-2cc1-4ee0-a499-283709aefb1a",
+      "username": "service-account-eveassist-admin",
+      "emailVerified": false,
+      "enabled": true,
+      "serviceAccountClientId": "eveassist-admin",
+      "realmRoles": [],
+      "clientRoles": {
+        "realm-management": [
+          "manage-users"
+        ]
+      },
+      "notBefore": 0,
+      "groups": []
+    }
+  ]
 }

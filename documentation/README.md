@@ -22,7 +22,7 @@ On Windows, `dev.eveassist.com` needs an entry in the Windows hosts file as well
 |---|---|---|
 | EveAssist (App) | https://dev.eveassist.com:7444 | `dev-user` (a normal user) or `dev-admin` (also an admin). Password: `KC_DEV_USER_PASSWORD` in `Infrastructure/.env` |
 | EveAssist plans | https://dev.eveassist.com:7444/plans | same as above |
-| Keycloak admin console | https://dev.eveassist.com:8442/admin | the `master` realm admin: `KC_BOOTSTRAP_ADMIN_USERNAME` and its password (see the note below) |
+| Keycloak admin console | https://dev.eveassist.com:8442/admin | a `master` realm admin. The bootstrap admin (`KC_BOOTSTRAP_ADMIN_USERNAME`) exists only until you create a named admin and delete it, so use the named one. `create-dev-users.sh` asks for that admin's user and password (see the note below) |
 | Keycloak, `EveAssist` realm | https://dev.eveassist.com:8442/admin/master/console/#/EveAssist | same admin as above |
 | Keycloak, user account page | https://dev.eveassist.com:8442/realms/EveAssist/account | `dev-user` or `dev-admin` |
 

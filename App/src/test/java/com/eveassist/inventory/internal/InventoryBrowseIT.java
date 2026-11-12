@@ -119,7 +119,7 @@ class InventoryBrowseIT extends IntegrationTest {
         assertThat(page).contains("<html").contains("id=\"browse-form\"").contains("id=\"items\"");
         var visible = text(page);
         assertThat(visible).contains("Tritanium", "2,000", "Pilot's Mineral", "Test Hauler", "Test Component");
-        assertThat(visible).contains("4 item types, 2,026 units");
+        assertThat(visible).contains("4 item types in 5 stacks with 2,026 units");
         assertThat(visible).contains("2 characters, most: Alt One");
         // a bar of pieces, one per character, in each character's own colour, drawn as an image and not a style
         assertThat(page).contains("<svg").contains("class=\"seg-0\"").contains("class=\"seg-1\"");
@@ -195,7 +195,7 @@ class InventoryBrowseIT extends IntegrationTest {
         var visible = text(result);
 
         // Alt Two's Material in Jita: 500 Tritanium and 20 Pilot's Mineral. Alt One's 1,500 are not counted.
-        assertThat(visible).contains("2 item types, 520 units").contains("Tritanium").contains("Pilot's Mineral");
+        assertThat(visible).contains("2 item types in 2 stacks with 520 units").contains("Tritanium").contains("Pilot's Mineral");
         assertThat(visible).contains("Category: Material", "Character: Alt Two", "Where: Jita IV - Moon 4",
                 "How held: in a hangar", "Total at least: 10");
         assertThat(visible).contains("Clear all");
@@ -291,6 +291,10 @@ class InventoryBrowseIT extends IntegrationTest {
                         .header("HX-Request", "true"))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
         assertThat(text(searched)).contains("Jita IV").doesNotContain("Amarr VIII");
+        // the box is answered with its id (htmx gives focus back only to an element with one), what was typed, and the
+        // agreed pause (see documentation/architecture/ui-conventions.md)
+        assertThat(searched).contains("id=\"filter-list-search\"").contains("name=\"fq\"").contains("value=\"jita\"")
+                .contains("delay:2000ms").contains("hx-select=\"#filter-choices &gt; *\"");
     }
 
     @Test
@@ -627,8 +631,8 @@ class InventoryBrowseIT extends IntegrationTest {
         var only = text(whole(s.sub(), "?ui=1&chars=1&character=" + corporation));
         var without = text(whole(s.sub(), "?ui=1&chars=1&character=" + s.one() + "&character=" + s.two()));
 
-        assertThat(only).contains("2 item types, 901 units").contains("Character or corporation: Test Industries");
-        assertThat(without).contains("4 item types, 2,026 units");
+        assertThat(only).contains("2 item types in 2 stacks with 901 units").contains("Character or corporation: Test Industries");
+        assertThat(without).contains("4 item types in 5 stacks with 2,026 units");
         var list = text(mvc.perform(get("/inventory/filter/character").with(signedInAs(s.sub())))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
         assertThat(list).contains("Alt One", "Alt Two", "Test Industries");
@@ -643,7 +647,7 @@ class InventoryBrowseIT extends IntegrationTest {
 
         var page = whole(s.sub(), "");
 
-        assertThat(text(page)).doesNotContain("Test Industries").contains("4 item types, 2,026 units")
+        assertThat(text(page)).doesNotContain("Test Industries").contains("4 item types in 5 stacks with 2,026 units")
                 .contains("2 characters, most: Alt One");
         assertThat(page).doesNotContain("id=\"corporation-status\"");
     }
@@ -661,7 +665,7 @@ class InventoryBrowseIT extends IntegrationTest {
 
         var page = text(whole(stranger, ""));
 
-        assertThat(page).contains("1 item type, 7 units").doesNotContain("Test Industries");
+        assertThat(page).contains("1 item type in 1 stack with 7 units").doesNotContain("Test Industries");
         var where = text(mvc.perform(get("/inventory/item/" + TRITANIUM).with(signedInAs(stranger)))
                 .andReturn().getResponse().getContentAsString());
         assertThat(where).doesNotContain("Production").doesNotContain("900");
@@ -867,7 +871,7 @@ class InventoryBrowseIT extends IntegrationTest {
         var only = text(whole(s.sub(), "?ui=1&chars=1&how=impounded"));
 
         assertThat(list).contains("in an impounded office");
-        assertThat(only).contains("1 item type, 9 units").contains("How held: in an impounded office");
+        assertThat(only).contains("1 item type in 1 stack with 9 units").contains("How held: in an impounded office");
         assertThat(BrowseFilter.none().looseOnly().held()).contains(Held.IMPOUNDED, Held.ASSET_SAFETY, Held.DELIVERIES);
     }
 }

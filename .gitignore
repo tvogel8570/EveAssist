@@ -54,6 +54,10 @@ out/
 **/dev.eveassist.com.crt
 **/dev.eveassist.com.key
 **/password.txt
+# deployment identifiers and the files the prod instance reads: real values stay out of the public repository (see Infrastructure/prod/template_ops.env)
+/Infrastructure/prod/ops.env
+/Infrastructure/prod/prod.env
+/Infrastructure/prod/images.env
 
 # log files
 **/*.log

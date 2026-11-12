@@ -24,7 +24,8 @@ class BrowseQueries {
             boolean hasBlueprintCopy, boolean hasBlueprintOriginal, List<UUID> holders, List<Long> held) {
     }
 
-    record Summary(int itemTypes, long units) {
+    /** @param stacks how many asset rows there are: a stack of identical items in one place, or one assembled item */
+    record Summary(int itemTypes, long stacks, long units) {
     }
 
     /** One place an item type is held, how, and by whom. */
@@ -176,16 +177,18 @@ class BrowseQueries {
                 .params(params).query(Integer.class).list();
     }
 
-    /** How many item types pass the filter and how many units they come to, before the page limit. */
+    /** How many item types pass the filter, in how many stacks, and how many units they come to, before the page limit. */
     Summary summary(UUID[] characters, BrowseFilter filter) {
         var where = where(characters, filter, null);
         var params = new HashMap<>(where.params());
         params.put("min", filter.minTotal());
         return jdbc.sql("WITH f AS (SELECT a.type_id, a.quantity " + FROM + where.sql() + "), "
-                        + "t AS (SELECT type_id, sum(quantity) AS total FROM f GROUP BY type_id HAVING sum(quantity) >= :min) "
-                        + "SELECT count(*) AS item_types, coalesce(sum(total), 0) AS units FROM t")
+                        + "t AS (SELECT type_id, sum(quantity) AS total, count(*) AS stacks FROM f GROUP BY type_id "
+                        + "HAVING sum(quantity) >= :min) "
+                        + "SELECT count(*) AS item_types, coalesce(sum(stacks), 0) AS stacks, "
+                        + "coalesce(sum(total), 0) AS units FROM t")
                 .params(params)
-                .query((rs, row) -> new Summary(rs.getInt("item_types"), rs.getLong("units")))
+                .query((rs, row) -> new Summary(rs.getInt("item_types"), rs.getLong("stacks"), rs.getLong("units")))
                 .single();
     }
 

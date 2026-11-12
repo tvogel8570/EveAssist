@@ -24,5 +24,20 @@ public interface PlanRepository {
      */
     void recordCosting(Viewer viewer, Plan plan, PlanTotal total);
 
-    List<PlanOverview> overviews(Viewer viewer, String currentSdeVersion);
+    /** The viewer's plans by name. Archived plans are left out unless asked for, and come after the active ones. */
+    List<PlanOverview> overviews(Viewer viewer, String currentSdeVersion, boolean includeArchived);
+
+    /** The viewer's active plans. */
+    default List<PlanOverview> overviews(Viewer viewer, String currentSdeVersion) {
+        return overviews(viewer, currentSdeVersion, false);
+    }
+
+    /**
+     * Archives or restores a plan. It is a status, not an edit: the version stays the same, so it cannot conflict with
+     * someone editing the plan. False when the viewer has no such plan.
+     */
+    boolean setArchived(Viewer viewer, PlanId id, boolean archived);
+
+    /** Deletes the plan with its products, parts and prices. False when the viewer has no such plan. */
+    boolean delete(Viewer viewer, PlanId id);
 }

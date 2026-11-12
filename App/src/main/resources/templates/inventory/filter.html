@@ -23,12 +23,13 @@
                         hx-include="#browse-form" hx-vals='{"open":""}' hx-target="#browse" hx-push-url="true"
                         th:text="#{inventory.done}">Done</button>
             </div>
-            <input type="search" name="fq" th:value="${listSearch}" class="input input-sm w-full" autocomplete="off"
-                   th:placeholder="#{inventory.filter.search}" th:aria-label="#{inventory.filter.search}"
-                   th:if="${facet.searchable}"
-                   th:attr="hx-get=@{/inventory/filter/{column}(column=${facet.dimension})}" hx-include="#browse-form"
-                   hx-target="#filter-pop" hx-swap="innerHTML" hx-trigger="input changed delay:250ms, search"
-                   hx-sync="this:replace">
+            <th:block th:if="${facet.searchable}">
+                <input th:replace="~{fragments/search-input :: field('filter-list-search', 'fq', ${listSearch}, #{inventory.filter.search},
+                       'input input-sm w-full', @{/inventory/filter/{column}(column=${facet.dimension})}, '#filter-choices',
+                       'innerHTML', '#filter-choices > *', '#browse-form', 'this:replace', false)}">
+            </th:block>
+            <!-- only this part is replaced when the list search refreshes: the box above is never swapped away -->
+            <div id="filter-choices" class="contents">
             <p class="text-sm opacity-70" th:if="${#lists.isEmpty(facet.choices)}" th:text="#{inventory.filter.none}">Nothing here with the other filters.</p>
             <div class="max-h-64 overflow-y-auto flex flex-col gap-1">
                 <label class="flex items-center gap-2 text-sm cursor-pointer" th:each="choice : ${facet.choices}">
@@ -40,6 +41,7 @@
             </div>
             <p class="text-xs opacity-60" th:if="${facet.truncated}" th:text="#{inventory.filter.truncated}">Search to narrow this list.</p>
             <p class="text-xs opacity-60" th:text="#{inventory.filter.count}">Item types each value would leave.</p>
+            </div>
         </div>
     </div>
     <div th:replace="~{inventory/browse :: state(true)}"></div>

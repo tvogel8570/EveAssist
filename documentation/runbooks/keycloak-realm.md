@@ -86,6 +86,25 @@ docker exec -i eve-assist-postgres pg_restore -U postgres --no-owner --role=keyc
 Then run `3-init-eveassist.sh` as `Infrastructure/README.md` describes, to put back the database's access rules, and
 start Keycloak.
 
+## Keeping dev and prod on one Keycloak version
+
+The version is pinned to a patch release in one place, `Infrastructure/keycloak/Dockerfile` (`FROM quay.io/keycloak/keycloak:26.8.2`),
+and dev and prod both build from that file. Do not use a floating tag such as `26.8`: on 2026-11-11 dev ran 26.8.1 from an
+old image while prod pulled 26.8.2, which started to reject admin API tokens without an audience, and nothing showed it until
+the first prod start. To take a patch release, change the pin, rebuild both images (`docker compose build eve-assist-keycloak`
+in `Infrastructure/` for dev, and the prod steps in the update runbook), and write the version in the deploy log. After a
+rebuild, check that the dev log says the same `Keycloak 26.x.y` as prod.
+
+## A client that calls the admin API needs the `kc-admin-api` scope
+
+From Keycloak 26.8.2 a call to the admin REST API is refused with 401 unless the token carries the `kc-admin-api` scope, which adds the
+API's own audience (the realm's admin URL) through the built-in "Admin API Audience" mapper. Keycloak gives that scope to its own
+`admin-cli` and `security-admin-console` clients; any other client, such as the app's `eveassist-admin` service account, must have it
+as a default client scope. Giving the client a generic audience mapper for `realm-management` does not work, and neither do role
+claims, which the API does not read from the token. Keycloak's log says why only at debug level
+(`KC_LOG_LEVEL=info,org.keycloak.services:debug`): "No audience in the token", then "Expected audience not available in the token".
+The scope's definition is in the realm file, and it needs Keycloak 26.8.2 or newer, which is another reason the version is pinned.
+
 ## Moving to a newer Keycloak
 
 An old realm file is put through Keycloak's upgrade steps at every import. A file from Keycloak 21 failed one of them
