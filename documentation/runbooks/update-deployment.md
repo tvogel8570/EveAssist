@@ -30,8 +30,10 @@ Downtime during a deploy is accepted. Do it at a quiet time and say so on the si
 
 ## 2. Rehearse
 
-1. On the dev machine, restore the latest prod RDS snapshot dump into a throwaway database (use the restore steps of
-   the initial runbook), point a local run of the new build at it, and let Flyway migrate it.
+1. Restore a snapshot of prod to a private, temporary RDS instance and run the new build against it **inside AWS**, as the restore test of
+   2026-11-12 did (see "Restoring the database" below; deploy-log.md has the example). Do not copy a dump of prod to the dev machine: the
+   privacy policy says the data is kept at AWS, and a file on a laptop is also in its backups and disk images. On the dev machine use the
+   dev database with generated data. Let Flyway migrate the copy.
 2. Open the pages the change touches, plus sign-in, Characters, Inventory and `/try`.
 3. Time the migration. A table rewrite on a large table (assets, price rows, contracts) is the thing to look for.
    More than a couple of minutes means a different migration (add column nullable, backfill in batches, then constrain
@@ -58,19 +60,24 @@ Downtime during a deploy is accepted. Do it at a quiet time and say so on the si
 
 - Take a manual RDS snapshot named `pre-vX.Y.Z` and wait until it is `available`.
 - Optional for code-only releases, mandatory when a migration is included.
+- **A manual snapshot never expires.** It keeps every account that exists on the day, including accounts users delete later, and the privacy
+  policy promises that deleted data leaves the backups within 28 days. Delete the snapshot when the release is accepted, and within 7 days
+  at the latest (`aws rds delete-db-snapshot --db-snapshot-identifier pre-vX.Y.Z`). The monthly task "list manual snapshots" below catches
+  one that was forgotten.
 
 ## 5. Deploy
 
-On the instance (`/opt/eveassist`):
+On the instance (`/opt/eveassist/Infrastructure/prod`; the directory is owned by root, so write with `sudo`):
 
 0. Optional, for a restart that takes more than a few seconds: silence `eveassist-prod-upstream-unreachable` (and `eveassist-prod-site-down`
    for a long one), so that a planned restart does not send alert emails. The commands are in [Common commands](common-commands.md),
    "Alarms". Switch them back on in step 6.
 
-1. Edit the pinned digest in the Compose file (or the env file the start script reads). Commit nothing secret.
-2. `docker compose pull app`
-3. `docker compose up -d app`. Flyway runs at start. Keycloak, Caddy and Postgres are not touched.
-4. `docker compose logs -f app` until it reports started. Any Flyway error, stop and go to "Rolling back".
+1. Put the new digest into `images.env` (`sudo nano images.env`; the file exists on the instance only). Commit nothing secret.
+2. `sudo ./start.sh app`. The script loads the three secrets from Secrets Manager, logs in to ECR and runs `docker compose up -d`, which
+   pulls the pinned image. Do not run `docker compose` by hand in this directory: Compose needs every secret, and exporting them yourself
+   is what `start.sh` exists to avoid. Flyway runs at start. Keycloak and Caddy are not touched.
+3. `sudo docker logs -f eveassist-app-1` until it reports started. Any Flyway error, stop and go to "Rolling back".
 
 ## 6. Verify
 
@@ -95,19 +102,52 @@ Tell testers what changed, and if they must re-authorize characters.
 | Situation | Action |
 |---|---|
 | App starts but is wrong, **no migration** ran, or the migration was backward compatible | Put the previous digest back, `docker compose up -d app`. |
-| Flyway failed halfway | Do **not** start the app on the half-migrated database. Restore the `pre-vX.Y.Z` snapshot to a new RDS instance, point the stack at it, start the previous digest. Switch the endpoint, then delete the damaged instance after a week. |
+| Flyway failed halfway | Do **not** start the app on the half-migrated database. Restore the `pre-vX.Y.Z` snapshot to a new RDS instance (see "Restoring the database"), point the stack at it, start the previous digest. Switch the endpoint, then delete the damaged instance after a week. |
 | Data was damaged by the release | Same as above. Point-in-time recovery gives a time just before the deploy. Tell users that changes since then are lost. |
 | Keycloak realm import broke sign-in | Follow "If it goes wrong" in [keycloak-realm.md](keycloak-realm.md). |
 
 After any rollback, write what happened in the deploy log and fix it forward in the next release. Do not edit a merged
-migration.
+migration. **If you silenced alarms in step 5, switch them back on now**, also when the deploy failed and you never reached step 6
+(the commands and the check are under "Alarms" in [Common commands](common-commands.md)): the site-down alarm is the only outage alert
+that does not depend on the instance.
+
+### Restoring the database
+
+For a rollback and for the six-monthly restore test. A restore brings back the database as it was at the snapshot, **including accounts that
+users deleted since**. The privacy policy says deleted data is gone from live systems, so the steps below delete them again before the site
+is used.
+
+1. Stop the app so that nobody writes while you work: `sudo docker compose -p eveassist stop app` (from a directory without a Compose file).
+   Visitors get an error page until it is back. Anything written to the live database after the snapshot is lost in a rollback, and anything
+   written during a restore *test* (including an account deletion) goes to the copy and is lost when it is deleted, so do the test when
+   nobody is expected, or with the app stopped.
+2. Before you restore, save the list of account ids of the live database (ids only, no names): `select public_id from account order by 1`,
+   with the PostgreSQL client container as `db-setup.sh` uses it.
+3. Restore with these settings (all of them matter; the values are in `ops.env`, see [Common commands](common-commands.md)):
+   ```bash
+   aws rds restore-db-instance-from-db-snapshot --db-instance-identifier eveassist-restore \
+     --db-snapshot-identifier pre-vX.Y.Z --db-instance-class db.t4g.small --db-subnet-group-name eveassist-prod \
+     --vpc-security-group-ids "$EVEASSIST_RDS_SG" --no-publicly-accessible --no-multi-az --backup-retention-period 7
+   ```
+   Without `--vpc-security-group-ids` the instance gets the VPC's default group, and without `--no-publicly-accessible` it can be reachable
+   from the internet, which the privacy policy says it is not (the subnets here route to an internet gateway). For a test, add nothing else
+   and delete it afterwards; for a rollback that becomes production also add `--deletion-protection`, and compare the result with
+   `aws rds describe-db-instances --db-instance-identifier eveassist-prod` (parameter group, encryption, backup window).
+4. When it is `available`, check `PubliclyAccessible` is `false` and the security group is `eveassist-rds`.
+5. Compare its account ids with the list from step 2. An id that is in the restore and not in the list was deleted after the snapshot: delete
+   that account again (`delete from account where public_id = '...'` cascades through the account's tables; delete its Keycloak user with
+   kcadm, see `Infrastructure/prod/admin-with-kcadm.md`), and its sessions (`delete from spring_session where principal_name = '<keycloak sub>'`; the Keycloak subject is the session's principal name). Write the number of accounts you re-deleted in
+   the deploy log (no ids, no names).
+6. For a rollback: set `RDS_HOST` in `prod.env` (`sudo`) to the new endpoint and restart the whole stack (`cd ~ && sudo docker compose -p
+   eveassist down`, then `sudo ./start.sh`), because Keycloak and the app both read it. For a test: do the same, check sign-in and your data,
+   then put the old value back and restart the stack the same way, and delete the restored instance and any snapshot you took for it.
 
 ## Special updates
 
 ### SDE reload (after an EVE patch)
 
 1. Download the new dump from Fuzzwork. Record its date.
-2. Rehearse on dev with a copy of prod, as in step 2. Check that blueprint and type ids the plans use still exist.
+2. Rehearse on a restored copy of prod inside AWS, as in step 2. Check that blueprint and type ids the plans use still exist.
 3. Snapshot (step 4).
 4. Stop the app. Load the new `sde` schema as the initial runbook step 7.2 does. The load replaces the schema, so
    do it in a transaction or load to a new schema name and swap. The App will not start without it.
@@ -132,7 +172,9 @@ migration.
 
 | Task | When | Next |
 |---|---|---|
-| Restore test (snapshot, restore, start the stack on it, delete) | every 6 months | by 2027-05-12 |
+| Restore test (snapshot, restore, start the stack on it, delete): follow "Restoring the database", with the app stopped or when nobody is expected | every 6 months | by 2027-05-12 |
+| List manual RDS snapshots and delete the ones that are not needed (they never expire, and the privacy policy promises 28 days): `aws rds describe-db-snapshots --snapshot-type manual` | monthly | 2026-12-12 |
+| Check that no alarm was left silenced (the check under "Alarms" in [Common commands](common-commands.md)) | monthly | 2026-12-12 |
 | OS security updates, and Keycloak, Caddy and Postgres patch review | monthly | 2026-12-12 |
 | Certificates: Caddy renews them by itself. The current ones end 2027-02-10, so look at the dates in January | yearly check | 2027-01-15 |
 | Domain `eveassist.net`: auto-renew is on, expires 2027-08-04 | yearly check | 2027-07-01 |

@@ -88,7 +88,7 @@ One secret per concern, JSON key/value, so that rotation of one does not touch t
 | Secret | Keys |
 |---|---|
 | `eveassist/db` | `EVEASSIST_OWNER_PASSWORD`, `EVEASSIST_APP_PASSWORD`, `EVEASSIST_SDE_PASSWORD`, `KC_DB_PASSWORD` (the master password is in RDS's own secret) |
-| `eveassist/keycloak` | `KC_BOOTSTRAP_ADMIN_USERNAME`, `KC_BOOTSTRAP_ADMIN_PASSWORD`, `KC_APP_CLIENT_SECRET`, `KC_EVE_CLIENT_ID`, `KC_EVE_CLIENT_SECRET` |
+| `eveassist/keycloak` | `KC_BOOTSTRAP_ADMIN_USERNAME`, `KC_BOOTSTRAP_ADMIN_PASSWORD`, `KC_APP_CLIENT_SECRET`, `KC_ADMIN_CLIENT_SECRET` (the account-deletion service account; Keycloak and the app both need it), `KC_EVE_CLIENT_ID`, `KC_EVE_CLIENT_SECRET` |
 | `eveassist/app` | `EVE_LINK_CLIENT_ID`, `EVE_LINK_CLIENT_SECRET`, `EVE_TOKEN_DATA_KEY_WRAPPED`, `ESI_CONTACT_EMAIL` |
 
 Non-secret settings (domain names, the RDS endpoint, the KMS key alias) are in `Infrastructure/prod/prod.env` on the instance. The repository has only
