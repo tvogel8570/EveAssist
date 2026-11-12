@@ -45,3 +45,19 @@ One entry per build and deploy of prod, newest last. No secrets. The procedure i
   only the session history). Worth enabling if more than one person gets shell access.
 - Not yet done: a character link, the account deletion on the live stack, the per-visitor `/try` limit from two networks, the restore test, and
   the CloudWatch alarm.
+
+## 2026-11-12: character link, export and account deletion on the live stack
+
+- Two characters were linked with all five read-only scopes (both features on). ESI answered: 2,878 asset rows were stored. The two stored
+  refresh tokens are 40 bytes of AES-GCM ciphertext with a 12-byte nonce each, not readable as text, and name the key
+  `kms-<12 hex digits>`, which is what the wrapped key in Secrets Manager gives. The app log held no JWT, `refresh_token`, `access_token`,
+  `Bearer`, `client_secret` or `eat_` string, and no warnings or errors.
+- KMS is asked once per app start, not per token: CloudTrail shows seven `Decrypt` calls with the purpose `eveassist-refresh-tokens` (one per
+  start this evening) and none while the two tokens were encrypted at link time. Only the link window was covered by CloudTrail when checked;
+  its delivery lags by minutes.
+- The data export held the account, both characters without any token, the features, and no plans.
+- The account was deleted from the account page. Checked against a baseline taken just before (1 account, 2 characters, 2 tokens, 2,878 assets,
+  2 features, 1 corporation, 1 Keycloak user with 1 EVE identity): every row is gone, no orphans, no sessions, the Keycloak user is gone, and
+  the realms are intact. This was the first live run of the real `KeycloakAdmin` with the `kc-admin-api` scope. The app logged no warning, so
+  EVE confirmed both revocations. EVE's own page for third-party applications is the place to see it from the player's side.
+- Still open: the per-visitor `/try` limit from two networks, the restore test, and the CloudWatch alarm.
