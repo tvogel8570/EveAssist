@@ -147,3 +147,10 @@ One entry per build and deploy of prod, newest last. No secrets. The procedure i
   `CharactersController` adds when EVE does not accept the revocation, so the token was revoked at EVE. Not yet tested: removing the character that is also the sign-in
   character (issue #24).
 
+
+## 2026-11-12: alert delivery
+
+- The alarm tests showed the chain up to SNS working (CloudWatch recorded each publish to `eveassist-alerts` as successful, and the upstream alarm's
+  emails arrived three times). All alerts, and the billing alarm, go to one address that is hosted at Microsoft 365. While Outlook had an outage
+  the same afternoon, the error alarm's emails could not be read. The developer decided not to add a second subscriber, so a Microsoft outage can hide an
+  alarm: the instance status check, the site-down health check and the CloudWatch console are the other places to look.

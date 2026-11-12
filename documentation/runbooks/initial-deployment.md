@@ -1,7 +1,7 @@
 # Initial Deployment to Prod
 
-Status: **in progress** since 2026-11-11. Sections 1, 2, 4 (except AWS Backup), 5 (except the EVE application values), 6 and 7 are
-done; section 3 is the developer's; 8 is written but has not run. Steps that did not exist when this was drafted are built now.
+Status: **done on 2026-11-12** except the last launch-gate item (step 10: the test ERROR that makes the alarm email arrive) and go-live (step 11).
+What was improvised on the way is now written into the steps below, and the day-to-day commands are in [Common commands](common-commands.md).
 The original wording follows. See [Public launch review](../architecture/public-launch-review.md) for the gap list.
 Replace every `<placeholder>`. Never paste a secret into a command line that lands in shell history: use
 `aws secretsmanager ... --secret-string file://` or the console.
@@ -105,6 +105,9 @@ Passwords are 40 letters and digits from `openssl rand` (no `/`, `+` or `=`, whi
    key (see 4.1), write to the log group, SSM core (for Session Manager).
 3. Install Docker Engine and the Compose plugin. Turn on automatic security updates.
 4. Copy `Infrastructure/prod/` and `Infrastructure/postgres/sql/init/` to `/opt/eveassist/Infrastructure/` (the layout `db-setup.sh` expects).
+   The instance has no git checkout: the files were copied by hand through SSM (base64 in a shell command is enough for the small ones). The
+   directory is owned by root, so every later write there (`Caddyfile`, `prod.env`) needs `sudo`, and `ssm-user` can only read it.
+   `images.env` (the pinned digests) exists on the instance only.
 
 ## 7. Prepare the database (once)
 
@@ -119,6 +122,9 @@ typed or passed on a command line, and it runs the PostgreSQL client from the sa
    `sde.sde_version`. Write down that build and date, because the update runbook needs it. Load the same dump into the dev
    database before launch, so that what was tested is what runs.
 3. Check as `eveassist_app` that `select count(*) from sde."invTypes"` returns rows, and that an `INSERT` into it is refused.
+
+The instance role may not call `rds:DescribeDBInstances` (it is meant to be narrow), so a command on the instance cannot look up the
+endpoint or the master secret's ARN: pass both in, as `RDS_HOST` and `RDS_SECRET_ARN` above.
 
 ## 8. Compose for prod
 
@@ -143,10 +149,18 @@ come from `App/Dockerfile` and `Infrastructure/keycloak/Dockerfile`. What it doe
 - `start.sh` reads the three secrets into the environment of that one process, logs in to ECR and runs
   `docker compose up -d`. No `.env` file with secrets is left on disk.
 
-Not yet done: pushing the images, and copying `Infrastructure/prod/` (and `postgres/sql/init/`, for `db-setup.sh`) to the
-instance. Until CI exists, copy with SSM or a tarball in S3, and keep `images.env` on the instance only.
+Done 2026-11-12: the images were built for `linux/arm64`, pushed to ECR and pinned by digest in `images.env`, and `Infrastructure/prod/` was
+copied to the instance (step 6.4).
+
+Two things to know about the single-file mount of `Caddyfile`: a replaced file is not seen by the running container, so follow "Changing the
+Caddyfile" in [update-deployment.md](update-deployment.md). And `docker compose down` run inside the stack's directory needs every secret,
+because Compose reads `compose.yaml` and its `${VAR:?}` checks first: run `cd ~ && sudo docker compose -p eveassist down` instead (see
+[Common commands](common-commands.md)).
 
 ## 9. First start
+
+Open the shell with `prod` or `prod stack` from [Common commands](common-commands.md) (bash, and `sudo` for Docker). In plain `sh` a multi-line
+paste goes wrong. Planned restarts raise the alarm `eveassist-prod-upstream-unreachable`; silence it first (same file, "Alarms").
 
 1. Build and push the images (manually the first time, `docker buildx build --platform linux/arm64 ...` for a Graviton
    instance, then `docker push`). Note the digest.
@@ -210,7 +224,8 @@ Do every item. A failed item stops the launch.
 
 ## 12. After launch
 
-- Record the instance id, the image digest, the SDE dump date and the RDS snapshot id in the deployment log
-  (a plain file `documentation/runbooks/deploy-log.md`, no secrets).
-- Calendar: restore test every six months, Keycloak and Postgres patch review monthly, certificate and domain expiry.
-- Move the first-deploy steps that you improvised back into this file.
+- The deployment log (`deploy-log.md`, no secrets) holds the instance id, the image digests, the SDE dump date and the restore test. Add the
+  go-live entry when it happens.
+- Recurring tasks and their next dates are in [update-deployment.md](update-deployment.md), "Recurring tasks". Put them in your calendar.
+- The steps improvised during the first deploy are now part of this file (steps 6.4, 7, 8, 9, and the SSM and alarm commands in
+  [Common commands](common-commands.md)).

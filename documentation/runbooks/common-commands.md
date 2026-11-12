@@ -34,15 +34,22 @@ prod() {
     stack) start='cd /opt/eveassist/Infrastructure/prod && exec bash -l' ;;
     *)     echo "usage: prod [home|stack]" >&2; return 2 ;;
   esac
+  # A dropped new connection (this WSL machine drops about 1 in 25) would otherwise hang for the CLI's default 60 s: give up after 5 s and retry.
+  local retry=(--cli-connect-timeout 5)
+  export AWS_MAX_ATTEMPTS=5
   # An expired or missing SSO session makes this call fail; sign in again, then carry on.
-  if ! aws sts get-caller-identity --profile "$profile" >/dev/null 2>&1; then
+  if ! aws "${retry[@]}" sts get-caller-identity --profile "$profile" >/dev/null 2>&1; then
     echo "The AWS session for $profile is missing or expired. Signing in..."
     aws sso login --profile "$profile" --use-device-code || return
   fi
-  aws ssm start-session --profile "$profile" --region "$region" --target "$target" \
+  aws "${retry[@]}" ssm start-session --profile "$profile" --region "$region" --target "$target" \
     --document-name AWS-StartInteractiveCommand --parameters "command=[\"$start\"]"
 }
 ```
+
+The retry settings only cover the API calls (the sign-in check and starting the session), not the websocket that the Session Manager plugin
+opens afterwards: if a session hangs at "Starting session", press Ctrl+C and run `prod` again. (If the sign-in check fails because the network
+dropped a connection and not because the session expired, it signs you in again, which is harmless.)
 
 `prod` opens the shell in the home directory, `prod stack` in the stack's directory (`/opt/eveassist/Infrastructure/prod`). The `cd` runs
 first and `exec` then replaces the starting `sh` with bash, so `exit` ends the session at once.  `sudo` is still needed for Docker commands.
@@ -54,6 +61,43 @@ enter the code if asked, and the command carries on by itself.
 Without the `--document-name` part, the session starts in plain `sh`, where a multi-line paste goes wrong. Run `bash` first then.
 (An account-wide alternative is a Session Manager preferences document, `SSM-SessionManagerRunShell`, with `shellProfile.linux` set to
 `exec /bin/bash`. It affects every session in the account and region, and is also where session logging is configured.)
+
+## Alarms
+
+Run on the dev machine. The alarms are in `us-west-2`, except the site-down alarm, which is in `us-east-1` (Route 53 health metrics exist
+only there). Stopping an alarm's actions silences its emails and its OK emails; the alarm still changes state, so its history keeps the
+episode. Always switch them back on.
+
+Planned restarts of the stack (`docker compose down` and `start.sh`, a switch to another database) make Caddy log a few "could not reach the
+app" errors while the app and Keycloak start, which raises `eveassist-prod-upstream-unreachable` (5 or more in 5 minutes). Silence it for
+the restart:
+
+```bash
+aws cloudwatch disable-alarm-actions --profile EveAssist-admin --region us-west-2 --alarm-names eveassist-prod-upstream-unreachable
+```
+
+If the restart can take a couple of minutes or more, also silence the site-down alarm (a Route 53 health check of `/privacy`, which fails
+while the app is down):
+
+```bash
+aws cloudwatch disable-alarm-actions --profile EveAssist-admin --region us-east-1 --alarm-names eveassist-prod-site-down
+```
+
+Switch them back on when the stack is healthy again:
+
+```bash
+aws cloudwatch enable-alarm-actions --profile EveAssist-admin --region us-west-2 --alarm-names eveassist-prod-upstream-unreachable
+aws cloudwatch enable-alarm-actions --profile EveAssist-admin --region us-east-1 --alarm-names eveassist-prod-site-down
+```
+
+Check that nothing was left silenced (prints the names of alarms whose actions are off; no output means all are on):
+
+```bash
+for r in us-west-2 us-east-1; do aws cloudwatch describe-alarms --profile EveAssist-admin --region $r --query 'MetricAlarms[?ActionsEnabled==`false`].AlarmName' --output text; done
+```
+
+The other alarms (`eveassist-prod-errors`, `-esi-failures`, `-instance-status`, `-cpu-credits`, and the billing alarm in `us-east-1`) are left
+on: a real ERROR during a restart is worth an email.
 
 ## On the instance
 

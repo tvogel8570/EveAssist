@@ -63,12 +63,18 @@ Downtime during a deploy is accepted. Do it at a quiet time and say so on the si
 
 On the instance (`/opt/eveassist`):
 
+0. Optional, for a restart that takes more than a few seconds: silence `eveassist-prod-upstream-unreachable` (and `eveassist-prod-site-down`
+   for a long one), so that a planned restart does not send alert emails. The commands are in [Common commands](common-commands.md),
+   "Alarms". Switch them back on in step 6.
+
 1. Edit the pinned digest in the Compose file (or the env file the start script reads). Commit nothing secret.
 2. `docker compose pull app`
 3. `docker compose up -d app`. Flyway runs at start. Keycloak, Caddy and Postgres are not touched.
 4. `docker compose logs -f app` until it reports started. Any Flyway error, stop and go to "Rolling back".
 
 ## 6. Verify
+
+0. If you silenced alarms in step 5, switch them back on and run the check at the end of "Alarms" in [Common commands](common-commands.md).
 
 - [ ] The footer shows the new commit id.
 - [ ] Health endpoint is up, the CloudWatch alarm is not firing.
@@ -121,6 +127,16 @@ migration.
    registration lists, never more).
 2. Deploy the code. The feature toggle asks for it only when turned on.
 3. Confirm it is read-only. A write scope is not allowed (gain-trust.md).
+
+### Recurring tasks
+
+| Task | When | Next |
+|---|---|---|
+| Restore test (snapshot, restore, start the stack on it, delete) | every 6 months | by 2027-05-12 |
+| OS security updates, and Keycloak, Caddy and Postgres patch review | monthly | 2026-12-12 |
+| Certificates: Caddy renews them by itself. The current ones end 2027-02-10, so look at the dates in January | yearly check | 2027-01-15 |
+| Domain `eveassist.net`: auto-renew is on, expires 2027-08-04 | yearly check | 2027-07-01 |
+| `security.txt` expiry (the app sets it; it ends 2027-11-11) | yearly check | 2027-10-15 |
 
 ### Patching the host and containers
 
