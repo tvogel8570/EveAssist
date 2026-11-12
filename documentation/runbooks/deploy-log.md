@@ -231,8 +231,8 @@ One entry per build and deploy of prod, newest last. No secrets. The procedure i
   exists. Import skipped" (no re-import, nobody signed out), the app validated 20 migrations, needed none and started in 12.8 s. No ERROR line in the
   prod log group afterwards. The footer shows `build 3ec2628` (browser and curl), the privacy page carries the new wording, `/`, `/try`, `/privacy`,
   `security.txt` and the realm's discovery document answer 200, `/admin/` on the auth host answers 404, and the developer signed in.
-- **Alarm:** `eveassist-prod-upstream-unreachable` went to ALARM at 21:26:55 UTC, because Caddy could not reach the restarting containers. It was not
-  silenced beforehand: the developer ran the deploy before that was done. The developer cannot read the alert mailbox while Outlook is down and
+- **Alarm:** `eveassist-prod-upstream-unreachable` went to ALARM at 21:26:55 UTC, because Caddy could not reach the restarting containers, and back to OK
+  at 21:31:55 UTC by itself. It was not silenced beforehand: the developer ran the deploy before that was done. The developer cannot read the alert mailbox while Outlook is down and
   accepts the alarms as right. The deploy's own checks do not depend on it.
 - **GitHub rules found on the way:** `main` is covered by the ruleset "primary branches" (shared with `development`, no bypass), which requires pull
   requests and forbids force pushes and deletion, so the fast-forward push in `CLAUDE.md` could never have worked. `CLAUDE.md` now says a release goes by
