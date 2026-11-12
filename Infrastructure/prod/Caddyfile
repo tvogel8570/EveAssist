@@ -24,10 +24,16 @@
 
 {$AUTH_DOMAIN} {
 	import security_headers
-	# The admin console and the master realm are for the operator and are reached through a tunnel to the instance
-	# (see documentation/runbooks/initial-deployment.md), never from the internet.
-	@operator path /admin /admin/* /realms/master /realms/master/* /metrics /metrics/*
-	respond @operator 404
-	encode zstd gzip
-	reverse_proxy keycloak:8080
+	# Allowlist: only the EveAssist realm's endpoints (sign-in, the callback from EVE, keys) and the theme files its
+	# pages load are forwarded. Everything else, including the admin console, the master realm and /metrics, answers
+	# 404 from the internet. The operator reaches those through a tunnel to the instance
+	# (see documentation/runbooks/initial-deployment.md). A new Keycloak path stays hidden until it is added here.
+	@public path /realms/EveAssist /realms/EveAssist/* /resources/*
+	handle @public {
+		encode zstd gzip
+		reverse_proxy keycloak:8080
+	}
+	handle {
+		respond 404
+	}
 }

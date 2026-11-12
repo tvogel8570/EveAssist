@@ -134,8 +134,8 @@ come from `App/Dockerfile` and `Infrastructure/keycloak/Dockerfile`. What it doe
 - `keycloak`: `KC_HOSTNAME=https://auth.<domain>`, `KC_HOSTNAME_ADMIN=http://localhost:8080` (the admin console is served
   there only, so a blocked public URL cannot break its own sign-in), `KC_PROXY_HEADERS=xforwarded`, `KC_HTTP_ENABLED=true`,
   `start --optimized --import-realm` with the realm baked into the image. Brute-force protection is on in the realm file.
-- `caddy`: `reverse_proxy app:7444` and `reverse_proxy keycloak:8080`, answering **404 for `/admin*`, `/realms/master*` and
-  `/metrics*`** on the auth host, with HSTS, `X-Content-Type-Options: nosniff`, `Referrer-Policy` and `X-Frame-Options: DENY`.
+- `caddy`: `reverse_proxy app:7444`, and on the auth host an allowlist: only `/realms/EveAssist*` and `/resources/*` go to
+  `keycloak:8080`, **everything else (`/admin*`, `/realms/master*`, `/metrics*`, any new path) answers 404**, with HSTS, `X-Content-Type-Options: nosniff`, `Referrer-Policy` and `X-Frame-Options: DENY`.
   The Caddy container has both public names as network aliases, so the app reaches Keycloak by the issuer's own name inside
   the network, with a valid certificate. Certificates are in a volume that is kept, because Let's Encrypt limits issuing.
 - Logging driver `awslogs`, group `/eveassist/prod`. Memory limits: Keycloak 1.5 GB, app 1.25 GB.
@@ -171,7 +171,7 @@ instance. Until CI exists, copy with SSM or a tarball in S3, and keep `images.en
 Do every item. A failed item stops the launch.
 
 - [ ] `https://<domain>` serves the landing page with a valid certificate. `http://` redirects.
-- [ ] `https://auth.<domain>/admin/` and `/realms/master` answer 404 from the internet.
+- [ ] `https://auth.<domain>/admin/`, `/realms/master`, `/metrics` and `/` answer 404 from the internet (the auth host is an allowlist).
 - [ ] Sign in with EVE, return to the app, an `account` row exists, the session cookie is `Secure; HttpOnly; SameSite=Lax`.
 - [ ] Link a character with the default scopes, see its assets, the Characters page lists the granted scopes.
 - [ ] Look at `character_token` in the database: the refresh token is ciphertext, and `EVE_TOKEN_DATA_KEY_WRAPPED` is
