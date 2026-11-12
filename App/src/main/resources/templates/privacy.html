@@ -17,7 +17,8 @@
     <ul>
         <li><strong>Your account.</strong> A display name (your EVE character's name when you first sign in), an id, and when the account was made.
             You sign in with EVE Online. EVE gives us no email address and no password exists, so we hold neither. Our sign-in service (Keycloak) keeps your
-            character's name and the identifier EVE gives for it, so that it recognises you next time.</li>
+            character's name and the identifier EVE gives for it, so that it recognises you next time. It does not keep the tokens that EVE hands it
+            when you sign in.</li>
         <li><strong>Characters you link.</strong> For each: its EVE id and name, the permissions you granted, whether it needs re-authorizing, when you linked
             it, and its portrait. We store the refresh token EVE gives us, <em>encrypted</em>; the key that protects it is held by AWS Key Management Service
             and is never stored with the data. Short-lived access tokens are kept in memory only.</li>
