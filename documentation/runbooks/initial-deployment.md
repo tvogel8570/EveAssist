@@ -224,7 +224,8 @@ Do every item. A failed item stops the launch.
       `/.well-known/security.txt` answers with the contact and a future expiry.
 - [ ] The privacy policy page (`/privacy`) matches what is stored. Read it against the schema once more if a migration added a table since it was written
       (last updated 2026-11-11). It says there are no access logs, which holds only while the Caddyfile has no `log` directive.
-- [ ] A CloudWatch log line shows with no tokens or secrets. Trigger a test ERROR and the alarm emails.
+- [x] A CloudWatch log line shows with no tokens or secrets. Trigger a test ERROR and the alarm emails. Done 2026-11-12: a test ERROR line reached
+      CloudWatch and put `eveassist-prod-errors` into ALARM, and CloudWatch recorded a successful notification to the alert topic (see the deploy log).
 - [x] **Restore test**: take an RDS snapshot, restore it to a new instance, start the stack against it on your dev
       machine or a second instance, sign in, see data. Delete the restore afterwards.
 - [x] `docker compose down && up -d` on the instance: everything comes back, sessions survive (they are in Postgres). Done 2026-11-12, see the deploy log.

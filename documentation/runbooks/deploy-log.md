@@ -184,3 +184,12 @@ One entry per build and deploy of prod, newest last. No secrets. The procedure i
 - The role still lets any container on the instance do the one `Decrypt` the app does (step above). The `manage-users` service account in Keycloak
   is unchanged, by decision, until an admin area exists.
 
+## 2026-11-12: the error alarm test is accepted
+
+- The test ERROR line (written to the app container's standard output at 18:11:28 UTC) reached CloudWatch Logs, `eveassist-prod-errors` went from OK to
+  ALARM at 18:12:00 UTC and back to OK at 18:24:00 UTC, and CloudWatch recorded each notification to `eveassist-alerts` as successfully executed. Through the
+  same topic and subscription the `eveassist-prod-upstream-unreachable` alarm's emails arrived on three occasions the same day.
+- The developer's mailbox, hosted at Microsoft 365, was unreachable for part of the afternoon (a Microsoft Outlook disruption), and the two
+  `eveassist-prod-errors` emails themselves were not seen. The developer accepted the item on that evidence: the alarm fired, AWS sent the
+  notifications, and the topic and the subscription demonstrably deliver.
+
