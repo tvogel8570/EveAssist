@@ -115,18 +115,24 @@ Passwords are 40 letters and digits from `openssl rand` (no `/`, `+` or `=`, whi
 
 From the instance, using `Infrastructure/prod/db-setup.sh`. It reads every password from Secrets Manager itself, so none is
 typed or passed on a command line, and it runs the PostgreSQL client from the same image as the dev database. Set
-`RDS_HOST` (the endpoint) and `RDS_SECRET_ARN` (the RDS-managed master secret's ARN).
+`RDS_HOST` (the endpoint). `init` also needs `RDS_SECRET_ARN` (the RDS-managed master secret's ARN), because it is the only step that
+connects as the master user; `sde` connects as `eveassist_sde`, which owns the `sde` schema, with the password from `eveassist/db`.
 
 1. `./db-setup.sh init` creates `eveassist`, `keycloak` and their roles with `postgres/sql/init/3-init-eveassist.sh`, run
    as the master user. The master user is not a superuser, so the script grants itself the roles first. It is safe to run
    again.
-2. `./db-setup.sh sde` downloads Fuzzwork's latest schema dump, restores it into the `sde` schema and records the build in
+2. `./db-setup.sh sde` (as `eveassist_sde`, so it needs no master secret and works again for every SDE reload) downloads Fuzzwork's
+   latest schema dump, restores it into the `sde` schema and records the build in
    `sde.sde_version`. Write down that build and date, because the update runbook needs it. Load the same dump into the dev
    database before launch, so that what was tested is what runs.
 3. Check as `eveassist_app` that `select count(*) from sde."invTypes"` returns rows, and that an `INSERT` into it is refused.
 
 The instance role may not call `rds:DescribeDBInstances` (it is meant to be narrow), so a command on the instance cannot look up the
-endpoint or the master secret's ARN: pass both in, as `RDS_HOST` and `RDS_SECRET_ARN` above.
+endpoint or the master secret's ARN: pass them in, as `RDS_HOST` and (for `init`) `RDS_SECRET_ARN` above.
+
+The master secret is needed only for `init` (once) and for a restore check as the master user. The instance role's permission to read it is
+therefore temporary: add it to the role's `ReadOwnSecrets` statement before `init`, and remove it afterwards. Everything else, including
+the SDE reload, uses the roles in `eveassist/db`.
 
 ## 8. Compose for prod
 

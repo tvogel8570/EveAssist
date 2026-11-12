@@ -1,19 +1,21 @@
 #!/bin/bash
-# Prod only. Prepares the RDS server, once, from the prod instance. Usage:
+# Prod only. Prepares the RDS server from the prod instance. Usage:
 #   RDS_HOST=<endpoint> RDS_SECRET_ARN=<arn of the RDS-managed master secret> ./db-setup.sh init
-#   RDS_HOST=... RDS_SECRET_ARN=... ./db-setup.sh sde
+#   RDS_HOST=<endpoint> ./db-setup.sh sde
+# Only init needs the master user, and so the master secret: the instance role may read it only while init runs (grant it
+# for that, then take it away). sde connects as eveassist_sde, which owns the sde schema and may create schemas in the
+# database (3-init-eveassist.sh grants that), with the password from the Secrets Manager secret eveassist/db.
 #
 # init  creates the keycloak and eveassist databases and roles (postgres/sql/init/3-init-eveassist.sh, run as the
 #       master user), with the role passwords from the Secrets Manager secret eveassist/db.
 # sde   downloads the SDE schema dump from Fuzzwork and replaces the sde schema in eveassist, like postgres/load-sde.sh
-#       does for the dev container. Stop the app first when this is a reload.
+#       does for the dev container, as the eveassist_sde role. Stop the app first when this is a reload.
 #
 # Secrets are read here with the instance role and passed to the container through a private temp file, never on a
 # command line. The postgres client is the same image as the dev database, so its version matches the server.
 set -euo pipefail
 
 : "${RDS_HOST:?set RDS_HOST to the RDS endpoint}"
-: "${RDS_SECRET_ARN:?set RDS_SECRET_ARN to the RDS master secret ARN}"
 IMAGE=postgres:18.6-alpine3.24
 HERE=$(cd "$(dirname "$0")" && pwd)
 INIT_SCRIPT="$HERE/../postgres/sql/init/3-init-eveassist.sh"
@@ -26,13 +28,25 @@ umask 077
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
 
-master_password=$(secret "$RDS_SECRET_ARN" | jq -r .password)
-{
-    echo "PGHOST=$RDS_HOST"
-    echo "PGUSER=eveassist_master"
-    echo "PGSSLMODE=require"
-    echo "PGPASSWORD=$master_password"
-} > "$work/env"
+# the connection settings for the container that runs the PostgreSQL client: who connects, and with which password
+connection() {
+    {
+        echo "PGHOST=$RDS_HOST"
+        echo "PGUSER=$1"
+        echo "PGSSLMODE=require"
+        echo "PGPASSWORD=$2"
+    } > "$work/env"
+}
+
+case "${1:-}" in
+init)
+    : "${RDS_SECRET_ARN:?set RDS_SECRET_ARN to the RDS master secret ARN}"
+    connection eveassist_master "$(secret "$RDS_SECRET_ARN" | jq -r .password)"
+    ;;
+sde)
+    connection eveassist_sde "$(secret eveassist/db | jq -r .EVEASSIST_SDE_PASSWORD)"
+    ;;
+esac
 
 case "${1:-}" in
 init)
