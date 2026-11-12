@@ -193,3 +193,17 @@ One entry per build and deploy of prod, newest last. No secrets. The procedure i
   `eveassist-prod-errors` emails themselves were not seen. The developer accepted the item on that evidence: the alarm fired, AWS sent the
   notifications, and the topic and the subscription demonstrably deliver.
 
+## 2026-11-12: go-live, first testers
+
+- The developer invited the first 2 testers (initial runbook, step 11). The state at that point: image digests as in the first start (app
+  `0.1.0-a13eb6a`, Keycloak `0.1.0-6813893`), every alarm `OK` with its actions on (none was left silenced), no ERROR lines in the 30 minutes before, and
+  the site, `/try` and the realm answering 200.
+- The launch gate was closed except one item, which stays open on purpose: the privacy policy page was read against the schema and what it
+  left out is now written into it, but four sentences still do not match what the code does (issues #25 to #28: corporation data after a character is
+  removed, the 10-hour session limit, `esi_cache` rows, data kept after a feature is turned off).
+- Nobody watches the first hours by hand: the developer chose to wait for the testers' feedback, which may take a couple of days because they
+  are volunteers. The safety net is the alarms (errors, ESI failures, upstream errors, instance status, CPU credits, the site-down health check and
+  the billing alarm), which email one Microsoft-hosted mailbox. A watch that I (Claude) started was stopped at the developer's request.
+- Running code is the build of commit `a13eb6a`. The repository's `prod-deployment` branch, with the fixes made since (the `start.sh` secrets check,
+  the Keycloak token retry, the runbooks), is not pushed and not deployed.
+
