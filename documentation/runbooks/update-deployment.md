@@ -14,6 +14,7 @@ Downtime during a deploy is accepted. Do it at a quiet time and say so on the si
 | App with a Flyway migration | Steps 1 to 7, snapshot is mandatory | Migration rules below |
 | Keycloak realm file or a Keycloak client secret | Step 5 replaced by [keycloak-realm.md](keycloak-realm.md) | Everyone is signed out |
 | New or changed ESI calls or scopes | Add: concurrency check first | [concurrency-tuning.md](concurrency-tuning.md), `esi.md`. New scopes need the EVE application updated ("Adding an ESI scope" below) and every character re-authorized. |
+| Caddyfile only | Put the file in place **without replacing its inode**, then `sudo docker restart <project>-caddy-1` | `caddy reload` does not see a replaced file; see "Changing the Caddyfile" below |
 | New SDE (after an EVE patch) | SDE reload section | Plans using old type ids may change |
 | Keycloak or Postgres major upgrade | Own rehearsal with a restore of prod data | Never in the same release as an app change |
 
@@ -125,3 +126,16 @@ migration.
 
 Monthly: OS security updates, then `docker compose pull` for Keycloak and Caddy on a quiet day, restart one service at a
 time. A Keycloak major version follows "Moving to a newer Keycloak" in keycloak-realm.md and is rehearsed on a restored copy.
+
+## Changing the Caddyfile
+
+Compose mounts `Caddyfile` into the Caddy container as a single file, and Docker pins such a mount to the file's inode. Replacing
+the file (`mv`, `cp` over a new file, an editor that saves by renaming) leaves the container reading the old content, and
+`caddy reload` then says `config is unchanged`. Do this instead:
+
+1. On the instance, keep a copy (`cp Caddyfile Caddyfile.bak`), write the new file, and `diff` the two.
+2. `docker exec <project>-caddy-1 caddy validate --config /etc/caddy/Caddyfile` only checks what the container sees, so it cannot
+   prove the new file is the one in use. Restart the container with `docker restart <project>-caddy-1` (1 to 3 seconds of dropped
+   connections; certificates are in a volume, sessions in Postgres).
+3. Check that the container sees the change (`docker exec <project>-caddy-1 grep -c <something new> /etc/caddy/Caddyfile`) and test
+   from outside. Use `docker exec`, not `docker compose exec`: Compose needs the variables `start.sh` sets and fails without them.

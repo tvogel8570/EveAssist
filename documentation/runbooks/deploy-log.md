@@ -77,3 +77,16 @@ One entry per build and deploy of prod, newest last. No secrets. The procedure i
   `/privacy` with its alarm in us-east-1. Route 53's checkers in five regions all answered 200.
 - The billing alarm's email subscription had never been confirmed, so it would not have emailed anyone. Both subscriptions were sent again and
   must be confirmed by clicking the link in each message.
+
+## 2026-11-12: Caddy allowlist for the auth host
+
+- The auth host's Caddy rules changed from a denylist (`/admin*`, `/realms/master*`, `/metrics*` answer 404) to an allowlist: only
+  `/realms/EveAssist*` and `/resources/*` go to Keycloak, everything else answers 404 from Caddy. Before this, `/` was proxied and
+  redirected to `http://localhost:8080/admin/`.
+- The Caddyfile was copied to the instance by hand in an SSM shell (the branch is not pushed). `caddy reload` said `config is unchanged`,
+  because the single-file bind mount still held the old inode after `mv`. `docker restart` on the Caddy container fixed it. The lesson is
+  in "Changing the Caddyfile" of the update runbook.
+- Checked from the internet: `/`, `/x`, `/admin/`, `/realms/master` and `/metrics` answer 404 from Caddy; the realm's discovery document,
+  keys and account page answer 200; the app and `/privacy` answer 200.
+- The developer signed in with EVE through the allowlist: the login page was styled and the sign-in completed.
+- Still open: the per-visitor `/try` limit from two networks, the restore test, and the `docker compose down && up -d` check.
