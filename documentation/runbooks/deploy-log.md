@@ -89,4 +89,17 @@ One entry per build and deploy of prod, newest last. No secrets. The procedure i
 - Checked from the internet: `/`, `/x`, `/admin/`, `/realms/master` and `/metrics` answer 404 from Caddy; the realm's discovery document,
   keys and account page answer 200; the app and `/privacy` answer 200.
 - The developer signed in with EVE through the allowlist: the login page was styled and the sign-in completed.
-- Still open: the per-visitor `/try` limit from two networks, the restore test, and the `docker compose down && up -d` check.
+- Still open: the per-visitor `/try` limit from two networks and the restore test.
+
+## 2026-11-12: `docker compose down` and start again
+
+- `docker compose -p eveassist down` (run from a directory without a Compose file, so it needs no secrets) removed the three containers and the
+  network, keeping the volumes. `sudo ./start.sh` brought everything back: Keycloak healthy after 16 s, the app healthy about 45 s after the
+  start, same image digests as before, the same Let's Encrypt certificate (not reissued, valid to 2027-02-10).
+- Checked from the internet: `auth.` answers 404 for `/`, `/x`, `/admin/`, `/realms/master` and `/metrics`, and 200 for the realm's discovery
+  document; the app, `/privacy` and `security.txt` answer 200. A browser tab signed in before the restart was still signed in after it, so
+  sessions survive (they are in Postgres).
+- About one request in 25 from the developer's WSL machine timed out, also against Cloudflare and AWS sites, so it is that machine's network
+  and not the server.
+- Still open: the per-visitor `/try` limit from two networks and the restore test.
+

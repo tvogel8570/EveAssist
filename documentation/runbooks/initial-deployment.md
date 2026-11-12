@@ -191,7 +191,7 @@ Do every item. A failed item stops the launch.
 - [ ] A CloudWatch log line shows with no tokens or secrets. Trigger a test ERROR and the alarm emails.
 - [ ] **Restore test**: take an RDS snapshot, restore it to a new instance, start the stack against it on your dev
       machine or a second instance, sign in, see data. Delete the restore afterwards.
-- [ ] `docker compose down && up -d` on the instance: everything comes back, sessions survive (they are in Postgres).
+- [x] `docker compose down && up -d` on the instance: everything comes back, sessions survive (they are in Postgres). Done 2026-11-12, see the deploy log.
 
 ## 11. Go live
 
