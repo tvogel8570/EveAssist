@@ -66,7 +66,11 @@ Check that no write scope is selected. The public commitment is read-only.
 ## 4. Data and key services
 
 1. **KMS**: a symmetric key with the alias `eveassist-token-key`. The default key policy lets IAM decide, so access is
-   the instance role's policy (step 6): `Encrypt`, `Decrypt`, `GenerateDataKey` on this key only. Make the wrapped data
+   the instance role's policy (step 6): **`Decrypt` only**, on this key only, with the condition
+   `"StringEquals": {"kms:EncryptionContext:purpose": "eveassist-refresh-tokens"}`. The app's only KMS call is that unwrap at start
+   (`KmsDataKeyProvider`), so the role cannot encrypt, generate data keys or decrypt for another purpose. Narrowed on 2026-11-12, see the
+   deploy log. Making the wrapped data key below needs `kms:GenerateDataKey` and so your admin profile, from the dev machine, not the
+   instance. Make the wrapped data
    key once, with the purpose that the app checks on every unwrap, and store the base64 text in Secrets Manager as
    `EVE_TOKEN_DATA_KEY_WRAPPED` without printing it:
    `aws kms generate-data-key-without-plaintext --key-id alias/eveassist-token-key --key-spec AES_256 --encryption-context purpose=eveassist-refresh-tokens --query CiphertextBlob --output text`.

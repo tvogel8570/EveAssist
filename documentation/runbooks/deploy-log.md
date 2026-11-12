@@ -154,3 +154,18 @@ One entry per build and deploy of prod, newest last. No secrets. The procedure i
   emails arrived three times). All alerts, and the billing alarm, go to one address that is hosted at Microsoft 365. While Outlook had an outage
   the same afternoon, the error alarm's emails could not be read. The developer decided not to add a second subscriber, so a Microsoft outage can hide an
   alarm: the instance status check, the site-down health check and the CloudWatch console are the other places to look.
+
+## 2026-11-12: the instance role's KMS access narrowed
+
+- The `TokenKey` statement of the instance role's inline policy went from `kms:Encrypt`, `kms:Decrypt` and `kms:GenerateDataKey` to `kms:Decrypt`
+  only, with the condition `kms:EncryptionContext:purpose = eveassist-refresh-tokens`. The app's only KMS call is that `Decrypt` at start-up
+  (checked in `KmsDataKeyProvider`). The previous policy was saved before the change, to put back if the app could not start.
+- Tested: after the change the app container was restarted. CloudTrail shows the instance role's `Decrypt` with that purpose at the app's start,
+  78 seconds after the `PutRolePolicy` call, without an error, and the site answered 200 on every checked address. A deliberate `kms:Encrypt`
+  from the instance with the same context was refused with `AccessDenied`.
+  The app showed `(healthy)` after the restart, and the developer signed in and the Characters page of a linked character loaded, which
+  shows that the stored refresh tokens still decrypt.
+- Not changed: anyone holding the role (any container, through the metadata service) can still do the one `Decrypt` that the app does, so this
+  removes abilities, it does not protect the key against code running on the instance. The `db-setup.sh` SDE load now runs as `eveassist_sde`;
+  removing the role's standing read of the RDS master secret is the next, separate step.
+
