@@ -89,7 +89,7 @@ One entry per build and deploy of prod, newest last. No secrets. The procedure i
 - Checked from the internet: `/`, `/x`, `/admin/`, `/realms/master` and `/metrics` answer 404 from Caddy; the realm's discovery document,
   keys and account page answer 200; the app and `/privacy` answer 200.
 - The developer signed in with EVE through the allowlist: the login page was styled and the sign-in completed.
-- Still open: the per-visitor `/try` limit from two networks and the restore test.
+- Still open: the restore test.
 
 ## 2026-11-12: `docker compose down` and start again
 
@@ -101,5 +101,49 @@ One entry per build and deploy of prod, newest last. No secrets. The procedure i
   sessions survive (they are in Postgres).
 - About one request in 25 from the developer's WSL machine timed out, also against Cloudflare and AWS sites, so it is that machine's network
   and not the server.
-- Still open: the per-visitor `/try` limit from two networks and the restore test.
+- Still open: the restore test.
+
+## 2026-11-12: `/try` per-visitor limit, the header chain
+
+- The limit itself could not be reached from outside: a plan holds at most 10 products, and one visitor fetches only prices that are not
+  already in the shared cache, so about 60 product adds as one visitor did not leave any item unpriced.
+- A throwaway `traefik/whoami` container on the Compose network, behind a temporary Caddy route `/_probe` (removed afterwards, the Caddyfile
+  is back to the committed one), showed what Caddy sends to its upstream. From two networks (network A and network B) the upstream
+  got each computer's own public address in `X-Forwarded-For`; a forged `X-Forwarded-For`, `-Proto` and `-Host` from the client were all
+  replaced. `RemoteAddr` was Caddy's address on the Docker network (172.18.0.3).
+- Not checked live: that Tomcat (`server.forward-headers-strategy=native`) turns that header into the request's remote address for requests
+  from the Docker subnet. That is covered by `ProdProfileIT.theVisitorsAddressIsTheOneCaddyForwarded` (prod profile, `X-Forwarded-For` in, the filter sees that address
+  as the remote address) and by Tomcat's default trusted proxies, which include `172.16.0.0/12`, the Docker network. The gate item is closed on the
+  two together, not on a live run of the limit.
+- The Caddyfile was changed in place with `tee` (same inode), so `caddy reload` was enough and Caddy was not restarted.
+
+## 2026-11-12: restore test
+
+- A manual snapshot of `eveassist-prod` (`restore-test-20261112`) was restored to a new private instance `eveassist-restore-test` (`db.t4g.small`,
+  the `eveassist-prod` subnet group and security group, not publicly accessible). The restore took about 10 minutes.
+- Checked from the instance with SQL as the master user: Flyway at `20261110.2008` with 20 migrations (the repository's latest migration is
+  `V20261110_2008__plan-archive.sql`), SDE build 3687575 with 53,925 `invTypes` rows, the one account, the 26 expected tables including
+  `spring_session*`, and in the `keycloak` database the realms `master` and `EveAssist` with 3 users.
+- The whole stack was then run on the copy by changing `RDS_HOST` in `prod.env` (kept as a backup, restored afterwards): Flyway validated 20
+  migrations and changed nothing, the app was healthy after 12 s, Keycloak and the app both held their connection pools on the copy
+  (`keycloak_owner -> keycloak: 3`, `eveassist_app -> eveassist: 10`), sign-in with EVE worked through the restored Keycloak realm, and the
+  developer's data was as expected. A sign-in tab that had been left open was no longer signed in, which fits Keycloak's 30 minute idle
+  timeout and not the restore.
+- Switched back to `eveassist-prod`, checked the URLs of the app, checked the site from the internet, signed in again. The restored instance and
+  its snapshot were deleted (no final snapshot). The backup `prod.env` copy was removed. The snapshots `pre-first-start` and
+  `eveassist-final-snapshot` were left alone.
+- Learned: the instance role may not call `rds:DescribeDBInstances` (by design), so a script on the instance must be given the master secret's
+  ARN. The stack's directory is owned by root, so changing `prod.env` needs `sudo`.
+- Launch gate: the restore test, the `/try` item and the restart check are done. Items without a recorded check yet: removing a single character
+  (the account deletion revoked both tokens, but a plain character removal was not run on its own), the privacy policy read against the
+  schema, and a test ERROR that makes the alarm email arrive.
+- Checked from the internet afterwards: `http://` answers 308 to `https://` for both names, and the footer shows the operator, the early-preview
+  wording, the privacy and `security.txt` links, `build a13eb6a` (the running image's commit) and the CCP © notice.
+
+## 2026-11-12: removing a single character
+
+- The developer removed one linked character from the Characters page on the live site, and its inventory data was removed with it. The
+  page showed the plain green message ("The character is removed, with its saved access and stored data."), not the revoke-failed warning that
+  `CharactersController` adds when EVE does not accept the revocation, so the token was revoked at EVE. Not yet tested: removing the character that is also the sign-in
+  character (issue #24).
 

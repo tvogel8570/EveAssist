@@ -45,8 +45,7 @@ prod() {
 ```
 
 `prod` opens the shell in the home directory, `prod stack` in the stack's directory (`/opt/eveassist/Infrastructure/prod`). The `cd` runs
-first and `exec` then replaces the starting `sh` with bash, so `exit` ends the session at once. (`bash -l; cd ~` would run the `cd` only
-after bash had exited.) `sudo` is still needed for Docker commands.
+first and `exec` then replaces the starting `sh` with bash, so `exit` ends the session at once.  `sudo` is still needed for Docker commands.
 
 The sign-in is AWS IAM Identity Center's, so there is no password prompt in the terminal. `--use-device-code` prints a web address and
 a short code. Open the address in any browser (it works from WSL, where opening a browser automatically often does not), sign in there,
@@ -80,13 +79,6 @@ Start the stack again (loads the secrets from Secrets Manager, logs in to ECR, t
 
 ```bash
 cd /opt/eveassist/Infrastructure/prod && sudo ./start.sh
-```
-
-```bash
-echo one
-pwd
-echo two
-pwd
 ```
 
 Editor on the instance: `nano` (preinstalled; `Ctrl+O` saves, `Ctrl+X` quits). Prefer writing a file from the repository and checking it

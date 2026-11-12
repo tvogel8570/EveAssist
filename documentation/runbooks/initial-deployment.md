@@ -153,6 +153,11 @@ instance. Until CI exists, copy with SSM or a tarball in S3, and keep `images.en
 2. On the instance, run the start script. Order: Keycloak first. Keycloak imports the realm because its database is
    empty. The app runs Flyway on start.
 3. Watch the logs until the app reports it started and Keycloak reports `Import finished successfully` and no `ERROR`.
+   `start.sh` prints Docker's warning `Your credentials are stored unencrypted in '/root/.docker/config.json'` (link
+   https://docs.docker.com/go/credential-store/) before `Login Succeeded`. It is expected and harmless here: the ECR login token
+   expires after 12 hours, the file is readable only by root, and no lasting registry credential exists (the instance pulls with
+   its IAM role). To silence it, install `docker-credential-ecr-login` and set it as `credsStore` or `credHelpers` in that
+   file, which also makes the login step unnecessary.
 4. Create the real admin in Keycloak, not through the internet. The console works at `http://localhost:8080/admin/` through an SSM
    port-forward (`aws ssm start-session --target <instance-id> --document-name AWS-StartPortForwardingSession --parameters '{"portNumber":["8080"],"localPortNumber":["8080"]}'`),
    but only if the browser runs where the plugin's loopback port is visible. From WSL with a **Windows browser** it is not: the plugin
@@ -168,28 +173,32 @@ instance. Until CI exists, copy with SSM or a tarball in S3, and keep `images.en
 
 ## 10. Verify (launch gate)
 
+Ticked items were checked on the live stack on 2026-11-12 (see the deploy log). Unticked items have no recorded check yet.
+
 Do every item. A failed item stops the launch.
 
-- [ ] `https://<domain>` serves the landing page with a valid certificate. `http://` redirects.
-- [ ] `https://auth.<domain>/admin/`, `/realms/master`, `/metrics` and `/` answer 404 from the internet (the auth host is an allowlist).
-- [ ] Sign in with EVE, return to the app, an `account` row exists, the session cookie is `Secure; HttpOnly; SameSite=Lax`.
-- [ ] Link a character with the default scopes, see its assets, the Characters page lists the granted scopes.
-- [ ] Look at `character_token` in the database: the refresh token is ciphertext, and `EVE_TOKEN_DATA_KEY_WRAPPED` is
+- [x] `https://<domain>` serves the landing page with a valid certificate. `http://` redirects.
+- [x] `https://auth.<domain>/admin/`, `/realms/master`, `/metrics` and `/` answer 404 from the internet (the auth host is an allowlist).
+- [x] Sign in with EVE, return to the app, an `account` row exists, the session cookie is `Secure; HttpOnly; SameSite=Lax`.
+- [x] Link a character with the default scopes, see its assets, the Characters page lists the granted scopes.
+- [x] Look at `character_token` in the database: the refresh token is ciphertext, and `EVE_TOKEN_DATA_KEY_WRAPPED` is
       the only place the key appears (not in the logs, not in the environment of the app in plaintext).
-- [ ] Remove the character. The token is revoked at EVE (the page confirms) and the row is gone.
-- [ ] `/try`: two different browsers on two networks are limited separately (proves forwarded headers). Fetching more
+- [x] Remove the character. The token is revoked at EVE (the page confirms) and the row is gone.
+- [x] `/try`: two different browsers on two networks are limited separately (proves forwarded headers). Fetching more
       than the limit prints "not priced" and does not error.
-- [ ] Export the test account's data (account page, "Download my data"): the file has the account, characters, features and plans and no token.
+      Done 2026-11-12 without reaching the limit (it is high): the header chain was checked from two networks with a throwaway echo
+      upstream, and the app's half by `ProdProfileIT`. See the deploy log.
+- [x] Export the test account's data (account page, "Download my data"): the file has the account, characters, features and plans and no token.
       Then delete the account (account page, "Delete my account"): the token is revoked at EVE, the app rows are gone, the Keycloak user is gone
       (the admin console through the tunnel shows no such user), and the home page says it was deleted. This is the first use of the
       `eveassist-admin` service account against real Keycloak: if it says the sign-in record remains, check `KC_ADMIN_CLIENT_SECRET`,
       that the realm import created the client, and that the app can reach `http://keycloak:8080`.
-- [ ] Footer shows the CCP © notice, the operator name and the commit id (built with `--build-arg GIT_COMMIT=...`, otherwise it says `unknown`).
+- [x] Footer shows the CCP © notice, the operator name and the commit id (built with `--build-arg GIT_COMMIT=...`, otherwise it says `unknown`).
       `/.well-known/security.txt` answers with the contact and a future expiry.
 - [ ] The privacy policy page (`/privacy`) matches what is stored. Read it against the schema once more if a migration added a table since it was written
       (last updated 2026-11-11). It says there are no access logs, which holds only while the Caddyfile has no `log` directive.
 - [ ] A CloudWatch log line shows with no tokens or secrets. Trigger a test ERROR and the alarm emails.
-- [ ] **Restore test**: take an RDS snapshot, restore it to a new instance, start the stack against it on your dev
+- [x] **Restore test**: take an RDS snapshot, restore it to a new instance, start the stack against it on your dev
       machine or a second instance, sign in, see data. Delete the restore afterwards.
 - [x] `docker compose down && up -d` on the instance: everything comes back, sessions survive (they are in Postgres). Done 2026-11-12, see the deploy log.
 
