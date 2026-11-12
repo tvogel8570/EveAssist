@@ -169,3 +169,18 @@ One entry per build and deploy of prod, newest last. No secrets. The procedure i
   removes abilities, it does not protect the key against code running on the instance. The `db-setup.sh` SDE load now runs as `eveassist_sde`;
   removing the role's standing read of the RDS master secret is the next, separate step.
 
+## 2026-11-12: the instance role no longer reads the RDS master secret
+
+- `db-setup.sh sde` now connects as `eveassist_sde` (password from `eveassist/db`), so only `init` needs the master user. The init script already gave that
+  role `CREATE` on the database. Tested first against a throwaway Postgres with the project's own init script: a first load and a replacement load
+  work as that role, the application role can read the result and cannot write to it. The new file was copied to the instance by hand (the old one
+  is kept as `db-setup.sh.bak` there).
+- The `ReadOwnSecrets` statement of the instance role's inline policy lost the `rds!db-...` resource, so it reads only `eveassist/*`. The previous
+  policy was saved before the change.
+- Checked on the instance: the script prints its usage and exits 2 when no mode is given, `eveassist_sde` logs in and shows `CREATE` on the
+  database and all 53,925 rows of `invTypes`, `describe-secret` on the master secret is refused with `AccessDeniedException`, and `eveassist/app` is
+  still readable. The site answered 200 on every checked address. Not run: a real SDE reload, which waits for the next EVE patch and will be the
+  first real use of this path.
+- The role still lets any container on the instance do the one `Decrypt` the app does (step above). The `manage-users` service account in Keycloak
+  is unchanged, by decision, until an admin area exists.
+

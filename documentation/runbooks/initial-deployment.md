@@ -79,7 +79,8 @@ Check that no write scope is selected. The public commitment is read-only.
 2. **RDS**: PostgreSQL 18.6 (the dev image's version), single-AZ in the instance's zone, `db.t4g.small`, 20 GB gp3 that grows
    to 100, storage encrypted, **not publicly accessible**, security group `eveassist-rds`, automated backups 7 days,
    deletion protection on. Use `--manage-master-user-password`: RDS makes the master password and keeps it in its own secret
-   (`rds!db-...`), so nobody handles it. The instance role may read that one secret.
+   (`rds!db-...`), so nobody handles it. The instance role has no standing permission to read that secret (removed on 2026-11-12, see the
+   deploy log): add it to the role's `ReadOwnSecrets` statement only for `db-setup.sh init` or a check as the master user, then take it away.
 3. **AWS Backup**: weekly plan, keep four.
 4. **ECR**: repository `eveassist-app`, plus `eveassist-keycloak` if you build the Keycloak image yourself. Lifecycle
    rule: keep the last 10 images.
