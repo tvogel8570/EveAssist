@@ -896,7 +896,7 @@
       "id": "0ab03151-a714-4e34-bc9d-50e5527500fd",
       "clientId": "eveassist-admin",
       "name": "EveAssist account deletion",
-      "description": "The app's service account. It may manage users in this realm and nothing else: it deletes a user when an account is deleted. Since Keycloak 26.8.2 a call to the admin API needs the kc-admin-api scope, which adds the API's audience to the token.",
+      "description": "The app's service account. It holds manage-users, which is broader than needed (it also covers role mappings), and only deletes a user when an account is deleted. Since Keycloak 26.8.2 a call to the admin API needs the kc-admin-api scope, which adds the API's audience to the token.",
       "enabled": true,
       "alwaysDisplayInConsole": false,
       "clientAuthenticatorType": "client-secret",
