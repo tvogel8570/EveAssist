@@ -10,7 +10,8 @@ Do this once. Later releases follow [Deploying an update](update-deployment.md).
 
 ## What exists (2026-11-11, `us-west-2`, account $EVEASSIST_ACCOUNT_ID)
 
-No secrets here, only identifiers.
+No secrets here, only identifiers, and the repository is public, so the identifiers are written as variables: `$EVEASSIST_INSTANCE_ID` and so
+on. Their values are in `Infrastructure/prod/ops.env` (git-ignored; see "Values" in [Common commands](common-commands.md)).
 
 | Thing | Id |
 |---|---|
@@ -90,7 +91,8 @@ One secret per concern, JSON key/value, so that rotation of one does not touch t
 | `eveassist/keycloak` | `KC_BOOTSTRAP_ADMIN_USERNAME`, `KC_BOOTSTRAP_ADMIN_PASSWORD`, `KC_APP_CLIENT_SECRET`, `KC_EVE_CLIENT_ID`, `KC_EVE_CLIENT_SECRET` |
 | `eveassist/app` | `EVE_LINK_CLIENT_ID`, `EVE_LINK_CLIENT_SECRET`, `EVE_TOKEN_DATA_KEY_WRAPPED`, `ESI_CONTACT_EMAIL` |
 
-Non-secret settings (domain names, the RDS endpoint, the KMS key alias) are in `Infrastructure/prod/prod.env`.
+Non-secret settings (domain names, the RDS endpoint, the KMS key alias) are in `Infrastructure/prod/prod.env` on the instance. The repository has only
+`Infrastructure/prod/template_prod.env` (copy it, then fill in `RDS_HOST`); the real file is git-ignored.
 
 Make the random values on the machine and load them with `--secret-string file://` from a private temporary file that is
 shredded afterwards, so that no value is printed or reaches shell history.
@@ -128,7 +130,7 @@ endpoint or the master secret's ARN: pass both in, as `RDS_HOST` and `RDS_SECRET
 
 ## 8. Compose for prod
 
-Built: `Infrastructure/prod/` has `compose.yaml`, `Caddyfile`, `prod.env`, `images.env.template` and `start.sh`; the images
+Built: `Infrastructure/prod/` has `compose.yaml`, `Caddyfile`, `template_prod.env`, `images.env.template`, `template_ops.env` and `start.sh`; the images
 come from `App/Dockerfile` and `Infrastructure/keycloak/Dockerfile`. What it does, and why:
 
 - Only Caddy publishes ports (80, 443 and 443/udp). The app and Keycloak publish none, and there is no Postgres container.

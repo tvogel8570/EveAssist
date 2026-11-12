@@ -9,7 +9,7 @@ Stop the browser tunnel first (Ctrl+C in the terminal that runs `aws ssm start-s
 ## 1. Open a shell on the instance (a WSL terminal)
 
 ```bash
-AWS_PROFILE=EveAssist-admin AWS_REGION=us-west-2 aws ssm start-session --target $EVEASSIST_INSTANCE_ID
+AWS_PROFILE=EveAssist-admin AWS_REGION=us-west-2 aws ssm start-session --target "$EVEASSIST_INSTANCE_ID"
 ```
 
 ## 2. In that shell, pick your admin user name and run kcadm inside Keycloak's container

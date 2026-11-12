@@ -3,7 +3,20 @@
 A permanent list of commands used often when working with EveAssist. No secrets here. Add a command when you find yourself
 looking it up twice, and say where to run it (dev machine or instance).
 
-The prod instance is `$EVEASSIST_INSTANCE_ID` in `us-west-2`, account `$EVEASSIST_ACCOUNT_ID` (see [deploy-log.md](deploy-log.md)).
+## Values
+
+The repository is public, so the identifiers of EveAssist's AWS setup (account id, instance id, RDS endpoint, security groups and so on) are
+not in it. The commands in the runbooks name them as variables, for example `$EVEASSIST_INSTANCE_ID`, and the values are in
+`Infrastructure/prod/ops.env`, which git ignores. Create it once on each computer from `Infrastructure/prod/template_ops.env`: the template
+gives the AWS command that looks up each value (the commands need a signed-in admin profile), or copy the file from another computer.
+No secret belongs in it. Load it before running a command that uses a variable:
+
+```bash
+set -a; . ~/git/EveAssist/Infrastructure/prod/ops.env; set +a
+```
+
+The instance is in `us-west-2`. Where a value is needed on the instance itself (for example `RDS_HOST` in its `prod.env`), the instance has its
+own copy of the file that needs it; the instance role is deliberately not allowed to look things up.
 
 ## AWS
 
@@ -19,7 +32,7 @@ Open a shell on the prod instance (Session Manager), started in bash. The prompt
 the dev machine's user, the session did not start:
 
 ```bash
-aws ssm start-session --target $EVEASSIST_INSTANCE_ID --profile EveAssist-admin --region us-west-2 \
+aws ssm start-session --target "$EVEASSIST_INSTANCE_ID" --profile EveAssist-admin --region us-west-2 \
   --document-name AWS-StartInteractiveCommand --parameters 'command=["bash -l"]'
 ```
 
@@ -28,7 +41,12 @@ the instance). A function is better than exporting `AWS_PROFILE`, which would re
 
 ```bash
 prod() {
-  local profile=EveAssist-admin region=us-west-2 target=$EVEASSIST_INSTANCE_ID start
+  # the instance id comes from ops.env (see "Values"); loaded here so that the function works in any shell
+  local ops=~/git/EveAssist/Infrastructure/prod/ops.env
+  [ -r "$ops" ] || { echo "Missing $ops: create it from template_ops.env" >&2; return 1; }
+  local profile=EveAssist-admin region=us-west-2 target start
+  target=$(. "$ops" >/dev/null 2>&1; echo "$EVEASSIST_INSTANCE_ID")
+  [ -n "$target" ] || { echo "EVEASSIST_INSTANCE_ID is empty in $ops" >&2; return 1; }
   case "${1:-home}" in
     home)  start='cd ~ && exec bash -l' ;;
     stack) start='cd /opt/eveassist/Infrastructure/prod && exec bash -l' ;;
