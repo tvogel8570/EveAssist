@@ -37,6 +37,8 @@ class SecurityConfig {
         return http
                 .authorizeHttpRequests(requests -> requests
                         .requestMatchers("/", "/error", "/css/**", "/js/**").permitAll()
+                        // the policy and the way to report a vulnerability are for anyone to read
+                        .requestMatchers("/privacy", "/.well-known/security.txt").permitAll()
                         // a plan without an account: open to everyone, stores nothing, so it has no token to protect
                         .requestMatchers("/try", "/try/**").permitAll()
                         // the Compose health check and the alarm cannot sign in. Health shows only UP or DOWN, and exists

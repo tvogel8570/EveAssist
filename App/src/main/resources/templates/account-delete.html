@@ -1,0 +1,42 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: page(~{::title}, ~{::main})}">
+<head><title th:text="#{account.delete.title}">Delete your account</title></head>
+<body>
+<main class="max-w-2xl mx-auto p-4">
+    <h1 class="text-xl font-semibold mb-3" th:text="#{account.delete.title}">Delete your account</h1>
+
+    <div th:if="${notConfirmed}" id="not-confirmed" class="alert alert-error mb-4" role="alert">
+        <span th:text="#{account.delete.notConfirmed}">Tick the box to confirm.</span>
+    </div>
+
+    <p class="mb-3" th:text="#{account.delete.intro(${account.displayName})}">Intro</p>
+
+    <h2 class="font-semibold mb-1" th:text="#{account.delete.removes}">This removes</h2>
+    <ul id="deletion-counts" class="list-disc ml-6 mb-4">
+        <li th:each="entry : ${counts}" th:id="|count-${entry.key}|"
+            th:text="#{account.delete.count(${entry.value}, #{|account.section.${entry.key}|})}">3 plans</li>
+        <li th:text="#{account.delete.tokens}">Tokens</li>
+        <li th:text="#{account.delete.signIn}">Sign-in</li>
+    </ul>
+
+    <ul class="list-disc ml-6 mb-4 text-sm opacity-80">
+        <li th:text="#{account.delete.eve}">EVE</li>
+        <li th:text="#{account.delete.backups}">Backups</li>
+        <li th:text="#{account.delete.final}">Final</li>
+    </ul>
+
+    <p class="mb-4"><a id="export-first" class="link" th:href="@{/account/export}" th:text="#{account.delete.exportFirst}">Download my data first</a></p>
+
+    <form th:action="@{/account/delete}" method="post" class="flex flex-col gap-4">
+        <label class="label cursor-pointer justify-start gap-3">
+            <input id="confirm" name="confirm" type="checkbox" value="true" class="checkbox checkbox-error">
+            <span th:text="#{account.delete.confirm}">I understand this cannot be undone</span>
+        </label>
+        <div class="flex gap-2">
+            <button id="confirm-delete" type="submit" class="btn btn-error" th:text="#{account.delete.button}">Delete my account for good</button>
+            <a id="cancel-delete" class="btn btn-ghost" th:href="@{/account}" th:text="#{account.delete.cancel}">Keep my account</a>
+        </div>
+    </form>
+</main>
+</body>
+</html>

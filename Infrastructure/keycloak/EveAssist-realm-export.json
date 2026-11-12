@@ -891,6 +891,33 @@
         "email"
       ],
       "optionalClientScopes": []
+    },
+    {
+      "id": "0ab03151-a714-4e34-bc9d-50e5527500fd",
+      "clientId": "eveassist-admin",
+      "name": "EveAssist account deletion",
+      "description": "The app's service account. It may manage users in this realm and nothing else: it deletes a user when an account is deleted.",
+      "enabled": true,
+      "alwaysDisplayInConsole": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "${KC_ADMIN_CLIENT_SECRET}",
+      "redirectUris": [],
+      "webOrigins": [],
+      "notBefore": 0,
+      "bearerOnly": false,
+      "consentRequired": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "publicClient": false,
+      "frontchannelLogout": false,
+      "protocol": "openid-connect",
+      "attributes": {},
+      "fullScopeAllowed": true,
+      "nodeReRegistrationTimeout": -1,
+      "defaultClientScopes": [],
+      "optionalClientScopes": []
     }
   ],
   "clientScopes": [
@@ -2664,5 +2691,22 @@
   "clientPolicies": {
     "policies": []
   },
-  "displayName": "EveAssist"
+  "displayName": "EveAssist",
+  "users": [
+    {
+      "id": "dc5de407-2cc1-4ee0-a499-283709aefb1a",
+      "username": "service-account-eveassist-admin",
+      "emailVerified": false,
+      "enabled": true,
+      "serviceAccountClientId": "eveassist-admin",
+      "realmRoles": [],
+      "clientRoles": {
+        "realm-management": [
+          "manage-users"
+        ]
+      },
+      "notBefore": 0,
+      "groups": []
+    }
+  ]
 }

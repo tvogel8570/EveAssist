@@ -28,7 +28,8 @@ class ArchitectureRulesFixtureTest {
         return Stream.of(
                 rule(ArchitectureRules::domainStaysPlain, "SpringAwarePlan"),
                 rule(ArchitectureRules::domainStaysPlain, "Jackson3AwarePlan"),
-                rule(ArchitectureRules::onlyEsiAndCharactersUseAnHttpClient, "MarketHttpCaller"),
+                rule(ArchitectureRules::onlyEsiCharactersAndKeycloakAdminUseAnHttpClient, "MarketHttpCaller"),
+                rule(ArchitectureRules::onlyEsiCharactersAndKeycloakAdminUseAnHttpClient, "IdentityHttpCaller"),
                 rule(ArchitectureRules::moduleDataTypesAreRecords, "PlanSummaryClass"),
                 rule(ArchitectureRules::namesCarryMeaningNotMechanism, "PlanDto"),
                 rule(ArchitectureRules::namesCarryMeaningNotMechanism, "PlanLookupImpl"),

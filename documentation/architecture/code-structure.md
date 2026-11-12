@@ -474,7 +474,10 @@ almost nothing, and they never need ArchUnit's frozen-violation baseline (`Freez
 - **EveAssist's own ArchUnit rules**, in the same test run:
   - `domain` packages do not depend on `org.springframework`, `jakarta.persistence`, `com.fasterxml.jackson` or
     `tools.jackson` (Jackson 3, the default in Spring Boot 4).
-  - Only the `esi` and `characters` modules use an HTTP client (ESI, and EVE SSO for character linking).
+  - Only the `esi` and `characters` modules and one class, `identity.internal.KeycloakAdmin`, use an HTTP client (ESI, EVE SSO
+    for character linking, and Keycloak's admin API to delete a user when an account is deleted). The exemption is the class,
+    not the `identity` module, so nothing else there can start an outbound call unnoticed. The developer decided this on
+    2026-11-11; fixtures prove that `KeycloakAdmin` passes and another `identity` class does not.
   - Data types and events in a module's base package are records. No class name ends in `Dto` or `Impl`, and no
     interface name starts with `I` followed by a capital letter.
   - The facade rule from [Facade and visibility](#facade-and-visibility), if that section stands.

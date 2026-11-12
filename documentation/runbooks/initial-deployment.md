@@ -2,8 +2,7 @@
 
 Status: **in progress** since 2026-11-11. Sections 1, 2, 4 (except AWS Backup), 5 (except the EVE application values), 6 and 7 are
 done; section 3 is the developer's; 8 is written but has not run. Steps that did not exist when this was drafted are built now.
-The original wording follows. Steps marked **[to build]** depend on code or
-files that do not exist yet (the account export and deletion); see [Public launch review](../architecture/public-launch-review.md) for the gap list.
+The original wording follows. See [Public launch review](../architecture/public-launch-review.md) for the gap list.
 Replace every `<placeholder>`. Never paste a secret into a command line that lands in shell history: use
 `aws secretsmanager ... --secret-string file://` or the console.
 
@@ -175,9 +174,15 @@ Do every item. A failed item stops the launch.
 - [ ] Remove the character. The token is revoked at EVE (the page confirms) and the row is gone.
 - [ ] `/try`: two different browsers on two networks are limited separately (proves forwarded headers). Fetching more
       than the limit prints "not priced" and does not error.
-- [ ] Delete the test account and export its data **[to build]**. Keycloak user and app rows are gone.
-- [ ] Footer shows the CCP © notice, the operator name, the commit id. `/.well-known/security.txt` answers.
-- [ ] The privacy policy page exists and matches what is stored.
+- [ ] Export the test account's data (account page, "Download my data"): the file has the account, characters, features and plans and no token.
+      Then delete the account (account page, "Delete my account"): the token is revoked at EVE, the app rows are gone, the Keycloak user is gone
+      (the admin console through the tunnel shows no such user), and the home page says it was deleted. This is the first use of the
+      `eveassist-admin` service account against real Keycloak: if it says the sign-in record remains, check `KC_ADMIN_CLIENT_SECRET`,
+      that the realm import created the client, and that the app can reach `http://keycloak:8080`.
+- [ ] Footer shows the CCP © notice, the operator name and the commit id (built with `--build-arg GIT_COMMIT=...`, otherwise it says `unknown`).
+      `/.well-known/security.txt` answers with the contact and a future expiry.
+- [ ] The privacy policy page (`/privacy`) matches what is stored. Read it against the schema once more if a migration added a table since it was written
+      (last updated 2026-11-11). It says there are no access logs, which holds only while the Caddyfile has no `log` directive.
 - [ ] A CloudWatch log line shows with no tokens or secrets. Trigger a test ERROR and the alarm emails.
 - [ ] **Restore test**: take an RDS snapshot, restore it to a new instance, start the stack against it on your dev
       machine or a second instance, sign in, see data. Delete the restore afterwards.

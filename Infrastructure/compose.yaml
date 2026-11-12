@@ -24,6 +24,7 @@ x-common-keycloak: &common-keycloak
     - KC_EVE_CLIENT_ID=${KC_EVE_CLIENT_ID}
     - KC_EVE_CLIENT_SECRET=${KC_EVE_CLIENT_SECRET}
     - KC_APP_CLIENT_SECRET=${KC_APP_CLIENT_SECRET}
+    - KC_ADMIN_CLIENT_SECRET=${KC_ADMIN_CLIENT_SECRET}
     - APP_BASE_URL=${APP_BASE_URL}
   volumes:
     - type: bind

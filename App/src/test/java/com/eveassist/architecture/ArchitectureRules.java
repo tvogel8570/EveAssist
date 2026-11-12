@@ -35,9 +35,15 @@ final class ArchitectureRules {
                 .allowEmptyShould(true);
     }
 
-    ArchRule onlyEsiAndCharactersUseAnHttpClient() {
+    /**
+     * Where outbound HTTP calls may start stays a list that can be read: ESI and EVE SSO (the esi and characters modules),
+     * and Keycloak's admin API, which identity calls to delete a user. The exemption is the one class, not the module, so
+     * nothing else in identity can start a call unnoticed.
+     */
+    ArchRule onlyEsiCharactersAndKeycloakAdminUseAnHttpClient() {
         return noClasses().that().resideInAPackage(base + "..")
                 .and().resideOutsideOfPackages(base + ".esi..", base + ".characters..")
+                .and().haveNameNotMatching(base.replace(".", "\\.") + "\\.identity\\.internal\\.KeycloakAdmin(\\$.*)?")
                 .should().dependOnClassesThat().resideInAnyPackage(
                         "org.springframework.web.client..", "org.springframework.web.reactive.function.client..",
                         "java.net.http..", "org.apache.hc..", "okhttp3..")

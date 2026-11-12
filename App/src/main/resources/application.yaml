@@ -63,6 +63,13 @@ spring:
       connect-timeout: 5s
       read-timeout: 30s
 eveassist:
+  operator:
+    # shown in the footer and the privacy policy, and the address security.txt gives for reports
+    name: Vogel Development, LLC
+    contact-email: cass@vogelware.com
+  build:
+    # the short commit id of the image, passed to the Docker build; "dev" when run from source
+    commit: ${GIT_COMMIT:dev}
   characters:
     # dev: the key itself. prod: the key wrapped by KMS and the KMS key that wrapped it (see KmsDataKeyProvider)
     token-data-key: ${EVE_TOKEN_DATA_KEY:}
@@ -74,6 +81,11 @@ eveassist:
       redirect-uri: ${APP_BASE_URL:https://dev.eveassist.com:7444}/characters/link/callback
   esi:
     contact-email: ${ESI_CONTACT_EMAIL:}
+  keycloak-admin:
+    # Keycloak's address as the app reaches it for the admin API (in prod its own address on the Compose network, because
+    # Caddy answers 404 for /admin on the public name), and the secret of the realm's eveassist-admin service account
+    url: ${KEYCLOAK_ADMIN_URL:}
+    client-secret: ${KC_ADMIN_CLIENT_SECRET:}
 server:
   port: 7444
   servlet:

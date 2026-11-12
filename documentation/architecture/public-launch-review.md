@@ -35,6 +35,14 @@ other than the operator can sign in to".
 | 14 | Spring Session, Flyway roles on RDS | data.md | `3-init-eveassist.sh` creates the databases and roles for the local Postgres. RDS needs the same, run once by hand with the master user. | Yes |  |
 | 15 | Fetch log, scope page, admin audit view | gain-trust.md | Proposed, partly built (Characters page). | No, but the trust message to testers depends on them. |  |
 
+## Progress on the gaps (2026-11-11)
+
+Built on branch `prod-deployment`: gaps 1 (files written; images not yet pushed), 3 (KMS provider, checked live), 4 (export and
+deletion, including Keycloak's `eveassist-admin` service account), 5 (privacy policy, footer with the CCP notice, operator and commit,
+`security.txt`), 6, 7, 8, 9, 10, 11 (headers at Caddy; the app's CSP is still open), 12 and 14. Still open: gap 2 (CI; a manual build for the
+first release), gap 11's CSP, gap 13 (checked at the first start) and gap 15. The SDE version is not yet in the footer, because `identity`
+may not depend on `sde`.
+
 ## Information the developer must provide
 
 Collect these before starting the initial runbook. None are secrets to commit; secrets go to Secrets Manager.

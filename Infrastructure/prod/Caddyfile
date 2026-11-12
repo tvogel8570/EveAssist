@@ -1,5 +1,7 @@
 # Prod proxy: ends TLS with Let's Encrypt certificates and forwards to the app and to Keycloak. The names come from
 # prod.env. Caddy sets X-Forwarded-For, -Proto and -Host itself and discards any the client sent.
+# There is no `log` directive on purpose: Caddy then writes no access log, and the privacy policy (privacy.html) says so.
+# Turning access logs on needs that page changed first.
 {
 	email {$ACME_EMAIL}
 }

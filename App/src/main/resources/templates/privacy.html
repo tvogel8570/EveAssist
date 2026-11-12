@@ -1,0 +1,73 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: page(~{::title}, ~{::main})}">
+<head><title>Privacy policy</title></head>
+<body>
+<main class="max-w-3xl mx-auto p-4 [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:mt-8 [&_h2]:mb-2 [&_p]:mb-3 [&_ul]:list-disc [&_ul]:ml-6 [&_ul]:mb-3 [&_li]:mb-1">
+    <h1 class="text-2xl font-semibold mb-1">Privacy policy</h1>
+    <p class="text-sm opacity-70">Last updated 2026-11-11. EveAssist is an early preview, so this policy may change as it grows. We change the date above when it does.</p>
+
+    <h2 id="who">Who runs EveAssist</h2>
+    <p><span th:text="${@siteInfo.operatorName}">The operator</span> runs EveAssist and decides what is stored and why. You can reach us at
+        <a class="link" th:href="|mailto:${contactEmail}|" th:text="${contactEmail}">contact</a>.
+        EveAssist is free and has no ads, and it does not sell or share your data. It is a third-party tool for EVE Online and is not made by or
+        endorsed by CCP hf.</p>
+
+    <h2 id="stored">What we store, and why</h2>
+    <p>We store only what a feature needs.</p>
+    <ul>
+        <li><strong>Your account.</strong> A display name (your EVE character's name when you first sign in), an id, and when the account was made.
+            You sign in with EVE Online. EVE gives us no email address and no password exists, so we hold neither. Our sign-in service (Keycloak) keeps your
+            character's name and the identifier EVE gives for it, so that it recognises you next time.</li>
+        <li><strong>Characters you link.</strong> For each: its EVE id and name, the permissions you granted, whether it needs re-authorizing, when you linked
+            it, and its portrait. We store the refresh token EVE gives us, <em>encrypted</em>; the key that protects it is held by AWS Key Management Service
+            and is never stored with the data. Short-lived access tokens are kept in memory only.</li>
+        <li><strong>EVE data of your linked characters</strong>, only for the features you turned on and only with the permissions you granted: your
+            assets and the names of the structures they are in; for the corporation feature, which corporation a character is in, whether it is a
+            Director, and that corporation's divisions and assets. We refresh it from EVE and it stays until you remove the character or your account.</li>
+        <li><strong>Your plans</strong>: their names, products, quantities and the parts you buy, and the costs worked out from public market prices.</li>
+        <li><strong>A sign-in session</strong>, so that you stay signed in: you are signed out after 30 minutes of inactivity and at most after 10 hours.</li>
+        <li><strong>Technical logs</strong> of the application, kept for 30 days at AWS. They record errors and events and can contain account or character ids.
+            They never contain tokens or secrets. Our web server keeps no access logs.</li>
+    </ul>
+    <p>We read EVE data only for characters you linked, with your consent through EVE's own sign-in, and all permissions we ask for are read-only:
+        EveAssist cannot act as your character. Public market and contract data is not about you and is shared by everyone.</p>
+
+    <h2 id="visitors">Visitors without an account</h2>
+    <p>Trying a plan without signing in stores nothing about you. Your address is held in memory for a while to limit how many price lookups one visitor can
+        start, and is not written to the database or to a log.</p>
+
+    <h2 id="cookies">Cookies</h2>
+    <p>Only the cookies needed to keep you signed in: one from EveAssist and a few from the sign-in service. There is no tracking, no analytics,
+        no advertising, and no font, script or image is loaded from another site.</p>
+
+    <h2 id="where">Where it is kept, and who else is involved</h2>
+    <ul>
+        <li>Everything is hosted at Amazon Web Services in the US West (Oregon) region of the United States, including the encrypted database and its
+            backups. If you are in the European Union, that means your data is transferred to the United States.</li>
+        <li>EVE Online (CCP hf.) is asked for your character data, with the permissions you granted, and signs you in.</li>
+        <li>Let's Encrypt issues our site's certificates and sees no data about you. We use no other service that receives data about you.</li>
+    </ul>
+
+    <h2 id="control">Your choices</h2>
+    <ul>
+        <li><strong>See and take your data.</strong> On your <a class="link" th:href="@{/account}">account page</a>, "Download my data" gives you one JSON file with
+            your account, your characters (never their tokens), the features you turned on, and your plans. It leaves out the EVE data we fetched for your characters
+            (assets and the like): EVE holds that and we fetch it again whenever you link a character.</li>
+        <li><strong>Remove a character</strong> at any time on the Characters page. Its token is revoked at EVE and its stored data is deleted at once.</li>
+        <li><strong>Delete your account</strong> on the same page. We revoke every saved token at EVE, delete the account with everything it holds, and delete your sign-in
+            record. If EVE does not confirm a revocation, you can remove EveAssist on CCP's third-party applications page.</li>
+        <li><strong>Backups.</strong> The database is backed up for disaster recovery: daily copies are kept for 7 days and weekly copies for 28 days. Data you deleted can
+            remain in a backup until it expires, and we never restore a backup to bring back one deleted account.</li>
+        <li><strong>Questions or complaints.</strong> Write to us at the address above, and we will answer.</li>
+    </ul>
+
+    <h2 id="security">How we protect it</h2>
+    <p>All traffic uses HTTPS. Refresh tokens are encrypted before they are stored, with a key that is not kept with them. The database is not reachable from the internet.
+        Secrets are never kept in the code. To report a weakness, see our <a class="link" th:href="@{/.well-known/security.txt}">security.txt</a>.</p>
+
+    <h2 id="incidents">If something goes wrong</h2>
+    <p>If a breach could have exposed your data or tokens, we will say so publicly on this site within one week of finding it, and say what to do. Revoking EveAssist on CCP's
+        third-party applications page ends our access at once.</p>
+</main>
+</body>
+</html>
