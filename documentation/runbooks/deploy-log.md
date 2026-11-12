@@ -61,3 +61,19 @@ One entry per build and deploy of prod, newest last. No secrets. The procedure i
   the realms are intact. This was the first live run of the real `KeycloakAdmin` with the `kc-admin-api` scope. The app logged no warning, so
   EVE confirmed both revocations. EVE's own page for third-party applications is the place to see it from the player's side.
 - Still open: the per-visitor `/try` limit from two networks, the restore test, and the CloudWatch alarm.
+
+## 2026-11-12: Keycloak stops keeping EVE's tokens, and monitoring
+
+- A sign-in that asks for no scopes still gets a refresh token from EVE, and Keycloak kept it (`storeToken` was on). Nothing in EveAssist reads it
+  and Keycloak never revokes an upstream token (no revoke code in its broker package, checked in the 26.8.2 sources), so a deleted account's
+  token was dropped without being revoked at EVE. `storeToken` and `addReadTokenRoleOnCreate` are now off in the realm file and, set in place with
+  kcadm, in the live realm. Checked after deleting the account and signing in again: the new EVE identity has no stored token and the user has no
+  `read-token` role. EVE keeps a consent entry for the sign-in application on the player's third-party applications page, which only the player can
+  remove (the deletion page and the privacy policy say so).
+- On the player's EVE page, the linked characters no longer list EveAssist after a deletion, so the token revocation is confirmed from EVE's side.
+- Monitoring, from `Infrastructure/prod/alarms.sh` (run with `ALERT_EMAIL` set; the address is not in the repository): metric filters in the namespace
+  `EveAssist/Prod` for ERROR lines, failed ESI fetches (the app logs a WARN with "failed", not the HTTP status, so 420 and 429 are not counted apart)
+  and Caddy's upstream errors; alarms for each, for the instance status check and for the CPU credit balance; and a Route 53 health check of
+  `/privacy` with its alarm in us-east-1. Route 53's checkers in five regions all answered 200.
+- The billing alarm's email subscription had never been confirmed, so it would not have emailed anyone. Both subscriptions were sent again and
+  must be confirmed by clicking the link in each message.
