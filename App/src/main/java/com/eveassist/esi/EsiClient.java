@@ -40,6 +40,18 @@ public interface EsiClient {
     String ASSETS_SCOPE = "esi-assets.read_assets.v1";
 
     /**
+     * Forgets what is stored about a character's routes (the {@code ETag} and expiry of each), so that the next call asks
+     * ESI for the whole answer instead of "unchanged since". A character that is removed must not leave an {@code ETag}
+     * behind: linked again, ESI would answer 304 for assets that were deleted here, and the caller would be told
+     * "unchanged" while holding nothing. Also used by a caller that finds exactly that. Does nothing for a character
+     * nothing is stored for.
+     */
+    void forgetCharacter(long eveCharacterId);
+
+    /** The same for a corporation's routes. */
+    void forgetCorporation(long eveCorporationId);
+
+    /**
      * The name of a player structure, from {@code GET /universe/structures/{structure_id}}, asked with the
      * character's token. It needs the scope {@value #STRUCTURES_SCOPE}. ESI answers only for a character that may dock
      * there, and answers 403 to the rest, which counts toward its error limit, so callers ask about as few structures

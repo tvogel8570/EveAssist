@@ -207,6 +207,35 @@ class CharactersPageIT extends IntegrationTest {
     }
 
     @Test
+    void forgetsWhatEsiSaidAboutACharacterWhenItIsRemoved() throws Exception {
+        var sub = newSub();
+        var eveId = link(sub, "Alt One", BOTH);
+        var other = link(sub, "Alt Two", BOTH);
+        var id = characters.listFor(viewerFor(sub).accountId()).stream().filter(c -> c.name().equals("Alt One"))
+                .findFirst().orElseThrow().id();
+
+        mvc.perform(post("/characters/{id}/remove", id).with(signedInAs(sub)).with(csrf()))
+                .andExpect(redirectedUrl("/characters?removed"));
+
+        // its rows went with it, so the stored ETag must go too, or a character linked again is answered "unchanged" for ever
+        assertThat(esi.forgottenCharacters()).containsExactly(eveId).doesNotContain(other);
+    }
+
+    @Test
+    void forgetsWhatEsiSaidAlsoWhenTheCharacterHadNoTokenLeft() throws Exception {
+        var sub = newSub();
+        var eveId = link(sub, "Alt One", BOTH);
+        var id = characters.listFor(viewerFor(sub).accountId()).getFirst().id();
+        mvc.perform(post("/characters/{id}/drop-access", id).with(signedInAs(sub)).with(csrf()));
+        assertThat(characters.findToken(eveId)).isEmpty();
+
+        mvc.perform(post("/characters/{id}/remove", id).with(signedInAs(sub)).with(csrf()))
+                .andExpect(redirectedUrl("/characters?removed"));
+
+        assertThat(esi.forgottenCharacters()).containsExactly(eveId);
+    }
+
+    @Test
     void removesTheCharacterEvenWhenEveDoesNotConfirmAndSaysSo() throws Exception {
         var sub = newSub();
         var eveId = link(sub, "Alt One", BOTH);

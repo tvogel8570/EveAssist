@@ -88,6 +88,19 @@ class AccountDeletionIT extends IntegrationTest {
     }
 
     @Test
+    void forgetsWhatEsiSaidAboutEveryCharacterOfTheAccount() {
+        var sub = newSub();
+        var first = linkCharacter(sub, "refresh-a");
+        var second = linkCharacter(sub, "refresh-b");
+        var other = linkCharacter(newSub(), "refresh-other");
+
+        deletion.delete(sub);
+
+        // the stored ETags go with the account, so a character linked again later is not told "unchanged"; another account's stay
+        assertThat(esi.forgottenCharacters()).containsExactlyInAnyOrder(first, second).doesNotContain(other);
+    }
+
+    @Test
     void revokesEveryTokenAtEveBeforeTheyAreGone() {
         var sub = newSub();
         linkCharacter(sub, "refresh-a");

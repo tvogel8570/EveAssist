@@ -28,6 +28,16 @@ interface OrdersEsi extends EsiClient {
     }
 
     @Override
+    default void forgetCharacter(long eveCharacterId) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    default void forgetCorporation(long eveCorporationId) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     default StructureLookup structure(long eveCharacterId, long structureId) {
         throw new UnsupportedOperationException();
     }

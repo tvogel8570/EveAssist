@@ -135,6 +135,26 @@ class CorporationFetcherIT extends IntegrationTest {
                 Map.entry(3, "Ammo"));
     }
 
+    /** As for a character's assets: an ETag that outlived the rows must not make "unchanged" the answer for ever. */
+    @Test
+    void aCorporationWhoseEtagOutlivedItsRowsIsFetchedInFull() {
+        var viewer = viewerFor(newSub());
+        turnOn(viewer);
+        var corporation = corporationId();
+        var boss = linkWithCorporationScopes(viewer, "The Director");
+        esi.inCorporation(boss.eveId(), corporation, "Director");
+        esi.corporationNamed(corporation, "Test Industries");
+        esi.corporationAssetsUnchangedUntilForgotten(corporation, List.of(office(), inOffice(1, 34, 900, "CorpSAG2")));
+
+        fetcher.run(viewer);
+
+        var status = only(viewer);
+        assertThat(status.phase()).isEqualTo(Phase.CURRENT);
+        assertThat(storedRows(status.corporationId())).isEqualTo(1);
+        assertThat(esi.forgottenCorporations()).containsExactly(corporation);
+        assertThat(esi.corporationAssetsAsked()).hasSize(2);
+    }
+
     @Test
     void theNameOfAStructureWithAnOfficeIsLearnedWithTheDirectorsTokenAndIsNotAskedAgain() {
         var viewer = viewerFor(newSub());
