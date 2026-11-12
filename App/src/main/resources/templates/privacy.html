@@ -17,18 +17,21 @@
     <ul>
         <li><strong>Your account.</strong> A display name (your EVE character's name when you first sign in), an id, and when the account was made.
             You sign in with EVE Online. EVE gives us no email address and no password exists, so we hold neither. Our sign-in service (Keycloak) keeps your
-            character's name and the identifier EVE gives for it, so that it recognises you next time. It does not keep the tokens that EVE hands it
-            when you sign in.</li>
+            character's name and the identifier EVE gives for it (EVE calls it the owner hash), so that it recognises you next time. It does not keep the
+            tokens that EVE hands it when you sign in. While you are signed in it also keeps a record of each sign-in session, with the address it came
+            from, until the session ends (30 minutes without use, or 10 hours at most), and it counts failed sign-in attempts so that it can slow down
+            guessing.</li>
         <li><strong>Characters you link.</strong> For each: its EVE id and name, the permissions you granted, whether it needs re-authorizing, when you linked
             it, and its portrait. We store the refresh token EVE gives us, <em>encrypted</em>; the key that protects it is held by AWS Key Management Service
             and is never stored with the data. Short-lived access tokens are kept in memory only.</li>
         <li><strong>EVE data of your linked characters</strong>, only for the features you turned on and only with the permissions you granted: your
-            assets and the names of the structures they are in; for the corporation feature, which corporation a character is in, whether it is a
+            assets (including any names you gave to containers) and the structures they are in (their names, and whether you may see them); for the corporation feature, which corporation a character is in, whether it is a
             Director, and that corporation's divisions and assets. We refresh it from EVE and it stays until you remove the character or your account.</li>
-        <li><strong>Your plans</strong>: their names, products, quantities and the parts you buy, and the costs worked out from public market prices.</li>
+        <li><strong>Your plans</strong>: their names, products, quantities and the parts you buy, and the costs worked out from public market prices. A plan you archive is kept, marked as archived, like your other plans.</li>
         <li><strong>A sign-in session</strong>, so that you stay signed in: you are signed out after 30 minutes of inactivity and at most after 10 hours.</li>
-        <li><strong>Technical logs</strong> of the application, kept for 30 days at AWS. They record errors and events and can contain account or character ids.
-            They never contain tokens or secrets. Our web server keeps no access logs.</li>
+        <li><strong>Technical logs</strong> of the application, kept for 30 days at AWS. They record errors and events and can contain account or character ids, or the identifier our sign-in service has for you.
+            They never contain tokens or secrets. Our web server keeps no access logs, but its error messages (for example when a connection to the
+            application fails) can include the visitor's address, and they are kept with the other technical logs.</li>
     </ul>
     <p>We read EVE data only for characters you linked, with your consent through EVE's own sign-in, and all permissions we ask for are read-only:
         EveAssist cannot act as your character. Public market and contract data is not about you and is shared by everyone.</p>
@@ -56,7 +59,8 @@
             (assets and the like): EVE holds that and we fetch it again whenever you link a character.</li>
         <li><strong>Remove a character</strong> at any time on the Characters page. Its token is revoked at EVE and its stored data is deleted at once.</li>
         <li><strong>Delete your account</strong> on the same page. We revoke every saved token at EVE, delete the account with everything it holds, and delete your sign-in
-            record. EVE then stops listing EveAssist's character access for those characters. Signing in with EVE also leaves an entry for
+            record. If our sign-in service cannot be reached at that moment, your data is still deleted, we say on the page that your sign-in record
+            remains, and we remove it when you write to us. EVE then stops listing EveAssist's character access for those characters. Signing in with EVE also leaves an entry for
             EveAssist's sign-in on CCP's third-party applications page. That entry never had access to anything but who your character is, we
             cannot remove it for you, and you can remove it there yourself. If EVE does not confirm a revocation, you can remove EveAssist
             there too.</li>
