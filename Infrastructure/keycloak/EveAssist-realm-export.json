@@ -896,7 +896,7 @@
       "id": "0ab03151-a714-4e34-bc9d-50e5527500fd",
       "clientId": "eveassist-admin",
       "name": "EveAssist account deletion",
-      "description": "The app's service account. It may manage users in this realm and nothing else: it deletes a user when an account is deleted.",
+      "description": "The app's service account. It may manage users in this realm and nothing else: it deletes a user when an account is deleted. Since Keycloak 26.8.2 a call to the admin API needs the kc-admin-api scope, which adds the API's audience to the token.",
       "enabled": true,
       "alwaysDisplayInConsole": false,
       "clientAuthenticatorType": "client-secret",
@@ -916,7 +916,9 @@
       "attributes": {},
       "fullScopeAllowed": true,
       "nodeReRegistrationTimeout": -1,
-      "defaultClientScopes": [],
+      "defaultClientScopes": [
+        "kc-admin-api"
+      ],
       "optionalClientScopes": []
     }
   ],
@@ -1611,6 +1613,30 @@
             "single": "false",
             "attribute.nameformat": "Basic",
             "attribute.name": "Role"
+          }
+        }
+      ]
+    },
+    {
+      "id": "edeb171c-ae3b-458c-94af-4b16ffee5ded",
+      "name": "kc-admin-api",
+      "description": "Grants access to the Keycloak Admin REST API by adding its required audience to the token",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "false"
+      },
+      "protocolMappers": [
+        {
+          "id": "96f375a7-2194-483b-a67f-981ec515e319",
+          "name": "admin-api-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-admin-api-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "lightweight.claim": "true",
+            "introspection.token.claim": "true",
+            "access.token.claim": "true"
           }
         }
       ]

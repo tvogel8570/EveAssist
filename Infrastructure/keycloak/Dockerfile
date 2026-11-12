@@ -1,5 +1,9 @@
-# Keycloak version, defined once; the builder and final stages both start from this stage
-FROM quay.io/keycloak/keycloak:26.8 AS keycloak
+# Keycloak version, defined once; the builder and final stages both start from this stage. It is pinned to a patch release,
+# for dev and prod alike (both build from this file), because a floating 26.8 tag let dev run 26.8.1 while prod got 26.8.2,
+# which rejects admin API tokens that have no audience: a difference that only showed at the first prod start. To move to a
+# newer patch release, change it here, rebuild the dev image and the prod image, reload the dev realm if the file changed
+# (documentation/runbooks/keycloak-realm.md), and note it in documentation/runbooks/deploy-log.md.
+FROM quay.io/keycloak/keycloak:26.8.2 AS keycloak
 
 # create builder image with curl properly installed
 FROM registry.access.redhat.com/ubi9 AS ubi-micro-build

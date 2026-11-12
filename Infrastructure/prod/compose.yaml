@@ -64,7 +64,9 @@ services:
       - "127.0.0.1:8080:8080"
     mem_limit: 1536m
     healthcheck:
-      test: ["CMD-SHELL", "curl -fs http://localhost:9000/health/live"]
+      # The realm's discovery document answers only once the realm exists, so the app (which reads it at start-up) never
+      # starts while the first import is still running. /health/live turns green before the import finishes.
+      test: ["CMD-SHELL", "curl -fs http://localhost:8080/realms/EveAssist/.well-known/openid-configuration"]
       interval: 15s
       timeout: 5s
       retries: 20
@@ -97,9 +99,12 @@ services:
       AWS_REGION: ${AWS_DEFAULT_REGION:?}
     mem_limit: 1280m
     healthcheck:
-      # the health endpoint is on the management port, which nothing publishes; the image has no curl, so bash opens the socket
+      # The health endpoint is on the management port, which nothing publishes. The image has no curl, so bash opens the
+      # socket. It has to be run as `bash -c`: CMD-SHELL uses /bin/sh, which is dash here and has no /dev/tcp.
       test:
-        - CMD-SHELL
+        - CMD
+        - bash
+        - -c
         - >-
           exec 3<>/dev/tcp/127.0.0.1/8081 && printf 'GET /actuator/health HTTP/1.0\r\n\r\n' >&3 && grep -q '"status":"UP"' <&3
       interval: 15s
