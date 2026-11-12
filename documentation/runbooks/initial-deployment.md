@@ -153,13 +153,18 @@ instance. Until CI exists, copy with SSM or a tarball in S3, and keep `images.en
 2. On the instance, run the start script. Order: Keycloak first. Keycloak imports the realm because its database is
    empty. The app runs Flyway on start.
 3. Watch the logs until the app reports it started and Keycloak reports `Import finished successfully` and no `ERROR`.
-4. Create the real admin in Keycloak through a tunnel, not the internet. On your computer, with the Session Manager plugin:
-   `aws ssm start-session --target <instance-id> --document-name AWS-StartPortForwardingSession --parameters '{"portNumber":["8080"],"localPortNumber":["8080"]}'`
-   then open `http://localhost:8080/admin/`, sign in as the bootstrap admin, and create a named admin with MFA. Turn on
-   brute-force detection for the **master** realm (the realm file configures only `EveAssist`), then delete the bootstrap
-   admin. Give your own EVE account the ADMIN role in the `EveAssist` realm.
+4. Create the real admin in Keycloak, not through the internet. The console works at `http://localhost:8080/admin/` through an SSM
+   port-forward (`aws ssm start-session --target <instance-id> --document-name AWS-StartPortForwardingSession --parameters '{"portNumber":["8080"],"localPortNumber":["8080"]}'`),
+   but only if the browser runs where the plugin's loopback port is visible. From WSL with a **Windows browser** it is not: the plugin
+   listens on WSL's `127.0.0.1` only, and WSL forwards to Windows only ports that listen on all interfaces. In that case do the same steps
+   with `kcadm` in an SSM shell (the commands are in `Infrastructure/prod/admin-with-kcadm.md`): create a named admin with the `admin` role, set its password at
+   kcadm's own prompt, check that it can sign in, turn on brute-force protection for the **master** realm (the realm file configures only
+   `EveAssist`), then delete the bootstrap admin. Optional: an authenticator app for the named admin, which needs the console.
+   Do **not** give your player account the ADMIN role: an admin account is separate and does not use the industry features
+   (users.md), and nothing in the app needs ADMIN at launch, because metrics come through the tunnel. Make a second account for it when the admin area exists.
 5. Metrics (heap, Hikari pool) are on the app's management port, not behind an admin sign-in: forward port 8081 the same way
    and open `http://localhost:8081/actuator/metrics`.
+   From WSL with a Windows browser use `curl` in the WSL terminal instead of the browser, for the same reason as above.
 
 ## 10. Verify (launch gate)
 
