@@ -22,6 +22,7 @@ class KeycloakAdminTest {
     private final List<String> authorizations = Collections.synchronizedList(new ArrayList<>());
     private volatile int tokenStatus = 200;
     private volatile int deleteStatus = 204;
+    private volatile int rejectNextDeletes = 0;
 
     @BeforeEach
     void startKeycloak() throws IOException {
@@ -37,7 +38,10 @@ class KeycloakAdminTest {
                 exchange.getResponseHeaders().add("Content-Type", "application/json");
             } else {
                 authorizations.add(exchange.getRequestHeaders().getFirst("Authorization"));
-                status = deleteStatus;
+                status = rejectNextDeletes > 0 ? 401 : deleteStatus;
+                if (rejectNextDeletes > 0) {
+                    rejectNextDeletes--;
+                }
             }
             exchange.sendResponseHeaders(status, status == 204 ? -1 : body.length);
             if (status != 204) {
@@ -96,6 +100,28 @@ class KeycloakAdminTest {
         deleteStatus = 403;
 
         assertThat(admin(url(), "s3cret").deleteUser("user")).isFalse();
+    }
+
+    @Test
+    void aTokenKeycloakNoLongerAcceptsIsReplacedAndTheDeletionTriedOnce() {
+        var admin = admin(url(), "s3cret");
+        admin.deleteUser("first");
+        requests.clear();
+        rejectNextDeletes = 1;
+
+        var gone = admin.deleteUser("second");
+
+        assertThat(gone).isTrue();
+        assertThat(requests).containsExactly("DELETE /admin/realms/EveAssist/users/second",
+                "POST /realms/EveAssist/protocol/openid-connect/token", "DELETE /admin/realms/EveAssist/users/second");
+    }
+
+    @Test
+    void aRefusalThatStaysIsTriedTwiceAtMostAndIsAFailure() {
+        deleteStatus = 403;
+
+        assertThat(admin(url(), "s3cret").deleteUser("user")).isFalse();
+        assertThat(requests).hasSize(4);
     }
 
     @Test

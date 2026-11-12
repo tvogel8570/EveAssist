@@ -12,8 +12,10 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
 /**
- * Keycloak's admin API, as the one service account that may manage users in this realm and nothing else (see
- * identity-and-tokens.md). Used to delete a user when an account is deleted. In prod the URL is Keycloak's own address on the
+ * Keycloak's admin API, as the one service account that holds the realm's {@code manage-users} role (see
+ * identity-and-tokens.md). That role is broader than deleting users: without Keycloak's fine-grained admin permissions it also
+ * covers changing a user's role mappings, so the account's secret is worth protecting like an admin's. Used to delete a user
+ * when an account is deleted. In prod the URL is Keycloak's own address on the
  * Compose network, because Caddy answers 404 for {@code /admin} on the public name. Never throws, and never logs the secret or
  * a token.
  */
@@ -50,9 +52,13 @@ public class KeycloakAdmin {
             return false;
         }
         try {
-            var status = http.delete().uri(url + "/admin/realms/{realm}/users/{id}", realm, keycloakSub)
-                    .headers(headers -> headers.setBearerAuth(token()))
-                    .exchange((request, response) -> response.getStatusCode().value());
+            var status = delete(keycloakSub);
+            if (status == 401 || status == 403) {
+                // the cached token may no longer be good (Keycloak restarted with new keys, the realm was imported again, the secret
+                // changed): ask for a new one and try once more, instead of failing every deletion until the old one expires
+                forgetToken();
+                status = delete(keycloakSub);
+            }
             if (status == 204 || status == 404) {
                 return true;
             }
@@ -62,6 +68,17 @@ public class KeycloakAdmin {
             log.warn("Keycloak could not be asked to delete user {}: {}", keycloakSub, e.getClass().getSimpleName());
             return false;
         }
+    }
+
+    private int delete(String keycloakSub) {
+        return http.delete().uri(url + "/admin/realms/{realm}/users/{id}", realm, keycloakSub)
+                .headers(headers -> headers.setBearerAuth(token()))
+                .exchange((request, response) -> response.getStatusCode().value());
+    }
+
+    private synchronized void forgetToken() {
+        accessToken = null;
+        accessTokenExpiresAt = Instant.MIN;
     }
 
     /** The service account's token, kept until shortly before it expires. */
