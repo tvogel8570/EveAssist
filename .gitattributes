@@ -1,0 +1,3 @@
+# Keep each Maven wrapper script runnable on its own platform, whatever core.autocrlf says
+mvnw text eol=lf
+*.cmd text eol=crlf

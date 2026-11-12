@@ -1,0 +1,25 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!--
+  A count badge that says who it counts when the pointer rests on it, or the element is read by a screen reader: the names
+  are in the title and the accessible label. Use it wherever a page summarises characters (or anything else with a name)
+  as "3 need authorization", so the number can always be traced to its members.
+
+    <th:block th:if="${n > 0}">
+        <span th:replace="~{fragments/badges :: withNames('badge badge-error badge-outline py-3', #{some.key(${n})}, ${names})}"></span>
+    </th:block>
+
+  Put a condition on a th:block around the span: th:replace runs before th:if on the same element.
+
+  css   the badge's classes
+  text  the words on the badge, already worded
+  names the names it counts (a list of text). With none, the badge is plain.
+  Thymeleaf escapes every value, so a name from the game cannot add markup.
+-->
+<span th:fragment="withNames(css, text, names)" th:class="${css}"
+      th:title="${#lists.isEmpty(names)} ? null : ${#strings.listJoin(names, ', ')}"
+      th:attr="aria-label=${#lists.isEmpty(names)} ? null : ${text + ': ' + #strings.listJoin(names, ', ')}"
+      th:text="${text}">3 need authorization</span>
+</body>
+</html>

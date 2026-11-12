@@ -1,0 +1,38 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: page(~{::title}, ~{::main})}">
+<head><title th:text="#{try.title}">Try a plan</title></head>
+<body>
+<main class="max-w-6xl mx-auto p-4">
+    <div class="flex items-start gap-3 mb-1">
+        <h1 class="text-xl font-semibold grow" th:text="#{try.title}">Try a plan</h1>
+        <button type="button" id="try-start-over" class="btn btn-sm btn-outline"
+                hx-post="/try/render" hx-vals='{"state": ""}' hx-swap="none"
+                th:text="#{try.startOver}">Start over</button>
+    </div>
+    <p id="try-intro" class="text-sm mb-1" th:text="#{try.intro}">Nothing is saved on our server.</p>
+    <div class="flex flex-wrap items-center gap-3 my-2">
+        <span class="text-sm" th:text="#{try.signInHint}">Sign in to save plans.</span>
+        <a id="try-sign-in" class="btn btn-outline btn-sm" th:href="@{/account}" th:text="#{try.signIn}">Sign in</a>
+    </div>
+    <p class="text-sm opacity-70 mb-1" th:text="#{plan.simplified}">Simplified costing</p>
+    <p id="plan-prices-note" class="text-sm opacity-70 mb-3" th:text="#{plan.allPricesJita}">All prices are Jita 4-4 only.</p>
+    <p class="text-sm opacity-70 mb-3" th:text="#{try.pricesNotRefreshed}">Prices are not refreshed here.</p>
+
+    <input th:replace="~{plans/fragments :: tryState(${tryState}, false)}">
+    <input th:replace="~{plans/fragments :: version(${plan.version}, false)}">
+    <!--/* Sends the plan the browser kept as soon as the page has loaded. app.js removes it when none was kept. */-->
+    <span id="try-restore" hidden hx-post="/try/render" hx-trigger="load" hx-include="#try-state" hx-swap="none"></span>
+
+    <div th:replace="~{plans/fragments :: total(${plan.totalCost}, ${plan.unpricedLines}, ${plan.pricesAsOf}, false)}"></div>
+    <div th:replace="~{plans/fragments :: tryNotes(${unpriced}, ${stale}, ${notice}, false)}"></div>
+
+    <div th:replace="~{plans/fragments :: undoBar(null, false)}"></div>
+    <div th:replace="~{plans/fragments :: products(${plan}, false)}"></div>
+    <div th:replace="~{plans/fragments :: trySearch(false)}"></div>
+
+    <div th:replace="~{plans/fragments :: parts(${plan}, false)}"></div>
+    <div th:replace="~{plans/fragments :: runs(${plan.runs}, false)}"></div>
+    <div th:replace="~{plans/fragments :: materials(${plan}, false)}"></div>
+</main>
+</body>
+</html>

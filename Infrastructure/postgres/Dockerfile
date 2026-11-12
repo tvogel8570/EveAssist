@@ -1,12 +1,9 @@
-FROM postgres:15.7-alpine
-
-RUN apk update && \
-    apk upgrade --latest
+FROM postgres:18.6-alpine3.24
 
 # set default user and working directory
 USER postgres
 WORKDIR /var/lib/postgresql
 
- # copy database initialization script and database backup to where it will be automatically executed on FIRST startup only
+# copy the database initialization script to where it will be automatically executed on FIRST startup only. The SDE is
+# not part of the image: load-sde.sh loads it into a running database.
 COPY sql/init/* /docker-entrypoint-initdb.d/
-COPY sql/backup/postgres-schema-latest.dmp /var/lib/postgresql/backup/sde-postgres-latest.dmp

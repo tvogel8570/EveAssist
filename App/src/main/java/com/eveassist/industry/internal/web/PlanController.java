@@ -1,0 +1,177 @@
+package com.eveassist.industry.internal.web;
+
+import com.eveassist.identity.Viewer;
+import com.eveassist.industry.PlanId;
+import com.eveassist.industry.internal.application.AddProductCommand;
+import com.eveassist.industry.internal.application.ChangeQuantityCommand;
+import com.eveassist.industry.internal.application.RemoveProductCommand;
+import com.eveassist.industry.internal.application.ChoosePartSourceCommand;
+import com.eveassist.industry.internal.application.CreatePlanCommand;
+import com.eveassist.industry.internal.application.InvalidPlanNameException;
+import com.eveassist.industry.internal.application.PlanChangedException;
+import com.eveassist.industry.internal.application.PlanEditing;
+import com.eveassist.industry.internal.application.PlanEntry;
+import com.eveassist.industry.internal.application.PlanNotFoundException;
+import com.eveassist.industry.internal.application.PlanQueries;
+import com.eveassist.industry.internal.application.UnknownProductException;
+import com.eveassist.industry.internal.domain.InvalidQuantityException;
+import com.eveassist.sde.TypeId;
+import java.util.UUID;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
+
+@Controller
+@RequestMapping("/plans")
+@PreAuthorize("hasRole('USER')")
+class PlanController {
+
+    private final PlanQueries queries;
+    private final PlanEditing editing;
+    private final PlanEntry entry;
+
+    PlanController(PlanQueries queries, PlanEditing editing, PlanEntry entry) {
+        this.queries = queries;
+        this.editing = editing;
+        this.entry = entry;
+    }
+
+    @GetMapping
+    String list(Viewer viewer, @RequestParam(name = "archived", required = false) String archived, Model model) {
+        var showArchived = archived != null;
+        var plans = queries.overviews(viewer, showArchived);
+        model.addAttribute("plans", plans);
+        model.addAttribute("showArchived", showArchived);
+        // a list that is empty only because everything is archived says so, instead of "no plans yet"
+        model.addAttribute("allArchived", plans.isEmpty() && !queries.overviews(viewer, true).isEmpty());
+        return "plans/list";
+    }
+
+    /** Hides the plan from the list. From its own page the user goes back to the list, which no longer shows it. */
+    @PostMapping("/{id}/archive")
+    String archive(Viewer viewer, @PathVariable UUID id, @RequestParam(required = false) String archived) {
+        editing.archive(viewer, new PlanId(id));
+        return "redirect:" + listAddress(archived);
+    }
+
+    /** Brings an archived plan back. From its own page the user stays on it. */
+    @PostMapping("/{id}/restore")
+    String restore(Viewer viewer, @PathVariable UUID id, @RequestParam(defaultValue = "list") String from,
+            @RequestParam(required = false) String archived) {
+        editing.restore(viewer, new PlanId(id));
+        return from.equals("plan") ? "redirect:/plans/" + id : "redirect:" + listAddress(archived);
+    }
+
+    /** Deletes the plan for good. The page asks for a confirmation before it sends this. */
+    @PostMapping("/{id}/delete")
+    String delete(Viewer viewer, @PathVariable UUID id, @RequestParam(required = false) String archived) {
+        editing.delete(viewer, new PlanId(id));
+        return "redirect:" + listAddress(archived);
+    }
+
+    /** The list as the user had it: with archived plans shown, when they were. */
+    private static String listAddress(String archived) {
+        return archived == null ? "/plans" : "/plans?archived=1";
+    }
+
+    @PostMapping
+    String create(Viewer viewer, @RequestParam String name) {
+        var id = editing.create(viewer, new CreatePlanCommand(name));
+        return "redirect:/plans/" + id.value();
+    }
+
+    @GetMapping("/{id}")
+    String editor(Viewer viewer, @PathVariable UUID id, Model model) {
+        model.addAttribute("plan", entry.open(viewer, new PlanId(id)));
+        return "plans/editor";
+    }
+
+    @PostMapping("/{id}/products")
+    String addProduct(Viewer viewer, @PathVariable UUID id, @RequestParam int typeId) {
+        entry.addProduct(viewer, new AddProductCommand(new PlanId(id), new TypeId(typeId), 1));
+        return "redirect:/plans/" + id;
+    }
+
+    @PostMapping("/{id}/products/{typeId}/quantity")
+    String changeQuantity(Viewer viewer, @PathVariable UUID id, @PathVariable int typeId,
+            @RequestParam long quantity, @RequestParam long expectedVersion, Model model) {
+        model.addAttribute("change", editing.changeQuantity(viewer,
+                new ChangeQuantityCommand(new PlanId(id), new TypeId(typeId), quantity, expectedVersion)));
+        model.addAttribute("editedTypeId", typeId);
+        return "plans/fragments :: change";
+    }
+
+    /** Takes the product out and answers with the plan redrawn and an offer to undo it. */
+    @PostMapping("/{id}/products/{typeId}/remove")
+    String removeProduct(Viewer viewer, @PathVariable UUID id, @PathVariable int typeId,
+            @RequestParam long expectedVersion, Model model) {
+        var removal = editing.removeProduct(viewer,
+                new RemoveProductCommand(new PlanId(id), new TypeId(typeId), expectedVersion));
+        model.addAttribute("plan", removal.plan());
+        model.addAttribute("removed", removal);
+        model.addAttribute("failedItems", java.util.List.of());
+        return "plans/fragments :: productsRedraw";
+    }
+
+    /** Puts a removed product back with the units it had, which is what Undo does. */
+    @PostMapping("/{id}/products/{typeId}/restore")
+    String restoreProduct(Viewer viewer, @PathVariable UUID id, @PathVariable int typeId, @RequestParam long quantity,
+            Model model) {
+        entry.addProduct(viewer, new AddProductCommand(new PlanId(id), new TypeId(typeId), quantity));
+        model.addAttribute("plan", entry.open(viewer, new PlanId(id)));
+        model.addAttribute("removed", null);
+        model.addAttribute("failedItems", java.util.List.of());
+        return "plans/fragments :: productsRedraw";
+    }
+
+    @PostMapping("/{id}/parts/{typeId}/{source:buy|build}")
+    String choosePartSource(Viewer viewer, @PathVariable UUID id, @PathVariable int typeId,
+            @PathVariable String source, @RequestParam long expectedVersion, Model model) {
+        model.addAttribute("plan", editing.choosePartSource(viewer, new ChoosePartSourceCommand(
+                new PlanId(id), new TypeId(typeId), source.equals("buy"), expectedVersion)));
+        return "plans/fragments :: planRedraw";
+    }
+
+    @PostMapping("/{id}/prices/refresh")
+    String refreshPrices(Viewer viewer, @PathVariable UUID id, Model model) {
+        var refresh = entry.refreshPrices(viewer, new PlanId(id));
+        model.addAttribute("plan", refresh.plan());
+        model.addAttribute("failedItems", refresh.failedItems());
+        return "plans/fragments :: planRedraw";
+    }
+
+    @GetMapping("/{id}/product-search")
+    String search(Viewer viewer, @PathVariable UUID id, @RequestParam(name = "q", defaultValue = "") String text,
+            Model model) {
+        model.addAttribute("planId", id);
+        model.addAttribute("items", queries.searchProducts(viewer, text));
+        model.addAttribute("searched", !text.isBlank());
+        return "plans/fragments :: searchResults";
+    }
+
+    @ExceptionHandler(PlanNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    String notFound() {
+        return "plans/not-found";
+    }
+
+    @ExceptionHandler(PlanChangedException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    String changed() {
+        return "plans/fragments :: empty";
+    }
+
+    @ExceptionHandler({InvalidQuantityException.class, UnknownProductException.class, InvalidPlanNameException.class})
+    @ResponseStatus(HttpStatus.UNPROCESSABLE_CONTENT)
+    String invalid() {
+        return "plans/fragments :: empty";
+    }
+}

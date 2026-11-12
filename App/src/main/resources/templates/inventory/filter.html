@@ -1,0 +1,74 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--
+  The values of one column, to tick. The ticks are part of the form, so ticking one asks for the list again with the new
+  filter. The hidden fields for this column are left out of the form while the list is open, so that nothing is sent twice.
+-->
+<th:block th:fragment="facet">
+    <div class="card bg-base-300 mt-1" id="filter-list">
+        <div class="card-body p-3 gap-2">
+            <input type="hidden" name="open" th:value="${facet.dimension}">
+            <div class="flex items-center gap-2">
+                <strong th:text="${facet.title}">Category</strong>
+                <span class="grow"></span>
+                <a class="btn btn-ghost btn-xs" th:if="${preset != ''}" th:href="@{'/inventory?' + ${preset}}"
+                   th:attr="hx-get=@{'/inventory?' + ${preset}}" hx-target="#browse" hx-push-url="true"
+                   th:text="#{inventory.preset.loose}">Not fitted or in ships</a>
+                <a class="btn btn-ghost btn-xs" th:href="@{'/inventory?' + ${clear}}"
+                   th:attr="hx-get=@{'/inventory?' + ${clear}}" hx-target="#browse" hx-push-url="true"
+                   th:text="#{inventory.clear}">Clear</a>
+                <button type="button" class="btn btn-primary btn-xs" id="filter-done" th:attr="hx-get=@{/inventory}"
+                        hx-include="#browse-form" hx-vals='{"open":""}' hx-target="#browse" hx-push-url="true"
+                        th:text="#{inventory.done}">Done</button>
+            </div>
+            <th:block th:if="${facet.searchable}">
+                <input th:replace="~{fragments/search-input :: field('filter-list-search', 'fq', ${listSearch}, #{inventory.filter.search},
+                       'input input-sm w-full', @{/inventory/filter/{column}(column=${facet.dimension})}, '#filter-choices',
+                       'innerHTML', '#filter-choices > *', '#browse-form', 'this:replace', false)}">
+            </th:block>
+            <!-- only this part is replaced when the list search refreshes: the box above is never swapped away -->
+            <div id="filter-choices" class="contents">
+            <p class="text-sm opacity-70" th:if="${#lists.isEmpty(facet.choices)}" th:text="#{inventory.filter.none}">Nothing here with the other filters.</p>
+            <div class="max-h-64 overflow-y-auto flex flex-col gap-1">
+                <label class="flex items-center gap-2 text-sm cursor-pointer" th:each="choice : ${facet.choices}">
+                    <input type="checkbox" class="checkbox checkbox-xs" th:name="${facet.dimension}" th:value="${choice.value}"
+                           th:checked="${choice.checked}">
+                    <span class="grow truncate" th:text="${choice.label}">Module</span>
+                    <span class="text-xs opacity-60" th:text="${choice.itemTypes}">3</span>
+                </label>
+            </div>
+            <p class="text-xs opacity-60" th:if="${facet.truncated}" th:text="#{inventory.filter.truncated}">Search to narrow this list.</p>
+            <p class="text-xs opacity-60" th:text="#{inventory.filter.count}">Item types each value would leave.</p>
+            </div>
+        </div>
+    </div>
+    <div th:replace="~{inventory/browse :: state(true)}"></div>
+</th:block>
+
+<!-- The smallest total an item type may have. A number is typed, so it is asked about when the box loses focus or Enter is pressed. -->
+<th:block th:fragment="minimum">
+    <div class="card bg-base-300 mt-1" id="filter-list">
+        <div class="card-body p-3 gap-2">
+            <input type="hidden" name="open" value="min">
+            <div class="flex items-center gap-2">
+                <strong th:text="#{inventory.filter.min}">Total at least</strong>
+                <span class="grow"></span>
+                <button type="button" class="btn btn-primary btn-xs" id="filter-done" th:attr="hx-get=@{/inventory}"
+                        hx-include="#browse-form" hx-vals='{"open":""}' hx-target="#browse" hx-push-url="true"
+                        th:text="#{inventory.done}">Done</button>
+            </div>
+            <label class="flex items-center gap-2 text-sm">
+                <span th:text="#{inventory.filter.atLeast}">At least</span>
+                <input id="minimum-input" type="number" name="min" min="0" step="1" th:value="${minimum}"
+                       class="input input-sm w-36" placeholder="0">
+                <span th:text="#{inventory.filter.units}">units</span>
+            </label>
+        </div>
+    </div>
+    <div th:replace="~{inventory/browse :: state(true)}"></div>
+</th:block>
+
+</body>
+</html>

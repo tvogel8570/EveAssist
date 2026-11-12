@@ -1,0 +1,57 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: page(~{::title}, ~{::main})}">
+<head><title th:text="${plan.name}">Plan</title></head>
+<body>
+<main class="max-w-6xl mx-auto p-4">
+    <div class="flex items-start gap-3 mb-1">
+        <h1 class="text-xl font-semibold grow">
+            <span th:text="${plan.name}">Plan</span>
+            <span id="archived-badge" th:if="${plan.archived}" class="badge badge-ghost badge-sm align-middle ml-1"
+                  th:text="#{plans.archived}">Archived</span>
+        </h1>
+        <th:block th:replace="~{plans/fragments :: planActions(${plan.id.value}, ${plan.name}, ${plan.archived}, 'plan', false)}"></th:block>
+        <!-- a new plan without going back to the list: a name is needed, because plans cannot be renamed yet -->
+        <details id="new-plan-menu" class="dropdown dropdown-end" data-autoclose data-focus-on-open>
+            <summary id="new-plan-toggle" class="btn btn-sm btn-outline" th:text="#{plans.new}">New</summary>
+            <form class="dropdown-content card bg-base-300 shadow z-30 w-72 p-3 gap-2" method="post" th:action="@{/plans}">
+                <input id="new-plan-name-here" class="input input-sm w-full" name="name" required maxlength="100"
+                       pattern=".*\S.*" autocomplete="off" th:placeholder="#{plans.newName}" th:aria-label="#{plans.newName}">
+                <button class="btn btn-primary btn-sm" type="submit" th:text="#{plans.create}">New plan</button>
+            </form>
+        </details>
+    </div>
+    <p class="text-sm opacity-70 mb-1" th:text="#{plan.simplified}">Simplified costing</p>
+    <p id="plan-prices-note" class="text-sm opacity-70 mb-3" th:text="#{plan.allPricesJita}">All prices are Jita 4-4 only.</p>
+    <input th:replace="~{plans/fragments :: version(${plan.version}, false)}">
+    <div th:replace="~{plans/fragments :: total(${plan.totalCost}, ${plan.unpricedLines}, ${plan.pricesAsOf}, false)}"></div>
+
+    <div class="flex flex-wrap items-center gap-3 mb-3">
+        <button type="button" id="refresh-prices" class="btn btn-sm btn-outline"
+                th:attr="hx-post=@{/plans/{id}/prices/refresh(id=${plan.id.value})}"
+                hx-trigger="click" hx-swap="none" hx-sync="#products:queue all"
+                hx-disabled-elt="this" hx-indicator="#refresh-spinner">
+            <span th:text="#{plan.refreshPrices}">Refresh prices</span>
+            <span id="refresh-spinner" class="loading loading-spinner loading-xs" aria-hidden="true"></span>
+        </button>
+        <span class="text-xs opacity-70" th:text="#{plan.pricesOnRequest}">Prices change only when you refresh them.</span>
+    </div>
+    <div th:replace="~{plans/fragments :: priceWarning(null, false)}"></div>
+
+    <div th:replace="~{plans/fragments :: undoBar(null, false)}"></div>
+    <div th:replace="~{plans/fragments :: products(${plan}, false)}"></div>
+
+    <div class="max-w-md mt-3">
+        <input id="product-search" class="input input-sm w-full" type="search" name="q" autocomplete="off"
+               th:placeholder="#{plan.addProduct}" th:aria-label="#{plan.addProduct}"
+               th:attr="hx-get=@{/plans/{id}/product-search(id=${plan.id.value})}"
+               hx-trigger="input changed delay:250ms, search" hx-target="#search-results" hx-sync="this:replace"
+               hx-indicator="#request-indicator">
+        <div id="search-results" class="mt-1"></div>
+    </div>
+
+    <div th:replace="~{plans/fragments :: parts(${plan}, false)}"></div>
+    <div th:replace="~{plans/fragments :: runs(${plan.runs}, false)}"></div>
+    <div th:replace="~{plans/fragments :: materials(${plan}, false)}"></div>
+</main>
+</body>
+</html>

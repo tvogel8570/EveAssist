@@ -1,0 +1,37 @@
+# EveAssist Requirements
+
+EveAssist is an out-of-game (OOG) tool for industry in EVE Online. The prototype code that was in `Api/` and `Client/`
+(now only in git, under the tag `prototype-api-client`) was written to try out ESI and the SDE. It is not the basis for
+these requirements.
+
+## Audience
+
+The tool is built in phases, and later phases must not need a rewrite of earlier ones:
+
+1. **Single player**: one person with several characters, possibly across several accounts. This includes reading the
+   assets of a corporation that the person's own characters belong to (see
+   [Pilot inventory](pilot-inventory.md#corporation-assets-of-your-own-corporations)), with no sharing with others.
+2. **Small group / corporation**: several people who share data, structures and roles.
+3. **Public multi-tenant** (possible): anyone can sign up, and each tenant's data is kept apart.
+
+## Scope of the first requirements
+
+- [Manufacturing and invention](manufacturing-invention.md)
+- [Market and logistics](market-logistics.md)
+- [Pilot inventory](pilot-inventory.md)
+- [Users, accounts and roles](users.md)
+- [ESI access and tokens](esi-access.md)
+- [Groups and corporations](groups.md) (phase 2)
+- [Non-functional requirements](non-functional.md)
+- [Gaining players' trust](gain-trust.md)
+
+Reactions, planetary industry, mining and reprocessing are out of scope for now.
+
+These features, common in other OOG tools, are also left for later phases: Upwell structure management (fuel and
+timers), appraisal, skill planning, stock levels and restocking, corporation buyback and freight services, fitting,
+killboards, mapping and LP store analysis. Contract tracking is in scope (see [Market and logistics](market-logistics.md#contracts)).
+
+## Process
+
+The requirements are gathered by interview, one area at a time, and are drafted into the files above as answers come in.
+Open questions are listed at the end of each file.

@@ -1,84 +1,130 @@
 name: eve-assist-infrastructure
+
+x-common-keycloak: &common-keycloak
+  image: tvogel8570/keycloak-eve-assist:latest
+  build:
+    context: ./keycloak
+    dockerfile: Dockerfile
+    tags:
+      - "tvogel8570/keycloak-eve-assist:latest"
+  environment:
+    - KC_BOOTSTRAP_ADMIN_USERNAME=${KC_BOOTSTRAP_ADMIN_USERNAME}  # reference .env file in same directory as compose.yaml
+    - KC_BOOTSTRAP_ADMIN_PASSWORD=${KC_BOOTSTRAP_ADMIN_PASSWORD} # reference .env file in same directory as compose.yaml
+    - KC_HTTPS_CERTIFICATE_FILE=/etc/x509/https/tls.crt
+    - KC_HTTPS_CERTIFICATE_KEY_FILE=/etc/x509/https/tls.key
+    - KC_DB=postgres
+    - KC_DB_URL=jdbc:postgresql://eve-assist-postgres:5432/keycloak
+    - KC_DB_USERNAME=keycloak_owner
+    - KC_DB_PASSWORD=${KC_DB_PASSWORD} # reference .env file in same directory as compose.yaml
+    - KC_DB_SCHEMA=public
+    - KC_HEALTH_ENABLED=true
+    - KC_HTTPS_PORT=8442 # not 8443, so Keycloaks of other local projects can run alongside
+    - KC_HOSTNAME=https://${HOST}:8442 # the URL browsers and the apps use; also the token issuer
+    # filled into the realm file when it is imported
+    - KC_EVE_CLIENT_ID=${KC_EVE_CLIENT_ID}
+    - KC_EVE_CLIENT_SECRET=${KC_EVE_CLIENT_SECRET}
+    - KC_APP_CLIENT_SECRET=${KC_APP_CLIENT_SECRET}
+    - KC_ADMIN_CLIENT_SECRET=${KC_ADMIN_CLIENT_SECRET}
+    - APP_BASE_URL=${APP_BASE_URL}
+  volumes:
+    - type: bind
+      source: ./keycloak/EveAssist-realm-export.json
+      target: /opt/keycloak/data/import/EveAssist-realm-export.json
+      read_only: true
+    - type: bind
+      source: ./keycloak/export # exports and the runbook's imports; ignored by git, as exports hold secrets
+      target: /opt/keycloak/data/export
+  secrets:
+    - source: server_crt
+      target: /etc/x509/https/tls.crt
+    - source: server_key
+      target: /etc/x509/https/tls.key
+  user: 1000:0
+  networks:
+    - eve-assist-network
+  depends_on:
+    eve-assist-postgres:
+      condition: service_healthy
+
 services:
-  eve-postgres:
-    image: tvogel8570/eveassist
+  eve-assist-postgres:
+    image: tvogel8570/postgres-eve-assist
     secrets:
       - db-password
     build:
       context: ./postgres
       dockerfile: Dockerfile
       tags:
-        - "tvogel8570/eveassist:latest"
+        - "tvogel8570/postgres-eve-assist:latest"
     healthcheck:
-      test: [ "CMD", "pg_isready", "-q", "-U", "localdevuser", "-d", "keycloak" ]
+      test: [ "CMD", "pg_isready", "-q", "-U", "postgres", "-d", "eveassist" ]
       interval: 10s
     volumes:
       - type: volume
         source: postgres-eve-assist
-        target: /var/lib/postgresql/data
+        target: /var/lib/postgresql
     networks:
       - eve-assist-network
     environment:
       - POSTGRES_PASSWORD_FILE=/run/secrets/db-password
+      # read by sql/init/3-init-eveassist.sh
+      - KC_DB_PASSWORD=${KC_DB_PASSWORD}
+      - EVEASSIST_OWNER_PASSWORD=${EVEASSIST_OWNER_PASSWORD}
+      - EVEASSIST_APP_PASSWORD=${EVEASSIST_APP_PASSWORD}
+      - EVEASSIST_SDE_PASSWORD=${EVEASSIST_SDE_PASSWORD}
     container_name: eve-assist-postgres
     ports:
       - target: 5432
-        published: 5432
+        published: 2345
         protocol: tcp
-        mode: host
 
-  keycloak:
-    image: quay.io/keycloak/keycloak:latest
-    command: [ "--verbose", "start-dev" ]
-    secrets:
-      - source: server_crt
-        target: /etc/x509/https/tls.crt
-      - source: server_key
-        target: /etc/x509/https/tls.key
-    volumes:
-      - type: volume
-        source: keycloak-eve-assist
-        target: /opt/keycloak/data
+  eve-assist-keycloak:
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -fsk https://localhost:9000/health/live" ]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+    command:
+      - "--verbose"
+      - "start"
+      - "--import-realm"
+      - "--optimized"
     ports:
-      - target: 8443 # Keycloak HTTPS port
-        published: 8443
-        protocol: tcp
-        mode: host
-      - target: 8080 # Keycloak HTTP port
+      - target: 8442 # Keycloak HTTPS port (KC_HTTPS_PORT)
         published: 8442
         protocol: tcp
-        mode: host
-    networks:
-      - eve-assist-network
-    depends_on:
-      eve-postgres:
-        condition: service_healthy
-    environment:
-      - KEYCLOAK_ADMIN=admin
-      - KEYCLOAK_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD}  # reference .env file in same directory as compose.yaml
-      - KC_HTTPS_CERTIFICATE_FILE=/etc/x509/https/tls.crt
-      - KC_HTTPS_CERTIFICATE_KEY_FILE=/etc/x509/https/tls.key
-      - KC_DB=postgres
-      - KC_DB_URL=jdbc:postgresql://eve-postgres:5432/keycloak
-      - KC_DB_USERNAME=localdevuser
-      - KC_DB_PASSWORD=${KC_DB_PASSWORD} # reference .env file in same directory as compose.yaml
-      - KC_DB_SCHEMA=public
+    # tools inside the container, such as kcadm.sh, reach Keycloak by its public name
+    extra_hosts:
+      - "${HOST}:127.0.0.1"
+    <<: *common-keycloak
     container_name: eve-assist-keycloak
 
+  eve-assist-keycloak-export:
+    <<: *common-keycloak
+    profiles:
+      - iam-export
+    command:
+      - "export"
+      - "--optimized"
+      - "--dir"
+      - "/opt/keycloak/data/export"
+      - "--realm"
+      - "EveAssist"
+      - "--users"
+      - "different_files"
+    container_name: eve-assist-keycloak-export
 
 volumes:
   postgres-eve-assist:
     name: postgres-eve-assist
-  keycloak-eve-assist:
-    name: keycloak-eve-assist
 
 secrets:
   db-password:
     file: ./postgres/password.txt
   server_crt:
-    file: keycloak/self_signed.crt
+    file: keycloak/${HOST}.crt
   server_key:
-    file: keycloak/self_signed_key.pem
+    file: keycloak/${HOST}.key
 
 networks:
   eve-assist-network:

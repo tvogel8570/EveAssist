@@ -1,0 +1,147 @@
+# Actuator: only the metrics the concurrency runbook uses, on the app's own port, and only for an admin signed in (see
+# SecurityConfig). Health is not exposed until a deployment needs it.
+management:
+  endpoints:
+    web:
+      exposure:
+        include: metrics
+  metrics:
+    enable:
+      # Spring Boot times every outgoing RestClient call and tags it with the full URL. ESI URLs carry ids (contracts,
+      # characters, structures), so every call is a new tag value, the 100-value limit is reached ("Reached the maximum
+      # number of 'uri' tags") and character ids would sit in metric names. Nothing uses it. To get per-route ESI
+      # metrics, build the URLs from templates in HttpEsiClient first.
+      http.client.requests: false
+spring:
+  application:
+    name: eveassist
+  messages:
+    # The text of the home page (first steps and FAQs) is long, so it has a bundle of its own beside messages.properties.
+    basename: messages,help
+  profiles:
+    default: dev
+  config:
+    # dev secrets are kept once, beside compose.yaml; elsewhere the same names come from real environment variables
+    import: optional:file:../Infrastructure/.env[.properties]
+  datasource:
+    url: ${EVEASSIST_DB_URL}
+    username: eveassist_app
+    password: ${EVEASSIST_APP_PASSWORD}
+    hikari:
+      # Hikari's own default, written down so that it is a visible choice. Symptoms that suggest changing it, and the
+      # other concurrency settings, are in documentation/runbooks/concurrency-tuning.md.
+      maximum-pool-size: 10
+  flyway:
+    url: ${EVEASSIST_DB_URL}
+    user: eveassist_owner
+    password: ${EVEASSIST_OWNER_PASSWORD}
+  session:
+    jdbc:
+      initialize-schema: never
+  security:
+    oauth2:
+      client:
+        provider:
+          keycloak:
+            user-name-attribute: sub
+        registration:
+          keycloak:
+            provider: keycloak
+            client-id: eveassist-app
+            client-secret: ${KC_APP_CLIENT_SECRET}
+            authorization-grant-type: authorization_code
+            scope:
+            - openid
+            - profile
+            - email
+  http:
+    clients:
+      # Without these a call to a server that accepts the connection and then says nothing waits forever, holding one of
+      # the ESI client's simultaneous-call permits (and, for the contract loader, its run). They apply to every
+      # RestClient built from Spring Boot's builder. EsiTimeoutTest checks that a stall before or after the response
+      # headers makes a call fail.
+      connect-timeout: 5s
+      read-timeout: 30s
+eveassist:
+  operator:
+    # shown in the footer and the privacy policy, and the address security.txt gives for reports
+    name: Vogel Development, LLC
+    contact-email: cass@vogelware.com
+  build:
+    # the short commit id of the image, passed to the Docker build; "dev" when run from source
+    commit: ${GIT_COMMIT:dev}
+  characters:
+    # dev: the key itself. prod: the key wrapped by KMS and the KMS key that wrapped it (see KmsDataKeyProvider)
+    token-data-key: ${EVE_TOKEN_DATA_KEY:}
+    token-data-key-wrapped: ${EVE_TOKEN_DATA_KEY_WRAPPED:}
+    kms-key-id: ${EVE_KMS_KEY_ID:}
+    sso:
+      client-id: ${EVE_LINK_CLIENT_ID:}
+      client-secret: ${EVE_LINK_CLIENT_SECRET:}
+      redirect-uri: ${APP_BASE_URL:https://dev.eveassist.com:7444}/characters/link/callback
+  esi:
+    contact-email: ${ESI_CONTACT_EMAIL:}
+  keycloak-admin:
+    # Keycloak's address as the app reaches it for the admin API (in prod its own address on the Compose network, because
+    # Caddy answers 404 for /admin on the public name), and the secret of the realm's eveassist-admin service account
+    url: ${KEYCLOAK_ADMIN_URL:}
+    client-secret: ${KC_ADMIN_CLIENT_SECRET:}
+server:
+  port: 7444
+  servlet:
+    session:
+      cookie:
+        http-only: true
+        secure: true
+        same-site: lax
+---
+# read from Keycloak at start-up; tests simulate sign-in and have no Keycloak
+spring:
+  config:
+    activate:
+      on-profile: "!test & !measure"
+  security:
+    oauth2:
+      client:
+        provider:
+          keycloak:
+            issuer-uri: ${KEYCLOAK_ISSUER_URI}
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+  ssl:
+    bundle:
+      pem:
+        dev-server:
+          keystore:
+            certificate: file:../Infrastructure/keycloak/dev.eveassist.com.crt
+            private-key: file:../Infrastructure/keycloak/dev.eveassist.com.key
+server:
+  address: 127.0.0.1
+  ssl:
+    bundle: dev-server
+eveassist:
+  dev:
+    # Keycloak's dev certificate comes from a private CA, so the JVM does not trust it by default
+    trusted-certificate: ../Infrastructure/keycloak/dev.eveassist.com.crt
+---
+# Prod runs behind Caddy, which ends TLS (see documentation/architecture/deployment.md). Nothing publishes the app's port,
+# so only containers on the Compose network reach it.
+spring:
+  config:
+    activate:
+      on-profile: prod
+server:
+  # "native" is Tomcat's RemoteIpValve. Unlike "framework" it also replaces the remote address with the one Caddy puts in
+  # X-Forwarded-For, which /try limits visitors by. It trusts that header only from private addresses (the Compose network).
+  forward-headers-strategy: native
+management:
+  server:
+    # A port of its own, not published and not proxied: the health check and the operator's tunnel reach it, nobody else.
+    port: 8081
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics
