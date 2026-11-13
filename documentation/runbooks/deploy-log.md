@@ -252,7 +252,7 @@ Production has none of it yet: no tunnel document, role, IAM authentication or d
 - **What changed:** IAM authentication on the RDS instance, and the two login roles `support_ro` and `support_rw` with the grants of
   `Infrastructure/prod/support-roles.sql`. The tunnel document `EveAssist-RdsTunnel` and the role `EveAssist-support-ro` already existed (created
   earlier, tested on a copy). No app, Keycloak or Caddy change, no migration, no restart, no downtime.
-- **Way back:** snapshot `pre-support-roles` taken first. Delete it a week after everything has worked, by 2026-11-19.
+- **Way back:** snapshot `pre-support-roles` taken first. Deleted the same day, at the developer's request, after every check had passed.
 - **Order:** snapshot; IAM authentication on (the status was `configuring-iam-database-auth` for a short while, the site answered 200 throughout);
   the script run twice as the master user (both runs ok, both roles `iam=true`, not superuser); then the checks below.
 - **Checks, all passed:** both roles log in with real IAM tokens; `support_ro` reads `account` and the SDE and is refused on `character_token`,
