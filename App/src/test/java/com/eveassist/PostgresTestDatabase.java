@@ -55,6 +55,35 @@ public final class PostgresTestDatabase {
                 CONTAINER.getHost(), CONTAINER.getMappedPort(PostgreSQLContainer.POSTGRESQL_PORT), name);
     }
 
+    /** The JDBC address of a database in the shared container. */
+    public static String jdbcUrl(String database) {
+        return "jdbc:postgresql://%s:%d/%s".formatted(
+                CONTAINER.getHost(), CONTAINER.getMappedPort(PostgreSQLContainer.POSTGRESQL_PORT), database);
+    }
+
+    /** A connection as the container's superuser, for set-up that no limited role may do. */
+    public static java.sql.Connection superuser(String database) throws SQLException {
+        return DriverManager.getConnection(jdbcUrl(database), CONTAINER.getUsername(), CONTAINER.getPassword());
+    }
+
+    /**
+     * Runs a SQL file with psql inside the container, as the superuser. For scripts that use psql's own commands (\gexec, \set),
+     * which JDBC cannot run. Fails when psql does.
+     */
+    public static String runPsqlScript(String database, Path script) {
+        var target = "/tmp/" + script.getFileName();
+        try {
+            CONTAINER.copyFileToContainer(MountableFile.forHostPath(script), target);
+            var result = CONTAINER.execInContainer("psql", "-U", CONTAINER.getUsername(), "-d", database, "-v", "ON_ERROR_STOP=1", "-f", target);
+            if (result.getExitCode() != 0) {
+                throw new IllegalStateException("psql failed on " + script + ": " + result.getStderr());
+            }
+            return result.getStdout() + result.getStderr();
+        } catch (IOException | InterruptedException e) {
+            throw new IllegalStateException("Could not run " + script, e);
+        }
+    }
+
     private static String url() {
         return "jdbc:postgresql://%s:%d/eveassist".formatted(
                 CONTAINER.getHost(), CONTAINER.getMappedPort(PostgreSQLContainer.POSTGRESQL_PORT));

@@ -240,3 +240,9 @@ One entry per build and deploy of prod, newest last. No secrets. The procedure i
 - **Still to do:** the tag `v0.2.0` on `3ec2628`, the pull requests to `main` and back, and deleting the snapshot `pre-v0-2-0` once the release is
   accepted, by 2026-11-19. Not obtained: the Hikari pending-connections reading (the one command printed an empty line).
 
+
+## 2026-11-12: support access to the database, tested on a copy
+
+Not a production change. The design in `support-access.md` (fixed-host tunnel document, non-admin role, IAM-token logins, `support_ro` and
+`support_rw` with an allowlist) was built and tested on a throwaway copy restored from a snapshot, with `SupportRolesIT` covering the database part.
+Production has none of it yet: no tunnel document, role, IAM authentication or database roles.
