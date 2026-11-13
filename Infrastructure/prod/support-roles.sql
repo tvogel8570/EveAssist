@@ -6,7 +6,7 @@
 --
 -- Neither role reads character_token (the encrypted refresh tokens) or spring_session* (a session id is the login cookie: whoever reads
 -- it can act as that user). Neither can reach the keycloak database. The roles have no password: on RDS they are members of rds_iam and
--- log in with a 15 minute IAM token (documentation/runbooks/common-commands.md, "Database access for support").
+-- log in with a 15 minute IAM token (documentation/runbooks/support-access.md, "Daily use").
 --
 -- THE ALLOWLIST IS DELIBERATE. A table is readable only if it is named below. A new migration's table stays invisible to support until
 -- someone adds it here, or names it as excluded in SupportRolesIT: that test fails for a table that is neither.

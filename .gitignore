@@ -30,7 +30,10 @@ atlassian-ide-plugin.xml
 **/.idea/**/libraries/
 out/
 
-# Sensitive or high-churn files (dataSources.xml is shared, its local credentials and caches are not)
+# Sensitive or high-churn files. The database data sources are per computer (host names, ports and which databases each person looks at),
+# so dataSources.xml and db-forest-config.xml are not shared either.
+**/.idea/**/dataSources.xml
+**/.idea/**/db-forest-config.xml
 **/.idea/**/dataSources/
 **/.idea/**/dataSources.ids
 **/.idea/**/dataSources.local.xml

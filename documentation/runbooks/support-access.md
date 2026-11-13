@@ -66,11 +66,26 @@ To repeat after a migration adds a table: decide whether support may read it, ed
 
 ## Checks
 
-- A login as `support_ro` can `SELECT` from `account` and the SDE, and `permission denied` on `character_token`, `spring_session`,
-  `spring_session_attributes`.
-- A `DELETE` as `support_ro` fails with `read-only transaction`, even after `SET TRANSACTION READ WRITE` (then `permission denied`).
-- As `support_rw`, a plain `DELETE FROM esi_cache` fails; after `SET TRANSACTION READ WRITE` it works; `UPDATE account` and `DELETE FROM plan`
-  are `permission denied`.
-- The role cannot start a session with another document, or on another target.
+Run them after a change to the script, a migration that adds a table, or a new IntelliJ setup. `SupportRolesIT` automates the database part
+(`./mvnw verify`, needs Docker); these are the same checks done by hand through the real tunnel and IAM tokens. All of them passed on production
+on 2026-11-12. Every write below is refused or rolled back.
 
-`SupportRolesIT` automates the database part (`./mvnw verify`, needs Docker).
+Open the tunnel and a token first (see "Daily use"). Use the `support_ro` data source for A, E and F and the `support_rw` one for B to D. For the
+write checks set the console's **Tx** to Manual and finish each with Rollback; in Auto mode `SET TRANSACTION READ WRITE` fails with `25P01` and the
+write after it is refused as read-only, which is the design working but not what C and D test.
+
+| | Do | Expect |
+|---|---|---|
+| A | Open or `SELECT * FROM` each of `character_token`, `spring_session`, `spring_session_attributes` | `permission denied for table ...` (42501) |
+| B | As `support_rw`, edit a cell in `account` and submit | `cannot execute UPDATE in a read-only transaction` (25006) |
+| C | As `support_rw`: `SET TRANSACTION READ WRITE; UPDATE account SET created_at = now();` then roll back. Also `DELETE FROM plan`, `DELETE FROM character`, `TRUNCATE esi_cache`, `DROP TABLE esi_cache` | `permission denied` for each |
+| D | As `support_rw`: `SET TRANSACTION READ WRITE; DELETE FROM esi_cache WHERE cache_key = 'does-not-exist';` then roll back. Without the first statement the same `DELETE` must fail | 0 rows, no error. Without `SET TRANSACTION`: 25006 |
+| E | As `support_ro`: `DELETE FROM esi_cache;`, then with `SET TRANSACTION READ WRITE;` first | `read-only transaction`, then `permission denied` |
+| F | `SELECT count(*) FROM sde."invTypes";` (tick `sde` under the data source's Schemas to see it in the browser) | a number |
+
+Also: an ordinary password for `support_ro` is refused, `support_ro` cannot connect to the `keycloak` database, and the role cannot start a session
+with another SSM document or on another target (tested with an identity other than the one that owns the session).
+
+To check from a shell instead of IntelliJ: `dbtoken` writes the token to `~/.pgpass`, which `psql` reads, so with the tunnel open
+`psql "host=127.0.0.1 port=15432 dbname=eveassist user=support_ro sslmode=verify-ca sslrootcert=$HOME/.aws/rds-global-bundle.pem" -c 'select current_user'`
+prints `support_ro`.
