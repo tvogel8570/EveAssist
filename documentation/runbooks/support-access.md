@@ -1,7 +1,7 @@
 # Support access to the production database
 
 How the developer looks at production data from IntelliJ's Database tool window without an administrator login, and what that access can and
-cannot do. **Status (2026-11-12): designed and tested on a throwaway restored copy of production. Not yet set up on production itself.**
+cannot do. **Status (2026-11-12): designed and tested on a throwaway restored copy of production, through IntelliJ as well as `SupportRolesIT`: every check below passed. Set up on production on 2026-11-12, with the same checks passing there.**
 The production steps are in "Setting it up on production".
 
 ## Design
@@ -40,18 +40,29 @@ are not in the repository.
 2. Terminal B: `dbtoken support_ro EveAssist-admin` (or `support_rw`). The token is valid for 15 minutes of new connections.
 3. IntelliJ data source: host `127.0.0.1`, port `15432`, database `eveassist`, authentication "pgpass", user `support_ro` (underscore, not hyphen),
    SSL mode `verify-ca` with the RDS global bundle (`~/.aws/rds-global-bundle.pem`). Run `dbtoken` again before each new connection.
-4. For `support_rw`, set the console's transaction mode to Manual and start each fix-up with `SET TRANSACTION READ WRITE;`, then commit or roll back
-   deliberately.
+4. For `support_rw`, set the console's transaction mode (**Tx**) to Manual and start each fix-up with `SET TRANSACTION READ WRITE;`, then commit or
+   roll back deliberately. In Auto mode every statement is its own transaction: `SET TRANSACTION` then fails with `25P01` ("can only be used in
+   transaction blocks") and the write after it is refused as read-only. In Auto mode, run `BEGIN; SET TRANSACTION READ WRITE; ...; ROLLBACK;` as
+   one script instead.
+5. IntelliJ opens one database session per console and table editor, and the roles have connection limits (`support_rw` 3, `support_ro` 5), so
+   a few open tabs give `53300 too many connections for role`. Tick *Single session mode* in the data source's Options, or close idle sessions
+   (Sessions list), or reconnect.
+6. The SDE is in the `sde` schema, with mixed-case names that must be quoted: `SELECT count(*) FROM sde."invTypes";`. The browser shows it only
+   after `sde` is ticked under the data source's Schemas.
 
 ## Setting it up on production
 
-Not done yet. In order, each step checked before the next:
+Done on 2026-11-12 (see `deploy-log.md`). The tunnel document and the role were created first, then, in this order, each step checked before the next:
 
-1. Create the tunnel document from its template (`aws ssm create-document --document-type Session`).
-2. Create the role with the rendered trust policy, attach the rendered permission policy.
-3. Enable IAM authentication on the RDS instance (a change that applies immediately, no restart). Record it in `deploy-log.md`.
-4. Run `support-roles.sql` as the master user, from the instance, since the database is private.
-5. Check with the steps below, then add a deploy-log entry.
+1. A manual snapshot, `pre-support-roles`, as the way back.
+2. IAM authentication turned on for the RDS instance (`modify-db-instance --enable-iam-database-authentication --apply-immediately`). The status
+   passes through `configuring-iam-database-auth` for a minute or two; the instance stays available and the site keeps answering. Do not use
+   `--output text` with `PendingModifiedValues`: the CLI cannot format it (the request still goes through).
+3. `support-roles.sql` run as the master user through a tunnel from the developer's machine, twice. The database is private and the instance role
+   has no standing read of the master secret, so the developer's admin profile reads it inside one subshell, never writing or printing it.
+4. Real logins as each role with IAM tokens, and the permission checks below.
+
+To repeat after a migration adds a table: decide whether support may read it, edit the script (or `EXCLUDED` in `SupportRolesIT`), and run step 3 again.
 
 ## Checks
 

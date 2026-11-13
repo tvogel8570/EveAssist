@@ -246,3 +246,18 @@ One entry per build and deploy of prod, newest last. No secrets. The procedure i
 Not a production change. The design in `support-access.md` (fixed-host tunnel document, non-admin role, IAM-token logins, `support_ro` and
 `support_rw` with an allowlist) was built and tested on a throwaway copy restored from a snapshot, with `SupportRolesIT` covering the database part.
 Production has none of it yet: no tunnel document, role, IAM authentication or database roles.
+
+## 2026-11-12: support access set up on production
+
+- **What changed:** IAM authentication on the RDS instance, and the two login roles `support_ro` and `support_rw` with the grants of
+  `Infrastructure/prod/support-roles.sql`. The tunnel document `EveAssist-RdsTunnel` and the role `EveAssist-support-ro` already existed (created
+  earlier, tested on a copy). No app, Keycloak or Caddy change, no migration, no restart, no downtime.
+- **Way back:** snapshot `pre-support-roles` taken first. Delete it a week after everything has worked, by 2026-11-19.
+- **Order:** snapshot; IAM authentication on (the status was `configuring-iam-database-auth` for a short while, the site answered 200 throughout);
+  the script run twice as the master user (both runs ok, both roles `iam=true`, not superuser); then the checks below.
+- **Checks, all passed:** both roles log in with real IAM tokens; `support_ro` reads `account` and the SDE and is refused on `character_token`,
+  `spring_session` and `spring_session_attributes`; its writes are refused, also after `SET TRANSACTION READ WRITE`; `support_rw` is refused a
+  plain write, may delete from a fix-up table in a read-write transaction, and is refused on `account` and `plan`; an ordinary password is refused;
+  the `keycloak` database is out of reach; the site answered 200 afterwards.
+- **Open:** the privacy policy does not yet say that the operator can read account data for support (issue 45, on hold by decision).
+  The throwaway test copy and its snapshot were deleted the same day.
