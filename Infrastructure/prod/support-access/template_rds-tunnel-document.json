@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "1.0",
+  "description": "Port forward to the EveAssist RDS database only. The host and port are fixed here, so a caller cannot forward anywhere else.",
+  "sessionType": "Port",
+  "parameters": {
+    "localPortNumber": {
+      "type": "String",
+      "description": "Port on the caller's machine",
+      "default": "15432",
+      "allowedPattern": "^[1-9][0-9]{3,4}$"
+    }
+  },
+  "properties": {
+    "portNumber": "5432",
+    "type": "LocalPortForwarding",
+    "host": "${EVEASSIST_RDS_HOST}",
+    "localPortNumber": "{{ localPortNumber }}"
+  }
+}

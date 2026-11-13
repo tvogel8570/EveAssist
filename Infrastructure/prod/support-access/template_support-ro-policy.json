@@ -1,0 +1,29 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "OpenTheDatabaseTunnelOnly",
+      "Effect": "Allow",
+      "Action": "ssm:StartSession",
+      "Resource": [
+        "arn:aws:ec2:us-west-2:${EVEASSIST_ACCOUNT_ID}:instance/${EVEASSIST_INSTANCE_ID}",
+        "arn:aws:ssm:us-west-2:${EVEASSIST_ACCOUNT_ID}:document/EveAssist-RdsTunnel"
+      ]
+    },
+    {
+      "Sid": "EndOwnTunnelSessions",
+      "Effect": "Allow",
+      "Action": [
+        "ssm:TerminateSession",
+        "ssm:ResumeSession"
+      ],
+      "Resource": "arn:aws:ssm:us-west-2:${EVEASSIST_ACCOUNT_ID}:session/support-ro-*"
+    },
+    {
+      "Sid": "LogInToTheDatabaseAsSupportRo",
+      "Effect": "Allow",
+      "Action": "rds-db:connect",
+      "Resource": "arn:aws:rds-db:us-west-2:${EVEASSIST_ACCOUNT_ID}:dbuser:${EVEASSIST_RDS_RESOURCE_ID}/support_ro"
+    }
+  ]
+}
