@@ -27,6 +27,11 @@ class JdbcEsiCache implements EsiCache {
     }
 
     @Override
+    public void forgetPrefix(String keyPrefix) {
+        jdbc.sql("DELETE FROM esi_cache WHERE starts_with(cache_key, :prefix)").param("prefix", keyPrefix).update();
+    }
+
+    @Override
     public void save(String key, Entry entry, Instant fetchedAt) {
         jdbc.sql("""
                 INSERT INTO esi_cache (cache_key, etag, last_modified, expires, fetched_at)

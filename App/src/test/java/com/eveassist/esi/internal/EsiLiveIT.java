@@ -31,6 +31,11 @@ class EsiLiveIT {
             public void save(String key, Entry entry, Instant fetchedAt) {
                 stored.put(key, entry);
             }
+
+            @Override
+            public void forgetPrefix(String keyPrefix) {
+                stored.keySet().removeIf(key -> key.startsWith(keyPrefix));
+            }
         };
         var properties = new EsiProperties("https://esi.evetech.net", System.getProperty("eveassist.esi-contact", ""), "2026-08-18", 8);
         var client = new HttpEsiClient(RestClient.builder(), properties, cache,

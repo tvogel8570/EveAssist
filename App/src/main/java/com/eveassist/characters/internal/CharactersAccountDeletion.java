@@ -20,15 +20,20 @@ class CharactersAccountDeletion implements AccountDeletionHook {
     private final CharacterRepository characters;
     private final TokenRevoker revoker;
     private final CharacterAccessTokens accessTokens;
+    private final com.eveassist.esi.EsiClient esi;
 
-    CharactersAccountDeletion(CharacterRepository characters, TokenRevoker revoker, CharacterAccessTokens accessTokens) {
+    CharactersAccountDeletion(CharacterRepository characters, TokenRevoker revoker, CharacterAccessTokens accessTokens,
+            com.eveassist.esi.EsiClient esi) {
         this.characters = characters;
         this.revoker = revoker;
         this.accessTokens = accessTokens;
+        this.esi = esi;
     }
 
     @Override
     public void beforeDelete(AccountId account) {
+        // the characters' rows go with the account; what ESI said about them (an ETag and an expiry each) must not stay behind
+        characters.eveIdsOf(account).forEach(esi::forgetCharacter);
         for (var token : characters.tokensOf(account)) {
             accessTokens.forget(token.eveCharacterId());
             if (!revoker.revoke(token.eveCharacterId(), token.token())) {

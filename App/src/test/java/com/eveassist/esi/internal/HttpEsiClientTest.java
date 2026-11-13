@@ -46,6 +46,11 @@ class HttpEsiClientTest {
         public void save(String key, Entry entry, Instant fetchedAt) {
             stored.put(key, entry);
         }
+
+        @Override
+        public void forgetPrefix(String keyPrefix) {
+            stored.keySet().removeIf(key -> key.startsWith(keyPrefix));
+        }
     };
     private MockRestServiceServer esi;
     private HttpEsiClient client;

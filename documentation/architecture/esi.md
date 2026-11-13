@@ -20,6 +20,13 @@ requests themselves.
   `Last-Modified`. It does not call a route again before `Expires`, and when it does it sends `If-None-Match`.
   A 304 costs one rate-limit token instead of two and only updates the fetched time. The client never sends
   `Cache-Control: no-cache`.
+  **What is stored must go with the rows it describes** (added 2026-11-12, after a live bug). `forgetCharacter` and
+  `forgetCorporation` delete a character's or corporation's cache entries, so that the next call asks ESI for the whole answer.
+  A character's entries are forgotten when the character is removed and when its account is deleted. Without that, a character
+  linked again was answered 304 for assets that had been deleted here, every fetch said "unchanged", and the Inventory page
+  showed an empty list under "updated". The fetchers also guard against it: an "unchanged" answer for a character or corporation
+  whose stored assets were never replaced (`changed_at` is empty in `character_fetch` or `corporation_fetch`) cannot be true, so
+  the entry is forgotten and the whole list is read once. This also repairs a restored database or any other stale entry.
 - **Rate limits**: the client tracks `X-Ratelimit-Remaining` per rate-limit group and character. It spreads requests
   and slows down well before the bucket is empty. After a 429 it waits for `Retry-After` before using that bucket
   again. Group limits are read from the OpenAPI spec's `x-rate-limit` (for example `char-industry` 600 and

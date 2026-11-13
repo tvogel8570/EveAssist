@@ -172,6 +172,12 @@ public class CorporationFetcher {
                     }
                 }
                 result = esi.corporationAssets(corporation.eveCorporationId(), director.eveCharacterId());
+                if (result.outcome() == EsiResult.Outcome.UNCHANGED && !corporations.everStored(corporation.id())) {
+                    // as for a character's assets: "unchanged" without a stored copy is an ETag that outlived the rows
+                    log.info("A corporation's assets were reported unchanged, but none were ever stored: asking for the whole list");
+                    esi.forgetCorporation(corporation.eveCorporationId());
+                    result = esi.corporationAssets(corporation.eveCorporationId(), director.eveCharacterId());
+                }
             } catch (RuntimeException e) {
                 log.warn("Fetching the assets of a corporation failed: {}", e.getClass().getSimpleName());
                 recordFailure(corporation.id(), now, "The fetch failed unexpectedly");

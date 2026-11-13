@@ -74,6 +74,11 @@ class HttpEsiClientAssetsTest {
         public void save(String key, Entry entry, Instant fetchedAt) {
             stored.put(key, entry);
         }
+
+        @Override
+        public void forgetPrefix(String keyPrefix) {
+            stored.keySet().removeIf(key -> key.startsWith(keyPrefix));
+        }
     };
     private final FakeTokens tokens = new FakeTokens();
     private MockRestServiceServer esi;
@@ -132,6 +137,66 @@ class HttpEsiClientAssetsTest {
                 .andRespond(withStatus(HttpStatus.NOT_MODIFIED).header("Expires", "Sun, 08 Nov 2026 21:11:00 GMT"));
 
         assertThat(client.characterAssets(90000001L).outcome()).isEqualTo(EsiResult.Outcome.UNCHANGED);
+        esi.verify();
+    }
+
+    @Test
+    void aForgottenCharacterIsAskedForInFullAndNotWithTheOldETag() {
+        esi.expect(requestTo(PAGE_1)).andRespond(page(ASSETS, "\"a1\"", "Sun, 08 Nov 2026 21:05:00 GMT"));
+        client.characterAssets(90000001L);
+        clock.advance(Duration.ofMinutes(6));
+        esi.verify();
+        esi.reset();
+
+        client.forgetCharacter(90000001L);
+
+        // without the ETag, ESI cannot answer 304: the whole list comes back, which is what a re-linked character needs
+        esi.expect(requestTo(PAGE_1)).andExpect(headerDoesNotExist("If-None-Match"))
+                .andRespond(page(ASSETS, "\"a2\"", "Sun, 08 Nov 2026 21:15:00 GMT"));
+        var result = client.characterAssets(90000001L);
+
+        assertThat(result.outcome()).isEqualTo(EsiResult.Outcome.UPDATED);
+        assertThat(result.data()).hasSize(3);
+        esi.verify();
+    }
+
+    @Test
+    void forgettingOneCharacterLeavesAnotherWithASimilarIdAlone() {
+        var shorter = "https://esi.test/characters/123/assets?page=1";
+        var longer = "https://esi.test/characters/1234/assets?page=1";
+        esi.expect(requestTo(shorter)).andRespond(page(ASSETS, "\"s1\"", "Sun, 08 Nov 2026 21:05:00 GMT"));
+        esi.expect(requestTo(longer)).andRespond(page(ASSETS, "\"l1\"", "Sun, 08 Nov 2026 21:05:00 GMT"));
+        client.characterAssets(123L);
+        client.characterAssets(1234L);
+        clock.advance(Duration.ofMinutes(6));
+        esi.verify();
+        esi.reset();
+
+        client.forgetCharacter(123L);
+
+        esi.expect(requestTo(shorter)).andExpect(headerDoesNotExist("If-None-Match"))
+                .andRespond(page(ASSETS, "\"s2\"", "Sun, 08 Nov 2026 21:15:00 GMT"));
+        esi.expect(requestTo(longer)).andExpect(header("If-None-Match", "\"l1\""))
+                .andRespond(withStatus(HttpStatus.NOT_MODIFIED).header("Expires", "Sun, 08 Nov 2026 21:15:00 GMT"));
+        assertThat(client.characterAssets(123L).outcome()).isEqualTo(EsiResult.Outcome.UPDATED);
+        assertThat(client.characterAssets(1234L).outcome()).isEqualTo(EsiResult.Outcome.UNCHANGED);
+        esi.verify();
+    }
+
+    @Test
+    void aForgottenCorporationIsAskedForInFullAndNotWithTheOldETag() {
+        var route = "https://esi.test/corporations/98000001/assets?page=1";
+        esi.expect(requestTo(route)).andRespond(page(ASSETS, "\"c1\"", "Sun, 08 Nov 2026 21:05:00 GMT"));
+        client.corporationAssets(98000001L, 90000001L);
+        clock.advance(Duration.ofMinutes(6));
+        esi.verify();
+        esi.reset();
+
+        client.forgetCorporation(98000001L);
+
+        esi.expect(requestTo(route)).andExpect(headerDoesNotExist("If-None-Match"))
+                .andRespond(page(ASSETS, "\"c2\"", "Sun, 08 Nov 2026 21:15:00 GMT"));
+        assertThat(client.corporationAssets(98000001L, 90000001L).outcome()).isEqualTo(EsiResult.Outcome.UPDATED);
         esi.verify();
     }
 
