@@ -36,6 +36,19 @@
     <p>We read EVE data only for characters you linked, with your consent through EVE's own sign-in, and all permissions we ask for are read-only:
         EveAssist cannot act as your character. Public market and contract data is not about you and is shared by everyone.</p>
 
+    <h2 id="support">When we look at your data to fix a problem</h2>
+    <p>If something does not work for you, the operator may look at the data stored for your account to find out why: the account, the characters you
+        linked, the EVE data we fetched for them, and your plans. We do this only to find and fix a problem, never to look at you, and we share nothing.</p>
+    <ul>
+        <li><strong>Never readable by this access:</strong> the refresh tokens and the sign-in sessions. The login the operator uses for support cannot read them, so it
+            cannot act as you in EveAssist or as your character at EVE. Our sign-in service's own database is out of its reach too.</li>
+        <li><strong>What it can change:</strong> nothing by default. When it helps, the operator may delete the EVE data we fetched for a character (assets and the
+            like), which is fetched again from EVE. It cannot change or delete accounts, characters or plans. Deleting an account stays with the application.</li>
+        <li><strong>Who and how:</strong> only the operator, with an administrator sign-in to the hosting account. The start of each such session is recorded in AWS's
+            audit log. As the administrator of the hosting account, the operator could technically reach more than this support login can. The support login
+            exists so that routine looking at data does not need that.</li>
+    </ul>
+
     <h2 id="visitors">Visitors without an account</h2>
     <p>Trying a plan without signing in stores nothing about you. Your address is held in memory for a while to limit how many price lookups one visitor can
         start, and is not written to the database or to a log.</p>
