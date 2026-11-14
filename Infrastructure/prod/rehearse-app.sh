@@ -1,6 +1,12 @@
 #!/bin/bash
 # Rehearsal of a release on a restored copy of the database. On a pass it prints the APP_IMAGE line for images.env. Usage: sudo ./rehearse-app.sh <db endpoint> <image@sha256:...>
 set -euo pipefail
+# Colors only on a terminal, and not when NO_COLOR is set (https://no-color.org): a log or a redirect stays free of escape codes.
+if [ -t 1 ] && [ -z "${NO_COLOR:-}" ]; then
+    GREEN=$'\033[1;32m'; RED=$'\033[1;31m'; YELLOW=$'\033[1;33m'; OFF=$'\033[0m'
+else
+    GREEN=; RED=; YELLOW=; OFF=
+fi
 COPY_HOST=${1:?usage: rehearse-app.sh <endpoint of the restored database> <app image with digest>}
 IMAGE=${2:?usage: rehearse-app.sh <endpoint of the restored database> <app image with digest>}
 cd "$(dirname "$0")"
@@ -30,20 +36,22 @@ for i in $(seq 1 36); do
     docker ps --filter name=rehearsal-app --filter status=running -q | grep -q . || { echo "the container stopped"; break; }
     if docker exec rehearsal-app bash -c "exec 3<>/dev/tcp/127.0.0.1/8081 && printf 'GET /actuator/health HTTP/1.0\r\n\r\n' >&3 && grep -q '\"status\":\"UP\"' <&3" 2>/dev/null; then status=UP; break; fi
 done
-echo "health: $status"
+if [ "$status" = UP ]; then echo "health: ${GREEN}UP${OFF}"; else echo "health: ${RED}${status}${OFF}"; fi
 echo "--- Flyway and start-up lines (the app's own log, no secrets):"
-docker logs rehearsal-app 2>&1 | grep -E "Flyway|Successfully validated|No migration necessary|up to date|Started EveAssist|ERROR|APPLICATION FAILED" | cut -c1-220 | tail -12
+# the lines that make a pass are green, errors red (colored after cut, so an escape code is never cut in two)
+docker logs rehearsal-app 2>&1 | grep -E "Flyway|Successfully validated|No migration necessary|up to date|Started EveAssist|ERROR|APPLICATION FAILED" | cut -c1-220 | tail -12 \
+    | sed -E "s/(Successfully validated [0-9]+ migrations|No migration necessary|Started EveAssist[A-Za-z]* in [0-9.]+ seconds)/${GREEN}\1${OFF}/; s/(ERROR|APPLICATION FAILED)/${RED}\1${OFF}/"
 free -m | awk 'NR==2{print "host memory: " $7 " MB available with the rehearsal running"}'
 docker rm -f rehearsal-app >/dev/null 2>&1
 echo "rehearsal container removed"
 # The result. Only a rehearsal with health UP gives images.env lines to deploy; read "Successfully validated N migrations" and
 # "No migration necessary" (or the migration you expect) in the lines above as well: that is the rest of a pass.
 if [ "$status" != UP ]; then
-    echo "health was $status: this is NOT a pass. Do not deploy; read the lines above."
+    echo "${RED}health was $status: this is NOT a pass. Do not deploy; read the lines above.${OFF}"
     exit 1
 fi
 echo
-echo "--- For images.env (update runbook, deploy, step 1). Copy the old file first: sudo cp images.env images.env.bak-<running version>"
+echo "${YELLOW}--- For images.env (update runbook, deploy, step 1). Copy the old file first: sudo cp images.env images.env.bak-<running version>${OFF}"
 [ -r images.env ] && grep -E '^(APP|KEYCLOAK)_IMAGE=' images.env | sed 's/^/# now in images.env: /'
 echo "APP_IMAGE=${IMAGE}"
 case "$IMAGE" in *@sha256:*) ;; *) echo "# warning: the image has no @sha256 digest; images.env pins digests, not tags" ;; esac

@@ -22,7 +22,17 @@ if ! a sts get-caller-identity >/dev/null 2>&1; then
   exit 1
 fi
 
-mark() { printf '  %-4s %s\n' "$1" "$2"; }   # mark DONE|TODO|INFO text
+# Colors only on a terminal, and not when NO_COLOR is set: a log or a redirect stays free of escape codes.
+if [ -t 1 ] && [ -z "${NO_COLOR:-}" ]; then
+  GREEN=$'\033[1;32m'; RED=$'\033[1;31m'; YELLOW=$'\033[1;33m'; OFF=$'\033[0m'
+else
+  GREEN=; RED=; YELLOW=; OFF=
+fi
+mark() {   # mark DONE|TODO|ERROR|INFO text: DONE green, TODO yellow, ERROR red, INFO plain
+  local color=
+  case "$1" in DONE) color=$GREEN ;; TODO) color=$YELLOW ;; ERROR) color=$RED ;; esac
+  printf '  %s%-5s%s %s\n' "$color" "$1" "$OFF" "$2"
+}
 
 echo "Release $VERSION   (git: $(git branch --show-current) at $(git rev-parse --short HEAD))"
 echo
@@ -86,7 +96,7 @@ tagged=$(git tag --list "v$VERSION")
 grep -q "$VERSION" documentation/runbooks/deploy-log.md 2>/dev/null && mark INFO "deploy-log.md mentions $VERSION" || mark TODO "deploy-log.md does not mention $VERSION"
 echo
 
-echo -n "Next: "
+echo -n "${YELLOW}Next:${OFF} "
 if [ -z "${APP_PUSHED:-}" ]; then echo "section 2, build and push the image."
 elif [ "$SNAP" = no ]; then echo "section 3, take the snapshot."
 elif [ "$REH" = none ]; then echo "section 4, step 1, restore the snapshot to $REHEARSAL."
