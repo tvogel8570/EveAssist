@@ -38,7 +38,8 @@
         <span aria-hidden="true">·</span>
         <a id="footer-security" class="link" th:href="@{/.well-known/security.txt}" th:text="#{footer.security}">Report a vulnerability</a>
         <span aria-hidden="true">·</span>
-        <span id="footer-build" th:text="#{footer.build(${@siteInfo.commit})}">build dev</span>
+        <span id="footer-build"
+              th:text="${#strings.isEmpty(@siteInfo.version)} ? #{footer.build(${@siteInfo.commit})} : #{footer.buildVersion(${@siteInfo.version}, ${@siteInfo.commit})}">build dev</span>
     </p>
     <p id="ccp-notice" class="mt-3 opacity-70" th:text="#{footer.ccp}">CCP notice</p>
 </footer>

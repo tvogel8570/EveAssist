@@ -70,6 +70,8 @@ eveassist:
   build:
     # the short commit id of the image, passed to the Docker build; "dev" when run from source
     commit: ${GIT_COMMIT:dev}
+    # the release version of the image, passed to the Docker build; empty when run from source
+    version: ${APP_VERSION:}
   characters:
     # dev: the key itself. prod: the key wrapped by KMS and the KMS key that wrapped it (see KmsDataKeyProvider)
     token-data-key: ${EVE_TOKEN_DATA_KEY:}
