@@ -2,12 +2,15 @@
 # Prod only. Creates the monitoring described in documentation/architecture/deployment.md: log metric filters, alarms and an
 # outside health check. Safe to run again: every call updates what exists. Run it where an admin AWS profile is signed in:
 #   set -a; . ./ops.env; set +a   (the account and instance ids, see template_ops.env)
-#   ALERT_EMAIL=you@example.com AWS_PROFILE=<admin profile> ./alarms.sh
+#   ALERT_EMAIL=you@example.com ./alarms.sh
+# The script uses the profile EveAssist-admin for all its aws calls (set below, for this script only). Sign in first:
+#   aws sso login --profile EveAssist-admin
 # The address is not in the repository on purpose. SNS sends each new address a confirmation message, and nothing is
 # delivered until its link is clicked.
 set -euo pipefail
 
 : "${ALERT_EMAIL:?set ALERT_EMAIL to the address that should receive alerts}"
+export AWS_PROFILE=EveAssist-admin   # this script's process only; the caller's shell is not changed
 REGION=us-west-2
 ACCOUNT=${EVEASSIST_ACCOUNT_ID:?load ops.env first (set -a; . ./ops.env; set +a)}
 INSTANCE=${EVEASSIST_INSTANCE_ID:?load ops.env first (set -a; . ./ops.env; set +a)}
