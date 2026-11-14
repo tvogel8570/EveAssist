@@ -300,9 +300,12 @@ On the *EC2 computer* (`/opt/eveassist/Infrastructure/prod`; the directory is ow
    remove every container, Keycloak and Caddy included, for a longer outage. It is needed only when every service reads a changed value ("Restoring the
    database", step 6, where Keycloak and the app both read `RDS_HOST`).
    ```bash
+   date -u '+deploy started %F %T UTC'
    sudo ./start.sh app
    # if Keycloak was built:  sudo ./start.sh app keycloak
    ```
+   The first line prints the time in UTC, for the deploy log. Write down that line, not a local time: a local clock depends on where you are, and the
+   other times on record (the AWS console, the logs, the alarms) are UTC.
 3. Follow the log until the app reports started. Any Flyway error, stop and go to "Rolling back".
    ```bash
    sudo docker logs -f eveassist-app-1
@@ -387,7 +390,8 @@ fi
 git push origin v$VERSION
 ```
 2. Release to `main` as CLAUDE.md describes: a pull request from `development` with a merge commit, then a pull request from `main` back to `development`.
-3. Append to `documentation/runbooks/deploy-log.md`: date, version, image digest, snapshot id, the result of the privacy review (section 1), anything surprising.
+3. Append to `documentation/runbooks/deploy-log.md`: date, version, image digest, snapshot id, the deploy time in UTC (the line printed in section 5), the result of the
+   privacy review (section 1), anything surprising.
 4. Tell testers what changed, and if they must re-authorize characters.
 5. Delete the *snapshot* when the release is accepted, and within 7 days at the latest. **A manual *snapshot* never expires.** It keeps every
    account that exists on the day, including accounts users delete later, and the privacy policy promises that deleted data leaves the backups
