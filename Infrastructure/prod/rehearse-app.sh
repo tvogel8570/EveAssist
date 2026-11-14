@@ -1,5 +1,5 @@
 #!/bin/bash
-# Rehearsal of a release on a restored copy of the database. Usage: sudo ./rehearse-app.sh <db endpoint> <image@sha256:...>
+# Rehearsal of a release on a restored copy of the database. On a pass it prints the APP_IMAGE line for images.env. Usage: sudo ./rehearse-app.sh <db endpoint> <image@sha256:...>
 set -euo pipefail
 COPY_HOST=${1:?usage: rehearse-app.sh <endpoint of the restored database> <app image with digest>}
 IMAGE=${2:?usage: rehearse-app.sh <endpoint of the restored database> <app image with digest>}
@@ -36,3 +36,15 @@ docker logs rehearsal-app 2>&1 | grep -E "Flyway|Successfully validated|No migra
 free -m | awk 'NR==2{print "host memory: " $7 " MB available with the rehearsal running"}'
 docker rm -f rehearsal-app >/dev/null 2>&1
 echo "rehearsal container removed"
+# The result. Only a rehearsal with health UP gives images.env lines to deploy; read "Successfully validated N migrations" and
+# "No migration necessary" (or the migration you expect) in the lines above as well: that is the rest of a pass.
+if [ "$status" != UP ]; then
+    echo "health was $status: this is NOT a pass. Do not deploy; read the lines above."
+    exit 1
+fi
+echo
+echo "--- For images.env (update runbook, deploy, step 1). Copy the old file first: sudo cp images.env images.env.bak-<running version>"
+[ -r images.env ] && grep -E '^(APP|KEYCLOAK)_IMAGE=' images.env | sed 's/^/# now in images.env: /'
+echo "APP_IMAGE=${IMAGE}"
+case "$IMAGE" in *@sha256:*) ;; *) echo "# warning: the image has no @sha256 digest; images.env pins digests, not tags" ;; esac
+echo "# KEYCLOAK_IMAGE stays as it is, unless you built a new Keycloak image for this release"

@@ -1,7 +1,10 @@
 # Common Commands
 
 A permanent list of commands used often when working with EveAssist. No secrets here. Add a command when you find yourself
-looking it up twice, and say where to run it (dev machine or instance).
+looking it up twice, and say where to run it (*development computer* or *EC2 computer*).
+
+The terms in italics, *development computer* and *EC2 computer*, are defined in [Deploying an update](update-deployment.md#terminology), with the other
+terms of that runbook (*prod stack*, *snapshot*, *rehearsal database*).
 
 ## Values
 
@@ -18,15 +21,15 @@ set -a; . ~/git/EveAssist/Infrastructure/prod/ops.env; set +a
 **The AWS profile.** Every `aws` command in the runbooks that runs on the development computer names the profile explicitly
 (`--profile EveAssist-admin`), and `aws sso login --profile EveAssist-admin` signs it in. Signing in to one profile does not sign in the
 default profile, and a command without `--profile` would use the default. Do not export `AWS_PROFILE` in your shell: it would redirect all
-your other AWS work too. Scripts that run on the EC2 instance (`start.sh`, `load-secrets.sh`, `rehearse-app.sh`, `db-setup.sh`) use the
+your other AWS work too. Scripts that run on the *EC2 computer* (`start.sh`, `load-secrets.sh`, `rehearse-app.sh`, `db-setup.sh`) use the
 instance role and name no profile.
 
-The instance is in `us-west-2`. Where a value is needed on the instance itself (for example `RDS_HOST` in its `prod.env`), the instance has its
+The *EC2 computer* is in `us-west-2`. Where a value is needed on the *EC2 computer* itself (for example `RDS_HOST` in its `prod.env`), it has its
 own copy of the file that needs it; the instance role is deliberately not allowed to look things up.
 
 ## AWS
 
-Run on the dev machine.
+Run on the *development computer*.
 
 Sign in again when the SSO session has expired (`Token has expired and refresh failed`):
 
@@ -34,16 +37,16 @@ Sign in again when the SSO session has expired (`Token has expired and refresh f
 aws sso login --profile EveAssist-admin
 ```
 
-Open a shell on the prod instance (Session Manager), started in bash. The prompt changes to `ssm-user@ip-...`; if it still shows
-the dev machine's user, the session did not start:
+Open a shell on the prod *EC2 computer* (Session Manager), started in bash. The prompt changes to `ssm-user@ip-...`; if it still shows
+the *development computer*'s user, the session did not start:
 
 ```bash
 aws ssm start-session --target "$EVEASSIST_INSTANCE_ID" --profile EveAssist-admin --region us-west-2 \
   --document-name AWS-StartInteractiveCommand --parameters 'command=["bash -l"]'
 ```
 
-To shorten it, put a function in `~/.bashrc` on the dev machine (the profile, region and target are client-side, so nothing is set on
-the instance). A function is better than exporting `AWS_PROFILE`, which would redirect all your other AWS work too:
+To shorten it, put a function in `~/.bashrc` on the *development computer* (the profile, region and target are client-side, so nothing is set on
+the *EC2 computer*). A function is better than exporting `AWS_PROFILE`, which would redirect all your other AWS work too:
 
 ```bash
 prod() {
@@ -88,6 +91,8 @@ Without the `--document-name` part, the session starts in plain `sh`, where a mu
 
 ### Container images in ECR
 
+Run these on the *development computer*, signed in with `aws sso login --profile EveAssist-admin`.
+
 List the repository names (the image names), and then the tags of every repository with the newest push last. A pushed tag is immutable, so check the
 name before you push, and before you read a digest back:
 
@@ -104,9 +109,33 @@ done
 Today the repositories are `eveassist-app` and `eveassist-keycloak`, directly under the registry host
 `$EVEASSIST_ACCOUNT_ID.dkr.ecr.us-west-2.amazonaws.com`.
 
+### RDS snapshots
+
+Run these on the *development computer*, signed in with `aws sso login --profile EveAssist-admin`.
+
+List the manual snapshots (the ones that never expire) with their status, creation time and the delete-by date from their `purpose` tag:
+
+```bash
+aws rds describe-db-snapshots --profile EveAssist-admin --no-cli-pager --snapshot-type manual \
+  --query 'DBSnapshots[].[DBSnapshotIdentifier,Status,SnapshotCreateTime,TagList[?Key==`purpose`]|[0].Value]' --output text
+```
+
+Delete one. Name it in the first line (edit the name there; do not paste `<...>`, the shell would read it as a redirect), check that it is the
+one you mean, then delete it. A deleted snapshot cannot be brought back, and nothing else holds that copy of the data:
+
+```bash
+SNAPSHOT=pre-vX-Y-Z
+aws rds describe-db-snapshots --profile EveAssist-admin --no-cli-pager --db-snapshot-identifier "$SNAPSHOT" \
+  --query 'DBSnapshots[].[DBSnapshotIdentifier,Status,SnapshotCreateTime]' --output text
+aws rds delete-db-snapshot --profile EveAssist-admin --no-cli-pager --db-snapshot-identifier "$SNAPSHOT" \
+  --query 'DBSnapshot.[DBSnapshotIdentifier,Status]' --output text
+```
+
+Automated snapshots (the 7 days of daily backups) are not listed by the first command and cannot be deleted this way; they expire by themselves.
+
 ## Alarms
 
-Run on the dev machine. The alarms are in `us-west-2`, except the site-down alarm, which is in `us-east-1` (Route 53 health metrics exist
+Run on the *development computer*. The alarms are in `us-west-2`, except the site-down alarm, which is in `us-east-1` (Route 53 health metrics exist
 only there). Stopping an alarm's actions silences its emails and its OK emails; the alarm still changes state, so its history keeps the
 episode. Always switch them back on.
 
@@ -141,7 +170,7 @@ for r in us-west-2 us-east-1; do aws cloudwatch describe-alarms --profile EveAss
 The other alarms (`eveassist-prod-errors`, `-esi-failures`, `-instance-status`, `-cpu-credits`, and the billing alarm in `us-east-1`) are left
 on: a real ERROR during a restart is worth an email.
 
-## On the instance
+## On the *EC2 computer*
 
 Run inside the SSM shell. In bash a block of several commands pastes correctly (tested 2026-11-12). Plain `sh` does not handle a
 multi-line paste, so if the session did not start in bash, type `bash` first. Commands whose output you must check before the next
@@ -167,5 +196,5 @@ Start the stack again (loads the secrets from Secrets Manager, logs in to ECR, t
 cd /opt/eveassist/Infrastructure/prod && sudo ./start.sh
 ```
 
-Editor on the instance: `nano` (preinstalled; `Ctrl+O` saves, `Ctrl+X` quits). Prefer writing a file from the repository and checking it
+Editor on the *EC2 computer*: `nano` (preinstalled; `Ctrl+O` saves, `Ctrl+X` quits). Prefer writing a file from the repository and checking it
 with `diff` over editing by hand on the host; use an editor there only to read a file or for a one-line emergency fix.

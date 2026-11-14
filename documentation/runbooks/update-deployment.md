@@ -101,7 +101,7 @@ names the profile (`--profile EveAssist-admin`), so it does not matter which pro
      && echo "ok       signed in to the account in ops.env" \
      || echo "WRONG ACCOUNT or not signed in: aws sso login --profile EveAssist-admin --use-device-code"
    ```
-4. CI builds, tests and pushes the images to ECR **[to build]**. Until then, build locally for the *EC2 computer*'s CPU, tagging
+4. CI builds, tests and pushes the images to ECR **[to build]** (how far that could go: [Automating the deployment](../architecture/deployment-pipeline.md), potential). Until then, build locally for the *EC2 computer*'s CPU, tagging
    `<version>-<short commit>` (ECR tags are immutable, so a tag can be pushed only once):
    ```bash
    # The registry host: the account id from ops.env (section 2, step 3). The repositories eveassist-app and eveassist-keycloak sit directly under it.
@@ -217,19 +217,31 @@ that way).
      --query 'DBInstance.[DBInstanceIdentifier,DBInstanceStatus]' --output text
    aws rds wait db-instance-available --db-instance-identifier eveassist-rehearsal --profile EveAssist-admin
    aws rds describe-db-instances --profile EveAssist-admin --db-instance-identifier eveassist-rehearsal \
-     --query 'DBInstances[0].[Endpoint.Address,PubliclyAccessible]' --output text
+     --query 'DBInstances[0].[Endpoint.Address,PubliclyAccessible,VpcSecurityGroups[0].VpcSecurityGroupId]' --output text
+   echo "the security group must be: $EVEASSIST_RDS_SG"
+
+   # The command for step 2, printed as a comment with its two arguments filled in: the endpoint of the rehearsal database, and the app
+   # image of this release by digest (needs ECR, VERSION and COMMIT from section 2). Copy the line, remove "# " and run it on the EC2 computer.
+   REHEARSAL_ENDPOINT=$(aws rds describe-db-instances --profile EveAssist-admin --db-instance-identifier eveassist-rehearsal \
+     --query 'DBInstances[0].Endpoint.Address' --output text)
+   APP_DIGEST=$(aws ecr describe-images --profile EveAssist-admin --repository-name eveassist-app \
+     --image-ids imageTag=${VERSION:?set VERSION}-${COMMIT:?set COMMIT} --query 'imageDetails[0].imageDigest' --output text)
+   echo "# sudo ./rehearse-app.sh $REHEARSAL_ENDPOINT ${ECR:?set ECR}/eveassist-app@$APP_DIGEST"
    ```
+   The second value must be `False` (a private database: the restore is a copy of real users' data) and the third the group printed by the `echo`.
+   Do not go on if either differs; delete the *rehearsal database* (step 5) and restore again.
 2. On the *EC2 computer*, run the new build against the *rehearsal database*. `Infrastructure/prod/rehearse-app.sh` starts the *rehearsal container* of the new
    image on the Compose network, memory capped at 900 MB, with Docker's own log driver (so its lines cannot trip the prod alarms) and no
    published port, waits up to 3 minutes for the health endpoint, prints the Flyway and start-up lines, and removes the *rehearsal container*. Copy it
    to the *EC2 computer* like the other scripts. Check `free -m` first: stop if less than about 1,200 MB is available, because the *prod stack*
    keeps running. **A pass** is health `UP`, "Successfully validated N migrations", and either "No migration necessary" or the new
    migration applied in the time you expect. The *rehearsal database* holds the same linked characters and tokens as prod, so the rehearsal may make one
-   round of ESI calls for them.
+   round of ESI calls for them. On a pass the script ends by printing the `APP_IMAGE` line for `images.env` (and the lines now in the file, for the rollback
+   note); on anything else it says so and exits with an error. Replace the *EC2 computer*'s copy of the script when it changes.
    ```bash
    free -m
    cd /opt/eveassist/Infrastructure/prod
-   sudo ./rehearse-app.sh <endpoint of the rehearsal database> <account id>.dkr.ecr.us-west-2.amazonaws.com/eveassist-app@sha256:<digest>
+   sudo ./rehearse-app.sh <endpoint of the rehearsal database> <account id>.dkr.ecr.us-west-2.amazonaws.com/eveassist-app@sha256:<digest>   # step 1 printed this line, filled in
    ```
 3. What this does not test: the Keycloak image (to rehearse a Keycloak change, start its image the same way against the `keycloak`
    database of the *rehearsal database*: the 2026-11-12 release skipped that on purpose), and anything seen in a browser. Those are checked after the deploy (step 6).
@@ -240,12 +252,13 @@ that way).
    not keep it.
    ```bash
    aws rds delete-db-instance --profile EveAssist-admin --no-cli-pager --db-instance-identifier eveassist-rehearsal \
-     --skip-final-snapshot --delete-automated-backups
+     --skip-final-snapshot --delete-automated-backups \
+     --query 'DBInstance.[DBInstanceIdentifier,DBInstanceStatus]' --output text
    aws rds wait db-instance-deleted --db-instance-identifier eveassist-rehearsal --profile EveAssist-admin
    # each of these must show nothing for eveassist-rehearsal
-   aws rds describe-db-instances --profile EveAssist-admin --query 'DBInstances[].DBInstanceIdentifier'
-   aws rds describe-db-snapshots --profile EveAssist-admin --query 'DBSnapshots[].DBSnapshotIdentifier'
-   aws rds describe-db-instance-automated-backups --profile EveAssist-admin --query 'DBInstanceAutomatedBackups[].DBInstanceIdentifier'
+   aws rds describe-db-instances --profile EveAssist-admin --no-cli-pager --query 'DBInstances[].DBInstanceIdentifier' --output text
+   aws rds describe-db-snapshots --profile EveAssist-admin --no-cli-pager --query 'DBSnapshots[].DBSnapshotIdentifier' --output text
+   aws rds describe-db-instance-automated-backups --profile EveAssist-admin --no-cli-pager --query 'DBInstanceAutomatedBackups[].DBInstanceIdentifier' --output text
    ```
 
 ### Migration rules
@@ -266,7 +279,7 @@ On the *EC2 computer* (`/opt/eveassist/Infrastructure/prod`; the directory is ow
    for a long one), so that a planned restart does not send alert emails. The commands are in [Common commands](common-commands.md),
    "Alarms". Switch them back on in step 6.
 
-1. Put the new app digest into `images.env` (the file exists on the *EC2 computer* only), and the new Keycloak digest too if you built Keycloak. Commit nothing secret.
+1. Put the new app digest into `images.env` (the rehearsal printed the line) (the file exists on the *EC2 computer* only), and the new Keycloak digest too if you built Keycloak. Commit nothing secret.
    ```bash
    cd /opt/eveassist/Infrastructure/prod
    sudo cp images.env images.env.bak-<running version, dots as hyphens, e.g. v0-2-0>   # the rollback target
@@ -295,7 +308,23 @@ On the *EC2 computer* (`/opt/eveassist/Infrastructure/prod`; the directory is ow
 - [ ] Open the specific feature changed, in its normal and error cases.
 - [ ] `/try` still answers and its limits still count per visitor.
 - [ ] Log lines: no new ERROR pattern, no `Connection is not available`, no ESI 420 or 429 in the first 15 minutes.
-- [ ] `hikaricp.connections.pending` is near 0 (`/actuator/metrics/` on management port 8081, through the tunnel in the initial runbook, step 9).
+- [ ] `hikaricp.connections.pending` is near 0. Run this on the *EC2 computer*. The metrics are on the app's management port 8081, which
+      nothing publishes, and the image has no `curl`, so bash inside the container opens the socket (the way the container's health check
+      does). It prints one line per metric: the HTTP status and the value. `pending` near 0 is good, and one that stays above 0 means requests
+      wait for a database connection. `active` is how many of the pool's connections are in use and `max` how many there can be.
+```bash
+for m in hikaricp.connections.pending hikaricp.connections.active hikaricp.connections.max; do
+  r=$(sudo docker exec eveassist-app-1 bash -c "exec 3<>/dev/tcp/127.0.0.1/8081 && printf 'GET /actuator/metrics/$m HTTP/1.0\r\n\r\n' >&3 && cat <&3")
+  echo "$m: $(echo "$r" | head -1 | tr -d '\r')  $(echo "$r" | grep -o '"value":[0-9.eE+-]*' | head -1)"
+done
+```
+      A line with `200` and a `"value"` is the answer. Anything else is not: `302` is a redirect to the sign-in (the management port needs none
+      from release 0.3.1 on; 0.3.0 answers `302`), and `404` is a metric the app does not have. To see the whole response and what the port
+      exposes:
+```bash
+sudo docker exec eveassist-app-1 bash -c 'exec 3<>/dev/tcp/127.0.0.1/8081 && printf "GET /actuator/metrics HTTP/1.0\r\n\r\n" >&3 && cat <&3'
+```
+      Or through the tunnel in the initial runbook, step 9, at `http://localhost:8081/actuator/metrics/hikaricp.connections.pending`.
 
 ## 7. Record
 
@@ -306,10 +335,21 @@ them again to the release version and the short commit that was built).
    the images do not show, such as a live realm setting that the image's realm file lacks. Tags `v*` are protected by the GitHub ruleset
    "release tags" (no deletion, no update, no bypass): to correct a wrong tag, remove that ruleset first. Tag only a deploy that was checked, so
    that `main` never claims a release that did not run.
-   ```bash
-   git tag -a v$VERSION $COMMIT -m "..."
-   git push origin v$VERSION
-   ```
+   Edit the two lines marked `EDIT` before you run it (an annotation cannot be changed afterwards). The fence is not indented, because the end marker of a
+   here-document must start the line. The image name has no registry host on purpose: it
+   would carry the AWS account id into a public repository.
+```bash
+APP_DIGEST=$(aws ecr describe-images --profile EveAssist-admin --repository-name eveassist-app \
+  --image-ids imageTag=$VERSION-$COMMIT --query 'imageDetails[0].imageDigest' --output text)
+git tag -a v$VERSION $COMMIT -F - <<ANNOTATION
+Release $VERSION, build $COMMIT
+App image: eveassist-app:$VERSION-$COMMIT
+App digest: $APP_DIGEST
+Keycloak: unchanged since <commit>, digest <sha256:...>     EDIT (or: its new tag and digest, if it was built)
+Notes: <anything the images do not show, or none>           EDIT
+ANNOTATION
+git push origin v$VERSION
+```
 2. Release to `main` as CLAUDE.md describes: a pull request from `development` with a merge commit, then a pull request from `main` back to `development`.
 3. Append to `documentation/runbooks/deploy-log.md`: date, version, image digest, snapshot id, the result of the privacy review (section 1), anything surprising.
 4. Tell testers what changed, and if they must re-authorize characters.

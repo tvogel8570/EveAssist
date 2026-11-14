@@ -261,3 +261,36 @@ Production has none of it yet: no tunnel document, role, IAM authentication or d
   the `keycloak` database is out of reach; the site answered 200 afterwards.
 - **Open:** the privacy policy does not yet say that the operator can read account data for support (issue 45, on hold by decision).
   The throwaway test copy and its snapshot were deleted the same day.
+
+## 2026-11-13: release v0.3.0 (build 269c9bd)
+
+- **What was built:** the tip of `development`, commit `269c9bd` (the merge of pull request #48), after `./mvnw verify` passed on it. The first attempt, built
+  from `76dede5`, was pushed to ECR as `0.3.0-76dede5` and **never deployed**: the footer change (the release version in the footer) was merged
+  in between, so the release was started again from `269c9bd`. Tag `0.3.0-269c9bd` (immutable in ECR):
+  - App: `$EVEASSIST_ACCOUNT_ID.dkr.ecr.us-west-2.amazonaws.com/eveassist-app:0.3.0-269c9bd`, digest
+    `sha256:4e358e86dc8751d4dae6c6547601958b7945afd6943c992fdf43d548d5d30b06` (read back from ECR).
+  - Keycloak: **unchanged**, still the 0.2.0 image (`0.2.0-3ec2628`, digest `sha256:c20bd8558f0a46b7ab3eb0dc86b087676e50420b274dd6d776be8e722f77002e`). Its
+    Dockerfile and realm file did not change since `3ec2628`, so it was not rebuilt or pushed (a local Keycloak build of that run was dropped).
+- **What changed compared with v0.2.0:** no migration. A removed character's or deleted account's ESI cache rows (the ETag and expiry of each route) are now
+  deleted with it, and an assets fetch that is answered "unchanged" when nothing was ever stored asks ESI for the whole list: a character with no assets
+  shown now shows them. The footer reads `build <version> (<commit>)`. The privacy policy now says when and how the operator looks at data for support
+  (this closes the "Open" item of the support-access entry above). The support-access runbook, the prod helper scripts and the update runbook, which this
+  release was the first run of by hand.
+- **Snapshot and rehearsal** (update runbook sections 3 and 4): snapshot `pre-v0-3-0`. Restored to `eveassist-rehearsal` (private, the `eveassist-rds`
+  group, no deletion protection, no backups). The app image ran against it as one throwaway container: health `UP`, 20 migrations validated, "No
+  migration necessary", started in 12.1 s, host memory 2,024 MB available before and 1,754 MB with it running. The copy was deleted and the checks found
+  no instance, snapshot or retained backup of it.
+- **Privacy review** (the `privacy-review` skill, first run; range `v0.2.0` to `development` plus the fix branch for 0.3.1): no wording change. Two
+  questions, both answered by the developer: the ESI cache rows of characters removed before this release are the developer's own account and accepted;
+  both support roles exist in prod and are tested.
+- **Deploy:** 01:25 UTC on 2026-11-14 (20:25 US Eastern on the 13th), the app by the runbook (section 5). No alarm fired. The first request after the start is in the
+  app log at 01:26:52 UTC (`DispatcherServlet ... Completed initialization in 3 ms`).
+- **Checked after the deploy:** the footer shows `build 0.3.0 (269c9bd)` (seen from outside; the site answers 200), and the character with no assets now shows its assets.
+- **Found:** the Hikari pending-connections check of the Verify section could not be done. On the management port (8081) the metrics need an admin
+  sign-in: the app answered `302` to the Keycloak login, although `concurrency-tuning.md` and `initial-deployment.md` say the port needs none. Only health was
+  covered by a test there. Fixed for 0.3.1 (a security filter chain for the management port, with tests). A first version of that fix also took the app's own
+  requests in a run without a separate management port (tests failed); that is corrected, and the fix is not merged yet. The tests also showed that one more Spring context
+  in the test run exhausted the test database's connections, so the new footer test closes its context.
+- **Tag:** `v0.3.0` on `269c9bd`, pushed by the developer. Its annotation is the placeholder text `...`, not the digests (tags `v*` cannot be updated); this entry
+  holds what the annotation should have said.
+- **Still to do:** the pull requests to `main` and back, and deleting the snapshot `pre-v0-3-0` once the release is accepted, by 2026-11-20.
