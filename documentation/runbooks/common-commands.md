@@ -15,6 +15,12 @@ No secret belongs in it. Load it before running a command that uses a variable:
 set -a; . ~/git/EveAssist/Infrastructure/prod/ops.env; set +a
 ```
 
+**The AWS profile.** Every `aws` command in the runbooks that runs on the development computer names the profile explicitly
+(`--profile EveAssist-admin`), and `aws sso login --profile EveAssist-admin` signs it in. Signing in to one profile does not sign in the
+default profile, and a command without `--profile` would use the default. Do not export `AWS_PROFILE` in your shell: it would redirect all
+your other AWS work too. Scripts that run on the EC2 instance (`start.sh`, `load-secrets.sh`, `rehearse-app.sh`, `db-setup.sh`) use the
+instance role and name no profile.
+
 The instance is in `us-west-2`. Where a value is needed on the instance itself (for example `RDS_HOST` in its `prod.env`), the instance has its
 own copy of the file that needs it; the instance role is deliberately not allowed to look things up.
 
@@ -79,6 +85,24 @@ enter the code if asked, and the command carries on by itself.
 Without the `--document-name` part, the session starts in plain `sh`, where a multi-line paste goes wrong. Run `bash` first then.
 (An account-wide alternative is a Session Manager preferences document, `SSM-SessionManagerRunShell`, with `shellProfile.linux` set to
 `exec /bin/bash`. It affects every session in the account and region, and is also where session logging is configured.)
+
+### Container images in ECR
+
+List the repository names (the image names), and then the tags of every repository with the newest push last. A pushed tag is immutable, so check the
+name before you push, and before you read a digest back:
+
+```bash
+aws ecr describe-repositories --profile EveAssist-admin --query 'repositories[].repositoryName' --output text
+
+for repo in $(aws ecr describe-repositories --profile EveAssist-admin --query 'repositories[].repositoryName' --output text); do
+  echo "== $repo"
+  aws ecr describe-images --profile EveAssist-admin --repository-name "$repo" \
+    --query 'sort_by(imageDetails[?imageTags!=`null`],&imagePushedAt)[].[imageTags[0],imageDigest,imagePushedAt]' --output text
+done
+```
+
+Today the repositories are `eveassist-app` and `eveassist-keycloak`, directly under the registry host
+`$EVEASSIST_ACCOUNT_ID.dkr.ecr.us-west-2.amazonaws.com`.
 
 ## Alarms
 

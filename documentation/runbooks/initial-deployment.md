@@ -73,7 +73,7 @@ Check that no write scope is selected. The public commitment is read-only.
    instance. Make the wrapped data
    key once, with the purpose that the app checks on every unwrap, and store the base64 text in Secrets Manager as
    `EVE_TOKEN_DATA_KEY_WRAPPED` without printing it:
-   `aws kms generate-data-key-without-plaintext --key-id alias/eveassist-token-key --key-spec AES_256 --encryption-context purpose=eveassist-refresh-tokens --query CiphertextBlob --output text`.
+   `aws kms generate-data-key-without-plaintext --profile EveAssist-admin --key-id alias/eveassist-token-key --key-spec AES_256 --encryption-context purpose=eveassist-refresh-tokens --query CiphertextBlob --output text`.
    Check it by unwrapping it and counting the bytes (32), and by trying a wrong purpose (refused). Losing the key or this
    blob makes every stored refresh token unreadable, so the key is never deleted and the blob lives in Secrets Manager.
 2. **RDS**: PostgreSQL 18.6 (the dev image's version), single-AZ in the instance's zone, `db.t4g.small`, 20 GB gp3 that grows
@@ -186,7 +186,7 @@ paste goes wrong. Planned restarts raise the alarm `eveassist-prod-upstream-unre
    its IAM role). To silence it, install `docker-credential-ecr-login` and set it as `credsStore` or `credHelpers` in that
    file, which also makes the login step unnecessary.
 4. Create the real admin in Keycloak, not through the internet. The console works at `http://localhost:8080/admin/` through an SSM
-   port-forward (`aws ssm start-session --target <instance-id> --document-name AWS-StartPortForwardingSession --parameters '{"portNumber":["8080"],"localPortNumber":["8080"]}'`),
+   port-forward (`aws ssm start-session --profile EveAssist-admin --target <instance-id> --document-name AWS-StartPortForwardingSession --parameters '{"portNumber":["8080"],"localPortNumber":["8080"]}'`),
    but only if the browser runs where the plugin's loopback port is visible. From WSL with a **Windows browser** it is not: the plugin
    listens on WSL's `127.0.0.1` only, and WSL forwards to Windows only ports that listen on all interfaces. In that case do the same steps
    with `kcadm` in an SSM shell (the commands are in `Infrastructure/prod/admin-with-kcadm.md`): create a named admin with the `admin` role, set its password at
