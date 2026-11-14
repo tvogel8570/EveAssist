@@ -294,3 +294,25 @@ Production has none of it yet: no tunnel document, role, IAM authentication or d
 - **Tag:** `v0.3.0` on `269c9bd`, pushed by the developer. Its annotation is the placeholder text `...`, not the digests (tags `v*` cannot be updated); this entry
   holds what the annotation should have said.
 - **Still to do:** the pull requests to `main` and back, and deleting the snapshot `pre-v0-3-0` once the release is accepted, by 2026-11-20.
+
+## 2026-11-14: release v0.3.1 (build c780e63)
+
+- **What was built:** the tip of `development`, commit `c780e63` (the merge of pull request #51), after `./mvnw verify` passed on it (BUILD SUCCESS, 239 unit and
+  426 integration tests, 2 skipped). Pushed to ECR at 13:48 UTC. Tag `0.3.1-c780e63` (immutable in ECR):
+  - App: `$EVEASSIST_ACCOUNT_ID.dkr.ecr.us-west-2.amazonaws.com/eveassist-app:0.3.1-c780e63`, digest
+    `sha256:55508610a4ba3fb4380c95b41e69c4f844bd4678e7cef6c7319f05e159ff869b` (read back from ECR).
+  - Keycloak: **unchanged**, still `0.2.0-3ec2628` (digest `sha256:c20bd8558f0a46b7ab3eb0dc86b087676e50420b274dd6d776be8e722f77002e`). Its Dockerfile and realm file did
+    not change since `3ec2628`, so it was not rebuilt.
+- **What changed compared with v0.3.0:** no migration. The management port (8081) serves health and metrics without a sign-in, as the runbooks said; 0.3.0 redirected
+  metrics requests to the Keycloak login. The new security filter chain applies only when the management port is a port of its own. The rest is test setup
+  (`FooterVersionIT` closes its Spring context so the test Postgres keeps connections for the browser tests) and documentation and scripts that do not run in the
+  app: the update runbook after its first full run, `rehearse-app.sh` printing the `images.env` lines, RDS snapshot commands and the potential pipeline page.
+- **Snapshot and rehearsal** (update runbook sections 3 and 4): snapshot `pre-v0-3-1` (13:48 UTC). Restored to `eveassist-rehearsal` (14:08 UTC), deleted 14:19 UTC, and
+  no instance of it remains. The Flyway and health lines of the rehearsal were not captured in this log; the deploy followed it.
+- **Deploy:** 08:30 US Central on 2026-11-14 (14:30 UTC), the app by the runbook (section 5). No further observations.
+- **Checked after the deploy:** the management port answers `200` on `/actuator/metrics` (3,406 bytes listing the metric names) and `hikaricp.connections.pending` 0.0,
+  `.active` 0.0, `.max` 10.0, all `200`, at 14:34 UTC. This is the Hikari reading that could not be taken after 0.3.0.
+- **Release to main:** tag `v0.3.1` on `c780e63`, pushed by the developer (annotation: app digest, `Keycloak: unchanged`, the pull requests #51 and #50, `Notes: none`).
+  Pull request #52 (`development` to `main`, merge commit `895fc56`) and #53 (back, merge commit `538a2a0`); the trees are identical.
+- **Snapshot `pre-v0-3-0`** is deleted (the list of manual snapshots shows only `pre-v0-3-1`).
+- **Still to do:** delete the snapshot `pre-v0-3-1` once the release is accepted, by 2026-11-21.
