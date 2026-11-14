@@ -91,6 +91,61 @@ class AssetFetcherIT extends IntegrationTest {
                 .param("id", character.id()).query(Boolean.class).optional()).isEmpty();
     }
 
+    /**
+     * The bug found on the live site: a character was removed (its rows deleted) and linked again, while ESI's stored ETag for it
+     * stayed. Every fetch was then answered "unchanged", nothing was stored, and the page said "updated" over an empty list.
+     */
+    @Test
+    void aCharacterWhoseEtagOutlivedItsRowsIsFetchedInFull() {
+        var viewer = viewerFor(newSub());
+        var character = linkActive(viewer, "Linked Again");
+        esi.assetsUnchangedUntilForgotten(character.eveId(), List.of(stack(1, 34, 10), stack(2, 35, 20)));
+
+        fetcher.refresh(viewer);
+        awaitIdle(viewer);
+
+        assertThat(storedRows(character.id())).isEqualTo(2);
+        assertThat(statusOf(viewer, character.id()).phase()).isEqualTo(Phase.CURRENT);
+        assertThat(statusOf(viewer, character.id()).itemCount()).isEqualTo(2);
+        assertThat(esi.forgottenCharacters()).containsExactly(character.eveId());
+        assertThat(esi.assetsAsked()).containsExactly(character.eveId(), character.eveId());
+    }
+
+    @Test
+    void anUnchangedAnswerStaysUnchangedOnceSomethingWasStored() {
+        var viewer = viewerFor(newSub());
+        var character = linkActive(viewer, "Steady");
+        esi.assetsOf(character.eveId(), List.of(stack(1, 34, 10)));
+        fetcher.refresh(viewer);
+        awaitIdle(viewer);
+
+        esi.assetsUnchanged(character.eveId());
+        fetcher.refresh(viewer);
+        awaitIdle(viewer);
+
+        assertThat(storedRows(character.id())).isEqualTo(1);
+        assertThat(esi.forgottenCharacters()).isEmpty();
+        assertThat(esi.assetsAsked()).hasSize(2);
+    }
+
+    @Test
+    void aCharacterWithNoAssetsIsNotRetriedOnceItsEmptyListWasStored() {
+        var viewer = viewerFor(newSub());
+        var character = linkActive(viewer, "Empty Handed");
+        esi.assetsOf(character.eveId(), List.of());
+        fetcher.refresh(viewer);
+        awaitIdle(viewer);
+
+        esi.assetsUnchanged(character.eveId());
+        fetcher.refresh(viewer);
+        awaitIdle(viewer);
+
+        // an empty list that was stored counts as stored: "unchanged" afterwards is the truth, and no entry is thrown away
+        assertThat(storedRows(character.id())).isZero();
+        assertThat(esi.forgottenCharacters()).isEmpty();
+        assertThat(esi.assetsAsked()).hasSize(2);
+    }
+
     @Test
     void eachFetchReplacesTheCharactersRowsAndKeepsNoHistory() {
         var viewer = viewerFor(newSub());

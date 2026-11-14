@@ -35,6 +35,10 @@ class EsiTimeoutTest {
         @Override
         public void save(String key, Entry entry, Instant fetchedAt) {
         }
+
+        @Override
+        public void forgetPrefix(String keyPrefix) {
+        }
     };
 
     @Test

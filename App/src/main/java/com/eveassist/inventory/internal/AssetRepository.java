@@ -130,6 +130,18 @@ class AssetRepository {
                 });
     }
 
+    /**
+     * Whether stored assets were ever replaced for the character. A fetch that stores a list, even an empty one, records the
+     * time, so "never" means that every fetch so far was answered "unchanged" and nothing was ever stored.
+     */
+    boolean everStored(UUID characterId) {
+        return jdbc.sql("""
+                SELECT EXISTS (SELECT 1 FROM character_fetch
+                               WHERE character_id = :id AND kind = :kind AND changed_at IS NOT NULL)
+                """)
+                .param("id", characterId).param("kind", KIND).query(Boolean.class).single();
+    }
+
     /** ESI said the stored copy is still current. */
     void recordUnchanged(UUID characterId, Instant now) {
         var count = jdbc.sql("SELECT count(*) FROM character_asset WHERE character_id = :id")

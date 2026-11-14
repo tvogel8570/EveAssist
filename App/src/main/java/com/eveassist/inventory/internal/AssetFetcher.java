@@ -142,6 +142,14 @@ public class AssetFetcher {
         EsiResult<List<com.eveassist.esi.CharacterAsset>> result;
         try {
             result = esi.characterAssets(character.eveCharacterId());
+            if (result.outcome() == EsiResult.Outcome.UNCHANGED && !assets.everStored(character.id())) {
+                // "Unchanged since" means nothing without a stored copy. Here every answer so far was "unchanged" and nothing was ever
+                // stored, so ESI was answering for an ETag that outlived the rows (a removed character linked again, a restored
+                // database). Forget it, and ask for the whole list.
+                log.info("A character's assets were reported unchanged, but none were ever stored: asking for the whole list");
+                esi.forgetCharacter(character.eveCharacterId());
+                result = esi.characterAssets(character.eveCharacterId());
+            }
         } catch (RuntimeException e) {
             log.warn("Fetching the assets of a character failed: {}", e.getClass().getSimpleName());
             try {

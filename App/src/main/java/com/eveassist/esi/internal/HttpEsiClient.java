@@ -126,6 +126,17 @@ class HttpEsiClient implements EsiClient {
     }
 
     @Override
+    public void forgetCharacter(long eveCharacterId) {
+        // the trailing slash keeps characters/123/ from matching characters/1234/
+        cache.forgetPrefix("characters/%d/".formatted(eveCharacterId));
+    }
+
+    @Override
+    public void forgetCorporation(long eveCorporationId) {
+        cache.forgetPrefix("corporations/%d/".formatted(eveCorporationId));
+    }
+
+    @Override
     public EsiResult<java.util.Set<String>> characterRoles(long eveCharacterId) {
         return object(CHARACTER_DETAIL_GROUP, "/characters/%d/roles".formatted(eveCharacterId),
                 new Auth(eveCharacterId, ROLES_SCOPE), EsiRoles.class)

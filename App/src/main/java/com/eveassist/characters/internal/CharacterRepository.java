@@ -168,6 +168,18 @@ class CharacterRepository {
                 .optional();
     }
 
+    /** The EVE id of one of the owner's characters, whether or not it still has a token. */
+    Optional<Long> findOwnedEveId(AccountId owner, UUID publicId) {
+        return jdbc.sql("SELECT eve_character_id FROM character WHERE public_id = :id AND owner_account_id = :owner")
+                .param("id", publicId).param("owner", owner.value()).query(Long.class).optional();
+    }
+
+    /** The EVE ids of all the owner's characters, with or without a token, for forgetting what ESI said about them. */
+    List<Long> eveIdsOf(AccountId owner) {
+        return jdbc.sql("SELECT eve_character_id FROM character WHERE owner_account_id = :owner")
+                .param("owner", owner.value()).query(Long.class).list();
+    }
+
     /** Every stored token of the owner's characters, for revoking them all when the account is deleted. */
     List<OwnedToken> tokensOf(AccountId owner) {
         return jdbc.sql("""

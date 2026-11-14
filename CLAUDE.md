@@ -135,5 +135,5 @@ Decided with the developer on 2026-11-08, corrected on 2026-11-12 after reading 
   PR links point at commits that are not on `main`, and the next release conflicts. Feature PRs into `development` are
   a separate choice from this one.
 - Build the release images from the tip of `development` after verify, and do not rewrite history afterwards: the footer shows the commit
-  id, and the id must stay a commit that exists on GitHub (see `documentation/runbooks/update-deployment.md`, step 3).
+  id, and the id must stay a commit that exists on GitHub (see `documentation/runbooks/update-deployment.md`, section 2).
 

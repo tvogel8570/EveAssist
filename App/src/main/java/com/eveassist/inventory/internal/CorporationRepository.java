@@ -221,6 +221,15 @@ class CorporationRepository {
     }
 
     /** ESI said the stored copy is still current. */
+    /** As for a character's assets: whether a list was ever stored. "Never" means every fetch was answered "unchanged". */
+    boolean everStored(UUID corporationId) {
+        return jdbc.sql("""
+                SELECT EXISTS (SELECT 1 FROM corporation_fetch
+                               WHERE corporation_id = :id AND kind = :kind AND changed_at IS NOT NULL)
+                """)
+                .param("id", corporationId).param("kind", KIND).query(Boolean.class).single();
+    }
+
     void recordUnchanged(UUID corporationId, Instant now) {
         var count = jdbc.sql("SELECT count(*) FROM corporation_asset WHERE corporation_id = :id")
                 .param("id", corporationId).query(Integer.class).single();

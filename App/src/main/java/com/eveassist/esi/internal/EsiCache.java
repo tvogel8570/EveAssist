@@ -12,4 +12,7 @@ interface EsiCache {
     Optional<Entry> find(String key);
 
     void save(String key, Entry entry, Instant fetchedAt);
+
+    /** Forgets every entry whose key starts with the prefix, so that the next call for it is made in full. */
+    void forgetPrefix(String keyPrefix);
 }

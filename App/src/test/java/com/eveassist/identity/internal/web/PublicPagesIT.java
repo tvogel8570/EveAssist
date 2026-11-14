@@ -40,6 +40,15 @@ class PublicPagesIT extends IntegrationTest {
     }
 
     @Test
+    void thePrivacyPolicySaysWhenAndHowTheOperatorLooksAtDataForSupport() throws Exception {
+        mvc.perform(get("/privacy"))
+                .andExpect(content().string(containsString("id=\"support\"")))
+                .andExpect(content().string(containsString("the refresh tokens and the sign-in sessions")))
+                .andExpect(content().string(containsString("It cannot change or delete accounts, characters or plans")))
+                .andExpect(content().string(containsString("recorded in AWS's")));
+    }
+
+    @Test
     void securityTxtIsPlainTextWithAContactAndAnExpiry() throws Exception {
         mvc.perform(get("/.well-known/security.txt"))
                 .andExpect(status().isOk())

@@ -37,6 +37,10 @@ public class TestEsi implements EsiClient {
         itemsAsked.clear();
         assets.clear();
         assetsAsked.clear();
+        staleAssets.clear();
+        staleCorporationAssets.clear();
+        forgottenCharacters.clear();
+        forgottenCorporations.clear();
         structures.clear();
         structuresAsked.clear();
         corporationOf.clear();
@@ -73,6 +77,32 @@ public class TestEsi implements EsiClient {
     /** ESI answers that the stored copy is still current, as it does before the cache time is over. */
     public void assetsUnchanged(long eveCharacterId) {
         assets.put(eveCharacterId, EsiResult.unchanged(Instant.now().plusSeconds(3600)));
+    }
+
+    private final Map<Long, List<CharacterAsset>> staleAssets = new ConcurrentHashMap<>();
+    private final List<Long> forgottenCharacters = new CopyOnWriteArrayList<>();
+
+    /**
+     * ESI answers "unchanged" for the character's assets, as it does for a request that carries an old ETag, until the stored entry
+     * is forgotten; then it answers with the list given here. This is the situation after a character is removed and linked again.
+     */
+    public void assetsUnchangedUntilForgotten(long eveCharacterId, List<CharacterAsset> listAfterForgetting) {
+        staleAssets.put(eveCharacterId, List.copyOf(listAfterForgetting));
+        assets.put(eveCharacterId, EsiResult.unchanged(Instant.now().plusSeconds(3600)));
+    }
+
+    @Override
+    public void forgetCharacter(long eveCharacterId) {
+        forgottenCharacters.add(eveCharacterId);
+        var fresh = staleAssets.remove(eveCharacterId);
+        if (fresh != null) {
+            assets.put(eveCharacterId, EsiResult.updated(fresh, Instant.now().plusSeconds(3600)));
+        }
+    }
+
+    /** The characters whose stored ESI entries were forgotten since the test began, in the order forgotten. */
+    public List<Long> forgottenCharacters() {
+        return List.copyOf(forgottenCharacters);
     }
 
     public void failAssets(long eveCharacterId, String problem) {
@@ -157,6 +187,28 @@ public class TestEsi implements EsiClient {
 
     public void corporationAssetsUnchanged(long corporationId) {
         corporationAssets.put(corporationId, EsiResult.unchanged(Instant.now().plusSeconds(3600)));
+    }
+
+    private final Map<Long, List<CharacterAsset>> staleCorporationAssets = new ConcurrentHashMap<>();
+    private final List<Long> forgottenCorporations = new CopyOnWriteArrayList<>();
+
+    /** As {@link #assetsUnchangedUntilForgotten}, for a corporation's assets. */
+    public void corporationAssetsUnchangedUntilForgotten(long corporationId, List<CharacterAsset> listAfterForgetting) {
+        staleCorporationAssets.put(corporationId, List.copyOf(listAfterForgetting));
+        corporationAssets.put(corporationId, EsiResult.unchanged(Instant.now().plusSeconds(3600)));
+    }
+
+    @Override
+    public void forgetCorporation(long eveCorporationId) {
+        forgottenCorporations.add(eveCorporationId);
+        var fresh = staleCorporationAssets.remove(eveCorporationId);
+        if (fresh != null) {
+            corporationAssets.put(eveCorporationId, EsiResult.updated(fresh, Instant.now().plusSeconds(3600)));
+        }
+    }
+
+    public List<Long> forgottenCorporations() {
+        return List.copyOf(forgottenCorporations);
     }
 
     public void failCorporationAssets(long corporationId, String problem) {

@@ -28,13 +28,15 @@ public class CharacterService {
     private final TokenRevoker revoker;
     private final CharacterAccessTokens accessTokens;
     private final MembershipRepository memberships;
+    private final com.eveassist.esi.EsiClient esi;
 
     /** Scopes that give nothing to a character that is not a Director of its corporation. */
     private static final Set<String> DIRECTOR_ONLY = Set.of("esi-assets.read_corporation_assets.v1",
             "esi-corporations.read_divisions.v1");
 
     CharacterService(CharacterRepository characters, FeatureRepository features, TokenRevoker revoker,
-            CharacterAccessTokens accessTokens, MembershipRepository memberships) {
+            CharacterAccessTokens accessTokens, MembershipRepository memberships, com.eveassist.esi.EsiClient esi) {
+        this.esi = esi;
         this.memberships = memberships;
         this.accessTokens = accessTokens;
         this.characters = characters;
@@ -95,9 +97,13 @@ public class CharacterService {
      */
     public AccessResult remove(Viewer viewer, UUID characterId) {
         var stored = characters.findOwnedToken(viewer.accountId(), characterId);
+        var eveId = characters.findOwnedEveId(viewer.accountId(), characterId);
         if (!characters.remove(viewer.accountId(), characterId)) {
             return AccessResult.NOT_FOUND;
         }
+        // The stored rows went with the character, so what ESI said about them must go too: linked again, the character would
+        // otherwise be told "unchanged" (a 304 for the old ETag) about assets that are no longer here.
+        eveId.ifPresent(esi::forgetCharacter);
         stored.ifPresent(token -> accessTokens.forget(token.eveCharacterId()));
         return stored.map(token -> revoker.revoke(token.eveCharacterId(), token.token())
                 ? AccessResult.DONE : AccessResult.DONE_NOT_REVOKED).orElse(AccessResult.DONE);

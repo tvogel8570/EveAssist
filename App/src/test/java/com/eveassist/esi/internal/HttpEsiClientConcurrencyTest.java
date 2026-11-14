@@ -59,6 +59,11 @@ class HttpEsiClientConcurrencyTest {
             public synchronized void save(String key, Entry entry, Instant fetchedAt) {
                 cache.put(key, entry);
             }
+
+            @Override
+            public synchronized void forgetPrefix(String keyPrefix) {
+                cache.keySet().removeIf(key -> key.startsWith(keyPrefix));
+            }
         }, new EsiLimiter(Clock.systemUTC(), millis -> { }), Clock.systemUTC());
 
         var results = new ArrayList<java.util.concurrent.Future<EsiResult<?>>>();
