@@ -128,6 +128,30 @@ class ProdProfileIT extends IntegrationTest {
     }
 
     @Test
+    void metricsAreOnTheManagementPortWithoutSignIn() throws Exception {
+        var response = get(managementPort, "/actuator/metrics");
+
+        assertThat(response.statusCode()).isEqualTo(200);
+        assertThat(response.body()).contains("hikaricp.connections.pending");
+        assertThat(get(managementPort, "/actuator/metrics/hikaricp.connections.pending").statusCode()).isEqualTo(200);
+    }
+
+    @Test
+    void metricsAreStillForAnAdminOnTheAppPort() throws Exception {
+        var response = get(appPort, "/actuator/metrics/hikaricp.connections.pending");
+
+        // the page chain sends a visitor without a session to the sign-in; nothing is served
+        assertThat(response.statusCode()).isEqualTo(302);
+        assertThat(response.body()).doesNotContain("measurements");
+    }
+
+    @Test
+    void nothingElseOfTheActuatorIsOpenOnTheManagementPort() throws Exception {
+        assertThat(get(managementPort, "/actuator/env").statusCode()).isIn(401, 403, 404);
+        assertThat(get(managementPort, "/privacy").statusCode()).isIn(401, 403, 404);
+    }
+
+    @Test
     void healthIsNotOnTheAppPort() throws Exception {
         var response = get(appPort, "/actuator/health");
 
