@@ -10,6 +10,8 @@ Alpine, Spring's `RestClient` against ESI, the Fuzzwork SDE dump), but it is not
 Each decision says what was chosen and why. **Agreed** decisions were made with the developer. **Proposed** decisions
 follow from the agreed ones or are technical details. They stand unless the developer changes them, and they are listed
 for review under [Open questions](#open-questions).
+**Potential** ideas are options the developer has seen and not decided on: they are not proposed decisions and not in the open
+questions, and nothing depends on them.
 
 ## Files
 
@@ -20,6 +22,7 @@ for review under [Open questions](#open-questions).
 - [Data and ownership](data.md): database layout, ownership and sharing, SDE import and versioning
 - [External REST API](api.md): the API for outside clients and automation, designed now and built later
 - [Deployment and operations](deployment.md): dev, prod in AWS, backups, secrets and monitoring
+- [Automating the deployment](deployment-pipeline.md): options for a deployment pipeline, **potential** (not proposed, nothing depends on them)
 - [Log context and correlation](logging.md): MDC attributes and correlation ids for logs (proposed, a later work stream)
 - [Code structure](code-structure.md): Spring Modulith for module boundaries, hexagonal layering inside modules with real domain logic
 
