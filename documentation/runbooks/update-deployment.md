@@ -98,9 +98,11 @@ names the profile (`--profile EveAssist-admin`), so it does not matter which pro
    ./Infrastructure/prod/ops-env-values.sh  # no lines with DIFFER
    ```
 3. Load it into this shell, then check that the values this release needs are set (a value is never printed, so the check is safe to paste
-   into a ticket). Do this in the same shell you use for the rest of the runbook; a new terminal starts without them.
+   into a ticket). Do this in the same shell you use for the rest of the runbook; a new terminal starts without them. The block also defines `hl`, which the later
+   blocks use to print, in yellow, a line you must check by eye (the scripts color their own results: green for a pass, red for a failure; set `NO_COLOR=1` to turn that off).
    ```bash
    set -a; . Infrastructure/prod/ops.env; set +a
+   hl() { if [ -t 1 ]; then printf '\033[1;33m%s\033[0m\n' "$*"; else printf '%s\n' "$*"; fi; }   # a line to check by eye: bold yellow on a terminal
    for v in EVEASSIST_ACCOUNT_ID EVEASSIST_INSTANCE_ID EVEASSIST_RDS_HOST EVEASSIST_RDS_SG; do
      [ -n "${!v}" ] && echo "ok       $v" || echo "MISSING  $v"
    done
@@ -159,7 +161,8 @@ names the profile (`--profile EveAssist-admin`), so it does not matter which pro
    docker image inspect --format '{{json .Config.Env}}' $ECR/eveassist-app:$VERSION-$COMMIT | tr ',' '\n' | grep GIT_COMMIT
    CID=$(docker create $ECR/eveassist-app:$VERSION-$COMMIT)
    docker cp $CID:/app/app.jar /tmp/image-app.jar && docker rm $CID
-   sha256sum /tmp/image-app.jar App/target/app-*.jar        # the two hashes must match
+   sha256sum /tmp/image-app.jar App/target/app-*.jar
+   hl "the two hashes above must be the same"
    ```
    Only if you built Keycloak:
    ```bash
@@ -225,7 +228,7 @@ that way).
    aws rds wait db-instance-available --db-instance-identifier eveassist-rehearsal --profile EveAssist-admin
    aws rds describe-db-instances --profile EveAssist-admin --db-instance-identifier eveassist-rehearsal \
      --query 'DBInstances[0].[Endpoint.Address,PubliclyAccessible,VpcSecurityGroups[0].VpcSecurityGroupId]' --output text
-   echo "the security group must be: $EVEASSIST_RDS_SG"
+   hl "the security group must be: $EVEASSIST_RDS_SG"
 
    # The command for step 2, printed as a comment with its two arguments filled in: the endpoint of the rehearsal database, and the app
    # image of this release by digest (needs ECR, VERSION and COMMIT from section 2). Copy the line, remove "# " and run it on the EC2 computer.
@@ -262,7 +265,7 @@ that way).
      --skip-final-snapshot --delete-automated-backups \
      --query 'DBInstance.[DBInstanceIdentifier,DBInstanceStatus]' --output text
    aws rds wait db-instance-deleted --db-instance-identifier eveassist-rehearsal --profile EveAssist-admin
-   # each of these must show nothing for eveassist-rehearsal
+   hl "each of these must show nothing for eveassist-rehearsal"
    aws rds describe-db-instances --profile EveAssist-admin --no-cli-pager --query 'DBInstances[].DBInstanceIdentifier' --output text
    aws rds describe-db-snapshots --profile EveAssist-admin --no-cli-pager --query 'DBSnapshots[].DBSnapshotIdentifier' --output text
    aws rds describe-db-instance-automated-backups --profile EveAssist-admin --no-cli-pager --query 'DBInstanceAutomatedBackups[].DBInstanceIdentifier' --output text
