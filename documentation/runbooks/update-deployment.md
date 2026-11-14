@@ -98,17 +98,19 @@ names the profile (`--profile EveAssist-admin`), so it does not matter which pro
    ./Infrastructure/prod/ops-env-values.sh  # no lines with DIFFER
    ```
 3. Load it into this shell, then check that the values this release needs are set (a value is never printed, so the check is safe to paste
-   into a ticket). Do this in the same shell you use for the rest of the runbook; a new terminal starts without them. The block also defines `hl`, which the later
-   blocks use to print, in yellow, a line you must check by eye (the scripts color their own results: green for a pass, red for a failure; set `NO_COLOR=1` to turn that off).
+   into a ticket). Do this in the same shell you use for the rest of the runbook; a new terminal starts without them. The block also defines three printing helpers for the later
+   blocks: `hl` (yellow, a line you must check by eye or a decision), `good` (green) and `bad` (red). The scripts color their own results the same way.
+   Nothing is colored when the output is not a terminal. A block that does not call one of them prints plain text, as `echo` does.
    ```bash
    set -a; . Infrastructure/prod/ops.env; set +a
-   hl() { if [ -t 1 ]; then printf '\033[1;33m%s\033[0m\n' "$*"; else printf '%s\n' "$*"; fi; }   # a line to check by eye: bold yellow on a terminal
+   c() { if [ -t 1 ]; then printf '\033[1;%sm%s\033[0m\n' "$1" "${*:2}"; else printf '%s\n' "${*:2}"; fi; }   # bold color on a terminal only
+   hl() { c 33 "$@"; }; good() { c 32 "$@"; }; bad() { c 31 "$@"; }      # yellow: check by eye, green: fine, red: wrong
    for v in EVEASSIST_ACCOUNT_ID EVEASSIST_INSTANCE_ID EVEASSIST_RDS_HOST EVEASSIST_RDS_SG; do
-     [ -n "${!v}" ] && echo "ok       $v" || echo "MISSING  $v"
+     [ -n "${!v}" ] && good "ok       $v" || bad "MISSING  $v"
    done
    aws sts get-caller-identity --profile EveAssist-admin --query Account --output text | grep -qx "$EVEASSIST_ACCOUNT_ID" \
-     && echo "ok       signed in to the account in ops.env" \
-     || echo "WRONG ACCOUNT or not signed in: aws sso login --profile EveAssist-admin --use-device-code"
+     && good "ok       signed in to the account in ops.env" \
+     || bad "WRONG ACCOUNT or not signed in: aws sso login --profile EveAssist-admin --use-device-code"
    ```
 4. CI builds, tests and pushes the images to ECR **[to build]** (how far that could go: [Automating the deployment](../architecture/deployment-pipeline.md), potential). Until then, build locally for the *EC2 computer*'s CPU, tagging
    `<version>-<short commit>` (ECR tags are immutable, so a tag can be pushed only once):
@@ -142,9 +144,9 @@ names the profile (`--profile EveAssist-admin`), so it does not matter which pro
    echo "newest Keycloak image in ECR: $KC_LAST (built from $KC_COMMIT)"
    git cat-file -e "$KC_COMMIT^{commit}" || echo "commit $KC_COMMIT is not in this clone: run git fetch, then repeat"
    if git diff --quiet "$KC_COMMIT" HEAD -- $KC_PATHS; then
-     KC_BUILD=no;  echo "Keycloak unchanged since $KC_COMMIT: do NOT build it"
+     KC_BUILD=no;  hl "Keycloak unchanged since $KC_COMMIT: do NOT build it"
    else
-     KC_BUILD=yes; echo "Keycloak CHANGED since $KC_COMMIT: build it"; git diff --stat "$KC_COMMIT" HEAD -- $KC_PATHS
+     KC_BUILD=yes; hl "Keycloak CHANGED since $KC_COMMIT: build it"; git diff --stat "$KC_COMMIT" HEAD -- $KC_PATHS
    fi
    ```
    Build it only when the check said `KC_BUILD=yes` (a changed realm file also needs [keycloak-realm.md](keycloak-realm.md), because the
