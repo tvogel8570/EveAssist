@@ -72,7 +72,14 @@ Your shell history (`~/.bash_history`) shows the last commands you ran. To keep 
       build in section 2. Stop on any write scope or anything that looks like an ad or a payment, because the license and the public commitment
       forbid them. It is not a legal review: take a recommendation that touches a legal duty to the developer.
 - [ ] The result is noted for the deploy log (section 7): "privacy review: no change needed", or the pull request that changed the policy.
-- [ ] Release notes written (what changed, any sign-out, any downtime).
+- [ ] Release notes written (what changed, any sign-out, any downtime). The pull requests since the last release are a start: each merge commit on
+      `development` carries the number and the title of its pull request.
+```bash
+git fetch origin --tags
+PREV=$(git tag --list 'v*' --sort=-v:refname | head -1)
+git log --merges --first-parent --format='%s%x09%b' $PREV..origin/development \
+  | sed -E 's/^Merge pull request (#[0-9]+) from [^[:space:]]+[[:space:]]+/\1 /'
+```
 
 ## 2. Build and publish the image
 
@@ -91,15 +98,19 @@ names the profile (`--profile EveAssist-admin`), so it does not matter which pro
    ./Infrastructure/prod/ops-env-values.sh  # no lines with DIFFER
    ```
 3. Load it into this shell, then check that the values this release needs are set (a value is never printed, so the check is safe to paste
-   into a ticket). Do this in the same shell you use for the rest of the runbook; a new terminal starts without them.
+   into a ticket). Do this in the same shell you use for the rest of the runbook; a new terminal starts without them. The block also defines three printing helpers for the later
+   blocks: `hl` (yellow, a line you must check by eye or a decision), `good` (green) and `bad` (red). The scripts color their own results the same way.
+   Nothing is colored when the output is not a terminal. A block that does not call one of them prints plain text, as `echo` does.
    ```bash
    set -a; . Infrastructure/prod/ops.env; set +a
+   c() { if [ -t 1 ]; then printf '\033[1;%sm%s\033[0m\n' "$1" "${*:2}"; else printf '%s\n' "${*:2}"; fi; }   # bold color on a terminal only
+   hl() { c 33 "$@"; }; good() { c 32 "$@"; }; bad() { c 31 "$@"; }      # yellow: check by eye, green: fine, red: wrong
    for v in EVEASSIST_ACCOUNT_ID EVEASSIST_INSTANCE_ID EVEASSIST_RDS_HOST EVEASSIST_RDS_SG; do
-     [ -n "${!v}" ] && echo "ok       $v" || echo "MISSING  $v"
+     [ -n "${!v}" ] && good "ok       $v" || bad "MISSING  $v"
    done
    aws sts get-caller-identity --profile EveAssist-admin --query Account --output text | grep -qx "$EVEASSIST_ACCOUNT_ID" \
-     && echo "ok       signed in to the account in ops.env" \
-     || echo "WRONG ACCOUNT or not signed in: aws sso login --profile EveAssist-admin --use-device-code"
+     && good "ok       signed in to the account in ops.env" \
+     || bad "WRONG ACCOUNT or not signed in: aws sso login --profile EveAssist-admin --use-device-code"
    ```
 4. CI builds, tests and pushes the images to ECR **[to build]** (how far that could go: [Automating the deployment](../architecture/deployment-pipeline.md), potential). Until then, build locally for the *EC2 computer*'s CPU, tagging
    `<version>-<short commit>` (ECR tags are immutable, so a tag can be pushed only once):
@@ -133,9 +144,9 @@ names the profile (`--profile EveAssist-admin`), so it does not matter which pro
    echo "newest Keycloak image in ECR: $KC_LAST (built from $KC_COMMIT)"
    git cat-file -e "$KC_COMMIT^{commit}" || echo "commit $KC_COMMIT is not in this clone: run git fetch, then repeat"
    if git diff --quiet "$KC_COMMIT" HEAD -- $KC_PATHS; then
-     KC_BUILD=no;  echo "Keycloak unchanged since $KC_COMMIT: do NOT build it"
+     KC_BUILD=no;  hl "Keycloak unchanged since $KC_COMMIT: do NOT build it"
    else
-     KC_BUILD=yes; echo "Keycloak CHANGED since $KC_COMMIT: build it"; git diff --stat "$KC_COMMIT" HEAD -- $KC_PATHS
+     KC_BUILD=yes; hl "Keycloak CHANGED since $KC_COMMIT: build it"; git diff --stat "$KC_COMMIT" HEAD -- $KC_PATHS
    fi
    ```
    Build it only when the check said `KC_BUILD=yes` (a changed realm file also needs [keycloak-realm.md](keycloak-realm.md), because the
@@ -152,7 +163,8 @@ names the profile (`--profile EveAssist-admin`), so it does not matter which pro
    docker image inspect --format '{{json .Config.Env}}' $ECR/eveassist-app:$VERSION-$COMMIT | tr ',' '\n' | grep GIT_COMMIT
    CID=$(docker create $ECR/eveassist-app:$VERSION-$COMMIT)
    docker cp $CID:/app/app.jar /tmp/image-app.jar && docker rm $CID
-   sha256sum /tmp/image-app.jar App/target/app-*.jar        # the two hashes must match
+   sha256sum /tmp/image-app.jar App/target/app-*.jar
+   hl "the two hashes above must be the same"
    ```
    Only if you built Keycloak:
    ```bash
@@ -218,7 +230,7 @@ that way).
    aws rds wait db-instance-available --db-instance-identifier eveassist-rehearsal --profile EveAssist-admin
    aws rds describe-db-instances --profile EveAssist-admin --db-instance-identifier eveassist-rehearsal \
      --query 'DBInstances[0].[Endpoint.Address,PubliclyAccessible,VpcSecurityGroups[0].VpcSecurityGroupId]' --output text
-   echo "the security group must be: $EVEASSIST_RDS_SG"
+   hl "the security group must be: $EVEASSIST_RDS_SG"
 
    # The command for step 2, printed as a comment with its two arguments filled in: the endpoint of the rehearsal database, and the app
    # image of this release by digest (needs ECR, VERSION and COMMIT from section 2). Copy the line, remove "# " and run it on the EC2 computer.
@@ -255,7 +267,7 @@ that way).
      --skip-final-snapshot --delete-automated-backups \
      --query 'DBInstance.[DBInstanceIdentifier,DBInstanceStatus]' --output text
    aws rds wait db-instance-deleted --db-instance-identifier eveassist-rehearsal --profile EveAssist-admin
-   # each of these must show nothing for eveassist-rehearsal
+   hl "each of these must show nothing for eveassist-rehearsal"
    aws rds describe-db-instances --profile EveAssist-admin --no-cli-pager --query 'DBInstances[].DBInstanceIdentifier' --output text
    aws rds describe-db-snapshots --profile EveAssist-admin --no-cli-pager --query 'DBSnapshots[].DBSnapshotIdentifier' --output text
    aws rds describe-db-instance-automated-backups --profile EveAssist-admin --no-cli-pager --query 'DBInstanceAutomatedBackups[].DBInstanceIdentifier' --output text
@@ -288,10 +300,17 @@ On the *EC2 computer* (`/opt/eveassist/Infrastructure/prod`; the directory is ow
 2. Start the app. The script loads the three secrets from Secrets Manager, logs in to ECR and runs `docker compose up -d`, which
    pulls the pinned image. Do not run `docker compose` by hand in this directory: Compose needs every secret, and exporting them yourself
    is what `start.sh` exists to avoid. Flyway runs at start. Caddy is not touched, and neither is Keycloak unless you built it.
+   No `docker compose down` first, and none is wanted: `start.sh` runs `docker compose up -d`, and Compose recreates only a service whose image or settings changed
+   (here the app, whose digest is new), so the old app container stops and the new one starts, with nothing else restarted. A `down` would stop and
+   remove every container, Keycloak and Caddy included, for a longer outage. It is needed only when every service reads a changed value ("Restoring the
+   database", step 6, where Keycloak and the app both read `RDS_HOST`).
    ```bash
+   date -u '+deploy started %F %T UTC'
    sudo ./start.sh app
    # if Keycloak was built:  sudo ./start.sh app keycloak
    ```
+   The first line prints the time in UTC, for the deploy log. Write down that line, not a local time: a local clock depends on where you are, and the
+   other times on record (the AWS console, the logs, the alarms) are UTC.
 3. Follow the log until the app reports started. Any Flyway error, stop and go to "Rolling back".
    ```bash
    sudo docker logs -f eveassist-app-1
@@ -318,13 +337,13 @@ for m in hikaricp.connections.pending hikaricp.connections.active hikaricp.conne
   echo "$m: $(echo "$r" | head -1 | tr -d '\r')  $(echo "$r" | grep -o '"value":[0-9.eE+-]*' | head -1)"
 done
 ```
-      A line with `200` and a `"value"` is the answer. Anything else is not: `302` is a redirect to the sign-in (the management port needs none
-      from release 0.3.1 on; 0.3.0 answers `302`), and `404` is a metric the app does not have. To see the whole response and what the port
-      exposes:
+A line with `200` and a `"value"` is the answer. Anything else is not: `302` is a redirect to the sign-in, which the management port must not do
+(release 0.3.0 did, and 0.3.1 fixed it), and `404` is a metric the app does not have. If `200` is missing from one of the outputs of the `for`, 
+see the whole response and what the port exposes:
 ```bash
 sudo docker exec eveassist-app-1 bash -c 'exec 3<>/dev/tcp/127.0.0.1/8081 && printf "GET /actuator/metrics HTTP/1.0\r\n\r\n" >&3 && cat <&3'
 ```
-      Or through the tunnel in the initial runbook, step 9, at `http://localhost:8081/actuator/metrics/hikaricp.connections.pending`.
+Or through the tunnel in the initial runbook, step 9, at `http://localhost:8081/actuator/metrics/hikaricp.connections.pending`.
 
 ## 7. Record
 
@@ -335,23 +354,49 @@ them again to the release version and the short commit that was built).
    the images do not show, such as a live realm setting that the image's realm file lacks. Tags `v*` are protected by the GitHub ruleset
    "release tags" (no deletion, no update, no bypass): to correct a wrong tag, remove that ruleset first. Tag only a deploy that was checked, so
    that `main` never claims a release that did not run.
-   Edit the two lines marked `EDIT` before you run it (an annotation cannot be changed afterwards). The fence is not indented, because the end marker of a
-   here-document must start the line. The image name has no registry host on purpose: it
-   would carry the AWS account id into a public repository.
+   The first block writes the annotation to a file and opens `nano` on it: replace the two `<...>` lines (Keycloak, notes); the pull requests since the last release are filled in from git, each as a line starting with `- ` (git drops a line that starts with `#`), save with `Ctrl+O`
+   and `Enter`, and leave with `Ctrl+X`. When `nano` has closed, the block creates the tag, unless a placeholder (`<commit>`, `<sha256:...>` or `<anything...>`) is still in the file, which it
+   prints instead of tagging (an annotation cannot be changed afterwards). If the tag already exists (an earlier try), it says so and stops before `nano` opens. It is one `{ ... }` group, so the whole block can be pasted at once:
+   the shell reads all of it before `nano` starts, and nothing is left to be typed into the editor. The fence is not indented, because the end
+   marker of a here-document must start the line. The image name has no registry host on purpose: it would carry the AWS account id into a
+   public repository. The push is a separate block, run only after the tag shown above looks right.
 ```bash
+{
+if git rev-parse -q --verify "refs/tags/v$VERSION" > /dev/null; then
+  echo "Tag v$VERSION already exists here. Read it: git tag -n9 v$VERSION. Not pushed and wrong: git tag -d v$VERSION, then run this block again."
+else
 APP_DIGEST=$(aws ecr describe-images --profile EveAssist-admin --repository-name eveassist-app \
   --image-ids imageTag=$VERSION-$COMMIT --query 'imageDetails[0].imageDigest' --output text)
-git tag -a v$VERSION $COMMIT -F - <<ANNOTATION
+ANNOTATION=$(mktemp)
+PREV=$(git tag --list 'v*' --sort=-v:refname | grep -vx "v$VERSION" | head -1)
+PULLS=$(git log --merges --first-parent --format='%s%x09%b' $PREV..$COMMIT \
+  | sed -E 's/^Merge pull request (#[0-9]+) from [^[:space:]]+[[:space:]]+/- \1 /')
+cat > "$ANNOTATION" <<TEXT
 Release $VERSION, build $COMMIT
 App image: eveassist-app:$VERSION-$COMMIT
 App digest: $APP_DIGEST
-Keycloak: unchanged since <commit>, digest <sha256:...>     EDIT (or: its new tag and digest, if it was built)
-Notes: <anything the images do not show, or none>           EDIT
-ANNOTATION
+Keycloak: unchanged since <commit>, digest <sha256:...>
+Pull requests since $PREV:
+$PULLS
+Notes: <anything the images do not show, or none>
+TEXT
+nano "$ANNOTATION"
+if grep -nE '<(commit|sha256|anything)' "$ANNOTATION"; then
+  echo "The lines above still hold a placeholder: no tag created. Edit $ANNOTATION and run: git tag -a v$VERSION $COMMIT -F $ANNOTATION"
+else
+  git tag -a v$VERSION $COMMIT -F "$ANNOTATION" && git tag -n9 v$VERSION
+fi
+fi
+}
+```
+
+
+```bash
 git push origin v$VERSION
 ```
 2. Release to `main` as CLAUDE.md describes: a pull request from `development` with a merge commit, then a pull request from `main` back to `development`.
-3. Append to `documentation/runbooks/deploy-log.md`: date, version, image digest, snapshot id, the result of the privacy review (section 1), anything surprising.
+3. Append to `documentation/runbooks/deploy-log.md`: date, version, image digest, snapshot id, the deploy time in UTC (the line printed in section 5), the result of the
+   privacy review (section 1), anything surprising.
 4. Tell testers what changed, and if they must re-authorize characters.
 5. Delete the *snapshot* when the release is accepted, and within 7 days at the latest. **A manual *snapshot* never expires.** It keeps every
    account that exists on the day, including accounts users delete later, and the privacy policy promises that deleted data leaves the backups
