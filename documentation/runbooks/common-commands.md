@@ -182,6 +182,14 @@ The stack's directory (read from the running Caddy container; it is `/opt/eveass
 D=$(sudo docker inspect eveassist-caddy-1 --format '{{index .Config.Labels "com.docker.compose.project.working_dir"}}'); echo "$D"; cd "$D"
 ```
 
+What is running, with the image each container runs (the digest, so you can compare it with the one you deployed) and how long it has been up.
+Do not use `docker compose ps` for this: in the stack's directory Compose reads `compose.yaml` and stops with "required variable ... is missing a
+value" (for example `AWS_DEFAULT_REGION`), because `start.sh` is what exports them. `docker ps` does not read `compose.yaml`:
+
+```bash
+sudo docker ps --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}'
+```
+
 Remove the stack's containers and network, keeping the volumes (certificates). Run it from a directory with no Compose file: inside
 the stack's directory Compose reads `compose.yaml` and refuses to run without every secret, and `sudo` does not pass your exported
 variables. Never add `-v` (it deletes the certificates, and Let's Encrypt limits how many it issues):

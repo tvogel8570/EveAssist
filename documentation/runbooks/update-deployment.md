@@ -72,7 +72,14 @@ Your shell history (`~/.bash_history`) shows the last commands you ran. To keep 
       build in section 2. Stop on any write scope or anything that looks like an ad or a payment, because the license and the public commitment
       forbid them. It is not a legal review: take a recommendation that touches a legal duty to the developer.
 - [ ] The result is noted for the deploy log (section 7): "privacy review: no change needed", or the pull request that changed the policy.
-- [ ] Release notes written (what changed, any sign-out, any downtime).
+- [ ] Release notes written (what changed, any sign-out, any downtime). The pull requests since the last release are a start: each merge commit on
+      `development` carries the number and the title of its pull request.
+```bash
+git fetch origin --tags
+PREV=$(git tag --list 'v*' --sort=-v:refname | head -1)
+git log --merges --first-parent --format='%s%x09%b' $PREV..origin/development \
+  | sed -E 's/^Merge pull request (#[0-9]+) from [^[:space:]]+[[:space:]]+/\1 /'
+```
 
 ## 2. Build and publish the image
 
@@ -288,6 +295,10 @@ On the *EC2 computer* (`/opt/eveassist/Infrastructure/prod`; the directory is ow
 2. Start the app. The script loads the three secrets from Secrets Manager, logs in to ECR and runs `docker compose up -d`, which
    pulls the pinned image. Do not run `docker compose` by hand in this directory: Compose needs every secret, and exporting them yourself
    is what `start.sh` exists to avoid. Flyway runs at start. Caddy is not touched, and neither is Keycloak unless you built it.
+   No `docker compose down` first, and none is wanted: `start.sh` runs `docker compose up -d`, and Compose recreates only a service whose image or settings changed
+   (here the app, whose digest is new), so the old app container stops and the new one starts, with nothing else restarted. A `down` would stop and
+   remove every container, Keycloak and Caddy included, for a longer outage. It is needed only when every service reads a changed value ("Restoring the
+   database", step 6, where Keycloak and the app both read `RDS_HOST`).
    ```bash
    sudo ./start.sh app
    # if Keycloak was built:  sudo ./start.sh app keycloak
@@ -318,13 +329,13 @@ for m in hikaricp.connections.pending hikaricp.connections.active hikaricp.conne
   echo "$m: $(echo "$r" | head -1 | tr -d '\r')  $(echo "$r" | grep -o '"value":[0-9.eE+-]*' | head -1)"
 done
 ```
-      A line with `200` and a `"value"` is the answer. Anything else is not: `302` is a redirect to the sign-in (the management port needs none
-      from release 0.3.1 on; 0.3.0 answers `302`), and `404` is a metric the app does not have. To see the whole response and what the port
-      exposes:
+A line with `200` and a `"value"` is the answer. Anything else is not: `302` is a redirect to the sign-in, which the management port must not do
+(release 0.3.0 did, and 0.3.1 fixed it), and `404` is a metric the app does not have. If `200` is missing from one of the outputs of the `for`, 
+see the whole response and what the port exposes:
 ```bash
 sudo docker exec eveassist-app-1 bash -c 'exec 3<>/dev/tcp/127.0.0.1/8081 && printf "GET /actuator/metrics HTTP/1.0\r\n\r\n" >&3 && cat <&3'
 ```
-      Or through the tunnel in the initial runbook, step 9, at `http://localhost:8081/actuator/metrics/hikaricp.connections.pending`.
+Or through the tunnel in the initial runbook, step 9, at `http://localhost:8081/actuator/metrics/hikaricp.connections.pending`.
 
 ## 7. Record
 
@@ -335,19 +346,44 @@ them again to the release version and the short commit that was built).
    the images do not show, such as a live realm setting that the image's realm file lacks. Tags `v*` are protected by the GitHub ruleset
    "release tags" (no deletion, no update, no bypass): to correct a wrong tag, remove that ruleset first. Tag only a deploy that was checked, so
    that `main` never claims a release that did not run.
-   Edit the two lines marked `EDIT` before you run it (an annotation cannot be changed afterwards). The fence is not indented, because the end marker of a
-   here-document must start the line. The image name has no registry host on purpose: it
-   would carry the AWS account id into a public repository.
+   The first block writes the annotation to a file and opens `nano` on it: replace the two `<...>` lines (Keycloak, notes); the pull requests since the last release are filled in from git, each as a line starting with `- ` (git drops a line that starts with `#`), save with `Ctrl+O`
+   and `Enter`, and leave with `Ctrl+X`. When `nano` has closed, the block creates the tag, unless a placeholder (`<commit>`, `<sha256:...>` or `<anything...>`) is still in the file, which it
+   prints instead of tagging (an annotation cannot be changed afterwards). If the tag already exists (an earlier try), it says so and stops before `nano` opens. It is one `{ ... }` group, so the whole block can be pasted at once:
+   the shell reads all of it before `nano` starts, and nothing is left to be typed into the editor. The fence is not indented, because the end
+   marker of a here-document must start the line. The image name has no registry host on purpose: it would carry the AWS account id into a
+   public repository. The push is a separate block, run only after the tag shown above looks right.
 ```bash
+{
+if git rev-parse -q --verify "refs/tags/v$VERSION" > /dev/null; then
+  echo "Tag v$VERSION already exists here. Read it: git tag -n9 v$VERSION. Not pushed and wrong: git tag -d v$VERSION, then run this block again."
+else
 APP_DIGEST=$(aws ecr describe-images --profile EveAssist-admin --repository-name eveassist-app \
   --image-ids imageTag=$VERSION-$COMMIT --query 'imageDetails[0].imageDigest' --output text)
-git tag -a v$VERSION $COMMIT -F - <<ANNOTATION
+ANNOTATION=$(mktemp)
+PREV=$(git tag --list 'v*' --sort=-v:refname | grep -vx "v$VERSION" | head -1)
+PULLS=$(git log --merges --first-parent --format='%s%x09%b' $PREV..$COMMIT \
+  | sed -E 's/^Merge pull request (#[0-9]+) from [^[:space:]]+[[:space:]]+/- \1 /')
+cat > "$ANNOTATION" <<TEXT
 Release $VERSION, build $COMMIT
 App image: eveassist-app:$VERSION-$COMMIT
 App digest: $APP_DIGEST
-Keycloak: unchanged since <commit>, digest <sha256:...>     EDIT (or: its new tag and digest, if it was built)
-Notes: <anything the images do not show, or none>           EDIT
-ANNOTATION
+Keycloak: unchanged since <commit>, digest <sha256:...>
+Pull requests since $PREV:
+$PULLS
+Notes: <anything the images do not show, or none>
+TEXT
+nano "$ANNOTATION"
+if grep -nE '<(commit|sha256|anything)' "$ANNOTATION"; then
+  echo "The lines above still hold a placeholder: no tag created. Edit $ANNOTATION and run: git tag -a v$VERSION $COMMIT -F $ANNOTATION"
+else
+  git tag -a v$VERSION $COMMIT -F "$ANNOTATION" && git tag -n9 v$VERSION
+fi
+fi
+}
+```
+
+
+```bash
 git push origin v$VERSION
 ```
 2. Release to `main` as CLAUDE.md describes: a pull request from `development` with a merge commit, then a pull request from `main` back to `development`.
