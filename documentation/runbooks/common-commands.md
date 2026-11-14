@@ -104,6 +104,28 @@ done
 Today the repositories are `eveassist-app` and `eveassist-keycloak`, directly under the registry host
 `$EVEASSIST_ACCOUNT_ID.dkr.ecr.us-west-2.amazonaws.com`.
 
+### RDS snapshots
+
+List the manual snapshots (the ones that never expire) with their status, creation time and the delete-by date from their `purpose` tag:
+
+```bash
+aws rds describe-db-snapshots --profile EveAssist-admin --no-cli-pager --snapshot-type manual \
+  --query 'DBSnapshots[].[DBSnapshotIdentifier,Status,SnapshotCreateTime,TagList[?Key==`purpose`]|[0].Value]' --output text
+```
+
+Delete one. Name it in the first line (edit the name there; do not paste `<...>`, the shell would read it as a redirect), check that it is the
+one you mean, then delete it. A deleted snapshot cannot be brought back, and nothing else holds that copy of the data:
+
+```bash
+SNAPSHOT=pre-vX-Y-Z
+aws rds describe-db-snapshots --profile EveAssist-admin --no-cli-pager --db-snapshot-identifier "$SNAPSHOT" \
+  --query 'DBSnapshots[].[DBSnapshotIdentifier,Status,SnapshotCreateTime]' --output text
+aws rds delete-db-snapshot --profile EveAssist-admin --no-cli-pager --db-snapshot-identifier "$SNAPSHOT" \
+  --query 'DBSnapshot.[DBSnapshotIdentifier,Status]' --output text
+```
+
+Automated snapshots (the 7 days of daily backups) are not listed by the first command and cannot be deleted this way; they expire by themselves.
+
 ## Alarms
 
 Run on the dev machine. The alarms are in `us-west-2`, except the site-down alarm, which is in `us-east-1` (Route 53 health metrics exist
