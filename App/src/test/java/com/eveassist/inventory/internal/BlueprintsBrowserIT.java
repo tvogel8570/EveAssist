@@ -126,6 +126,30 @@ class BlueprintsBrowserIT extends IntegrationTest {
     }
 
     @Test
+    void theBackButtonRestoresTheWholePageWithoutAReloadFirst() {
+        page.navigate(url("/blueprints"));
+        assertThat(page.locator("[data-blueprint-link]").first()).isVisible();
+        page.locator("select[name=kind]").selectOption("BPC");
+        assertThat(page.locator("#blueprint-results")).containsText("No blueprints match");
+        assertThat(page).hasURL(Pattern.compile(".*kind=BPC.*"));
+
+        // htmx puts the earlier step back itself, by asking the server for its address: the answer must be the page
+        page.goBack();
+
+        assertThat(page.locator("[data-blueprint-link]").first()).isVisible();
+        assertThat(page.locator("select[name=kind]")).hasValue("");
+        assertThat(page.locator("#nav-blueprints")).isVisible();
+        assertThat(page.locator("#blueprint-filters")).isVisible();
+        assertThat(page.locator("#blueprint-status")).isVisible();
+
+        page.goForward();
+
+        assertThat(page.locator("select[name=kind]")).hasValue("BPC");
+        assertThat(page.locator("#blueprint-results")).containsText("No blueprints match");
+        assertThat(page.locator("#nav-blueprints")).isVisible();
+    }
+
+    @Test
     void theTableAppearsWhenTheReadFinishesWithoutReloadingThePage() {
         // the page opens with nothing stored; its own read fills the table and the page has to show it by itself
         jdbc.sql("DELETE FROM character_blueprint WHERE item_id = 86001").update();

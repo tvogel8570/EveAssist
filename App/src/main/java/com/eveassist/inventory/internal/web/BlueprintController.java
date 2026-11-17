@@ -136,7 +136,11 @@ class BlueprintController {
         }
     }
 
-    /** htmx asks for a history entry with the same header as for a fragment, but wants the whole page back. */
+    /**
+     * The answer to a step back in the history is always the whole page. htmx 4.0.0 asks for it with
+     * {@code HX-History-Restore-Request} and without {@code HX-Request} (measured in a browser, see the Back tests), so
+     * this only matters if a later version sends both, as htmx 2 did.
+     */
     private static String partial(String htmx, String historyRestore) {
         return historyRestore != null ? null : htmx;
     }

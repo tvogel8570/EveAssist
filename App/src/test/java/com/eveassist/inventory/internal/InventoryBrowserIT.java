@@ -208,6 +208,29 @@ class InventoryBrowserIT extends IntegrationTest {
     }
 
     @Test
+    void theBackButtonRestoresTheWholePageWithoutAReloadFirst() {
+        open();
+        addFilter("Category");
+        page.locator("#filter-list label", new Page.LocatorOptions().setHasText("Material")).locator("input").check();
+        assertThat(page.locator("#summary")).containsText("2 item types");
+
+        // htmx puts the earlier step back itself, by asking the server for its address: the answer must be the page
+        page.goBack();
+
+        assertThat(page.locator("#summary")).containsText("4 item types");
+        assertThat(page.locator("#chips")).hasCount(0);
+        assertThat(page.locator("#nav-inventory")).isVisible();
+        assertThat(page.locator("#browse-form")).isVisible();
+        assertThat(page.locator("#fetch-status")).isVisible();
+
+        page.goForward();
+
+        assertThat(page.locator("#chips")).containsText("Category: Material");
+        assertThat(page.locator("#nav-inventory")).isVisible();
+        assertThat(page.locator("#browse-form")).isVisible();
+    }
+
+    @Test
     void aRowOpensToShowWhereAndClosesAgain() {
         open();
         var row = page.locator("tr[data-item='Tritanium']");
