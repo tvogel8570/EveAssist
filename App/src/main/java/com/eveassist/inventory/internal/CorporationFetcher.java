@@ -113,12 +113,35 @@ public class CorporationFetcher {
         }
     }
 
+    /**
+     * One run on the calling thread under the same per-account guard as {@link #refresh}, for a caller that needs the
+     * corporations learned before it goes on. Only corporations with a Director that {@code mayRead} accepts are
+     * learned, so ESI is not asked about the others. Returns false, and does nothing, when a run for the account is
+     * going.
+     */
+    public boolean runGuarded(Viewer viewer, java.util.function.Predicate<LinkedCharacter> mayRead) {
+        var account = viewer.accountId().value();
+        if (!running.add(account)) {
+            return false;
+        }
+        try {
+            run(viewer, false, mayRead);
+            return true;
+        } finally {
+            running.remove(account);
+        }
+    }
+
     /** One run on the calling thread. Used by the background task and by tests. */
     void run(Viewer viewer) {
         run(viewer, false);
     }
 
     void run(Viewer viewer, boolean rereadNames) {
+        run(viewer, rereadNames, null);
+    }
+
+    private void run(Viewer viewer, boolean rereadNames, java.util.function.Predicate<LinkedCharacter> mayRead) {
         var account = viewer.accountId().value();
         // which corporation each character is in, and who is a Director, as the characters module reads it from ESI
         linked.learnCorporations(viewer);
@@ -129,6 +152,10 @@ public class CorporationFetcher {
                 .forEach(c -> members.computeIfAbsent(c.eveCorporationId(), id -> new ArrayList<>()).add(c));
         corporations.dropAbandoned(account, members.keySet());
         for (var entry : members.entrySet()) {
+            if (mayRead != null && entry.getValue().stream()
+                    .noneMatch(c -> Boolean.TRUE.equals(c.director()) && mayRead.test(c))) {
+                continue;
+            }
             var corporation = learnCorporation(account, entry.getKey());
             var directors = entry.getValue().stream().filter(c -> Boolean.TRUE.equals(c.director()) && canRead(c))
                     .toList();

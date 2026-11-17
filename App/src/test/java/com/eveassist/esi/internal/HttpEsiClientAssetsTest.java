@@ -9,6 +9,7 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
 import com.eveassist.esi.AccessTokens;
+import com.eveassist.esi.CharacterBlueprint;
 import com.eveassist.esi.EsiResult;
 import com.eveassist.esi.StructureLookup;
 import com.eveassist.esi.TokenGrant;
@@ -31,6 +32,14 @@ import org.springframework.web.client.RestClient;
 class HttpEsiClientAssetsTest {
 
     private static final String PAGE_1 = "https://esi.test/characters/90000001/assets?page=1";
+    private static final String CHARACTER_BLUEPRINTS = """
+            [{"item_id":1000000000003,"type_id":1000,"location_id":60003760,"location_flag":"Hangar",
+              "quantity":-2,"material_efficiency":8,"time_efficiency":16,"runs":12}]
+            """;
+    private static final String CORPORATION_BLUEPRINTS = """
+            [{"item_id":1000000000004,"type_id":1001,"location_id":60003760,"location_flag":"Hangar",
+              "quantity":-1,"material_efficiency":10,"time_efficiency":20,"runs":-1}]
+            """;
     private static final String ASSETS = """
             [{"is_singleton":false,"item_id":1000000000001,"location_flag":"Hangar","location_id":60003760,
               "location_type":"station","quantity":1500,"type_id":34},
@@ -119,6 +128,51 @@ class HttpEsiClientAssetsTest {
         assertThat(result.data().get(2).blueprintCopy()).isTrue();
         assertThat(result.data().get(2).locationId()).isEqualTo(1000000000002L);
         assertThat(tokens.scopesAsked).containsExactly("esi-assets.read_assets.v1");
+        esi.verify();
+    }
+
+    @Test
+    void readsCharacterBlueprintsWithTheirScopeAndMapsEveryField() {
+        esi.expect(requestTo("https://esi.test/characters/90000001/blueprints?page=1"))
+                .andExpect(header("Authorization", "Bearer token-1"))
+                .andRespond(page(CHARACTER_BLUEPRINTS, "\"bp1\"", "Sun, 08 Nov 2026 21:05:00 GMT"));
+
+        var result = client.characterBlueprints(90000001L);
+
+        assertThat(result.outcome()).isEqualTo(EsiResult.Outcome.UPDATED);
+        assertThat(result.data()).containsExactly(new CharacterBlueprint(1000000000003L, 1000, 60003760L,
+                "Hangar", -2, 8, 16, 12));
+        assertThat(tokens.scopesAsked).containsExactly("esi-characters.read_blueprints.v1");
+        esi.verify();
+    }
+
+    @Test
+    void aBlueprintLineWithoutRunsIsAnOriginalNotAZeroRunCopy() {
+        esi.expect(requestTo("https://esi.test/characters/90000001/blueprints?page=1"))
+                .andRespond(page("""
+                        [{"item_id":1000000000005,"type_id":1002,"location_id":60003760,"location_flag":"Hangar",
+                          "quantity":-1,"material_efficiency":10,"time_efficiency":20}]
+                        """, "\"bp2\"", "Sun, 08 Nov 2026 21:05:00 GMT"));
+
+        var result = client.characterBlueprints(90000001L);
+
+        assertThat(result.data()).containsExactly(new CharacterBlueprint(1000000000005L, 1002, 60003760L,
+                "Hangar", -1, 10, 20, -1));
+        esi.verify();
+    }
+
+    @Test
+    void readsCorporationBlueprintsWithTheDirectorsScope() {
+        esi.expect(requestTo("https://esi.test/corporations/98000001/blueprints?page=1"))
+                .andExpect(header("Authorization", "Bearer token-1"))
+                .andRespond(page(CORPORATION_BLUEPRINTS, "\"cbp1\"", "Sun, 08 Nov 2026 21:05:00 GMT"));
+
+        var result = client.corporationBlueprints(98000001L, 90000002L);
+
+        assertThat(result.outcome()).isEqualTo(EsiResult.Outcome.UPDATED);
+        assertThat(result.data()).containsExactly(new CharacterBlueprint(1000000000004L, 1001, 60003760L,
+                "Hangar", -1, 10, 20, -1));
+        assertThat(tokens.scopesAsked).containsExactly("esi-corporations.read_blueprints.v1");
         esi.verify();
     }
 

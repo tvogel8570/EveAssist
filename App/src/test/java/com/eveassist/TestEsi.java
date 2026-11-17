@@ -1,6 +1,7 @@
 package com.eveassist;
 
 import com.eveassist.esi.CharacterAsset;
+import com.eveassist.esi.CharacterBlueprint;
 import com.eveassist.esi.EsiClient;
 import com.eveassist.esi.EsiResult;
 import com.eveassist.esi.MarketOrder;
@@ -36,6 +37,7 @@ public class TestEsi implements EsiClient {
         contractItems.clear();
         itemsAsked.clear();
         assets.clear();
+        blueprints.clear();
         assetsAsked.clear();
         staleAssets.clear();
         staleCorporationAssets.clear();
@@ -46,6 +48,7 @@ public class TestEsi implements EsiClient {
         corporationOf.clear();
         rolesOf.clear();
         corporationNames.clear();
+        corporationNamesAsked.clear();
         corporationAssets.clear();
         hangarNames.clear();
         corporationAssetsAsked.clear();
@@ -54,6 +57,9 @@ public class TestEsi implements EsiClient {
         namesFailure = null;
         assetsGate = null;
         assetsFailure = null;
+        corporationBlueprints.clear();
+        blueprintsAsked.clear();
+        corporationBlueprintsAsked.clear();
         sells.put(34, new BigDecimal("5.00"));
         sells.put(35, new BigDecimal("10.00"));
     }
@@ -68,6 +74,42 @@ public class TestEsi implements EsiClient {
 
     private final Map<Long, EsiResult<List<CharacterAsset>>> assets = new ConcurrentHashMap<>();
     private final List<Long> assetsAsked = new CopyOnWriteArrayList<>();
+
+    private final Map<Long, EsiResult<List<CharacterBlueprint>>> blueprints = new ConcurrentHashMap<>();
+    private final List<Long> blueprintsAsked = new CopyOnWriteArrayList<>();
+    private final Map<Long, EsiResult<List<CharacterBlueprint>>> corporationBlueprints = new ConcurrentHashMap<>();
+    private final List<String> corporationBlueprintsAsked = new CopyOnWriteArrayList<>();
+
+    public void blueprintsOf(long eveCharacterId, List<CharacterBlueprint> list) {
+        blueprints.put(eveCharacterId, EsiResult.updated(List.copyOf(list), Instant.now().plusSeconds(3600)));
+    }
+
+    public List<Long> blueprintsAsked() {
+        return List.copyOf(blueprintsAsked);
+    }
+
+    public void corporationBlueprintsOf(long eveCorporationId, List<CharacterBlueprint> list) {
+        corporationBlueprints.put(eveCorporationId,
+                EsiResult.updated(List.copyOf(list), Instant.now().plusSeconds(3600)));
+    }
+
+    public List<String> corporationBlueprintsAsked() {
+        return List.copyOf(corporationBlueprintsAsked);
+    }
+
+    @Override
+    public EsiResult<List<CharacterBlueprint>> characterBlueprints(long eveCharacterId) {
+        blueprintsAsked.add(eveCharacterId);
+        return blueprints.getOrDefault(eveCharacterId,
+                EsiResult.updated(List.of(), Instant.now().plusSeconds(3600)));
+    }
+
+    @Override
+    public EsiResult<List<CharacterBlueprint>> corporationBlueprints(long eveCorporationId, long viaEveCharacterId) {
+        corporationBlueprintsAsked.add(eveCorporationId + ":" + viaEveCharacterId);
+        return corporationBlueprints.getOrDefault(eveCorporationId,
+                EsiResult.updated(List.of(), Instant.now().plusSeconds(3600)));
+    }
 
     /** What ESI answers for a character's assets from now on. A character with no answer set gets an empty list. */
     public void assetsOf(long eveCharacterId, List<CharacterAsset> list) {
@@ -166,6 +208,7 @@ public class TestEsi implements EsiClient {
     private final Map<Long, Long> corporationOf = new ConcurrentHashMap<>();
     private final Map<Long, Set<String>> rolesOf = new ConcurrentHashMap<>();
     private final Map<Long, String> corporationNames = new ConcurrentHashMap<>();
+    private final List<Long> corporationNamesAsked = new CopyOnWriteArrayList<>();
     private final Map<Long, EsiResult<List<CharacterAsset>>> corporationAssets = new ConcurrentHashMap<>();
     private final Map<Long, Map<Integer, String>> hangarNames = new ConcurrentHashMap<>();
     private final List<String> corporationAssetsAsked = new CopyOnWriteArrayList<>();
@@ -178,6 +221,11 @@ public class TestEsi implements EsiClient {
 
     public void corporationNamed(long corporationId, String name) {
         corporationNames.put(corporationId, name);
+    }
+
+    /** The corporations whose names were asked for so far, in the order made. */
+    public List<Long> corporationNamesAsked() {
+        return List.copyOf(corporationNamesAsked);
     }
 
     /** What ESI answers for a corporation's assets from now on. */
@@ -240,6 +288,7 @@ public class TestEsi implements EsiClient {
 
     @Override
     public EsiResult<String> corporationName(long eveCorporationId) {
+        corporationNamesAsked.add(eveCorporationId);
         var name = corporationNames.get(eveCorporationId);
         return name == null ? EsiResult.failed("test ESI does not know the corporation")
                 : EsiResult.updated(name, Instant.now().plusSeconds(3600));

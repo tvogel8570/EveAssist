@@ -165,6 +165,9 @@ it (flags `CorpSAG1` to `CorpSAG7`); the office is not stored, and the division 
   price. A migration flags the contracts already stored. Contracts up to 100 m³ are kept, newest first,
   and each batch reads up to 500 sets of lines (see [Background fetches](#background-fetches)). ESI's OpenAPI spec names
   no rate-limit group for these routes and the responses carry no rate-limit headers, so only the error limit applies.
+  The same can hold for `/characters/{id}/blueprints` and `/corporations/{id}/blueprints`, whose spec also says `runs` is
+  -1 for an original. Not yet checked against real responses. `HttpEsiClient` reads `runs` as optional and stores -1 when it
+  is missing, so an original shows no runs and is never taken for a copy with none left.
   The prices are worked out from the stored rows (see
   [Contract prices](../requirements/market-logistics.md#contract-prices)).
 

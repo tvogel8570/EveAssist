@@ -86,10 +86,11 @@
                     hx-include="#browse-form" hx-trigger="click once" hx-swap="innerHTML">
                     <td class="px-1"><span data-expander>&#9656;</span></td>
                     <td>
-                        <span class="font-medium" th:text="${item.name}">Item</span>
+                        <a class="link font-medium" data-blueprint-link th:if="${item.blueprintCopy or item.blueprintOriginal}"
+                           th:href="@{/blueprints(type=${item.typeId})}" th:text="${item.name}">Blueprint</a>
+                        <span class="font-medium" th:unless="${item.blueprintCopy or item.blueprintOriginal}" th:text="${item.name}">Item</span>
                         <span class="badge badge-sm badge-secondary" th:if="${item.blueprintCopy}" th:text="#{inventory.bpc}">BPC</span>
                         <span class="badge badge-sm badge-secondary" th:if="${item.blueprintOriginal}" th:text="#{inventory.bpo}">BPO</span>
-                        <span class="text-xs opacity-60" th:if="${item.blueprintCopy or item.blueprintOriginal}" th:text="#{inventory.noMeTe}">ME/TE not read yet</span>
                         <div class="text-xs opacity-60"><span th:text="${item.groupName}">Group</span><span class="lg:hidden"> &middot; <span th:text="${item.categoryName}">Category</span></span></div>
                         <div class="md:hidden mt-1" th:if="${view.showCharacters}">
                             <div th:replace="~{inventory/browse :: bar(${item}, 'w-40')}"></div>

@@ -4,6 +4,14 @@
 }
 @source "../resources/templates";
 
+/*
+ * daisyUI rounds a checkbox by the theme's selector radius (.5rem). A checkbox-xs is 1rem wide, so that radius makes it a
+ * circle, which reads as a radio button. A small corner keeps it a square.
+ */
+.checkbox-xs {
+  border-radius: .25rem;
+}
+
 .num {
   text-align: right;
   font-variant-numeric: tabular-nums;
@@ -92,3 +100,56 @@
 .seg-22 { fill: hsl(145 62% 58%); }
 .seg-23 { fill: hsl(283 62% 58%); }
 .seg-rest { fill: var(--color-base-300); }
+
+.blueprint-actions-menu {
+  position: absolute;
+  z-index: 30;
+  top: 100%;
+  left: 0;
+  min-width: 16rem;
+  padding: .35rem;
+  border: 1px solid var(--color-base-300);
+  border-radius: .5rem;
+  background: var(--color-base-200);
+  box-shadow: 0 .5rem 1.25rem #0008;
+}
+
+.blueprint-actions-menu button {
+  display: block;
+  width: 100%;
+  padding: .5rem .65rem;
+  border: 0;
+  border-radius: .35rem;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+}
+
+.blueprint-actions-menu button:not(:disabled):hover { background: var(--color-base-300); }
+.blueprint-actions-menu button:disabled { opacity: .5; cursor: not-allowed; }
+.blueprint-actions-menu hr { margin: .25rem 0; border: 0; border-top: 1px solid var(--color-base-300); }
+
+.blueprint-drawer-scrim {
+  position: fixed;
+  z-index: 40;
+  inset: 0;
+  display: none;
+  background: #0008;
+}
+
+.blueprint-drawer {
+  position: fixed;
+  z-index: 50;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  display: none;
+  width: min(36rem, 100vw);
+  overflow-y: auto;
+  border-left: 1px solid var(--color-base-300);
+  background: var(--color-base-100);
+  box-shadow: -.5rem 0 1.5rem #0008;
+}
+
+body.blueprint-drawer-open .blueprint-drawer-scrim,
+body.blueprint-drawer-open .blueprint-drawer { display: block; }

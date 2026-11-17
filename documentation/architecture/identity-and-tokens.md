@@ -145,17 +145,21 @@ granted scopes, state: active or needs re-authorization, linked at), `character_
 token, nonce, key id, replaced at each refresh) and `account_feature` (account, feature, turned on at). Deleting a
 character cascades to its token and, later, to its ESI data.
 
-**Features and scopes.** A `Feature` enum in `characters` maps each feature to its read-only scopes. The first is
-`INVENTORY`: `esi-assets.read_assets.v1` and `esi-universe.read_structures.v1`. `CORPORATION_ASSETS` (added 2026-11-10)
-asks for `esi-assets.read_corporation_assets.v1`, `esi-corporations.read_divisions.v1` and
-`esi-characters.read_corporation_roles.v1`, and needs `INVENTORY`: turning it on turns `INVENTORY` on too, and turning
-`INVENTORY` off turns it off (`Feature.requires()`). A character that lacks the permissions is marked as missing them
-and the Characters page offers re-authorization, as for any feature. The roles scope is what lets the app tell which
-characters are Directors, because only a Director's token can read a corporation's assets. The account turns features on and off
-(the developer decided on 2026-11-09 to build the toggle now). An authorization request asks for the union of the
-scopes of the turned-on features. Turning a feature on marks each linked character that lacks its scopes as needing
-them, and the Characters page offers re-authorization. The EVE developer application is registered with the scopes of
-every planned feature, which is allowed because a request may ask for fewer than the registration lists.
+**Features and scopes.** A `Feature` enum in `characters` maps each feature to its read-only scopes and prerequisite.
+`INVENTORY` asks for `esi-assets.read_assets.v1` and `esi-universe.read_structures.v1`. `BLUEPRINTS` asks for
+`esi-characters.read_blueprints.v1` and needs `INVENTORY`. `CORPORATION_ASSETS` (added 2026-11-10) asks for
+`esi-assets.read_corporation_assets.v1`, `esi-corporations.read_divisions.v1` and
+`esi-characters.read_corporation_roles.v1`, and needs `INVENTORY`. `CORPORATION_BLUEPRINTS` asks for
+`esi-corporations.read_blueprints.v1` and needs `CORPORATION_ASSETS`. Turning a feature on turns on its whole
+prerequisite chain, and turning one off turns off every feature that depends on it. A character that lacks the
+permissions is marked as missing them and the Characters page offers re-authorization. The roles scope is what lets
+the app tell which characters are Directors, because only a Director's token can read corporation assets and
+blueprints. The developer decided on 2026-11-17 that asking already-linked characters to authorize the new blueprint
+scopes is acceptable, since EveAssist has only one user. The account turns features on and off (the developer decided
+on 2026-11-09 to build the toggle now). An authorization request asks for the union of the scopes of the turned-on
+features. Turning a feature on marks each linked character that lacks its scopes as needing them, and the Characters
+page offers re-authorization. The EVE developer application is registered with the scopes of every planned feature,
+which is allowed because a request may ask for fewer than the registration lists.
 
 **The Characters page.** A page of its own, with a card per character (portrait, name, state, granted scopes, Remove),
 a Link a character button and the feature toggles. It grows into the scope page and fetch log in

@@ -350,6 +350,37 @@ class CharactersPageIT extends IntegrationTest {
     }
 
     @Test
+    void corporationBlueprintsTurnsOnItsPrerequisitesAndTurningOffInventoryTurnsOffTheChain() throws Exception {
+        var sub = newSub();
+        var viewer = viewerFor(sub);
+
+        mvc.perform(post("/characters/features/CORPORATION_BLUEPRINTS").param("on", "true")
+                        .header("HX-Request", "true").with(signedInAs(sub)).with(csrf()))
+                .andExpect(status().isNoContent());
+        assertThat(features.turnedOn(viewer.accountId())).containsExactlyInAnyOrder(
+                Feature.INVENTORY, Feature.CORPORATION_ASSETS, Feature.CORPORATION_BLUEPRINTS);
+        assertThat(Feature.BLUEPRINTS.scopes()).containsExactly("esi-characters.read_blueprints.v1");
+        assertThat(Feature.CORPORATION_BLUEPRINTS.scopes()).containsExactly("esi-corporations.read_blueprints.v1");
+
+        mvc.perform(post("/characters/features/INVENTORY").header("HX-Request", "true")
+                        .with(signedInAs(sub)).with(csrf()))
+                .andExpect(status().isNoContent());
+        assertThat(features.turnedOn(viewer.accountId())).isEmpty();
+    }
+
+    @Test
+    void thePageOffersBothBlueprintFeaturesAndListsTheirScopes() throws Exception {
+        var sub = newSub();
+        viewerFor(sub);
+
+        var page = text(mvc.perform(get("/characters").with(signedInAs(sub))).andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString());
+
+        assertThat(page).contains("Character blueprints", "esi-characters.read_blueprints.v1",
+                "Corporation blueprints", "esi-corporations.read_blueprints.v1");
+    }
+
+    @Test
     void aCharacterThatGrantedOnlyInventoryIsToldToAddTheCorporationPermissions() throws Exception {
         var sub = newSub();
         var viewer = viewerFor(sub);
@@ -370,8 +401,10 @@ class CharactersPageIT extends IntegrationTest {
         var viewer = viewerFor(sub);
         features.turnOn(viewer.accountId(), Feature.INVENTORY);
         features.turnOn(viewer.accountId(), Feature.CORPORATION_ASSETS);
+        features.turnOn(viewer.accountId(), Feature.CORPORATION_BLUEPRINTS);
         var all = new java.util.HashSet<>(BOTH);
         all.addAll(Feature.CORPORATION_ASSETS.scopes());
+        all.addAll(Feature.CORPORATION_BLUEPRINTS.scopes());
         var boss = link(sub, "Cass Director", all);
         var member = link(sub, "Henre Member", all);
         var unknown = link(sub, "Not Yet Read", all);
@@ -390,8 +423,8 @@ class CharactersPageIT extends IntegrationTest {
         var memberCard = card(html, memberId);
         assertThat(memberCard).contains("line-through");
         assertThat(memberCard).contains("title=\"This character is not a Director");
-        // both Director-only permissions are struck, and the others are not
-        assertThat(memberCard.split("line-through", -1)).hasSize(3);
+        // all Director-only permissions are struck, and the others are not
+        assertThat(memberCard.split("line-through", -1)).hasSize(4);
         assertThat(card(html, bossId)).doesNotContain("line-through");
         assertThat(card(html, publicId(unknown))).doesNotContain("line-through");
     }

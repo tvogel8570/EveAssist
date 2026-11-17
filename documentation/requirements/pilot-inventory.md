@@ -28,7 +28,8 @@ parts. Inventory asks for two scopes, both read-only:
 ## What is shown
 
 - All items of all linked characters, in all locations: ships, containers, fitted modules and cargo included.
-- Blueprints (BPOs and BPCs) are shown too, without ME, TE and runs until the blueprint fetch exists.
+- Blueprints (BPOs and BPCs) are shown too, without ME, TE and runs. Those are on the
+  [Blueprints page](manufacturing-invention.md#blueprints-page), which the inventory links to.
 - Each row says where the item is. NPC stations and systems are named from the SDE. Structures are named through ESI.
 - Fitted modules, cargo and container contents are marked as such.
 
@@ -80,7 +81,9 @@ Decided with the developer on 2026-11-10, from mockups (`documentation/mockups/i
   way of holding) follow the filter.
 - **Places.** A place is a station or solar system named from the SDE, or a structure named by any character of the
   account. A structure no character of the account can name shows as an unknown structure with its id.
-- **Blueprints** are tagged BPC or BPO and say that ME and TE are not read yet.
+- **Blueprints** are tagged BPC or BPO. A link on the item opens the
+  [Blueprints page](manufacturing-invention.md#blueprints-page) filtered to that blueprint type, where ME, TE and runs
+  are shown.
 
 Container names are read with the assets and are refreshed only when the asset list changes, because ESI's asset list
 does not carry names: a container renamed in game keeps its old name here until its items move. If ESI cannot give the
@@ -123,9 +126,9 @@ users. [Groups and corporations](groups.md) adds sharing later without changing 
   corporation and its stored items are dropped at the next run. A failed lookup never drops one.
 - **Structure names** are learned with the Director's token, as for a character's own items, and are available to all
   characters of the account.
-- **Not yet.** Corporation blueprints, industry jobs and contracts (a later step, each with its own scope and role),
-  corporation wallet and orders, and how many of a corporation's structures are named (the status block shows that for
-  characters only). Assets in a corporation the account has no Director in.
+- **Not yet.** Industry jobs and contracts (a later step, each with its own scope and role), corporation wallet and
+  orders, and how many of a corporation's structures are named (the status block shows that for characters only).
+  Assets in a corporation the account has no Director in.
 
 ## Fetching
 
@@ -164,4 +167,3 @@ Also open:
   for another account. Still to decide: whether the user can name a structure by hand, as for facilities in
   [Manufacturing and invention](manufacturing-invention.md#facilities). Until then an unnamed structure shows as an
   unknown structure with its id.
-- Whether blueprints with ME, TE and runs are merged into the inventory rows when the blueprint fetch exists.
