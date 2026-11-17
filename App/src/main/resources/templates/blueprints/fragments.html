@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <body>
 <section th:fragment="status" id="blueprint-status" class="mb-3"
-         th:attr="hx-get=${startOnLoad} ? @{/blueprints/status(start=1)} : @{/blueprints/status},hx-trigger=${startOnLoad} ? 'load' : (${running} ? 'every 2s' : null),hx-swap='outerHTML'">
+         th:attr="hx-get=${startOnLoad} ? @{/blueprints/status(start=1)} : @{/blueprints/status},hx-trigger=${startOnLoad} ? 'load' : (${running} ? 'every 2s' : null),hx-swap='outerHTML',hx-include='#blueprint-filters, #blueprint-view'">
     <details id="blueprint-status-details" th:unless="${#lists.isEmpty(statuses)}">
         <summary class="cursor-pointer text-sm select-none"
                  th:classappend="${summary.state.name() == 'ATTENTION'} ? 'text-warning' : 'opacity-80'">

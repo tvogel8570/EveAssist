@@ -176,4 +176,30 @@ class BlueprintsBrowserIT extends IntegrationTest {
             assertThat(rounded).as(selector + " is round").isFalse();
         }
     }
+
+    @Test
+    void aVisitThatChangedNothingDoesNotFetchTheTableAgain() throws Exception {
+        var tables = new java.util.concurrent.atomic.AtomicInteger();
+        var statuses = new java.util.concurrent.atomic.AtomicInteger();
+        page.route(address -> address.contains("/blueprints"), route -> {
+            var request = route.request();
+            if (request.url().contains("/blueprints/status")) {
+                statuses.incrementAndGet();
+            } else if (request.headers().containsKey("hx-request")) {
+                tables.incrementAndGet();
+            }
+            route.resume();
+        });
+        page.navigate(url("/blueprints"));
+        assertThat(page.locator("[data-blueprint-link]").first()).isVisible();
+        // the page asks for its read when it has loaded; the read ends with nothing new, so the table stays as it is
+        await().atMost(5, TimeUnit.SECONDS).until(() -> statuses.get() >= 1);
+        // the status block has nothing to wait for once the read is done, and its last answer could have told the table
+        // to look again: a moment more makes sure that nothing follows
+        assertThat(page.locator("#blueprint-status[hx-trigger]")).hasCount(0,
+                new com.microsoft.playwright.assertions.LocatorAssertions.HasCountOptions().setTimeout(20_000));
+        Thread.sleep(1_500);
+        assertThat(statuses.get()).as("the read was asked for").isGreaterThanOrEqualTo(1);
+        assertThat(tables.get()).as("the table was fetched again although nothing changed").isZero();
+    }
 }

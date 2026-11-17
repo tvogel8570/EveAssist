@@ -28,6 +28,8 @@
 </div>
 
 <div th:fragment="results">
+    <!-- What this list shows, sent back with the status poll (see BrowseView.fingerprint). -->
+    <div id="browse-view" hidden><input type="hidden" name="seen" th:value="${view.fingerprint}"></div>
     <div id="chips" class="flex flex-wrap gap-2 items-center mb-2" th:unless="${#lists.isEmpty(view.chips)}">
         <span class="text-xs opacity-70" th:text="#{inventory.chips}">Filters, all of them apply:</span>
         <span class="badge badge-primary badge-outline gap-1 py-3" th:each="chip : ${view.chips}">

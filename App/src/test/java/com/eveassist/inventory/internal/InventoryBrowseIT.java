@@ -466,13 +466,29 @@ class InventoryBrowseIT extends IntegrationTest {
     }
 
     @Test
-    void theStatusAnswersWithAnEventOnceTheFetchIsDoneAndNotBefore() throws Exception {
+    void theStatusAnswersWithAnEventOnlyWhenWhatTheListShowsHasChanged() throws Exception {
         var s = setup();
+        var page = mvc.perform(get("/inventory").with(signedInAs(s.sub()))).andExpect(status().isOk()).andReturn()
+                .getResponse().getContentAsString();
+        var matcher = java.util.regex.Pattern.compile("name=\"seen\" value=\"([^\"]+)\"").matcher(page);
+        assertThat(matcher.find()).as("the page says what it shows").isTrue();
+        var seen = matcher.group(1);
 
-        mvc.perform(get("/inventory/status").with(signedInAs(s.sub())).header("HX-Request", "true"))
-                .andExpect(status().isOk()).andExpect(header().string("HX-Trigger", "browse-refresh"))
+        // the fetch is done and nothing changed: the list is not sent again
+        mvc.perform(get("/inventory/status").param("seen", seen).with(signedInAs(s.sub())).header("HX-Request", "true"))
+                .andExpect(status().isOk()).andExpect(header().doesNotExist("HX-Trigger"))
                 .andExpect(content().string(not(containsString("hx-get"))));
-        mvc.perform(get("/inventory/status").with(signedInAs(s.sub()))).andExpect(header().doesNotExist("HX-Trigger"));
+        // the list on the page is not what is stored: it is, once
+        mvc.perform(get("/inventory/status").param("seen", "0").with(signedInAs(s.sub())).header("HX-Request", "true"))
+                .andExpect(status().isOk()).andExpect(header().string("HX-Trigger", "browse-refresh"));
+        // the filter is part of what is shown, and a poll that does not say what the page shows asks for nothing
+        mvc.perform(get("/inventory/status").param("seen", seen).param("category", "4").with(signedInAs(s.sub()))
+                        .header("HX-Request", "true"))
+                .andExpect(header().string("HX-Trigger", "browse-refresh"));
+        mvc.perform(get("/inventory/status").with(signedInAs(s.sub())).header("HX-Request", "true"))
+                .andExpect(header().doesNotExist("HX-Trigger"));
+        mvc.perform(get("/inventory/status").param("seen", "0").with(signedInAs(s.sub())))
+                .andExpect(header().doesNotExist("HX-Trigger"));
     }
 
     @Test

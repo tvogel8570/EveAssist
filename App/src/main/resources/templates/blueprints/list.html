@@ -58,8 +58,8 @@
             </div>
         </form>
 
-        <div id="blueprint-results" th:if="${view.hasSources}" th:attr="hx-get=@{/blueprints}" hx-include="#blueprint-filters"
-             hx-trigger="blueprints-refresh from:body" hx-swap="innerHTML">
+        <div id="blueprint-results" th:if="${view.hasSources}" th:attr="hx-get=@{/blueprints}" hx-include="#blueprint-filters, #blueprint-view"
+             hx-trigger="blueprints-refresh from:document" hx-swap="innerHTML">
             <th:block th:replace="~{blueprints/results :: results}"></th:block>
         </div>
         <div id="blueprint-drawer-scrim" class="blueprint-drawer-scrim" data-close-blueprint-drawer></div>

@@ -317,6 +317,110 @@ class BlueprintsPageIT extends IntegrationTest {
     }
 
     @Test
+    void aDirectorWhoFailedWhileAnotherWorkedIsNotAskedAtEveryVisit() throws Exception {
+        var sub = newSub();
+        var viewer = viewerFor(sub);
+        turnOn(viewer, Feature.INVENTORY, Feature.CORPORATION_ASSETS, Feature.CORPORATION_BLUEPRINTS);
+        var scopes = new String[] {ASSETS_SCOPE, CORP_ASSETS_SCOPE, CORP_DIVISIONS_SCOPE, CORP_ROLES_SCOPE,
+                CORP_BLUEPRINT_SCOPE};
+        var lost = link(viewer, "Director Who Lost The Role", scopes);
+        var working = link(viewer, "Director Who Works", scopes);
+        var corporationId = 98_500_001L + ThreadLocalRandom.current().nextInt(100_000);
+        esi.inCorporation(lost.eveId(), corporationId, "Director");
+        esi.inCorporation(working.eveId(), corporationId, "Director");
+        esi.corporationNamed(corporationId, "Two Director Corporation");
+        esi.corporationAssetsOf(corporationId, List.of(asset(89000, 27, 60003760L, "station", "OfficeFolder", null)));
+        esi.corporationBlueprintsOf(corporationId, List.of(new CharacterBlueprint(89001, 2001, 89000L, "CorpSAG2", -1, 10, 20, -1)));
+        esi.refuseDirector(lost.eveId());
+
+        startAndWait(sub, viewer);
+        var refusedFirst = refusals(corporationId, lost.eveId());
+        assertThat(esi.corporationBlueprintsAsked()).contains(corporationId + ":" + working.eveId());
+        mvc.perform(get("/blueprints").with(signedInAs(sub))).andExpect(status().isOk())
+                .andExpect(content().string(containsString("Two Director Corporation")))
+                .andExpect(content().string(containsString("Test Hauler Blueprint")));
+
+        // the next visits go straight to the Director who works: the other is not asked again
+        startAndWait(sub, viewer);
+        startAndWait(sub, viewer);
+        assertThat(refusals(corporationId, lost.eveId())).isEqualTo(refusedFirst);
+
+        // the roles change: the Director who worked is refused now, and the one avoided is back in the role
+        esi.refuseDirector(working.eveId());
+        esi.acceptDirector(lost.eveId());
+        startAndWait(sub, viewer);
+        assertThat(refusals(corporationId, lost.eveId())).as("avoided for a while").isEqualTo(refusedFirst);
+
+        // the button asks everything again, so a Director who may have been put right is tried once more
+        mvc.perform(post("/blueprints/refresh").with(csrf()).with(signedInAs(sub))).andExpect(status().is3xxRedirection());
+        await().atMost(10, TimeUnit.SECONDS).until(() -> !fetcher.anyRunning(viewer));
+        assertThat(refusals(corporationId, lost.eveId())).as("asked again after the button").isGreaterThan(refusedFirst);
+    }
+
+    /** How many corporation calls went through the character: the refused ones, for assets and for blueprints. */
+    private long refusals(long corporationId, long eveCharacterId) {
+        var key = corporationId + ":" + eveCharacterId;
+        return esi.corporationBlueprintsAsked().stream().filter(key::equals).count()
+                + esi.corporationAssetsAsked().stream().filter(key::equals).count();
+    }
+
+    private static String seenIn(String page) {
+        var matcher = java.util.regex.Pattern.compile("name=\"seen\" value=\"([^\"]+)\"").matcher(page);
+        assertThat(matcher.find()).as("the page says what it shows").isTrue();
+        return matcher.group(1);
+    }
+
+    private String refreshAsked(String sub, String seen, String... filter) throws Exception {
+        var request = get("/blueprints/status").header("HX-Request", "true").with(signedInAs(sub));
+        if (seen != null) {
+            request = request.param("seen", seen);
+        }
+        for (var i = 0; i + 1 < filter.length; i += 2) {
+            request = request.param(filter[i], filter[i + 1]);
+        }
+        return mvc.perform(request).andExpect(status().isOk()).andReturn().getResponse().getHeader("HX-Trigger");
+    }
+
+    @Test
+    void theTableIsAskedForAgainOnlyWhenWhatItShowsHasChanged() throws Exception {
+        var sub = newSub();
+        var viewer = viewerFor(sub);
+        turnOn(viewer, Feature.BLUEPRINTS);
+        var character = link(viewer, "Change Character", BLUEPRINT_SCOPE);
+        esi.blueprintsOf(character.eveId(), manyBlueprints(5));
+        startAndWait(sub, viewer);
+        var seen = seenIn(mvc.perform(get("/blueprints").with(signedInAs(sub))).andReturn().getResponse()
+                .getContentAsString());
+
+        // a read that changed nothing: the table is not sent again
+        assertThat(refreshAsked(sub, seen)).isNull();
+        startAndWait(sub, viewer);
+        assertThat(refreshAsked(sub, seen)).isNull();
+        // a page that shows something else, and a poll that does not say what the page shows
+        assertThat(refreshAsked(sub, "0")).isEqualTo("blueprints-refresh");
+        assertThat(refreshAsked(sub, null)).isNull();
+        // the filter is part of what is shown: the same data under another filter is another table
+        assertThat(refreshAsked(sub, seen, "kind", "BPC")).isEqualTo("blueprints-refresh");
+        var filtered = seenIn(mvc.perform(get("/blueprints").param("kind", "BPC").with(signedInAs(sub)))
+                .andReturn().getResponse().getContentAsString());
+        assertThat(refreshAsked(sub, filtered, "kind", "BPC")).isNull();
+
+        // a read that changed a blueprint: now it is
+        esi.blueprintsOf(character.eveId(), manyBlueprints(6));
+        startAndWait(sub, viewer);
+        assertThat(refreshAsked(sub, seen)).isEqualTo("blueprints-refresh");
+        var after = seenIn(mvc.perform(get("/blueprints").with(signedInAs(sub))).andReturn().getResponse()
+                .getContentAsString());
+        assertThat(after).isNotEqualTo(seen);
+        assertThat(refreshAsked(sub, after)).isNull();
+
+        // a poll while a read runs never asks: the read is not finished
+        mvc.perform(get("/blueprints/status").param("start", "1").header("HX-Request", "true").param("seen", "0")
+                .with(signedInAs(sub))).andExpect(status().isOk());
+        await().atMost(10, TimeUnit.SECONDS).until(() -> !fetcher.anyRunning(viewer));
+    }
+
+    @Test
     void sortsByEveryColumnAndAnswersAHistoryRestoreWithTheWholePage() throws Exception {
         var sub = newSub();
         var viewer = viewerFor(sub);

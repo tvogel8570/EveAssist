@@ -321,6 +321,31 @@ class InventoryBrowserIT extends IntegrationTest {
     }
 
     @Test
+    void aVisitThatChangedNothingDoesNotFetchTheListAgain() throws Exception {
+        var lists = new java.util.concurrent.atomic.AtomicInteger();
+        var statuses = new java.util.concurrent.atomic.AtomicInteger();
+        page.route(address -> address.contains("/inventory"), route -> {
+            var request = route.request();
+            if (request.url().contains("/inventory/status")) {
+                statuses.incrementAndGet();
+            } else if (request.headers().containsKey("hx-request")) {
+                lists.incrementAndGet();
+            }
+            route.resume();
+        });
+
+        open();
+        // the status block has no address to ask for once the fetch is done, and its last answer could have told the
+        // list to look again: a moment more makes sure that nothing follows
+        assertThat(page.locator("#fetch-status[hx-get]")).hasCount(0,
+                new com.microsoft.playwright.assertions.LocatorAssertions.HasCountOptions().setTimeout(20_000));
+        Thread.sleep(1_500);
+
+        assertThat(statuses.get()).as("the fetch was asked for").isGreaterThanOrEqualTo(1);
+        assertThat(lists.get()).as("the list was fetched again although nothing changed").isZero();
+    }
+
+    @Test
     void theStatusOpensIntoATableWithEachCharacter() {
         open();
 

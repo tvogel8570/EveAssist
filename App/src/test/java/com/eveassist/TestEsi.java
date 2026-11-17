@@ -60,6 +60,7 @@ public class TestEsi implements EsiClient {
         corporationBlueprints.clear();
         blueprintsAsked.clear();
         corporationBlueprintsAsked.clear();
+        refusedDirectors.clear();
         sells.put(34, new BigDecimal("5.00"));
         sells.put(35, new BigDecimal("10.00"));
     }
@@ -79,6 +80,18 @@ public class TestEsi implements EsiClient {
     private final List<Long> blueprintsAsked = new CopyOnWriteArrayList<>();
     private final Map<Long, EsiResult<List<CharacterBlueprint>>> corporationBlueprints = new ConcurrentHashMap<>();
     private final List<String> corporationBlueprintsAsked = new CopyOnWriteArrayList<>();
+    private final java.util.Set<Long> refusedDirectors = ConcurrentHashMap.newKeySet();
+
+    /** From now on corporation calls made through this character fail, as for a Director who lost the role. */
+    public void refuseDirector(long eveCharacterId) {
+        refusedDirectors.add(eveCharacterId);
+    }
+
+    /** Undoes {@link #refuseDirector}, as if the role was given back. */
+    public void acceptDirector(long eveCharacterId) {
+        refusedDirectors.remove(eveCharacterId);
+    }
+
 
     public void blueprintsOf(long eveCharacterId, List<CharacterBlueprint> list) {
         blueprints.put(eveCharacterId, EsiResult.updated(List.copyOf(list), Instant.now().plusSeconds(3600)));
@@ -107,6 +120,9 @@ public class TestEsi implements EsiClient {
     @Override
     public EsiResult<List<CharacterBlueprint>> corporationBlueprints(long eveCorporationId, long viaEveCharacterId) {
         corporationBlueprintsAsked.add(eveCorporationId + ":" + viaEveCharacterId);
+        if (refusedDirectors.contains(viaEveCharacterId)) {
+            return EsiResult.failed("ESI refused the Director (403)");
+        }
         return corporationBlueprints.getOrDefault(eveCorporationId,
                 EsiResult.updated(List.of(), Instant.now().plusSeconds(3600)));
     }
@@ -297,6 +313,9 @@ public class TestEsi implements EsiClient {
     @Override
     public EsiResult<List<CharacterAsset>> corporationAssets(long eveCorporationId, long viaEveCharacterId) {
         corporationAssetsAsked.add(eveCorporationId + ":" + viaEveCharacterId);
+        if (refusedDirectors.contains(viaEveCharacterId)) {
+            return EsiResult.failed("ESI refused the Director (403)");
+        }
         return corporationAssets.getOrDefault(eveCorporationId,
                 EsiResult.updated(List.of(), Instant.now().plusSeconds(3600)));
     }

@@ -58,7 +58,7 @@
         </div>
     </form>
 
-    <div id="browse" th:attr="hx-get=@{/inventory}" hx-include="#browse-form" hx-trigger="browse-refresh from:body"
+    <div id="browse" th:attr="hx-get=@{/inventory}" hx-include="#browse-form" hx-trigger="browse-refresh from:document"
          hx-swap="innerHTML">
         <th:block th:replace="~{inventory/browse :: results}"></th:block>
     </div>

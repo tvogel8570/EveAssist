@@ -4,6 +4,11 @@
 
 <!-- The table only, so a filter request can replace it without replacing the filter controls or selection menu. -->
 <div xmlns:th="http://www.thymeleaf.org" th:fragment="results">
+    <!-- What this table shows, sent back with the status poll (see Page.fingerprint) and with a refresh of the table. -->
+    <div id="blueprint-view" hidden>
+        <input type="hidden" name="seen" th:value="${view.fingerprint}">
+        <input type="hidden" name="limit" th:value="${filter.limit}">
+    </div>
     <div class="flex flex-wrap items-center gap-3 text-sm mb-2">
         <span class="opacity-80" th:if="${view.total > #lists.size(view.items)}"
               th:text="#{blueprints.summaryOf(${#lists.size(view.items)}, ${view.total})}">Showing 100 of 14,213 blueprints</span>

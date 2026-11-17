@@ -58,15 +58,20 @@ class BlueprintController {
     }
 
     @GetMapping("/blueprints/status")
-    String status(Viewer viewer, Model model, HttpServletResponse response,
+    String status(Viewer viewer, HttpServletRequest request, Model model, HttpServletResponse response,
             @RequestHeader(value = "HX-Request", required = false) String htmx,
-            @RequestParam(name = "start", required = false) String start) {
+            @RequestParam(name = "start", required = false) String start,
+            @RequestParam(name = "seen", required = false) String seen) {
         // only start=1 starts a read: the poll must never restart the read it is waiting for
         if ("1".equals(start)) {
             fetcher.refresh(viewer);
         }
         fillStatus(viewer, model);
-        if (htmx != null && !Boolean.TRUE.equals(model.getAttribute("running"))) {
+        // the last answer of a poll: the table is asked for again only when what it shows is no longer what is stored.
+        // The page says what it shows with seen, and the poll carries the filter, so the same rows can be worked out.
+        if (htmx != null && seen != null && !Boolean.TRUE.equals(model.getAttribute("running"))
+                && !blueprints.browse(viewer, BlueprintFilter.parse(request.getParameterMap())).fingerprint()
+                        .equals(seen)) {
             response.setHeader("HX-Trigger", "blueprints-refresh");
         }
         return "blueprints/fragments :: status";
@@ -74,7 +79,8 @@ class BlueprintController {
 
     @PostMapping("/blueprints/refresh")
     String refresh(Viewer viewer) {
-        fetcher.refresh(viewer);
+        // the button asks for everything again, a Director who failed a moment ago included
+        fetcher.refresh(viewer, true);
         return "redirect:/blueprints";
     }
 

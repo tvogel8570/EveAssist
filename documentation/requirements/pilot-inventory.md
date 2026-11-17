@@ -119,7 +119,8 @@ users. [Groups and corporations](groups.md) adds sharing later without changing 
   the hangar of the container. The CSV export has a Hangar column.
 - **Fetch.** Same rules as [Fetching](#fetching): when the page opens or Refresh is pressed, only while the user is
   signed in and the feature is on, within ESI cache times, and only the latest state is kept. If several characters are
-  Directors, the first that ESI answers for is used. The status block lists each corporation with its state: up to
+  Directors, the first that ESI answers for is used (the one who last worked first; see
+  [Corporation assets](../architecture/esi.md#corporation-data)). The status block lists each corporation with its state: up to
   date, updating, could not update, **no Director linked** (with the reason), or **Director needs authorization**.
 - **Corporations come and go with the characters.** A corporation is listed when one of the account's characters that
   granted the roles permission is in it. When no such character is in it any more (it moved, or was removed), the

@@ -32,6 +32,14 @@ public class BlueprintService {
     public record Page(List<Blueprint> items, List<Holder> holders, List<BlueprintFetcher.HolderStatus> statuses,
             BlueprintFilter filter, boolean hasSources, long total) {
 
+        /**
+         * A short text that stands for everything this page shows. The page sends it back with the status poll, and
+         * the table is fetched again only when it no longer matches, so a read that changed nothing sends nothing.
+         */
+        public String fingerprint() {
+            return Integer.toHexString(java.util.Objects.hash(items, holders, total, hasSources));
+        }
+
         /** Whether the list stops before the end and a page more can be shown. */
         public boolean more() {
             return total > items.size() && filter.limit() < BlueprintFilter.MOST_ITEMS;
