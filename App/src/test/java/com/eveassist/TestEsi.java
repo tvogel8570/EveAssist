@@ -56,6 +56,7 @@ public class TestEsi implements EsiClient {
         namesAsked.clear();
         namesFailure = null;
         assetsGate = null;
+        corporationAssetsGate = null;
         assetsFailure = null;
         corporationBlueprints.clear();
         blueprintsAsked.clear();
@@ -193,6 +194,12 @@ public class TestEsi implements EsiClient {
 
     private volatile java.util.concurrent.CountDownLatch assetsGate;
     private volatile RuntimeException assetsFailure;
+    private volatile java.util.concurrent.CountDownLatch corporationAssetsGate;
+
+    /** Holds every corporation asset call until the latch opens, so a test can look at a run that is still going. */
+    public void holdCorporationAssetCalls(java.util.concurrent.CountDownLatch gate) {
+        corporationAssetsGate = gate;
+    }
 
     /** Makes every asset call throw, as an ESI client does for a failure it did not expect. */
     public void throwOnAssets(RuntimeException failure) {
@@ -313,6 +320,14 @@ public class TestEsi implements EsiClient {
     @Override
     public EsiResult<List<CharacterAsset>> corporationAssets(long eveCorporationId, long viaEveCharacterId) {
         corporationAssetsAsked.add(eveCorporationId + ":" + viaEveCharacterId);
+        var gate = corporationAssetsGate;
+        if (gate != null) {
+            try {
+                gate.await();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
         if (refusedDirectors.contains(viaEveCharacterId)) {
             return EsiResult.failed("ESI refused the Director (403)");
         }

@@ -126,6 +126,21 @@ class BlueprintsBrowserIT extends IntegrationTest {
     }
 
     @Test
+    void aSharedLinkToABlueprintClosesToTheListAndStaysOnThePage() {
+        // a link opened in a new tab has no page of this app before it, so closing must not go back in the history
+        page.navigate(url("/blueprints/86001"));
+        assertThat(page.locator("#blueprint-drawer h2")).containsText("Test Hauler Blueprint");
+        assertThat(page.locator("body.blueprint-drawer-open")).hasCount(1);
+
+        page.keyboard().press("Escape");
+
+        assertThat(page.locator("body.blueprint-drawer-open")).hasCount(0);
+        assertThat(page).hasURL(Pattern.compile(".*/blueprints\\?.*"));
+        assertThat(page.locator("[data-blueprint-link]").first()).isVisible();
+        assertThat(page.locator("#nav-blueprints")).isVisible();
+    }
+
+    @Test
     void theBackButtonRestoresTheWholePageWithoutAReloadFirst() {
         page.navigate(url("/blueprints"));
         assertThat(page.locator("[data-blueprint-link]").first()).isVisible();

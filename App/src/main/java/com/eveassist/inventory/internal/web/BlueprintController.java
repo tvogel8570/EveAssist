@@ -47,10 +47,8 @@ class BlueprintController {
 
     @GetMapping("/blueprints")
     String page(Viewer viewer, HttpServletRequest request, HttpServletResponse response, Model model,
-            @RequestHeader(value = "HX-Request", required = false) String htmxHeader,
-            @RequestHeader(value = "HX-History-Restore-Request", required = false) String restore) {
-        response.addHeader("Vary", "HX-Request, HX-History-Restore-Request");
-        var htmx = partial(htmxHeader, restore);
+            @RequestHeader(value = "HX-Request", required = false) String htmx) {
+        response.addHeader("Vary", "HX-Request");
         if (htmx == null && RememberedFilters.resumes(request)) {
             // the menu link: the page as it was left, at its own address, which the marker is not part of
             return remembered.resumeAt(request, RememberedFilters.Page.BLUEPRINTS, "/blueprints");
@@ -94,10 +92,9 @@ class BlueprintController {
 
     @GetMapping("/blueprints/{itemId}")
     String detail(Viewer viewer, @PathVariable long itemId, HttpServletRequest request, HttpServletResponse response,
-            Model model, @RequestHeader(value = "HX-Request", required = false) String htmxHeader,
-            @RequestHeader(value = "HX-History-Restore-Request", required = false) String restore) {
-        response.addHeader("Vary", "HX-Request, HX-History-Restore-Request");
-        var htmx = partial(htmxHeader, restore);
+            Model model, @RequestHeader(value = "HX-Request", required = false) String htmx) {
+        // the same address answers the whole page and, to htmx, only the drawer
+        response.addHeader("Vary", "HX-Request");
         var filter = BlueprintFilter.parse(request.getParameterMap());
         var detail = blueprints.detail(viewer, itemId, filter)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
@@ -134,15 +131,6 @@ class BlueprintController {
                     Integer.toString(item.materialEfficiency()), Integer.toString(item.timeEfficiency()),
                     item.runs() < 0 ? "" : Integer.toString(item.runs()), item.holderName(), fullPlace(item)));
         }
-    }
-
-    /**
-     * The answer to a step back in the history is always the whole page. htmx 4.0.0 asks for it with
-     * {@code HX-History-Restore-Request} and without {@code HX-Request} (measured in a browser, see the Back tests), so
-     * this only matters if a later version sends both, as htmx 2 did.
-     */
-    private static String partial(String htmx, String historyRestore) {
-        return historyRestore != null ? null : htmx;
     }
 
     private void fill(Viewer viewer, BlueprintFilter filter, Model model) {

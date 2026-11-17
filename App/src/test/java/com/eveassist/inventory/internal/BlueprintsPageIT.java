@@ -52,6 +52,9 @@ class BlueprintsPageIT extends IntegrationTest {
     @Autowired
     CorporationFetcher corporationFetcher;
 
+    @Autowired
+    BlueprintRepository blueprintRepository;
+
     private RequestPostProcessor signedInAs(String sub) {
         return oidcLogin().idToken(token -> token.subject(sub)).authorities(new SimpleGrantedAuthority("ROLE_USER"));
     }
@@ -420,8 +423,38 @@ class BlueprintsPageIT extends IntegrationTest {
         await().atMost(10, TimeUnit.SECONDS).until(() -> !fetcher.anyRunning(viewer));
     }
 
+    /**
+     * The page says "UTC" after the time, so the time must be in UTC. A machine that runs the build in UTC would hide a
+     * time formatted in the JVM's own zone, so the test puts the JVM in a zone a long way from UTC.
+     */
     @Test
-    void sortsByEveryColumnAndAnswersAHistoryRestoreWithTheWholePage() throws Exception {
+    void theFetchedTimeIsInUtcWhateverZoneTheJvmIsIn() throws Exception {
+        var original = java.util.TimeZone.getDefault();
+        java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone("Pacific/Auckland"));
+        try {
+            var sub = newSub();
+            var viewer = viewerFor(sub);
+            turnOn(viewer, Feature.BLUEPRINTS);
+            var character = link(viewer, "Time Character", BLUEPRINT_SCOPE);
+            esi.blueprintsOf(character.eveId(), manyBlueprints(2));
+            startAndWait(sub, viewer);
+
+            var fetchedAt = blueprintRepository.characterStates(List.of(character.id())).getFirst().fetchedAt();
+            var pattern = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+            var inUtc = pattern.withZone(java.time.ZoneOffset.UTC).format(fetchedAt) + " UTC";
+            var inAuckland = pattern.withZone(java.time.ZoneId.of("Pacific/Auckland")).format(fetchedAt) + " UTC";
+            assertThat(inUtc).isNotEqualTo(inAuckland);
+
+            var status = mvc.perform(get("/blueprints/status").with(signedInAs(sub))).andExpect(status().isOk())
+                    .andReturn().getResponse().getContentAsString();
+            assertThat(status).contains(inUtc).doesNotContain(inAuckland);
+        } finally {
+            java.util.TimeZone.setDefault(original);
+        }
+    }
+
+    @Test
+    void sortsByEveryColumnAndAHistoryStepIsAnsweredWithTheWholePage() throws Exception {
         var sub = newSub();
         var viewer = viewerFor(sub);
         turnOn(viewer, Feature.INVENTORY, Feature.BLUEPRINTS);
@@ -434,12 +467,13 @@ class BlueprintsPageIT extends IntegrationTest {
                     .andExpect(status().isOk()).andExpect(content().string(containsString("Test Hauler Blueprint")));
         }
 
-        // htmx asks for a history entry with HX-Request too, and swaps what it gets over the whole body
-        var restore = mvc.perform(get("/blueprints").header("HX-Request", "true")
-                        .header("HX-History-Restore-Request", "true").with(signedInAs(sub)))
+        // htmx 4.0.0 asks for a step back in the history with HX-History-Restore-Request and without HX-Request (measured
+        // in a browser, see the Back tests in BlueprintsBrowserIT), so it is a plain request for the page
+        var restore = mvc.perform(get("/blueprints").header("HX-History-Restore-Request", "true").with(signedInAs(sub)))
                 .andExpect(status().isOk()).andReturn().getResponse();
         assertThat(restore.getContentAsString()).contains("<html", "id=\"blueprint-drawer\"");
-        assertThat(restore.getHeaders("Vary")).anyMatch(value -> value.contains("HX-History-Restore-Request"));
+        // the same address answers the page and, to htmx, the list alone, so a cache must tell them apart
+        assertThat(restore.getHeaders("Vary")).anyMatch(value -> value.contains("HX-Request"));
         var fragment = mvc.perform(get("/blueprints").header("HX-Request", "true").with(signedInAs(sub)))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
         assertThat(fragment).doesNotContain("<html", "id=\"blueprint-drawer\"");
