@@ -10,6 +10,15 @@ x-logging: &logging
     awslogs-group: /eveassist/prod
     tag: "{{.Name}}"
 
+# Caddy's access log holds visitors' addresses, so it goes to its own group with a shorter retention (14 days, the
+# privacy policy's promise) than the application's 30 days. Caddy's error messages go there too.
+x-proxy-logging: &proxy-logging
+  driver: awslogs
+  options:
+    awslogs-region: ${AWS_DEFAULT_REGION:?}
+    awslogs-group: /eveassist/prod/proxy
+    tag: "{{.Name}}"
+
 services:
   caddy:
     image: caddy:2.11.9-alpine
@@ -34,7 +43,7 @@ services:
         aliases:
           - ${DOMAIN}
           - ${AUTH_DOMAIN}
-    logging: *logging
+    logging: *proxy-logging
 
   keycloak:
     image: ${KEYCLOAK_IMAGE:?}

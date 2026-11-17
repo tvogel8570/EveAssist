@@ -23,7 +23,7 @@ on. Their values are in `Infrastructure/prod/ops.env` (git-ignored; see "Values"
 | KMS | key `$EVEASSIST_KMS_KEY_ID`, alias `eveassist-token-key` |
 | RDS | `eveassist-prod`, PostgreSQL 18.6, `$EVEASSIST_RDS_HOST`, subnet group `eveassist-prod` |
 | ECR | `eveassist-app`, `eveassist-keycloak` (tags immutable, scan on push, keep 10) |
-| Logs | `/eveassist/prod`, 30 days |
+| Logs | `/eveassist/prod`, 30 days (app, Keycloak); `/eveassist/prod/proxy`, 14 days (Caddy, with the access log) |
 | Secrets | `eveassist/db`, `eveassist/keycloak`, `eveassist/app`, and RDS's own `rds!db-...` |
 | SDE loaded | Fuzzwork build 3687575, 2026-11-11 |
 
@@ -84,7 +84,7 @@ Check that no write scope is selected. The public commitment is read-only.
 3. **AWS Backup**: weekly plan, keep four.
 4. **ECR**: repository `eveassist-app`, plus `eveassist-keycloak` if you build the Keycloak image yourself. Lifecycle
    rule: keep the last 10 images.
-5. **CloudWatch**: log group `/eveassist/prod`, retention 30 days.
+5. **CloudWatch**: log group `/eveassist/prod`, retention 30 days, and `/eveassist/prod/proxy`, retention 14 days (Caddy; the privacy policy promises 14 days for its access log).
 
 ## 5. Secrets Manager
 
@@ -109,7 +109,7 @@ Passwords are 40 letters and digits from `openssl rand` (no `/`, `+` or `=`, whi
 1. Ubuntu LTS or Amazon Linux, `t4g.medium` (4 GB; Keycloak needs about 1 GB, the app about 1 GB) in a public subnet,
    security group `eveassist-ec2`, the Elastic IP, encrypted root volume.
 2. IAM instance role `eveassist-ec2` with only: pull from the two ECR repositories, read the three secrets, use the KMS
-   key (see 4.1), write to the log group, SSM core (for Session Manager).
+   key (see 4.1), write to both log groups, SSM core (for Session Manager).
 3. Install Docker Engine and the Compose plugin. Turn on automatic security updates.
 4. Copy `Infrastructure/prod/` and `Infrastructure/postgres/sql/init/` to `/opt/eveassist/Infrastructure/` (the layout `db-setup.sh` expects).
    The instance has no git checkout: the files were copied by hand through SSM (base64 in a shell command is enough for the small ones). The
@@ -157,7 +157,7 @@ come from `App/Dockerfile` and `Infrastructure/keycloak/Dockerfile`. What it doe
   `keycloak:8080`, **everything else (`/admin*`, `/realms/master*`, `/metrics*`, any new path) answers 404**, with HSTS, `X-Content-Type-Options: nosniff`, `Referrer-Policy` and `X-Frame-Options: DENY`.
   The Caddy container has both public names as network aliases, so the app reaches Keycloak by the issuer's own name inside
   the network, with a valid certificate. Certificates are in a volume that is kept, because Let's Encrypt limits issuing.
-- Logging driver `awslogs`, group `/eveassist/prod`. Memory limits: Keycloak 1.5 GB, app 1.25 GB.
+- Logging driver `awslogs`, group `/eveassist/prod` (Caddy: `/eveassist/prod/proxy`). Memory limits: Keycloak 1.5 GB, app 1.25 GB.
 - Health checks: Keycloak on its management port, the app on 8081 (the image has no `curl`, so bash opens the socket).
 - `start.sh` reads the three secrets into the environment of that one process, logs in to ECR and runs
   `docker compose up -d`. No `.env` file with secrets is left on disk.
@@ -223,7 +223,7 @@ Do every item. A failed item stops the launch.
 - [x] Footer shows the CCP © notice, the operator name and the commit id (built with `--build-arg GIT_COMMIT=...`, otherwise it says `unknown`).
       `/.well-known/security.txt` answers with the contact and a future expiry.
 - [ ] The privacy policy page (`/privacy`) matches what is stored. Read it against the schema once more if a migration added a table since it was written
-      (last updated 2026-11-11). It says there are no access logs, which holds only while the Caddyfile has no `log` directive.
+      (last updated 2026-11-11). Its "web server's log" item must match the Caddyfile's `log` blocks and the 14-day retention of `/eveassist/prod/proxy`.
 - [x] A CloudWatch log line shows with no tokens or secrets. Trigger a test ERROR and the alarm emails. Done 2026-11-12: a test ERROR line reached
       CloudWatch and put `eveassist-prod-errors` into ALARM, and CloudWatch recorded a successful notification to the alert topic (see the deploy log).
 - [x] **Restore test**: take an RDS snapshot, restore it to a new instance, start the stack against it on your dev

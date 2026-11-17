@@ -15,6 +15,7 @@ REGION=us-west-2
 ACCOUNT=${EVEASSIST_ACCOUNT_ID:?load ops.env first (set -a; . ./ops.env; set +a)}
 INSTANCE=${EVEASSIST_INSTANCE_ID:?load ops.env first (set -a; . ./ops.env; set +a)}
 LOG_GROUP=/eveassist/prod
+PROXY_LOG_GROUP=/eveassist/prod/proxy   # Caddy's own group (access log and errors), see compose.yaml
 NS=EveAssist/Prod
 TAGS=(Key=Project,Value=eveassist Key=Env,Value=prod)
 export AWS_PAGER=""
@@ -27,17 +28,19 @@ aws sns subscribe --region $REGION --topic-arn "$TOPIC" --protocol email --notif
 US_EAST_TOPIC=arn:aws:sns:us-east-1:$ACCOUNT:billing-alarm-eve-assist
 aws sns subscribe --region us-east-1 --topic-arn "$US_EAST_TOPIC" --protocol email --notification-endpoint "$ALERT_EMAIL" > /dev/null
 
-echo "2. log metric filters on $LOG_GROUP"
-filter() { # name, pattern, metric
-    aws logs put-metric-filter --region $REGION --log-group-name $LOG_GROUP --filter-name "$1" --filter-pattern "$2" \
-        --metric-transformations "metricName=$3,metricNamespace=$NS,metricValue=1,defaultValue=0"
+echo "2. log metric filters on $LOG_GROUP and $PROXY_LOG_GROUP"
+filter() { # log group, name, pattern, metric
+    aws logs put-metric-filter --region $REGION --log-group-name "$1" --filter-name "$2" --filter-pattern "$3" \
+        --metric-transformations "metricName=$4,metricNamespace=$NS,metricValue=1,defaultValue=0"
 }
-# the app and Keycloak write " ERROR " at that level; Caddy writes JSON with a lower-case level
-filter eveassist-prod-errors '" ERROR "' AppErrors
+# the app and Keycloak write " ERROR " at that level
+filter $LOG_GROUP eveassist-prod-errors '" ERROR "' AppErrors
 # the app logs a WARN with "failed" when an ESI fetch fails (it does not log the HTTP status, so 420 and 429 are not counted apart)
-filter eveassist-prod-esi-failures '"WARN" "failed"' EsiFetchFailures
+filter $LOG_GROUP eveassist-prod-esi-failures '"WARN" "failed"' EsiFetchFailures
 # Caddy could not reach the app or Keycloak: connection refused, or the name did not resolve
-filter eveassist-prod-upstream-unreachable '{ $.logger = "http.log.error" && $.msg = "*dial tcp*" }' UpstreamUnreachable
+filter $PROXY_LOG_GROUP eveassist-prod-upstream-unreachable '{ $.logger = "http.log.error" && $.msg = "*dial tcp*" }' UpstreamUnreachable
+# Before Caddy had its own group this filter sat on $LOG_GROUP. Remove that copy, which no longer sees any Caddy line.
+aws logs delete-metric-filter --region $REGION --log-group-name $LOG_GROUP --filter-name eveassist-prod-upstream-unreachable 2>/dev/null || true
 
 echo "3. alarms in $REGION"
 alarm() { # name, description, then the rest of the put-metric-alarm arguments

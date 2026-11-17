@@ -515,3 +515,24 @@ the file (`mv`, `cp` over a new file, an editor that saves by renaming) leaves t
    connections; certificates are in a volume, sessions in Postgres).
 3. Check that the container sees the change (`docker exec <project>-caddy-1 grep -c <something new> /etc/caddy/Caddyfile`) and test
    from outside. Use `docker exec`, not `docker compose exec`: Compose needs the variables `start.sh` sets and fails without them.
+
+## Turning on Caddy's access log (once)
+
+The release that adds the access log moves Caddy to its own log group, `/eveassist/prod/proxy`, kept for 14 days, which is what
+the privacy policy promises. The group and the instance role's permission must exist before Caddy restarts with the new
+`compose.yaml`, because the `awslogs` driver does not create groups and a container whose log group is missing does not start.
+Run these from the dev machine with the admin profile, before the deploy:
+
+1. Create the group and set its retention:
+   `aws logs create-log-group --profile EveAssist-admin --region us-west-2 --log-group-name /eveassist/prod/proxy --tags Project=eveassist,Env=prod`
+   then `aws logs put-retention-policy --profile EveAssist-admin --region us-west-2 --log-group-name /eveassist/prod/proxy --retention-in-days 14`.
+2. In the instance role `eveassist-ec2`, inline policy `eveassist-prod`, statement `Logs`: add
+   `arn:aws:logs:us-west-2:<account>:log-group:/eveassist/prod/proxy:*` to `Resource`, next to the existing `/eveassist/prod:*`.
+3. Deploy the release. Copy the new `compose.yaml` and `Caddyfile` to the instance, following "Changing the Caddyfile" above
+   for the Caddyfile, then recreate Caddy with `start.sh` so the new logging settings apply (a plain `docker restart` keeps the old
+   log group).
+4. Run `alarms.sh` again. It puts the upstream-unreachable filter on the new group and removes its old copy from `/eveassist/prod`.
+5. Check: a request to `https://<domain>/` appears in `/eveassist/prod/proxy` with `user_agent` and no `headers`; a request to
+   `/login/oauth2/code/keycloak?code=x&state=y&z=1` shows only `?z=1`; the Route 53 checks of `/privacy` do not appear; Caddy lines
+   no longer appear in `/eveassist/prod`.
+6. The privacy policy with the "web server's log" item must be live from the same release. Do not turn on the log without it.
