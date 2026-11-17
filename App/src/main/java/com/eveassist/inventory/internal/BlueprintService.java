@@ -12,6 +12,7 @@ import com.eveassist.sde.TypeId;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -23,7 +24,8 @@ public class BlueprintService {
 
     public record Blueprint(long itemId, int typeId, String name, String kind, int materialEfficiency,
             int timeEfficiency, long quantity, int runs, UUID holderId, String holderName, boolean corporation,
-            String status, String place, String held, String hangar, String container, boolean matched) {
+            int holderColor, String status, String place, String held, String hangar, String container,
+            boolean matched) {
     }
 
     public record Holder(UUID id, String name, boolean corporation) {
@@ -65,9 +67,11 @@ public class BlueprintService {
     private final BlueprintFetcher fetcher;
     private final BlueprintQueries queries;
     private final SdeService sde;
+    private final HolderColors holderColors;
 
     BlueprintService(LinkedCharacters linked, BlueprintFetcher fetcher,
-            BlueprintQueries queries, SdeService sde) {
+            BlueprintQueries queries, SdeService sde, HolderColors holderColors) {
+        this.holderColors = holderColors;
         this.linked = linked;
         this.fetcher = fetcher;
         this.queries = queries;
@@ -79,7 +83,7 @@ public class BlueprintService {
     /** The ids a viewer may read, from the features turned on and the corporations they hold. */
     private record Scope(java.util.Set<Feature> features, List<LinkedCharacter> characters,
             List<CorporationRepository.Corporation> ownCorporations, UUID[] characterIds, UUID[] corporationIds,
-            UUID[] structureCharacterIds) {
+            UUID[] structureCharacterIds, Map<UUID, Integer> colors) {
     }
 
     private Scope scope(Viewer viewer) {
@@ -91,12 +95,13 @@ public class BlueprintService {
                 ? fetcher.corporationsWithDirector(viewer) : List.<CorporationRepository.Corporation>of();
         var corporationIds = ownCorporations.stream().map(CorporationRepository.Corporation::id).toArray(UUID[]::new);
         var structureCharacterIds = characters.stream().map(LinkedCharacter::id).toArray(UUID[]::new);
-        return new Scope(features, characters, ownCorporations, characterIds, corporationIds, structureCharacterIds);
+        return new Scope(features, characters, ownCorporations, characterIds, corporationIds, structureCharacterIds,
+                holderColors.of(viewer));
     }
 
     private List<Blueprint> rows(Scope scope, BlueprintFilter filter, java.util.Collection<Long> itemIds) {
         return queries.list(scope.characterIds(), scope.corporationIds(), scope.structureCharacterIds(), filter, itemIds)
-                .stream().map(this::blueprint).toList();
+                .stream().map(row -> blueprint(row, scope.colors())).toList();
     }
 
     public Page browse(Viewer viewer, BlueprintFilter filter) {
@@ -140,10 +145,10 @@ public class BlueprintService {
         return itemIds.stream().distinct().map(byId::get).filter(java.util.Objects::nonNull).toList();
     }
 
-    private Blueprint blueprint(BlueprintQueries.Row row) {
+    private Blueprint blueprint(BlueprintQueries.Row row, Map<UUID, Integer> colors) {
         return new Blueprint(row.itemId(), row.typeId(), row.typeName(), row.kind(), row.materialEfficiency(),
                 row.timeEfficiency(), row.quantity(), row.runs(), row.holderId(), row.holderName(), row.corporation(),
-                "NOT_READ", row.place(), row.held(), row.hangar(), row.container(), row.matched());
+                colors.getOrDefault(row.holderId(), 0), "NOT_READ", row.place(), row.held(), row.hangar(), row.container(), row.matched());
     }
 
     private RecipeDetail recipe(Blueprint blueprint) {

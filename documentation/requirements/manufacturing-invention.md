@@ -48,9 +48,14 @@ place to see and work with them, like the blueprint window in the game.
   [Pilot inventory](pilot-inventory.md#browse-view), because each blueprint is matched to its asset row by item id.
 - **Not matched yet.** ESI's blueprint and asset lists are cached apart, so a blueprint can arrive before its asset row.
   Such a blueprint is still shown: its place is named from its own location id and marked "not matched yet".
-- **Status.** The column is there, but industry jobs are not read yet, so every blueprint shows "Available / not read
-  yet". Manufacturing, copying, ME and TE research and invention come when industry jobs are fetched, with their own
+- **Status.** The column is there, but industry jobs are not read yet, so every blueprint shows "Under development".
+  Manufacturing, copying, ME and TE research and invention come when industry jobs are fetched, with their own
   scopes.
+- **The holder has its colour** (the developer decided on 2026-11-18). The holder's name has a square of the holder's
+  colour in front of it, the same colour as in the bars of the inventory page: the characters in the order they were
+  linked, then the corporations by name. A corporation's colour is its place among all the account's corporations, not
+  among the ones this page shows, so it matches the inventory page even though this page leaves some out
+  (`HolderColors`).
 - **Search, sort and filter**: by text, type, BPO or BPC, status, a minimum ME or TE, holder, or originals that still
   need research. As on the inventory page, the address is the filter, and the menu link brings the page back with the
   filter it last had in the session (see [Pilot inventory](pilot-inventory.md#browse-view)).

@@ -109,7 +109,7 @@ class BlueprintsPageIT extends IntegrationTest {
         var page = mvc.perform(get("/blueprints").with(signedInAs(sub))).andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
         assertThat(page).contains("Test Hauler Blueprint", "Test Component Blueprint", "Jita IV - Moon 4 - Caldari Navy Assembly Plant",
-                "not matched yet", "Available / not read yet", "ME");
+                "not matched yet", "Under development", "ME");
         // the results block is part of the page once, inside main, and not again after the layout
         assertThat(page.split("id=\"blueprint-actions\"", -1)).hasSize(2);
         var inventory = mvc.perform(get("/inventory").with(signedInAs(sub))).andExpect(status().isOk())
@@ -131,7 +131,7 @@ class BlueprintsPageIT extends IntegrationTest {
 
         var csv = mvc.perform(post("/blueprints/export.csv").param("item", "81001").with(csrf()).with(signedInAs(sub)))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
-        assertThat(csv).contains("\"Test Hauler Blueprint\",\"BPO\",\"Available / not read yet\",\"4\",\"8\"");
+        assertThat(csv).contains("\"Test Hauler Blueprint\",\"BPO\",\"Under development\",\"4\",\"8\"");
     }
 
     @Test
@@ -451,6 +451,48 @@ class BlueprintsPageIT extends IntegrationTest {
         } finally {
             java.util.TimeZone.setDefault(original);
         }
+    }
+
+    private static String rowOf(String page, long itemId) {
+        var start = page.indexOf("data-blueprint-row=\"" + itemId + "\"");
+        assertThat(start).as("the page has a row for " + itemId).isGreaterThanOrEqualTo(0);
+        return page.substring(start, page.indexOf("</tr>", start));
+    }
+
+    @Test
+    void theHolderColumnHasTheColourOfTheHolderAsInTheInventoryBars() throws Exception {
+        var sub = newSub();
+        var viewer = viewerFor(sub);
+        turnOn(viewer, Feature.INVENTORY, Feature.BLUEPRINTS, Feature.CORPORATION_ASSETS, Feature.CORPORATION_BLUEPRINTS);
+        var plainCorporation = 98_600_001L + ThreadLocalRandom.current().nextInt(100_000);
+        var readableCorporation = plainCorporation + 1_000_000L;
+        esi.corporationNamed(plainCorporation, "Plain Corporation");
+        esi.corporationNamed(readableCorporation, "Readable Corporation");
+        esi.corporationAssetsOf(readableCorporation, List.of(asset(92000, 27, 60003760L, "station", "OfficeFolder", null)));
+        esi.corporationBlueprintsOf(readableCorporation,
+                List.of(new CharacterBlueprint(92003, 2001, 92000L, "CorpSAG2", -1, 10, 20, -1)));
+        // linked in this order, which fixes the colours of the characters: the first is 0 and the second is 1
+        var first = link(viewer, "First Linked", ASSETS_SCOPE, BLUEPRINT_SCOPE, CORP_ROLES_SCOPE);
+        esi.inCorporation(first.eveId(), plainCorporation);
+        var second = link(viewer, "Second Linked", ASSETS_SCOPE, BLUEPRINT_SCOPE, CORP_ASSETS_SCOPE, CORP_DIVISIONS_SCOPE,
+                CORP_ROLES_SCOPE, CORP_BLUEPRINT_SCOPE);
+        esi.inCorporation(second.eveId(), readableCorporation, "Director");
+        esi.blueprintsOf(first.eveId(), List.of(new CharacterBlueprint(92001, 2001, 60003760L, "Hangar", -1, 4, 8, -1)));
+        esi.blueprintsOf(second.eveId(), List.of(new CharacterBlueprint(92002, 2001, 60003760L, "Hangar", -1, 4, 8, -1)));
+        // the inventory page names every corporation of the account, the one nobody can read from here included
+        mvc.perform(get("/inventory/status").param("start", "1").with(signedInAs(sub))).andExpect(status().isOk());
+        await().atMost(10, TimeUnit.SECONDS).until(() -> !corporationFetcher.anyRunning(viewer));
+        startAndWait(sub, viewer);
+
+        var page = mvc.perform(get("/blueprints").with(signedInAs(sub))).andExpect(status().isOk()).andReturn()
+                .getResponse().getContentAsString();
+
+        assertThat(rowOf(page, 92001)).contains("class=\"seg-0\"", "First Linked");
+        assertThat(rowOf(page, 92002)).contains("class=\"seg-1\"", "Second Linked");
+        // two characters, then the corporations by name: Plain is 2 and Readable is 3, though this page shows only
+        // Readable, so counting among the corporations it shows would make it 2 here and 3 in the inventory bars
+        assertThat(rowOf(page, 92003)).contains("class=\"seg-3\"", "Readable Corporation");
+        assertThat(page).doesNotContain("Plain Corporation");
     }
 
     @Test

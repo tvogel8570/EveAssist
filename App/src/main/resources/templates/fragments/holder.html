@@ -1,0 +1,13 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!--
+  A holder's name with a square of its colour in front, the same colour as in the bars of the inventory page
+  (HolderColors). The square is drawn as SVG because the colours are fills: seg-0 and on in app.css.
+-->
+<span th:fragment="holder(color, name)" class="inline-flex items-center gap-1.5">
+    <svg class="h-3 w-3 shrink-0" viewBox="0 0 12 12" aria-hidden="true"><rect width="12" height="12" rx="2" th:class="'seg-' + ${color}"/></svg>
+    <span th:text="${name}">Holder</span>
+</span>
+</body>
+</html>

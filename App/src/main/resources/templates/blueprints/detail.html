@@ -17,7 +17,7 @@
         <dt class="opacity-60" th:text="#{blueprints.col.te}">TE</dt><dd th:text="${detail.blueprint.timeEfficiency}">20</dd>
         <dt class="opacity-60" th:text="#{blueprints.col.runs}">Runs</dt>
         <dd th:text="${detail.blueprint.runs < 0 ? '—' : detail.blueprint.runs}">—</dd>
-        <dt class="opacity-60" th:text="#{blueprints.col.holder}">Holder</dt><dd th:text="${detail.blueprint.holderName}">Holder</dd>
+        <dt class="opacity-60" th:text="#{blueprints.col.holder}">Holder</dt><dd><span th:replace="~{fragments/holder :: holder(${detail.blueprint.holderColor}, ${detail.blueprint.holderName})}">Holder</span></dd>
         <dt class="opacity-60" th:text="#{blueprints.col.place}">Place</dt>
         <dd><span th:text="${detail.blueprint.place}">Place</span>
             <span th:if="${detail.blueprint.hangar != null}" th:text="' › ' + ${detail.blueprint.hangar}"> › Hangar</span>
