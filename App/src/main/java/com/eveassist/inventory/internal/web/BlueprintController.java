@@ -122,14 +122,15 @@ class BlueprintController {
         var out = response.getWriter();
         var header = new String[] {"blueprints.csv.type", "blueprints.csv.kind", "blueprints.csv.status",
                 "blueprints.csv.me", "blueprints.csv.te", "blueprints.csv.runs", "blueprints.csv.holder",
-                "blueprints.csv.place"};
+                "blueprints.csv.place", "blueprints.csv.tech"};
         out.write(InventoryController.csvLine(java.util.Arrays.stream(header)
                 .map(key -> messages.getMessage(key, null, key, locale)).toArray(String[]::new)));
         for (var item : visible) {
             out.write(InventoryController.csvLine(item.name(), item.kind(),
                     messages.getMessage("blueprints.status.notRead", null, locale),
                     Integer.toString(item.materialEfficiency()), Integer.toString(item.timeEfficiency()),
-                    item.runs() < 0 ? "" : Integer.toString(item.runs()), item.holderName(), fullPlace(item)));
+                    item.runs() < 0 ? "" : Integer.toString(item.runs()), item.holderName(), fullPlace(item),
+                    messages.getMessage("blueprints.tech." + item.tech(), null, locale)));
         }
     }
 

@@ -9,6 +9,22 @@
         <input type="hidden" name="seen" th:value="${view.fingerprint}">
         <input type="hidden" name="limit" th:value="${filter.limit}">
     </div>
+    <!-- One button for each tech level, with how many blueprints it would show under the other filters. -->
+    <div class="join flex-wrap mb-2" role="group" th:attr="aria-label=#{blueprints.tech.aria}"
+         th:if="${#lists.size(view.techLevels) > 1 or filter.tech != null}">
+        <a class="btn btn-sm join-item" th:classappend="${filter.tech == null} ? ' btn-active'"
+           th:href="@{'/blueprints?' + ${filter.techQuery(null)}}" th:attr="hx-get=@{'/blueprints?' + ${filter.techQuery(null)}}"
+           hx-target="#blueprint-results" hx-push-url="true">
+            <span th:text="#{blueprints.tech.all}">All</span>
+            <span class="opacity-70" th:text="${#numbers.formatInteger(view.techTotal, 1, 'COMMA')}">14,271</span></a>
+        <a class="btn btn-sm join-item" th:each="level : ${view.techLevels}"
+           th:classappend="${filter.tech != null and filter.tech == level} ? ' btn-active'"
+           th:href="@{'/blueprints?' + ${filter.techQuery(level)}}" th:attr="hx-get=@{'/blueprints?' + ${filter.techQuery(level)}}"
+           hx-target="#blueprint-results" hx-push-url="true">
+            <span th:text="#{${'blueprints.tech.' + level}}">T1</span>
+            <span class="opacity-70" th:text="${#numbers.formatInteger(view.techCounts.getOrDefault(level, 0L), 1, 'COMMA')}">10,714</span></a>
+    </div>
+
     <div class="flex flex-wrap items-center gap-3 text-sm mb-2">
         <span class="opacity-80" th:if="${view.total > #lists.size(view.items)}"
               th:text="#{blueprints.summaryOf(${#lists.size(view.items)}, ${view.total})}">Showing 100 of 14,213 blueprints</span>
@@ -49,6 +65,8 @@
                        hx-target="#blueprint-results" hx-push-url="true" th:text="#{blueprints.col.type}">Type</a></th>
                 <th><a th:href="@{'/blueprints?' + ${filter.sortQuery('kind')}}" th:attr="hx-get=@{'/blueprints?' + ${filter.sortQuery('kind')}}"
                        hx-target="#blueprint-results" hx-push-url="true" th:text="#{blueprints.col.kind}">Kind</a></th>
+                <th><a th:href="@{'/blueprints?' + ${filter.sortQuery('tech')}}" th:attr="hx-get=@{'/blueprints?' + ${filter.sortQuery('tech')}}"
+                       hx-target="#blueprint-results" hx-push-url="true" th:text="#{blueprints.col.tech}">Tech</a></th>
                 <th><a th:href="@{'/blueprints?' + ${filter.sortQuery('status')}}" th:attr="hx-get=@{'/blueprints?' + ${filter.sortQuery('status')}}"
                        hx-target="#blueprint-results" hx-push-url="true" th:text="#{blueprints.col.status}">Status</a></th>
                 <th class="num"><a th:href="@{'/blueprints?' + ${filter.sortQuery('me')}}" th:attr="hx-get=@{'/blueprints?' + ${filter.sortQuery('me')}}"
@@ -71,8 +89,11 @@
                     <a class="link font-medium" data-blueprint-link th:href="@{'/blueprints/' + ${item.itemId} + '?' + ${filter.query}}"
                        th:attr="hx-get=@{'/blueprints/' + ${item.itemId} + '?' + ${filter.query}}"
                        hx-target="#blueprint-drawer" hx-swap="innerHTML" hx-push-url="true" th:text="${item.name}">Blueprint</a>
+                    <span class="badge badge-xs badge-outline ml-1" th:if="${item.variant != null}" th:text="${item.variant}">Faction</span>
                 </td>
                 <td><span class="badge badge-sm" th:text="${item.kind}" th:classappend="${item.kind == 'BPC'} ? ' badge-secondary' : ' badge-accent'">BPO</span></td>
+                <td th:text="${item.tech == 0} ? '—' : 'T' + ${item.tech}"
+                    th:title="#{${'blueprints.tech.' + item.tech}}">T1</td>
                 <td><span class="badge badge-sm badge-ghost" th:text="#{blueprints.status.notRead}">Available / not read yet</span></td>
                 <td class="num" th:text="${item.materialEfficiency}">10</td>
                 <td class="num" th:text="${item.timeEfficiency}">20</td>

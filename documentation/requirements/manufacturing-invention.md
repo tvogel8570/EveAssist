@@ -64,6 +64,17 @@ place to see and work with them, like the blueprint window in the game.
   summary says "Showing 300 of 14,213 blueprints", and the total is counted in the database for the current filter.
   A new sort order starts again at the first page, and a blueprint's drawer closes back to the page size it had. The
   tick box in the header picks the rows on screen. Export takes every picked row, however many pages they came from.
+- **Tech level** (the developer decided on 2026-11-18). A row has a Tech column (T1, T2, T3, or a dash), and buttons
+  above the table separate the list: All, T1, T2, T3 and **No tech level**, each with how many blueprints it holds under
+  the other filters (a level with none has no button). The level is the `techLevel` attribute (422) of what the
+  blueprint makes. A Structure item that has none is read from its meta group: Structure Tech I and Structure Faction
+  are T1, and Structure Tech II is T2. What has no tech level in the game, mostly components, fuel blocks and tools,
+  is "No tech level" (15.6% of the first real account). The address carries it (`tech=0` to `tech=3`), so it is
+  remembered with the rest of the filter, and the list can be sorted by it, with "No tech level" last.
+- **Variant badge.** A different matter from the tech level: a small badge beside the blueprint's name for the meta
+  group of what it makes, such as Faction, Storyline, Officer, Deadspace or Abyssal, and "Structure" for Upwell items.
+  Tech I, Tech II, Tech III and items with no meta group have none. The two disagree in places (a Storyline item can be
+  T2), which is why they are not one list. A filter by variant can follow when it is wanted.
 - **Actions on ticked rows.** A menu offers Load into project (shown but off until the plan → project function defines
   its workflow), Show in Inventory, Export picked as CSV and Clear selection. Ticks survive filtering, and the server
   checks again that every picked blueprint belongs to the account.

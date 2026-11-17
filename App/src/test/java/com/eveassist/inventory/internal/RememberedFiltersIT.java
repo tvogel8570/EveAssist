@@ -93,10 +93,10 @@ class RememberedFiltersIT extends IntegrationTest {
     void blueprintsComeBackWithTheFilterTheyWereLeftWith() throws Exception {
         var browser = newBrowser();
 
-        browser.open("/blueprints?q=Hauler&kind=BPC&me=5&sort=me&dir=desc&limit=400").andExpect(status().isOk());
+        browser.open("/blueprints?q=Hauler&kind=BPC&tech=2&me=5&sort=me&dir=desc&limit=400").andExpect(status().isOk());
 
         var address = browser.sendsTo("/blueprints");
-        assertThat(address).startsWith("/blueprints?").contains("q=Hauler", "kind=BPC", "me=5", "sort=me", "dir=desc")
+        assertThat(address).startsWith("/blueprints?").contains("q=Hauler", "kind=BPC", "tech=2", "me=5", "sort=me", "dir=desc")
                 .doesNotContain("limit");
 
         // Clear goes to the page without a filter, which is the unfiltered list and is what is kept from then on

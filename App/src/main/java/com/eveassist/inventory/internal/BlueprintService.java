@@ -25,21 +25,33 @@ public class BlueprintService {
     public record Blueprint(long itemId, int typeId, String name, String kind, int materialEfficiency,
             int timeEfficiency, long quantity, int runs, UUID holderId, String holderName, boolean corporation,
             int holderColor, String status, String place, String held, String hangar, String container,
-            boolean matched) {
+            boolean matched, int tech, String variant) {
     }
 
     public record Holder(UUID id, String name, boolean corporation) {
     }
 
     public record Page(List<Blueprint> items, List<Holder> holders, List<BlueprintFetcher.HolderStatus> statuses,
-            BlueprintFilter filter, boolean hasSources, long total) {
+            BlueprintFilter filter, boolean hasSources, long total, Map<Integer, Long> techCounts) {
+
+        /** How many blueprints the buttons above the table add up to: the list under every filter but the tech level. */
+        public long techTotal() {
+            return techCounts.values().stream().mapToLong(Long::longValue).sum();
+        }
 
         /**
          * A short text that stands for everything this page shows. The page sends it back with the status poll, and
          * the table is fetched again only when it no longer matches, so a read that changed nothing sends nothing.
          */
         public String fingerprint() {
-            return Integer.toHexString(java.util.Objects.hash(items, holders, total, hasSources));
+            return Integer.toHexString(java.util.Objects.hash(items, holders, total, hasSources, techCounts));
+        }
+
+        /** The tech levels that have a button above the table, in the order shown: 1, 2, 3, and then none. */
+        public List<Integer> techLevels() {
+            return java.util.stream.Stream.of(1, 2, 3, 0)
+                    .filter(level -> techCounts.containsKey(level) || java.util.Objects.equals(filter.tech(), level))
+                    .toList();
         }
 
         /** Whether the list stops before the end and a page more can be shown. */
@@ -119,7 +131,8 @@ public class BlueprintService {
                         String.CASE_INSENSITIVE_ORDER))
                 .forEach(corporation -> holders.add(new Holder(corporation.id(), corporation.name(), true)));
         return new Page(rows, List.copyOf(holders), fetcher.status(viewer), filter,
-                scope.characterIds().length > 0 || scope.corporationIds().length > 0, total);
+                scope.characterIds().length > 0 || scope.corporationIds().length > 0, total,
+                queries.techCounts(scope.characterIds(), scope.corporationIds(), scope.structureCharacterIds(), filter));
     }
 
     public Optional<Detail> detail(Viewer viewer, long itemId, BlueprintFilter filter) {
@@ -129,7 +142,7 @@ public class BlueprintService {
             return Optional.empty();
         }
         var row = blueprint.get();
-        var sameType = rows(scope, new BlueprintFilter("", row.typeId(), "", 0, 0, null, false, "", "type", "asc", BlueprintFilter.NO_LIMIT), null)
+        var sameType = rows(scope, new BlueprintFilter("", row.typeId(), "", 0, 0, null, false, "", null, "type", "asc", BlueprintFilter.NO_LIMIT), null)
                 .stream().filter(other -> other.itemId() != row.itemId()).toList();
         return Optional.of(new Detail(row, sameType, recipe(row), filter.query()));
     }
@@ -148,7 +161,8 @@ public class BlueprintService {
     private Blueprint blueprint(BlueprintQueries.Row row, Map<UUID, Integer> colors) {
         return new Blueprint(row.itemId(), row.typeId(), row.typeName(), row.kind(), row.materialEfficiency(),
                 row.timeEfficiency(), row.quantity(), row.runs(), row.holderId(), row.holderName(), row.corporation(),
-                colors.getOrDefault(row.holderId(), 0), "NOT_READ", row.place(), row.held(), row.hangar(), row.container(), row.matched());
+                colors.getOrDefault(row.holderId(), 0), "NOT_READ", row.place(), row.held(), row.hangar(), row.container(),
+                row.matched(), row.tech(), row.variant());
     }
 
     private RecipeDetail recipe(Blueprint blueprint) {

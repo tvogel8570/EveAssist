@@ -8,7 +8,7 @@ import java.util.UUID;
 
 /** The Blueprints table's address: every search, filter and sort can be bookmarked and shared. */
 public record BlueprintFilter(String search, Integer typeId, String kind, int minimumMe, int minimumTe,
-        UUID holder, boolean needsResearch, String status, String sort, String direction, int limit) {
+        UUID holder, boolean needsResearch, String status, Integer tech, String sort, String direction, int limit) {
 
     /** How many blueprints the first page shows, and how many each "Show more" adds. */
     public static final int FIRST_PAGE = 100;
@@ -19,12 +19,23 @@ public record BlueprintFilter(String search, Integer typeId, String kind, int mi
 
     /** A filter for every blueprint of the viewer, in type order. */
     public static BlueprintFilter all() {
-        return new BlueprintFilter("", null, "", 0, 0, null, false, "", "type", "asc", NO_LIMIT);
+        return new BlueprintFilter("", null, "", 0, 0, null, false, "", null, "type", "asc", NO_LIMIT);
     }
 
     public BlueprintFilter withLimit(int newLimit) {
-        return new BlueprintFilter(search, typeId, kind, minimumMe, minimumTe, holder, needsResearch, status, sort,
+        return new BlueprintFilter(search, typeId, kind, minimumMe, minimumTe, holder, needsResearch, status, tech, sort,
                 direction, newLimit);
+    }
+
+    /** The same filter for one tech level, or for every blueprint with {@code null}. */
+    public BlueprintFilter withTech(Integer newTech) {
+        return new BlueprintFilter(search, typeId, kind, minimumMe, minimumTe, holder, needsResearch, status, newTech,
+                sort, direction, limit);
+    }
+
+    /** The address of the list for a tech level, from its first page: the buttons above the table link to it. */
+    public String techQuery(Integer newTech) {
+        return withTech(newTech).withLimit(FIRST_PAGE).query();
     }
 
     public static BlueprintFilter parse(Map<String, String[]> parameters) {
@@ -35,15 +46,22 @@ public record BlueprintFilter(String search, Integer typeId, String kind, int mi
             kind = "";
         }
         var status = "not_read".equals(first(parameters, "status")) ? "not_read" : "";
+        var tech = switch (first(parameters, "tech")) {
+            case "0" -> 0;
+            case "1" -> 1;
+            case "2" -> 2;
+            case "3" -> 3;
+            default -> null;
+        };
         var sort = first(parameters, "sort");
-        if (!java.util.Set.of("type", "kind", "status", "me", "te", "runs", "holder", "place")
+        if (!java.util.Set.of("type", "kind", "status", "tech", "me", "te", "runs", "holder", "place")
                 .contains(sort)) {
             sort = "type";
         }
         var direction = "desc".equalsIgnoreCase(first(parameters, "dir")) ? "desc" : "asc";
         return new BlueprintFilter(first(parameters, "q"), type, kind, bounded(parameters, "me", 0, 10),
-                bounded(parameters, "te", 0, 20), holder, "1".equals(first(parameters, "research")), status, sort,
-                direction, limit(first(parameters, "limit")));
+                bounded(parameters, "te", 0, 20), holder, "1".equals(first(parameters, "research")), status, tech,
+                sort, direction, limit(first(parameters, "limit")));
     }
 
     private static int limit(String value) {
@@ -91,6 +109,9 @@ public record BlueprintFilter(String search, Integer typeId, String kind, int mi
             params.put("type", typeId.toString());
         }
         put(params, "kind", kind);
+        if (tech != null) {
+            params.put("tech", tech.toString());
+        }
         if (minimumMe > 0) {
             params.put("me", Integer.toString(minimumMe));
         }
@@ -117,7 +138,7 @@ public record BlueprintFilter(String search, Integer typeId, String kind, int mi
     public String sortQuery(String column) {
         var nextDirection = sort.equals(column) && "asc".equals(direction) ? "desc" : "asc";
         // a new order starts again at the first page
-        return new BlueprintFilter(search, typeId, kind, minimumMe, minimumTe, holder, needsResearch, status, column,
+        return new BlueprintFilter(search, typeId, kind, minimumMe, minimumTe, holder, needsResearch, status, tech, column,
                 nextDirection, FIRST_PAGE).query();
     }
 

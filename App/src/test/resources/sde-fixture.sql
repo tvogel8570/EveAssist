@@ -69,3 +69,18 @@ INSERT INTO sde."industryActivityMaterials" VALUES
 -- A mutaplasmid (5001) that turns the Test Hauler's kind of item into type 3001, as in the real SDE
 CREATE TABLE sde."dynamicItemAttributeMappings" ("typeID" integer, "applicableTypeID" integer, "resultingTypeID" integer);
 INSERT INTO sde."dynamicItemAttributeMappings" VALUES (5001, 1002, 3001);
+
+-- What tier a product is: the techLevel attribute (422), and the meta group for variants such as Faction or Structure.
+-- 1001 is 1, 1002 has none (a component), 1003 is 2, 1004 has none but is a Structure Tech I item, 1005 is 3,
+-- 1006 is a Faction item of level 1, and 1007 is a Storyline item of level 2 whose value is stored as a float.
+CREATE TABLE sde."dgmTypeAttributes" ("typeID" integer NOT NULL, "attributeID" integer NOT NULL, "valueInt" integer,
+    "valueFloat" double precision, PRIMARY KEY ("typeID", "attributeID"));
+INSERT INTO sde."dgmTypeAttributes" VALUES
+    (1001, 422, 1, NULL), (1003, 422, 2, NULL), (1005, 422, 3, NULL), (1006, 422, 1, NULL), (1007, 422, NULL, 2.0);
+
+CREATE TABLE sde."invMetaGroups" ("metaGroupID" integer PRIMARY KEY, "metaGroupName" varchar(100));
+INSERT INTO sde."invMetaGroups" VALUES (1, 'Tech I'), (2, 'Tech II'), (3, 'Storyline'), (4, 'Faction'), (14, 'Tech III'),
+    (54, 'Structure Tech I');
+
+CREATE TABLE sde."invMetaTypes" ("typeID" integer PRIMARY KEY, "parentTypeID" integer, "metaGroupID" integer);
+INSERT INTO sde."invMetaTypes" VALUES (1004, NULL, 54), (1006, NULL, 4), (1007, NULL, 3);

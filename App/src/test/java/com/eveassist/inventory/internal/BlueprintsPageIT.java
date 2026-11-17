@@ -495,6 +495,100 @@ class BlueprintsPageIT extends IntegrationTest {
         assertThat(page).doesNotContain("Plain Corporation");
     }
 
+    private static CharacterBlueprint blueprint(long itemId, int typeId) {
+        return new CharacterBlueprint(itemId, typeId, 60003760L, "Hangar", -1, 4, 8, -1);
+    }
+
+    private static List<Long> rowIds(String page) {
+        var ids = new java.util.ArrayList<Long>();
+        var matcher = java.util.regex.Pattern.compile("data-blueprint-row=\"(\\d+)\"").matcher(page);
+        while (matcher.find()) {
+            ids.add(Long.parseLong(matcher.group(1)));
+        }
+        return ids;
+    }
+
+    /**
+     * The fixture's products: 2001 makes a tech 1 item, 2002 one with no tech level (a component), 2003 tech 2, 2004 a
+     * Structure Tech I item that has no tech level of its own, 2005 tech 3, 2006 a tech 1 Faction item and 2007 a Storyline
+     * item whose tech level 2 is stored as a float.
+     */
+    private String techSetup(String sub) throws Exception {
+        var viewer = viewerFor(sub);
+        turnOn(viewer, Feature.BLUEPRINTS);
+        var character = link(viewer, "Tech Character", BLUEPRINT_SCOPE);
+        esi.blueprintsOf(character.eveId(), List.of(blueprint(93001, 2001), blueprint(93002, 2002), blueprint(93003, 2003),
+                blueprint(93004, 2004), blueprint(93005, 2005), blueprint(93006, 2006), blueprint(93007, 2007),
+                blueprint(93008, 2001)));
+        startAndWait(sub, viewer);
+        return sub;
+    }
+
+    @Test
+    void blueprintsAreSeparatedByTechLevelWithCountsAndAVariantBadge() throws Exception {
+        var sub = techSetup(newSub());
+
+        var page = mvc.perform(get("/blueprints").with(signedInAs(sub))).andExpect(status().isOk()).andReturn()
+                .getResponse().getContentAsString();
+
+        // one button for each level and how many it holds: a Structure item with no level of its own counts with tech 1
+        assertThat(page).containsPattern("(?s)All.*?>8<.*?T1.*?>4<.*?T2.*?>2<.*?T3.*?>1<.*?No tech level.*?>1<");
+        assertThat(rowOf(page, 93001)).contains(">T1<").doesNotContain("badge-xs");
+        assertThat(rowOf(page, 93002)).contains(">—<");
+        assertThat(rowOf(page, 93003)).contains(">T2<");
+        assertThat(rowOf(page, 93005)).contains(">T3<");
+        // the variant is a different matter from the level
+        assertThat(rowOf(page, 93004)).contains(">T1<", ">Structure<");
+        assertThat(rowOf(page, 93006)).contains(">T1<", ">Faction<");
+        assertThat(rowOf(page, 93007)).contains(">T2<", ">Storyline<");
+
+        var second = mvc.perform(get("/blueprints").param("tech", "2").with(signedInAs(sub))).andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        assertThat(rowIds(second)).containsExactlyInAnyOrder(93003L, 93007L);
+        // the buttons still say what each would show, and the chosen one is marked
+        assertThat(second).containsPattern("(?s)All.*?>8<.*?T1.*?>4<.*?T2.*?>2<");
+        assertThat(second).containsPattern("(?s)btn-active[^>]*>\\s*<span[^>]*>T2<");
+        assertThat(rowIds(mvc.perform(get("/blueprints").param("tech", "1").with(signedInAs(sub))).andReturn()
+                .getResponse().getContentAsString())).containsExactlyInAnyOrder(93001L, 93004L, 93006L, 93008L);
+        assertThat(rowIds(mvc.perform(get("/blueprints").param("tech", "0").with(signedInAs(sub))).andReturn()
+                .getResponse().getContentAsString())).containsExactly(93002L);
+        assertThat(rowIds(mvc.perform(get("/blueprints").param("tech", "3").with(signedInAs(sub))).andReturn()
+                .getResponse().getContentAsString())).containsExactly(93005L);
+        // anything else is not a level, so it is every blueprint
+        assertThat(rowIds(mvc.perform(get("/blueprints").param("tech", "9").with(signedInAs(sub))).andReturn()
+                .getResponse().getContentAsString())).hasSize(8);
+
+        // sorted by tech level, with those that have none last
+        var ascending = rowIds(mvc.perform(get("/blueprints").param("sort", "tech").param("dir", "asc")
+                .with(signedInAs(sub))).andReturn().getResponse().getContentAsString());
+        assertThat(ascending.indexOf(93005L)).isGreaterThan(ascending.indexOf(93003L));
+        assertThat(ascending.indexOf(93002L)).isEqualTo(ascending.size() - 1);
+
+        // the CSV says it too, and the filter is part of the address that is remembered
+        var csv = mvc.perform(post("/blueprints/export.csv").param("item", "93003").param("item", "93002").with(csrf())
+                .with(signedInAs(sub))).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        assertThat(csv).contains("\"Tech\"").contains("\"T2\"").contains("\"No tech level\"");
+        assertThat(second).contains("tech=2");
+    }
+
+    @Test
+    void theTechButtonsAreLeftOutWhenThereIsOneLevelOnly() throws Exception {
+        var sub = newSub();
+        var viewer = viewerFor(sub);
+        turnOn(viewer, Feature.BLUEPRINTS);
+        var character = link(viewer, "One Level Character", BLUEPRINT_SCOPE);
+        esi.blueprintsOf(character.eveId(), List.of(blueprint(94001, 2001), blueprint(94002, 2001)));
+        startAndWait(sub, viewer);
+
+        var page = mvc.perform(get("/blueprints").with(signedInAs(sub))).andExpect(status().isOk()).andReturn()
+                .getResponse().getContentAsString();
+        assertThat(page).doesNotContain("Show blueprints by tech level");
+        // but a level that was chosen stays, so it can be taken off again
+        var none = mvc.perform(get("/blueprints").param("tech", "2").with(signedInAs(sub))).andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        assertThat(none).contains("Show blueprints by tech level", "No blueprints match");
+    }
+
     @Test
     void sortsByEveryColumnAndAHistoryStepIsAnsweredWithTheWholePage() throws Exception {
         var sub = newSub();
@@ -504,7 +598,7 @@ class BlueprintsPageIT extends IntegrationTest {
         esi.blueprintsOf(character.eveId(), List.of(new CharacterBlueprint(84001, 2001, 60003760L, "Hangar", -1, 4, 8, -1)));
         startAndWait(sub, viewer);
 
-        for (var column : List.of("type", "kind", "status", "me", "te", "runs", "holder", "place")) {
+        for (var column : List.of("type", "kind", "tech", "status", "me", "te", "runs", "holder", "place")) {
             mvc.perform(get("/blueprints").param("sort", column).param("dir", "desc").with(signedInAs(sub)))
                     .andExpect(status().isOk()).andExpect(content().string(containsString("Test Hauler Blueprint")));
         }

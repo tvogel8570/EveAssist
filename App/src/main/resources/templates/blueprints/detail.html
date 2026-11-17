@@ -12,6 +12,9 @@
                 th:attr="aria-label=#{blueprints.close}" aria-label="Close">✕</button>
     </div>
     <dl class="grid grid-cols-[8rem_1fr] gap-x-3 gap-y-1 text-sm mb-4">
+        <dt class="opacity-60" th:text="#{blueprints.col.tech}">Tech</dt>
+        <dd><span th:text="#{${'blueprints.tech.' + detail.blueprint.tech}}">T1</span>
+            <span class="badge badge-xs badge-outline ml-1" th:if="${detail.blueprint.variant != null}" th:text="${detail.blueprint.variant}">Faction</span></dd>
         <dt class="opacity-60" th:text="#{blueprints.col.status}">Status</dt><dd th:text="#{blueprints.status.notRead}">Available / not read yet</dd>
         <dt class="opacity-60" th:text="#{blueprints.col.me}">ME</dt><dd th:text="${detail.blueprint.materialEfficiency}">10</dd>
         <dt class="opacity-60" th:text="#{blueprints.col.te}">TE</dt><dd th:text="${detail.blueprint.timeEfficiency}">20</dd>
