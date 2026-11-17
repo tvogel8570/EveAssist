@@ -1,7 +1,8 @@
 -- Support access to the production database: two login roles for a person looking at data, and fixing one small thing.
 --
 --   support_ro  reads an allowlist of tables. No writes, whatever the session asks for.
---   support_rw  reads the same, and may delete or update a few tables that a fix-up needs (the ESI cache, the fetch state, fetched assets).
+--   support_rw  reads the same, and may delete or update a few tables that a fix-up needs (the ESI cache, the fetch state, fetched assets
+--               and blueprints).
 --               Its transactions are read-only unless the session says BEGIN, SET TRANSACTION READ WRITE: a deliberate step, not a slip.
 --
 -- Neither role reads character_token (the encrypted refresh tokens) or spring_session* (a session id is the login cookie: whoever reads
@@ -53,6 +54,7 @@ GRANT SELECT ON TABLE
     account_feature,
     character,
     character_asset,
+    character_blueprint,
     character_corporation,
     character_fetch,
     character_structure,
@@ -61,6 +63,7 @@ GRANT SELECT ON TABLE
     contract_public_item,
     corporation,
     corporation_asset,
+    corporation_blueprint,
     corporation_division,
     corporation_fetch,
     esi_cache,
@@ -80,9 +83,11 @@ GRANT DELETE ON TABLE
     esi_cache,
     character_fetch,
     character_asset,
+    character_blueprint,
     character_structure,
     corporation_fetch,
     corporation_asset,
+    corporation_blueprint,
     corporation_division
 TO support_rw;
 

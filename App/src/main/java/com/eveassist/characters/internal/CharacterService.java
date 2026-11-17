@@ -32,7 +32,7 @@ public class CharacterService {
 
     /** Scopes that give nothing to a character that is not a Director of its corporation. */
     private static final Set<String> DIRECTOR_ONLY = Set.of("esi-assets.read_corporation_assets.v1",
-            "esi-corporations.read_divisions.v1");
+            "esi-corporations.read_divisions.v1", "esi-corporations.read_blueprints.v1");
 
     CharacterService(CharacterRepository characters, FeatureRepository features, TokenRevoker revoker,
             CharacterAccessTokens accessTokens, MembershipRepository memberships, com.eveassist.esi.EsiClient esi) {
@@ -77,16 +77,22 @@ public class CharacterService {
      */
     public void setFeature(Viewer viewer, Feature feature, boolean on) {
         if (on) {
-            if (feature.requires() != null) {
-                features.turnOn(viewer.accountId(), feature.requires());
+            var required = feature.requires();
+            while (required != null) {
+                features.turnOn(viewer.accountId(), required);
+                required = required.requires();
             }
             features.turnOn(viewer.accountId(), feature);
         } else {
-            features.turnOff(viewer.accountId(), feature);
-            for (var other : Feature.values()) {
-                if (other.requires() == feature) {
-                    features.turnOff(viewer.accountId(), other);
-                }
+            turnOffFeatureAndDependents(viewer, feature);
+        }
+    }
+
+    private void turnOffFeatureAndDependents(Viewer viewer, Feature feature) {
+        features.turnOff(viewer.accountId(), feature);
+        for (var other : Feature.values()) {
+            if (other.requires() == feature) {
+                turnOffFeatureAndDependents(viewer, other);
             }
         }
     }

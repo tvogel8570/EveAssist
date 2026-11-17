@@ -25,6 +25,7 @@ public class IndustryData {
     private final String version;
     private final Map<TypeId, ItemType> types;
     private final Map<TypeId, Recipe> recipes;
+    private final Map<TypeId, Recipe> blueprintRecipes;
     private final Set<TypeId> blueprints;
     private final Set<TypeId> abyssalTypes;
 
@@ -43,6 +44,7 @@ public class IndustryData {
                 .list().stream()
                 .collect(Collectors.toUnmodifiableMap(ItemType::id, type -> type));
         recipes = Map.copyOf(loadRecipes(jdbc));
+        blueprintRecipes = Map.copyOf(loadBlueprintRecipes(jdbc, recipes));
         // What a mutaplasmid turns an item into. Names are no guide: "50MN Abyssal Microwarpdrive" is one, "Abyssal Trace" is not.
         abyssalTypes = Set.copyOf(jdbc.sql("""
                 SELECT DISTINCT "resultingTypeID" FROM sde."dynamicItemAttributeMappings"
@@ -84,6 +86,22 @@ public class IndustryData {
         return result;
     }
 
+    private static Map<TypeId, Recipe> loadBlueprintRecipes(JdbcClient jdbc, Map<TypeId, Recipe> recipes) {
+        return jdbc.sql("""
+                SELECT p."typeID" AS blueprint_type, p."productTypeID" AS product_type
+                FROM sde."industryActivityProducts" p
+                JOIN sde."invTypes" blueprint ON blueprint."typeID" = p."typeID" AND blueprint.published
+                WHERE p."activityID" = :activity
+                ORDER BY p."typeID", p."productTypeID"
+                """)
+                .param("activity", MANUFACTURING)
+                .query((rs, row) -> Map.entry(new TypeId(rs.getInt("blueprint_type")),
+                        new TypeId(rs.getInt("product_type"))))
+                .list().stream()
+                .filter(entry -> recipes.containsKey(entry.getValue()))
+                .collect(Collectors.toMap(Map.Entry::getKey, entry -> recipes.get(entry.getValue()), (first, ignored) -> first));
+    }
+
     public String version() {
         return version;
     }
@@ -94,6 +112,11 @@ public class IndustryData {
 
     public Optional<Recipe> recipeFor(TypeId product) {
         return Optional.ofNullable(recipes.get(product));
+    }
+
+    /** The manufacturing recipe produced by a blueprint type, when its output is in the SDE. */
+    public Optional<Recipe> recipeOfBlueprint(TypeId blueprint) {
+        return Optional.ofNullable(blueprintRecipes.get(blueprint));
     }
 
     /** Names that start with the text come first. */

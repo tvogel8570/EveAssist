@@ -411,17 +411,19 @@ class InventoryBrowseIT extends IntegrationTest {
     }
 
     @Test
-    void blueprintCopiesAndOriginalsAreTaggedAndSaySoAboutMeAndTe() throws Exception {
+    void blueprintCopiesAndOriginalsAreTaggedAndLinkToTheBlueprintsPage() throws Exception {
         var sub = newSub();
         var viewer = viewerFor(sub);
         var one = link(viewer, "Alt One");
         store(one, new CharacterAsset(1, 2001, 1, JITA, "station", "Hangar", true, true),
                 new CharacterAsset(2, 2002, 1, JITA, "station", "Hangar", true, null));
 
-        var page = text(whole(sub, ""));
+        var html = whole(sub, "");
+        var page = text(html);
 
-        assertThat(page).contains("Test Hauler Blueprint BPC ME/TE not read yet");
-        assertThat(page).contains("Test Component Blueprint BPO ME/TE not read yet");
+        assertThat(page).contains("Test Hauler Blueprint BPC").contains("Test Component Blueprint BPO")
+                .doesNotContain("ME/TE not read yet");
+        assertThat(html).contains("href=\"/blueprints?type=2001\"").contains("href=\"/blueprints?type=2002\"");
     }
 
     @Test

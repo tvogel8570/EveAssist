@@ -39,6 +39,11 @@ public interface EsiClient {
 
     String ASSETS_SCOPE = "esi-assets.read_assets.v1";
 
+    /** Everything a character owns in blueprint form, from {@code GET /characters/{character_id}/blueprints}. */
+    EsiResult<List<CharacterBlueprint>> characterBlueprints(long eveCharacterId);
+
+    String CHARACTER_BLUEPRINTS_SCOPE = "esi-characters.read_blueprints.v1";
+
     /**
      * Forgets what is stored about a character's routes (the {@code ETag} and expiry of each), so that the next call asks
      * ESI for the whole answer instead of "unchanged since". A character that is removed must not leave an {@code ETag}
@@ -89,6 +94,11 @@ public interface EsiClient {
     EsiResult<List<CharacterAsset>> corporationAssets(long eveCorporationId, long viaEveCharacterId);
 
     String CORPORATION_ASSETS_SCOPE = "esi-assets.read_corporation_assets.v1";
+
+    /** Everything a corporation owns in blueprint form, read with a Director's token. */
+    EsiResult<List<CharacterBlueprint>> corporationBlueprints(long eveCorporationId, long viaEveCharacterId);
+
+    String CORPORATION_BLUEPRINTS_SCOPE = "esi-corporations.read_blueprints.v1";
 
     /**
      * The names a corporation gave its seven hangar divisions, by division number (1 to 7), from

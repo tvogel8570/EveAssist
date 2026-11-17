@@ -253,4 +253,168 @@
             }
         });
     });
+
+    // Blueprint selection survives list swaps and filters; only ids are sent back, and the server rechecks ownership.
+    const pickedBlueprints = new Map();
+
+    function updateBlueprintSelection() {
+        const checks = [...document.querySelectorAll('[data-blueprint-pick]')];
+        const shown = new Set(checks.map(check => check.value));
+        checks.forEach(check => { check.checked = pickedBlueprints.has(check.value); });
+        const selectAll = document.getElementById('blueprint-pick-all');
+        if (selectAll) {
+            const selectedShown = checks.filter(check => pickedBlueprints.has(check.value)).length;
+            selectAll.checked = checks.length > 0 && selectedShown === checks.length;
+            selectAll.indeterminate = selectedShown > 0 && selectedShown < checks.length;
+        }
+        const button = document.getElementById('blueprint-actions');
+        const count = document.getElementById('blueprint-picked-count');
+        if (!button || !count) {
+            return;
+        }
+        button.disabled = pickedBlueprints.size === 0;
+        // Inventory takes one search text, so "show in Inventory" is for blueprints of a single type
+        const inventory = document.querySelector('[data-blueprint-action="inventory"]');
+        if (inventory) {
+            const types = new Set([...pickedBlueprints.values()].map(item => item.type));
+            inventory.disabled = types.size > 1;
+            inventory.title = types.size > 1 ? inventory.dataset.manyTypes : '';
+        }
+        button.setAttribute('aria-expanded', String(document.getElementById('blueprint-actions-menu')?.hidden === false));
+        const label = button.querySelector('span');
+        if (label) {
+            label.textContent = pickedBlueprints.size === 0 ? button.dataset.disabledLabel
+                : button.dataset.label.replace('{0}', pickedBlueprints.size);
+        }
+        if (pickedBlueprints.size === 0) {
+            count.textContent = count.dataset.none;
+        } else {
+            const hidden = [...pickedBlueprints.keys()].filter(id => !shown.has(id)).length;
+            count.textContent = hidden
+                ? count.dataset.hidden.replace('{0}', pickedBlueprints.size).replace('{1}', hidden)
+                : count.dataset.picked.replace('{0}', pickedBlueprints.size);
+        }
+    }
+
+    function closeBlueprintDrawer() {
+        document.body.classList.remove('blueprint-drawer-open');
+        const drawer = document.getElementById('blueprint-drawer');
+        const listUrl = drawer?.querySelector('[data-return-url]')?.dataset.returnUrl;
+        if (drawer) {
+            drawer.replaceChildren();
+        }
+        // The address goes back to the list without history.back(): that could leave the page (a shared link), and
+        // htmx restores a history entry by asking the server for it.
+        if (listUrl && /^\/blueprints\/\d+$/.test(window.location.pathname)) {
+            history.replaceState(history.state, '', listUrl);
+        }
+    }
+
+    document.addEventListener('change', event => {
+        const check = event.target;
+        if (check.matches('[data-blueprint-pick]')) {
+            const row = check.closest('[data-blueprint-row]');
+            if (check.checked) {
+                pickedBlueprints.set(check.value, {type: row.dataset.type, name: row.dataset.name});
+            } else {
+                pickedBlueprints.delete(check.value);
+            }
+            updateBlueprintSelection();
+        } else if (check.id === 'blueprint-pick-all') {
+            document.querySelectorAll('[data-blueprint-pick]').forEach(box => {
+                const row = box.closest('[data-blueprint-row]');
+                if (check.checked) {
+                    pickedBlueprints.set(box.value, {type: row.dataset.type, name: row.dataset.name});
+                } else {
+                    pickedBlueprints.delete(box.value);
+                }
+            });
+            updateBlueprintSelection();
+        }
+    });
+
+    document.addEventListener('click', event => {
+        if (event.target.closest('[data-blueprint-link]') && event.target.closest('tr[data-expand]')) {
+            event.stopPropagation();
+        }
+        const close = event.target.closest('[data-close-blueprint-drawer]');
+        if (close) {
+            closeBlueprintDrawer();
+            return;
+        }
+        const actions = event.target.closest('#blueprint-actions');
+        const menu = document.getElementById('blueprint-actions-menu');
+        if (actions && menu) {
+            menu.hidden = !menu.hidden;
+            actions.setAttribute('aria-expanded', String(!menu.hidden));
+            return;
+        }
+        if (menu && !event.target.closest('#blueprint-actions-menu')) {
+            menu.hidden = true;
+            document.getElementById('blueprint-actions')?.setAttribute('aria-expanded', 'false');
+        }
+        const action = event.target.closest('[data-blueprint-action]');
+        if (!action || action.disabled) {
+            return;
+        }
+        if (action.dataset.blueprintAction === 'csv') {
+            // a POST, so that hundreds of picked ids never have to fit in an address
+            const form = document.createElement('form');
+            form.method = 'post';
+            form.action = '/blueprints/export.csv';
+            const field = (name, value) => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = name;
+                input.value = value;
+                form.appendChild(input);
+            };
+            field('_csrf', document.querySelector('meta[name="_csrf"]').content);
+            pickedBlueprints.forEach((value, id) => field('item', id));
+            document.body.appendChild(form);
+            form.submit();
+            form.remove();
+        } else if (action.dataset.blueprintAction === 'inventory') {
+            const unique = new Map([...pickedBlueprints.values()].map(item => [item.type, item.name]));
+            if (unique.size === 1) {
+                window.open('/inventory?q=' + encodeURIComponent([...unique.values()][0]), '_blank', 'noopener');
+            }
+        } else if (action.dataset.blueprintAction === 'clear') {
+            pickedBlueprints.clear();
+            updateBlueprintSelection();
+        }
+        if (menu) {
+            menu.hidden = true;
+        }
+    });
+
+    // The status line is swapped every two seconds while a read runs, so whether its table is open is remembered here
+    let blueprintStatusOpen = false;
+    document.addEventListener('toggle', event => {
+        if (event.target.id === 'blueprint-status-details') {
+            blueprintStatusOpen = event.target.open;
+        }
+    }, true);
+
+    // htmx 4 puts the request context in the event detail; its target is the element that was swapped into
+    document.addEventListener('htmx:after:swap', event => {
+        const details = document.getElementById('blueprint-status-details');
+        if (details && details.open !== blueprintStatusOpen) {
+            details.open = blueprintStatusOpen;
+        }
+        if (event.detail.ctx?.target?.id === 'blueprint-drawer') {
+            document.body.classList.add('blueprint-drawer-open');
+        }
+        updateBlueprintSelection();
+    });
+
+    document.addEventListener('keydown', event => {
+        if (event.key === 'Escape' && document.body.classList.contains('blueprint-drawer-open')) {
+            closeBlueprintDrawer();
+        }
+    });
+
+    document.body.classList.toggle('blueprint-drawer-open',
+        document.getElementById('blueprints-page')?.dataset.drawerOpen === 'true');
+    updateBlueprintSelection();
 })();
