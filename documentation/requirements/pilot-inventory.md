@@ -76,6 +76,12 @@ Decided with the developer on 2026-11-10, from mockups (`documentation/mockups/i
   or in ships.
 - **The address is the filter.** A filtered, sorted view can be reloaded, bookmarked and sent, and the back button steps
   back through the filters.
+- **The menu brings the page back as it was left** (the developer decided on 2026-11-18). The Inventory and Blueprints
+  links in the menu carry `resume=1`, and the server sends them on to the address the page last had in this session.
+  Each page keeps its own filter, because their columns differ, so searching on one does not filter the other. The
+  first page of the list is shown again whatever "Show more" had reached. It is kept in the session (gone when the
+  session ends, never shared with another user) and not in the browser. An address without a filter stays the
+  unfiltered list, so a typed or bookmarked address, and Back to an earlier step, show what the address says.
 - **Sort** by most units, name or category. A long list shows the first 100 item types and offers more.
 - **Copy as text** (item and total, tab-separated) and **Export CSV** (one line for each item, character, place and
   way of holding) follow the filter.

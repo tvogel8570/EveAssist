@@ -35,8 +35,11 @@ class BlueprintController {
     private final BlueprintFetcher fetcher;
     private final BlueprintService blueprints;
     private final MessageSource messages;
+    private final RememberedFilters remembered;
 
-    BlueprintController(BlueprintFetcher fetcher, BlueprintService blueprints, MessageSource messages) {
+    BlueprintController(BlueprintFetcher fetcher, BlueprintService blueprints, MessageSource messages,
+            RememberedFilters remembered) {
+        this.remembered = remembered;
         this.fetcher = fetcher;
         this.blueprints = blueprints;
         this.messages = messages;
@@ -48,7 +51,12 @@ class BlueprintController {
             @RequestHeader(value = "HX-History-Restore-Request", required = false) String restore) {
         response.addHeader("Vary", "HX-Request, HX-History-Restore-Request");
         var htmx = partial(htmxHeader, restore);
+        if (htmx == null && RememberedFilters.resumes(request)) {
+            // the menu link: the page as it was left, at its own address, which the marker is not part of
+            return remembered.resumeAt(request, RememberedFilters.Page.BLUEPRINTS, "/blueprints");
+        }
         var filter = BlueprintFilter.parse(request.getParameterMap());
+        remembered.remember(request, RememberedFilters.Page.BLUEPRINTS, filter.withLimit(BlueprintFilter.FIRST_PAGE).query());
         fill(viewer, filter, model);
         if (htmx == null) {
             fillStatus(viewer, model);

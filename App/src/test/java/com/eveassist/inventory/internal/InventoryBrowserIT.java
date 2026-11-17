@@ -346,6 +346,22 @@ class InventoryBrowserIT extends IntegrationTest {
     }
 
     @Test
+    void theFilterIsKeptWhenYouComeBackThroughTheMenu() {
+        page.navigate(url("/inventory?ui=1&chars=1&q=Tritanium"));
+        assertThat(page.locator("#items")).containsText("Tritanium");
+        assertThat(page.locator("#items")).not().containsText("Test Hauler");
+
+        page.locator("#nav-blueprints").click();
+        assertThat(page).hasURL(Pattern.compile(".*/blueprints.*"));
+        page.locator("#nav-inventory").click();
+
+        // the menu link has no filter, and the page comes back at the address it had, with the same list
+        assertThat(page).hasURL(Pattern.compile(".*/inventory\\?.*q=Tritanium.*"));
+        assertThat(page.locator("#items")).containsText("Tritanium");
+        assertThat(page.locator("#items")).not().containsText("Test Hauler");
+    }
+
+    @Test
     void theStatusOpensIntoATableWithEachCharacter() {
         open();
 
