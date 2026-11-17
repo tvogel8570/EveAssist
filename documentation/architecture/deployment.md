@@ -75,6 +75,9 @@ flags, which cover one instance, so a second instance first needs each task to c
 
 - Container logs go to CloudWatch Logs through Docker's `awslogs` driver. Logging never writes tokens or secrets: the
   token classes have no readable `toString`, and request logging leaves out `Authorization` headers and token bodies.
+- Caddy writes an access log (time, client address, method, host, path, status, size, duration and User-Agent; no other
+  headers, no OAuth codes) to its own group `/eveassist/prod/proxy`, kept 14 days, used only to find and stop attacks. The
+  privacy policy describes it, so the two change together.
 - Correlation ids and other attributes on every log line (MDC) are a later work stream; see
   [Log context and correlation](logging.md).
 - The app exposes Spring Boot Actuator health. Keycloak exposes its own health endpoint. Both are checked by the

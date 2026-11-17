@@ -4,7 +4,7 @@
 <body>
 <main class="max-w-3xl mx-auto p-4 [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:mt-8 [&_h2]:mb-2 [&_p]:mb-3 [&_ul]:list-disc [&_ul]:ml-6 [&_ul]:mb-3 [&_li]:mb-1">
     <h1 class="text-2xl font-semibold mb-1">Privacy policy</h1>
-    <p class="text-sm opacity-70">Last updated 2026-11-12. EveAssist is an early preview, so this policy may change as it grows. We change the date above when it does.</p>
+    <p class="text-sm opacity-70">Last updated 2026-11-17. EveAssist is an early preview, so this policy may change as it grows. We change the date above when it does.</p>
 
     <h2 id="who">Who runs EveAssist</h2>
     <p><span th:text="${@siteInfo.operatorName}">The operator</span> runs EveAssist and decides what is stored and why. You can reach us at
@@ -30,8 +30,11 @@
         <li><strong>Your plans</strong>: their names, products, quantities and the parts you buy, and the costs worked out from public market prices. A plan you archive is kept, marked as archived, like your other plans.</li>
         <li><strong>A sign-in session</strong>, so that you stay signed in: you are signed out after 30 minutes of inactivity and at most after 10 hours.</li>
         <li><strong>Technical logs</strong> of the application, kept for 30 days at AWS. They record errors and events and can contain account or character ids, or the identifier our sign-in service has for you.
-            They never contain tokens or secrets. Our web server keeps no access logs, but its error messages (for example when a connection to the
-            application fails) can include the visitor's address, and they are kept with the other technical logs.</li>
+            They never contain tokens or secrets.</li>
+        <li><strong>The web server's log</strong>, kept for 14 days at AWS and then deleted. For each request to the site it records the time, the visitor's
+            address, the page asked for, the answer given, and the name the browser gives itself. It leaves out cookies, the codes used during sign-in and
+            the other details a browser sends. We use it only to notice and stop attacks on the site, never to follow what you do. The web server's error
+            messages, which can also include the visitor's address, are kept in the same log.</li>
     </ul>
     <p>We read EVE data only for characters you linked, with your consent through EVE's own sign-in, and all permissions we ask for are read-only:
         EveAssist cannot act as your character. Public market and contract data is not about you and is shared by everyone.</p>
@@ -50,8 +53,8 @@
     </ul>
 
     <h2 id="visitors">Visitors without an account</h2>
-    <p>Trying a plan without signing in stores nothing about you. Your address is held in memory for a while to limit how many price lookups one visitor can
-        start, and is not written to the database or to a log.</p>
+    <p>Trying a plan without signing in stores nothing about you in the database. Your address is held in memory for a while to limit how many price lookups
+        one visitor can start. Like every visit to the site, your requests are recorded in the web server's log for 14 days (see above).</p>
 
     <h2 id="cookies">Cookies</h2>
     <p>Only the cookies needed to keep you signed in: one from EveAssist and a few from the sign-in service. There is no tracking, no analytics,
@@ -84,7 +87,7 @@
 
     <h2 id="security">How we protect it</h2>
     <p>All traffic uses HTTPS. Refresh tokens are encrypted before they are stored, with a key that is not kept with them. The database is not reachable from the internet.
-        Secrets are never kept in the code. To report a weakness, see our <a class="link" th:href="@{/.well-known/security.txt}">security.txt</a>.</p>
+        Secrets are never kept in the code. We watch the web server's log for attacks, and may block an address that attacks the site. To report a weakness, see our <a class="link" th:href="@{/.well-known/security.txt}">security.txt</a>.</p>
 
     <h2 id="incidents">If something goes wrong</h2>
     <p>If a breach could have exposed your data or tokens, we will say so publicly on this site within one week of finding it, and say what to do. Revoking EveAssist on CCP's
