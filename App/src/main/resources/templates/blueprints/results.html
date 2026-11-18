@@ -12,13 +12,13 @@
     <!-- One button for each tech level, with how many blueprints it would show under the other filters. -->
     <div class="join flex-wrap mb-2" role="group" th:attr="aria-label=#{blueprints.tech.aria}"
          th:if="${#lists.size(view.techLevels) > 1 or filter.tech != null}">
-        <a class="btn btn-sm join-item" th:classappend="${filter.tech == null} ? ' btn-active'"
+        <a class="btn btn-sm join-item btn-primary" th:classappend="${filter.tech != null} ? ' btn-soft'"
            th:href="@{'/blueprints?' + ${filter.techQuery(null)}}" th:attr="hx-get=@{'/blueprints?' + ${filter.techQuery(null)}}"
            hx-target="#blueprint-results" hx-push-url="true">
             <span th:text="#{blueprints.tech.all}">All</span>
             <span class="opacity-70" th:text="${#numbers.formatInteger(view.techTotal, 1, 'COMMA')}">14,271</span></a>
-        <a class="btn btn-sm join-item" th:each="level : ${view.techLevels}"
-           th:classappend="${filter.tech != null and filter.tech == level} ? ' btn-active'"
+        <a class="btn btn-sm join-item btn-primary" th:each="level : ${view.techLevels}"
+           th:classappend="${filter.tech == null or filter.tech != level} ? ' btn-soft'"
            th:href="@{'/blueprints?' + ${filter.techQuery(level)}}" th:attr="hx-get=@{'/blueprints?' + ${filter.techQuery(level)}}"
            hx-target="#blueprint-results" hx-push-url="true">
             <span th:text="#{${'blueprints.tech.' + level}}">T1</span>

@@ -499,6 +499,17 @@ class BlueprintsPageIT extends IntegrationTest {
         return new CharacterBlueprint(itemId, typeId, 60003760L, "Hangar", -1, 4, 8, -1);
     }
 
+    /** The classes of each button above the table, by what it says. */
+    private static java.util.Map<String, String> techButtons(String page) {
+        var buttons = new java.util.LinkedHashMap<String, String>();
+        var matcher = java.util.regex.Pattern
+                .compile("(?s)<a class=\"([^\"]*join-item[^\"]*)\"[^>]*>\\s*<span[^>]*>([^<]+)</span>").matcher(page);
+        while (matcher.find()) {
+            buttons.put(matcher.group(2), matcher.group(1));
+        }
+        return buttons;
+    }
+
     private static List<Long> rowIds(String page) {
         var ids = new java.util.ArrayList<Long>();
         var matcher = java.util.regex.Pattern.compile("data-blueprint-row=\"(\\d+)\"").matcher(page);
@@ -547,7 +558,14 @@ class BlueprintsPageIT extends IntegrationTest {
         assertThat(rowIds(second)).containsExactlyInAnyOrder(93003L, 93007L);
         // the buttons still say what each would show, and the chosen one is marked
         assertThat(second).containsPattern("(?s)All.*?>8<.*?T1.*?>4<.*?T2.*?>2<");
-        assertThat(second).containsPattern("(?s)btn-active[^>]*>\\s*<span[^>]*>T2<");
+        // the chosen button is solid and the others are soft, so the chosen one stands out from the rest
+        assertThat(techButtons(second).get("T2")).doesNotContain("btn-soft");
+        assertThat(techButtons(second)).containsOnlyKeys("All", "T1", "T2", "T3", "No tech level");
+        for (var other : List.of("All", "T1", "T3", "No tech level")) {
+            assertThat(techButtons(second).get(other)).contains("btn-primary", "btn-soft");
+        }
+        assertThat(techButtons(page).get("All")).doesNotContain("btn-soft");
+        assertThat(techButtons(page).get("T1")).contains("btn-soft");
         assertThat(rowIds(mvc.perform(get("/blueprints").param("tech", "1").with(signedInAs(sub))).andReturn()
                 .getResponse().getContentAsString())).containsExactlyInAnyOrder(93001L, 93004L, 93006L, 93008L);
         assertThat(rowIds(mvc.perform(get("/blueprints").param("tech", "0").with(signedInAs(sub))).andReturn()
