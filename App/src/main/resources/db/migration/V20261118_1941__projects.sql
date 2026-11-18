@@ -60,9 +60,10 @@ CREATE TABLE project_item (
     blueprint_cost_per_run numeric(20, 2) NOT NULL DEFAULT 0 CHECK (blueprint_cost_per_run >= 0),
     -- Null means the project's default facility. Deleting a facility falls back to that.
     facility_id            bigint         REFERENCES facility (id) ON DELETE SET NULL,
-    -- Null means the project's own.
+    -- Both null means the project's own policy. An item that overrides it sets the strategy, with or without a bound.
     split_strategy         text           CHECK (split_strategy IN ('least_cost', 'copies_first')),
     max_job_seconds        bigint         CHECK (max_job_seconds IS NULL OR max_job_seconds >= 1),
+    CHECK (split_strategy IS NOT NULL OR max_job_seconds IS NULL),
     PRIMARY KEY (project_id, type_id)
 );
 CREATE INDEX project_item_facility_ix ON project_item (facility_id) WHERE facility_id IS NOT NULL;

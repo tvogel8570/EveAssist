@@ -156,6 +156,8 @@ only one in this module. A quote is deleted by `deleteQuote` or with its project
 
 ## Concurrency and rules
 
+- **Compare numbers by value.** The tables store `0` as `0.00`, and `BigDecimal.equals` tells scales apart, so a reloaded `ProjectSettings` does not `equals`
+  the one that was saved. A use case that asks whether settings changed compares them by value (`compareTo`), never with `equals` on the records.
 - **Optimistic versions**, as for plans: every edit has `WHERE version = ?`. Costing and archiving do not change `version`. A costing stored
   later than the edit it was made for cannot overwrite a newer one, because the row records `costed_project_version` and the write checks it.
 - **A quote can only be issued from a costing of the current version.** If the Draft changed after the last costing, *issue* is refused with
@@ -177,8 +179,12 @@ only one in this module. A quote is deleted by `deleteQuote` or with its project
 - **Built:** `ProjectSchemaIT` shows what the tables enforce before any repository uses them: the cascade from an account, the plan's deletion leaving the
   project, a deleted facility falling back to the default, the frozen quote (it fails with the trigger migration taken out), one Draft costing, a costing
   that must agree with its quote's project, quote numbers, and the checks.
-- `JdbcProjectRepositoryIT` (Testcontainers), **not yet written**: create, find as the owner and as someone else (another account's project looks
-  missing), the version conflict, copy from a plan, replacing the Draft's costing, and the trace purge leaving the quote as it was.
+- **Built** (2026-11-18): the aggregate `Project` (with `ProjectConfig`, `ProjectItem`, `ProjectBuilder` and the lock) and `ProjectRepository` with its JDBC
+  adapter, tested by `ProjectTest` and `JdbcProjectRepositoryIT`: create from a plan (the link is kept only for the viewer's own plan), the round trip of every
+  input, a save replacing what was stored, a stale version refused, another account's project looking missing, a facility of another account refused, quoted
+  and reopened states, archive, and delete. Removing the version check or the facility check makes exactly the tests for them fail.
+- **Not yet written:** the repository's methods for the Draft's costing, quotes and traces (with their tests: replacing the Draft's costing, and the trace
+  purge leaving the quote as it was), the facility repository, and the use cases.
 - Use case tests with a fake repository and fake ports: *issue refused on a stale costing*, *edit refused on a quoted project*, *new version from a
   quote* round trip, *add a product the plan did not have*.
 - A document test per stored version, loading or rendering a stored example (see the version rules above).
