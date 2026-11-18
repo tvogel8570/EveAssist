@@ -58,7 +58,10 @@ place to see and work with them, like the blueprint window in the game.
   (`HolderColors`).
 - **Search, sort and filter**: by text, type, BPO or BPC, status, a minimum ME or TE, holder, or originals that still
   need research. As on the inventory page, the address is the filter, and the menu link brings the page back with the
-  filter it last had in the session (see [Pilot inventory](pilot-inventory.md#browse-view)).
+  filter it last had in the session (see [Pilot inventory](pilot-inventory.md#browse-view)). The order in which the parts of a filter were chosen does
+  not matter: a search, a kind, a tech level and a sort give the same list and the same address whichever came first.
+  The server says the address for each change of the filter, and the hidden fields of the form (sort, direction, type
+  and tech level) are made new with every list, so a later change does not forget an earlier one.
 - **Paged like the inventory page** (the developer decided on 2026-11-17, with 14,000 blueprints in the first real
   account). The list shows 100 rows, "Show more" adds 100, and it stops at 1,000 with a note to narrow the filters. The
   summary says "Showing 300 of 14,213 blueprints", and the total is counted in the database for the current filter.

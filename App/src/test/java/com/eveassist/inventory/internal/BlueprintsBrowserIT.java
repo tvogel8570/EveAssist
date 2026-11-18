@@ -241,4 +241,110 @@ class BlueprintsBrowserIT extends IntegrationTest {
         assertThat(statuses.get()).as("the read was asked for").isGreaterThanOrEqualTo(1);
         assertThat(tables.get()).as("the table was fetched again although nothing changed").isZero();
     }
+
+    /** A tech 1, a tech 2 and a tech 3 blueprint, so that a level and a search can be put together in either order. */
+    private void seedTechMix() {
+        esi.blueprintsOf(eveId, List.of(
+                new CharacterBlueprint(96001, 2001, 60003760L, "Hangar", -1, 4, 8, -1),
+                new CharacterBlueprint(96002, 2003, 60003760L, "Hangar", -1, 4, 8, -1),
+                new CharacterBlueprint(96003, 2005, 60003760L, "Hangar", -1, 4, 8, -1)));
+        fetcher.refresh(viewerFor(sub));
+        await().atMost(10, TimeUnit.SECONDS).until(() -> !fetcher.anyRunning(viewerFor(sub))
+                && jdbc.sql("SELECT count(*) FROM character_blueprint WHERE item_id = 96003").query(Long.class).single() > 0);
+    }
+
+    private void search(String text) {
+        var box = page.locator("#blueprint-filters input[name=q]");
+        box.fill(text);
+        box.press("Enter");
+    }
+
+    /** Waits for the address to say all of these, which it does once the change has been made and its answer is in. */
+    private void addressSays(String... parts) {
+        // Playwright runs the pattern as JavaScript: plain look-aheads, so the parts may come in any order
+        var pattern = new StringBuilder(".*/blueprints\\?");
+        for (var part : parts) {
+            pattern.append("(?=.*").append(part).append(")");
+        }
+        assertThat(page).hasURL(Pattern.compile(pattern.append(".*").toString()));
+    }
+
+    private void showsOnly(String... names) {
+        assertThat(page.locator("[data-blueprint-link]")).hasText(names);
+    }
+
+    @Test
+    void theOrderOfASearchAndATechLevelDoesNotMatter() {
+        seedTechMix();
+
+        page.navigate(url("/blueprints"));
+        showsOnly("Nested Ship Blueprint", "Second Ship Blueprint", "Test Hauler Blueprint");
+        search("Ship");
+        showsOnly("Nested Ship Blueprint", "Second Ship Blueprint");
+        page.locator(".join a", new Page.LocatorOptions().setHasText("T2")).click();
+        addressSays("q=Ship", "tech=2");
+        showsOnly("Second Ship Blueprint");
+        var searchFirst = page.url();
+
+        page.navigate(url("/blueprints"));
+        showsOnly("Nested Ship Blueprint", "Second Ship Blueprint", "Test Hauler Blueprint");
+        page.locator(".join a", new Page.LocatorOptions().setHasText("T2")).click();
+        showsOnly("Second Ship Blueprint");
+        search("Ship");
+        addressSays("q=Ship", "tech=2");
+        showsOnly("Second Ship Blueprint");
+        var levelFirst = page.url();
+
+        assertThat(levelFirst).as("the same filter has the same address, whichever was chosen first")
+                .isEqualTo(searchFirst);
+        assertThat(searchFirst).contains("q=Ship", "tech=2");
+    }
+
+    @Test
+    void aTechLevelSurvivesAChangeOfAnotherFilter() {
+        seedTechMix();
+        page.navigate(url("/blueprints"));
+        page.locator(".join a", new Page.LocatorOptions().setHasText("T2")).click();
+        showsOnly("Second Ship Blueprint");
+
+        page.locator("#blueprint-filters select[name=kind]").selectOption("BPO");
+
+        addressSays("tech=2", "kind=BPO");
+        showsOnly("Second Ship Blueprint");
+        assertThat(page.locator(".join a.btn-soft")).hasCount(3);
+    }
+
+    @Test
+    void aSortSurvivesAChangeOfAFilter() {
+        seedTechMix();
+        page.navigate(url("/blueprints"));
+        showsOnly("Nested Ship Blueprint", "Second Ship Blueprint", "Test Hauler Blueprint");
+        page.locator("#blueprint-table th a", new Page.LocatorOptions().setHasText("Type")).click();
+        showsOnly("Test Hauler Blueprint", "Second Ship Blueprint", "Nested Ship Blueprint");
+        addressSays("dir=desc");
+
+        search("Ship");
+
+        addressSays("q=Ship", "dir=desc");
+        showsOnly("Second Ship Blueprint", "Nested Ship Blueprint");
+    }
+
+    @Test
+    void theTableAskingForItselfAfterAReadAddsNoStepToTheHistory() {
+        seedTechMix();
+        page.navigate(url("/blueprints"));
+        page.locator(".join a", new Page.LocatorOptions().setHasText("T2")).click();
+        addressSays("tech=2");
+        showsOnly("Second Ship Blueprint");
+        var steps = (Integer) page.evaluate("history.length");
+        var address = page.url();
+
+        // what the page does when a read is done: the table asks again, with the filter, and nothing the user chose changed
+        page.evaluate("htmx.trigger(document.body, 'blueprints-refresh')");
+        page.waitForTimeout(1_000);
+
+        assertThat((Integer) page.evaluate("history.length")).isEqualTo(steps);
+        assertThat(page.url()).isEqualTo(address);
+        showsOnly("Second Ship Blueprint");
+    }
 }

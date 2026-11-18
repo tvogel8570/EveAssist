@@ -55,12 +55,18 @@ class BlueprintController {
         }
         var filter = BlueprintFilter.parse(request.getParameterMap());
         remembered.remember(request, RememberedFilters.Page.BLUEPRINTS, filter.withLimit(BlueprintFilter.FIRST_PAGE).query());
+        if (htmx != null && !"div#blueprint-results".equals(request.getHeader("HX-Source"))) {
+            // A change of the filter is pushed to the history at the address the filter has, and not at the one the
+            // form or the link happened to build: the same filter is one address, whichever part was chosen first. The
+            // table asking for itself when a read is done changes nothing the user chose, so it is left alone.
+            response.setHeader("HX-Push-Url", "/blueprints?" + filter.query());
+        }
         fill(viewer, filter, model);
         if (htmx == null) {
             fillStatus(viewer, model);
             model.addAttribute("startOnLoad", true);
         }
-        return htmx == null ? "blueprints/list" : "blueprints/results :: results";
+        return htmx == null ? "blueprints/list" : "blueprints/results :: partial";
     }
 
     @GetMapping("/blueprints/status")
