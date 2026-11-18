@@ -17,6 +17,7 @@ The tool is built in phases, and later phases must not need a rewrite of earlier
 ## Scope of the first requirements
 
 - [Manufacturing and invention](manufacturing-invention.md)
+- [Projects and quotes](projects.md)
 - [Market and logistics](market-logistics.md)
 - [Pilot inventory](pilot-inventory.md)
 - [Users, accounts and roles](users.md)

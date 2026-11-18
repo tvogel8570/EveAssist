@@ -251,6 +251,9 @@ The tool helps with:
 
 ## Projects
 
+Quoting a project (blueprints, facility, builder, fees, delivered cost and the price to a buyer) is specified in
+[Projects](projects.md). What is below is the tracking side, which comes after it.
+
 - A saved plan becomes a live project.
 - Expected cost and profit are frozen when the project is saved. Current prices are shown beside them so the user can
   see the drift.
