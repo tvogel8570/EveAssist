@@ -71,7 +71,7 @@ public class ProjectEntry {
     }
 
     /**
-     * Costs the project, which is the one thing that is on request only. The adjusted prices are refreshed first (a call to ESI only
+     * Costs the project and stores the costing and its trace, which is the one thing that is on request only. The adjusted prices are refreshed first (a call to ESI only
      * when its hour is up), and if that fails the costing uses the ones that are stored and the result says so. A quoted project and a
      * project with no product are refused before ESI is asked.
      */
@@ -81,7 +81,7 @@ public class ProjectEntry {
             throw new NothingToCostException();
         }
         var refresh = adjustedPrices.refresh();
-        return new ProjectCostRun(costings.cost(viewer, id), refresh.problem());
+        return new ProjectCostRun(costings.costAndStore(viewer, id), refresh.problem());
     }
 
     private Project loadDraft(Viewer viewer, ProjectId id) {

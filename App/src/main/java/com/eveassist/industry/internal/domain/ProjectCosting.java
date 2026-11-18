@@ -60,6 +60,7 @@ public final class ProjectCosting {
 
         Set<ProjectWarning> warnings = new LinkedHashSet<>();
         List<ProjectJobCost> jobs = new ArrayList<>();
+        List<ItemDemand> demands = new ArrayList<>();
         List<BoughtMaterial> boughtItems = new ArrayList<>();
         var materials = BigDecimal.ZERO;
         var install = BigDecimal.ZERO;
@@ -79,10 +80,12 @@ public final class ProjectCosting {
                 }
                 long runsNeeded = Math.ceilDiv(needed, recipe.get().unitsPerRun());
                 long unitsMade = 0;
+                int jobCount = 0;
                 for (ProjectJob planned : build.jobsFor(recipe.get(), runsNeeded)) {
                     var job = JobCosting.cost(recipe.get(), planned.runs(), planned.terms(), adjustedPrices);
                     var blueprintCost = planned.blueprintCostPerRun().multiply(BigDecimal.valueOf(planned.runs()));
-                    jobs.add(new ProjectJobCost(job, blueprintCost));
+                    jobs.add(new ProjectJobCost(job, blueprintCost, planned.terms(), planned.kind()));
+                    jobCount++;
                     for (RecipeMaterial material : job.materials()) {
                         demand.merge(material.material(), material.quantity(), Long::sum);
                     }
@@ -101,6 +104,7 @@ public final class ProjectCosting {
                     longestJob = Math.max(longestJob, job.seconds());
                     unitsMade += job.unitsMade();
                 }
+                demands.add(new ItemDemand(type, needed, runsNeeded, jobCount, unitsMade));
                 if (unitsMade < needed) {
                     warnings.add(new ProjectWarning(Kind.TOO_FEW_RUNS, type));
                 } else if (unitsMade > needed) {
@@ -148,7 +152,7 @@ public final class ProjectCosting {
                 .map(price -> quote(delivered, price, units, settings)).orElse(null);
         boolean marginMode = settings.mode() == QuoteMode.MARGIN;
         return new ProjectCost(jobs, boughtItems, lines, delivered, perUnit, seconds, longestJob, new ArrayList<>(warnings),
-                marginMode ? margin : market, marginMode ? market : margin);
+                marginMode ? margin : market, marginMode ? market : margin, demands);
     }
 
     /**

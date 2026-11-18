@@ -195,8 +195,19 @@ only one in this module. A quote is deleted by `deleteQuote` or with its project
   (the Golem has three, Multispectrum Coating II two, a Vexor is hauled at its packaged 10,000 m³). An item with no facility chosen is costed with none and the result
   says so (`NO_FACILITY`, which blocks a quote). An item typed as owned is refused until step 5. **The adjusted prices come from step 2** (2026-11-18): `ProjectEntry.cost` first refreshes them from ESI's `/markets/prices` (only when ESI's hour is up, and a failure keeps the stored ones and is reported with their age), then costs. The result carries `adjustedPricesAge`: two times, when the app last confirmed the prices and ESI's `Last-Modified` as sent (which is not a reliable age, see [Adjusted prices](esi.md#adjusted-prices)). Tested by `ProjectCostingsIT` with numbers worked by hand
   from the fixture's recipes, and removing the product skills, the per-item facility, the warning or the price side makes the matching tests fail.
-- **Not yet written:** the repository's methods for the Draft's costing, quotes and traces (with their tests: replacing the Draft's costing, and the trace
-  purge leaving the quote as it was), the facility repository, and the use cases `cost`, `issue`, `newVersionFrom`, `deleteQuote` and the queries.
+- **Built** (2026-11-18): the Draft's costing and trace are stored. `ProjectCostings.costAndStore` (which `ProjectEntry.cost` calls after refreshing the adjusted prices)
+  costs the Draft and replaces its latest costing and trace in one transaction through `ProjectCostingRepository`. The documents are plain records, `CostingDocumentV1`
+  (what the page shows: provenance with both ages of the adjusted prices, the lines, the quote and its comparison, the jobs, what is bought, the warnings and the split
+  against least cost) and `TraceDocumentV1` (what each job was costed under and every number of the game's windows: facility terms, the builder's levels and skills,
+  each material's exact product and two-decimal figure, the time's factors, the install cost's lines, the adjusted price each base material was valued at, the demand per
+  built item, the project's own prices, the app's commit id and the SDE version). `CostingDocuments` builds them, as pure functions. Both are written as JSON by a mapper
+  that is the repository's own, and read by their format version, which is a column. A format no reader knows is refused by name (`UnreadableDocumentException`). A costing for an
+  earlier edit of the project than the stored one is refused (`STALE`, `ProjectChangedException`), one for the same edit replaces it, and a quoted project is refused (`LOCKED`).
+  A **stored example of format 1** (`src/test/resources/documents/`, written by the application from two Haulers in an Azbel) is read through the repository by
+  `JdbcProjectCostingRepositoryIT`, so a change that would stop old documents from being read fails a test. **Measured sizes:** the costing document is 2.1 KB and the trace 3.6 KB for
+  a project of two jobs, so a project of nine jobs, such as the Golem, is expected to be about four times that. That is **not measured**.
+- **Not yet written:** the same for a quote's costing and trace (the trace purge leaving the quote as it was), the facility repository, and the use cases `issue`,
+  `newVersionFrom`, `deleteQuote` and the queries.
 - Use case tests with a fake repository and fake ports: *issue refused on a stale costing*, *edit refused on a quoted project*, *new version from a
   quote* round trip, *add a product the plan did not have*.
 - A document test per stored version, loading or rendering a stored example (see the version rules above).

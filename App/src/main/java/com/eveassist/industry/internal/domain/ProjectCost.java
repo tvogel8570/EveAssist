@@ -18,18 +18,20 @@ import org.jmolecules.ddd.annotation.ValueObject;
  * @param warnings gaps and shortfalls
  * @param quote the price in the project's mode, or null when the market price is the mode and a product has no price
  * @param comparison the price in the other mode, or null when it cannot be worked out
+ * @param demands what the project needs of each item it builds and what the jobs make, in the order costing reached them
  */
 @ValueObject
 public record ProjectCost(
         List<ProjectJobCost> jobs, List<BoughtMaterial> bought, List<CostLine> lines, BigDecimal deliveredCost,
         BigDecimal costPerUnit, long totalSeconds, long longestJobSeconds, List<ProjectWarning> warnings, ProjectQuote quote,
-        ProjectQuote comparison) {
+        ProjectQuote comparison, List<ItemDemand> demands) {
 
     public ProjectCost {
         jobs = List.copyOf(jobs);
         bought = List.copyOf(bought);
         lines = List.copyOf(lines);
         warnings = List.copyOf(warnings);
+        demands = List.copyOf(demands);
     }
 
     /** A quote can be issued only when nothing is missing and there is a price. Notices do not block it. */

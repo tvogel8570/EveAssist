@@ -131,6 +131,15 @@ class ProjectCostingTest {
         assertThat(cost.amount(Component.MATERIALS)).isEqualByComparingTo("1023");
         // 8 PART are left over and credited at 40 ISK
         assertThat(cost.amount(Component.SURPLUS_CREDIT)).isEqualByComparingTo("-320");
+        // the demand for each built item and what its jobs make, in the order costing reached them: the ships, then the part
+        assertThat(cost.demands()).extracting(ItemDemand::unitsNeeded, ItemDemand::runsNeeded, ItemDemand::jobs, ItemDemand::unitsMade)
+                .containsExactlyInAnyOrder(org.assertj.core.groups.Tuple.tuple(2L, 2L, 1, 2L),
+                        org.assertj.core.groups.Tuple.tuple(3L, 3L, 1, 3L), org.assertj.core.groups.Tuple.tuple(32L, 4L, 1, 40L));
+        // each job keeps what it was costed under
+        assertThat(cost.jobs()).allSatisfy(job -> {
+            assertThat(job.terms()).isEqualTo(JobTerms.PLAN);
+            assertThat(job.kind()).isEqualTo(BlueprintKind.TYPED);
+        });
     }
 
     @Test

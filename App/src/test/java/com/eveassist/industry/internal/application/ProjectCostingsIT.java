@@ -245,6 +245,106 @@ class ProjectCostingsIT extends IntegrationTest {
     }
 
     @Test
+    void askingToCostStoresTheCostingAndItsTraceAsTheDraftsLatest() {
+        var owner = viewerFor(newSub());
+        var id = twoHaulers(owner, azbel(owner, "2"));
+
+        var run = entry.cost(owner, id);
+
+        var stored = costings.latest(owner, id).orElseThrow();
+        assertThat(stored.costedProjectVersion()).isEqualTo(run.result().costedProjectVersion());
+        assertThat(stored.deliveredCost()).isEqualByComparingTo("11344.98");
+        assertThat(stored.quotable()).isTrue();
+        var document = stored.document();
+        assertThat(document.deliveredCost()).isEqualByComparingTo("11344.984");
+        assertThat(document.lines()).extracting(CostingDocumentV1.Line::component).containsExactly("materials", "install_cost",
+                "blueprint", "time_value", "hauling", "contract_fee", "surplus_credit");
+        assertThat(document.lines().getFirst().amount()).isEqualByComparingTo("1255");
+        assertThat(document.quote().mode()).isEqualTo("margin");
+        assertThat(document.quote().price()).isEqualByComparingTo("15000");
+        assertThat(document.jobs()).extracting(CostingDocumentV1.Job::product, CostingDocumentV1.Job::runs)
+                .containsExactlyInAnyOrder(org.assertj.core.groups.Tuple.tuple(1001, 2L), org.assertj.core.groups.Tuple.tuple(1002, 4L));
+        assertThat(document.provenance().adjustedPricesEsiModifiedAt()).isEqualTo(com.eveassist.TestEsi.PRICES_MODIFIED);
+        assertThat(document.warnings()).isEmpty();
+    }
+
+    @Test
+    void theTraceShowsEveryNumberOfAJobInTheShapeOfTheGamesWindows() {
+        var owner = viewerFor(newSub());
+        var id = twoHaulers(owner, azbel(owner, "2"));
+        entry.cost(owner, id);
+
+        var trace = costings.latestTrace(owner, id).orElseThrow();
+
+        assertThat(trace.data().appCommit()).isEqualTo("dev");
+        assertThat(trace.data().sdeVersion()).isEqualTo("test-sde");
+        assertThat(trace.inputs().priceSide()).isEqualTo("sell");
+        assertThat(trace.inputs().industryLevel()).isEqualTo(5);
+        assertThat(trace.demands()).extracting(TraceDocumentV1.Demand::type, TraceDocumentV1.Demand::unitsNeeded,
+                TraceDocumentV1.Demand::runsNeeded, TraceDocumentV1.Demand::jobs, TraceDocumentV1.Demand::unitsMade)
+                .contains(org.assertj.core.groups.Tuple.tuple(1001, 2L, 2L, 1, 2L), org.assertj.core.groups.Tuple.tuple(1002, 4L, 4L, 1, 4L));
+        var hauler = trace.jobs().stream().filter(job -> job.product() == 1001).findFirst().orElseThrow();
+        assertThat(hauler.runs()).isEqualTo(2);
+        assertThat(hauler.me()).isEqualTo(10);
+        assertThat(hauler.te()).isEqualTo(20);
+        assertThat(hauler.facility().systemCostIndexPercent()).isEqualByComparingTo("2");
+        assertThat(hauler.facility().structureTimePercent()).isEqualByComparingTo("20");
+        assertThat(hauler.builder().productSkills()).extracting(TraceDocumentV1.Skill::level, skill -> skill.percentPerLevel().intValue())
+                .containsExactly(org.assertj.core.groups.Tuple.tuple(5, 1), org.assertj.core.groups.Tuple.tuple(3, 2));
+        // the exact product, the figure to two decimals, and what the job uses: 2 x 2 x 0.891 = 3.564, and 100 x 2 x 0.891 = 178.2
+        var component = hauler.materials().stream().filter(material -> material.type() == 1002).findFirst().orElseThrow();
+        assertThat(component.exactProduct()).isEqualByComparingTo("3.564");
+        assertThat(component.roundedToTwoDecimals()).isEqualByComparingTo("3.56");
+        assertThat(component.quantity()).isEqualTo(4);
+        var tritanium = hauler.materials().stream().filter(material -> material.type() == 34).findFirst().orElseThrow();
+        assertThat(tritanium.exactProduct()).isEqualByComparingTo("178.2");
+        assertThat(tritanium.quantity()).isEqualTo(179);
+        // the duration hover: TE, skills (0.80 x 0.85 x 0.95 x 0.94), structure
+        assertThat(hauler.time().baseSecondsPerRun()).isEqualTo(6000);
+        assertThat(hauler.time().blueprintFactor()).isEqualByComparingTo("0.8");
+        assertThat(hauler.time().skillsAndImplantsFactor()).isEqualByComparingTo("0.60724");
+        assertThat(hauler.time().structureFactor()).isEqualByComparingTo("0.8");
+        assertThat(hauler.time().exactSeconds()).isEqualByComparingTo("4663.6032");
+        assertThat(hauler.time().seconds()).isEqualTo(4664);
+        // the cost hover: EIV 1,200, a job fee of 2%, the structure's 4% off it, and the SCC surcharge of 4% of the EIV
+        assertThat(hauler.install().estimatedItemValue()).isEqualByComparingTo("1200");
+        assertThat(hauler.install().jobFee()).isEqualByComparingTo("24");
+        assertThat(hauler.install().structureBonus()).isEqualByComparingTo("-0.96");
+        assertThat(hauler.install().grossCost()).isEqualByComparingTo("23.04");
+        assertThat(hauler.install().sccSurcharge()).isEqualByComparingTo("48");
+        assertThat(hauler.install().total()).isEqualByComparingTo("71.04");
+        // the adjusted price each base material was valued at
+        assertThat(hauler.eivLines()).extracting(TraceDocumentV1.EivLine::type, TraceDocumentV1.EivLine::baseQuantity)
+                .containsExactlyInAnyOrder(org.assertj.core.groups.Tuple.tuple(1002, 2L), org.assertj.core.groups.Tuple.tuple(34, 100L));
+        assertThat(hauler.eivLines()).filteredOn(line -> line.type() == 1002).singleElement()
+                .satisfies(line -> assertThat(line.adjustedPrice()).isEqualByComparingTo("100"));
+        assertThat(trace.unitPrices()).extracting(TraceDocumentV1.UnitPrice::type).containsExactly(34, 35);
+    }
+
+    @Test
+    void costingAgainReplacesWhatWasStoredAndPlainCostingStoresNothing() {
+        var owner = viewerFor(newSub());
+        var id = twoHaulers(owner, azbel(owner, "2"));
+
+        costings.cost(owner, id);
+        assertThat(costings.latest(owner, id)).as("a plain cost writes nothing").isEmpty();
+
+        entry.cost(owner, id);
+        var first = costings.latest(owner, id).orElseThrow();
+        var project = projects.find(owner, id).orElseThrow();
+        editing.changeQuantity(owner, new ChangeProjectQuantityCommand(id, HAULER, 3, project.version()));
+        entry.cost(owner, id);
+
+        var second = costings.latest(owner, id).orElseThrow();
+        assertThat(second.costedProjectVersion()).isEqualTo(project.version() + 1);
+        assertThat(second.costedProjectVersion()).isGreaterThan(first.costedProjectVersion());
+        assertThat(second.deliveredCost()).isGreaterThan(first.deliveredCost());
+        assertThat(jdbc.sql("""
+                SELECT count(*) FROM project_costing c JOIN project p ON p.id = c.project_id WHERE p.public_id = :id
+                """).param("id", id.value()).query(Integer.class).single()).isOne();
+    }
+
+    @Test
     void ifTheRefreshFailsTheStoredAdjustedPricesAreUsedAndTheRunSaysSo() {
         var owner = viewerFor(newSub());
         var id = twoHaulers(owner, azbel(owner, "2"));

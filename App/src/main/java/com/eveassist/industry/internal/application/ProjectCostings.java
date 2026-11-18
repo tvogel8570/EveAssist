@@ -17,10 +17,12 @@ import com.eveassist.industry.internal.domain.ProjectItem;
 import com.eveassist.industry.internal.domain.ProjectLockedException;
 import com.eveassist.industry.internal.domain.ProjectWarning;
 import com.eveassist.industry.internal.domain.ProjectWarning.Kind;
+import com.eveassist.industry.internal.domain.Project;
 import com.eveassist.industry.internal.domain.ProjectCost;
 import com.eveassist.market.AdjustedPriceService;
 import com.eveassist.sde.TypeId;
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -28,6 +30,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import org.jmolecules.architecture.hexagonal.PrimaryPort;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -50,16 +53,63 @@ public class ProjectCostings {
     private final ProjectRecipes recipes;
     private final FacilityTermsLookup facilities;
     private final AdjustedPriceService adjustedPrices;
+    private final ProjectCostingRepository costings;
+    private final Clock clock;
+    private final String appCommit;
 
     ProjectCostings(ProjectRepository projects, ProjectRecipes recipes, FacilityTermsLookup facilities,
-            AdjustedPriceService adjustedPrices) {
+            AdjustedPriceService adjustedPrices, ProjectCostingRepository costings, Clock clock,
+            @Value("${eveassist.build.commit:dev}") String appCommit) {
         this.projects = projects;
         this.recipes = recipes;
         this.facilities = facilities;
         this.adjustedPrices = adjustedPrices;
+        this.costings = costings;
+        this.clock = clock;
+        this.appCommit = appCommit;
     }
 
+    /** Costs the Draft and gives the result back, writing nothing. */
     public ProjectCostResult cost(Viewer viewer, ProjectId id) {
+        return compute(viewer, id).result();
+    }
+
+    /**
+     * Costs the Draft and stores the costing and its trace as the Draft's latest, replacing the ones before. A costing for an earlier
+     * edit than the one stored is refused ({@link ProjectChangedException}), so a slow costing cannot overwrite a newer one.
+     */
+    @Transactional
+    public ProjectCostResult costAndStore(Viewer viewer, ProjectId id) {
+        var computed = compute(viewer, id);
+        var result = computed.result();
+        var costedAt = clock.instant();
+        var mode = computed.project().config().settings().mode();
+        var stored = new StoredCosting(result.costedProjectVersion(), result.sdeVersion(), result.pricesAsOf(), costedAt,
+                result.cost().deliveredCost(), result.quotable(), CostingDocuments.costing(result, mode, costedAt));
+        var trace = CostingDocuments.trace(result, computed.project(), computed.adjusted(), appCommit, costedAt);
+        switch (costings.saveDraft(viewer, id, stored, trace)) {
+            case SAVED -> { }
+            case STALE -> throw new ProjectChangedException();
+            case LOCKED -> throw new ProjectLockedException();
+            case NOT_FOUND -> throw new ProjectNotFoundException();
+        }
+        return result;
+    }
+
+    /** The Draft's latest stored costing, if it has one. Whether it is out of date is for the caller to say from its version. */
+    public Optional<StoredCosting> latest(Viewer viewer, ProjectId id) {
+        return costings.findDraft(viewer, id);
+    }
+
+    /** The trace of the Draft's latest stored costing. */
+    public Optional<TraceDocumentV1> latestTrace(Viewer viewer, ProjectId id) {
+        return costings.findDraftTrace(viewer, id);
+    }
+
+    private record Computed(Project project, Map<TypeId, BigDecimal> adjusted, ProjectCostResult result) {
+    }
+
+    private Computed compute(Viewer viewer, ProjectId id) {
         var project = projects.find(viewer, id).orElseThrow(ProjectNotFoundException::new);
         if (!project.draft()) {
             throw new ProjectLockedException();
@@ -99,8 +149,8 @@ public class ProjectCostings {
                 new ProjectDefinition(project.products(), project.boughtParts(), builds, config.settings()));
         var warnings = new ArrayList<>(comparison.chosen().warnings());
         warnings.addAll(noFacility);
-        return new ProjectCostResult(id, project.version(), recipes.sdeVersion(), oldestBoughtPrice(comparison.chosen(), prices),
-                adjustedPrices.age().orElse(null), comparison, warnings);
+        return new Computed(project, adjusted, new ProjectCostResult(id, project.version(), recipes.sdeVersion(),
+                oldestBoughtPrice(comparison.chosen(), prices), adjustedPrices.age().orElse(null), comparison, warnings));
     }
 
     /** The builder's level in each skill the item's blueprint requires that saves time. A skill the developer did not type is level 0. */

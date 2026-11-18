@@ -1,0 +1,212 @@
+{
+  "data": {
+    "costedAt": "2026-11-18T23:27:22.604473972Z",
+    "appCommit": "dev",
+    "sdeVersion": "test-sde",
+    "costedProjectVersion": 3
+  },
+  "jobs": [
+    {
+      "me": 10,
+      "te": 20,
+      "runs": 2,
+      "time": {
+        "seconds": 4664,
+        "rigFactor": 1.0,
+        "maximumRuns": 1112,
+        "exactSeconds": 4663.6032,
+        "blueprintFactor": 0.8,
+        "structureFactor": 0.8,
+        "baseSecondsPerRun": 6000,
+        "skillsAndImplantsFactor": 0.60724
+      },
+      "builder": {
+        "industry": 5,
+        "productSkills": [
+          {
+            "level": 5,
+            "percentPerLevel": 1
+          },
+          {
+            "level": 3,
+            "percentPerLevel": 2
+          }
+        ],
+        "advancedIndustry": 5,
+        "implantTimePercent": 0.0
+      },
+      "install": {
+        "total": 71.04,
+        "jobFee": 24.0,
+        "grossCost": 23.04,
+        "facilityTax": 0.0,
+        "sccSurcharge": 48.0,
+        "structureBonus": -0.96,
+        "estimatedItemValue": 1200,
+        "systemCostIndexPercent": 2.0
+      },
+      "product": 1001,
+      "eivLines": [
+        {
+          "type": 34,
+          "baseQuantity": 100,
+          "adjustedPrice": 4
+        },
+        {
+          "type": 1002,
+          "baseQuantity": 2,
+          "adjustedPrice": 100
+        }
+      ],
+      "facility": {
+        "taxPercent": 0.0,
+        "rigTimePercent": 0.0,
+        "rigMaterialPercent": 0.0,
+        "sccSurchargePercent": 4.0,
+        "structureCostPercent": 4.0,
+        "structureTimePercent": 20.0,
+        "systemCostIndexPercent": 2.0,
+        "structureMaterialPercent": 1.0
+      },
+      "materials": [
+        {
+          "type": 34,
+          "quantity": 179,
+          "baseQuantity": 100,
+          "exactProduct": 178.2,
+          "raisedToMinimum": false,
+          "roundedToTwoDecimals": 178.2
+        },
+        {
+          "type": 1002,
+          "quantity": 4,
+          "baseQuantity": 2,
+          "exactProduct": 3.564,
+          "raisedToMinimum": false,
+          "roundedToTwoDecimals": 3.56
+        }
+      ],
+      "unitsPerRun": 1,
+      "blueprintKind": "typed"
+    },
+    {
+      "me": 10,
+      "te": 20,
+      "runs": 4,
+      "time": {
+        "seconds": 5222,
+        "rigFactor": 1.0,
+        "maximumRuns": 1986,
+        "exactSeconds": 5222.4,
+        "blueprintFactor": 0.8,
+        "structureFactor": 0.8,
+        "baseSecondsPerRun": 3000,
+        "skillsAndImplantsFactor": 0.68
+      },
+      "builder": {
+        "industry": 5,
+        "productSkills": [],
+        "advancedIndustry": 5,
+        "implantTimePercent": 0.0
+      },
+      "install": {
+        "total": 18.944,
+        "jobFee": 6.4,
+        "grossCost": 6.144,
+        "facilityTax": 0.0,
+        "sccSurcharge": 12.8,
+        "structureBonus": -0.256,
+        "estimatedItemValue": 320,
+        "systemCostIndexPercent": 2.0
+      },
+      "product": 1002,
+      "eivLines": [
+        {
+          "type": 34,
+          "baseQuantity": 10,
+          "adjustedPrice": 4
+        },
+        {
+          "type": 35,
+          "baseQuantity": 5,
+          "adjustedPrice": 8
+        }
+      ],
+      "facility": {
+        "taxPercent": 0.0,
+        "rigTimePercent": 0.0,
+        "rigMaterialPercent": 0.0,
+        "sccSurchargePercent": 4.0,
+        "structureCostPercent": 4.0,
+        "structureTimePercent": 20.0,
+        "systemCostIndexPercent": 2.0,
+        "structureMaterialPercent": 1.0
+      },
+      "materials": [
+        {
+          "type": 34,
+          "quantity": 36,
+          "baseQuantity": 10,
+          "exactProduct": 35.64,
+          "raisedToMinimum": false,
+          "roundedToTwoDecimals": 35.64
+        },
+        {
+          "type": 35,
+          "quantity": 18,
+          "baseQuantity": 5,
+          "exactProduct": 17.82,
+          "raisedToMinimum": false,
+          "roundedToTwoDecimals": 17.82
+        }
+      ],
+      "unitsPerRun": 1,
+      "blueprintKind": "typed"
+    }
+  ],
+  "inputs": {
+    "priceSide": "sell",
+    "quoteMode": "margin",
+    "quoteStep": 1000.0,
+    "iskPerHour": 0.0,
+    "contractFee": 10000.0,
+    "industryLevel": 5,
+    "marginPercent": 20.0,
+    "premiumPercent": 0.0,
+    "iskPerCubicMeter": 0.0,
+    "implantTimePercent": 0.0,
+    "defaultMaxJobSeconds": null,
+    "defaultSplitStrategy": "least_cost",
+    "advancedIndustryLevel": 5
+  },
+  "demands": [
+    {
+      "jobs": 1,
+      "type": 1001,
+      "unitsMade": 2,
+      "runsNeeded": 2,
+      "unitsNeeded": 2
+    },
+    {
+      "jobs": 1,
+      "type": 1002,
+      "unitsMade": 4,
+      "runsNeeded": 4,
+      "unitsNeeded": 4
+    }
+  ],
+  "unitPrices": [
+    {
+      "buy": 4.0,
+      "asOf": "2026-11-18T12:00:00Z",
+      "sell": 5.0,
+      "type": 34
+    },
+    {
+      "buy": 8.0,
+      "asOf": "2026-11-18T12:00:00Z",
+      "sell": 10.0,
+      "type": 35
+    }
+  ]
+}
