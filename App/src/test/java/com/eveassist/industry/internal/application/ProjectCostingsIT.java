@@ -18,6 +18,7 @@ import com.eveassist.industry.internal.domain.ProjectWarning;
 import com.eveassist.industry.internal.domain.ProjectWarning.Kind;
 import com.eveassist.industry.internal.domain.SplitPolicy;
 import com.eveassist.industry.internal.domain.SplitStrategy;
+import com.eveassist.market.AdjustedPriceService;
 import com.eveassist.market.JitaQuote;
 import com.eveassist.sde.TypeId;
 import java.math.BigDecimal;
@@ -53,11 +54,26 @@ class ProjectCostingsIT extends IntegrationTest {
     @Autowired
     JdbcClient jdbc;
 
+    @Autowired
+    AdjustedPriceService adjusted;
+
+    @Autowired
+    ProjectEntry entry;
+
+    /** ESI's adjusted prices as the fake ESI gives them, refreshed into the shared table the way the app does it. */
+    private void esiHasAdjustedPrices(boolean withPilotsMineral) {
+        esi.reset();
+        esi.adjustedPrice(TRITANIUM.value(), "4");
+        esi.adjustedPrice(COMPONENT.value(), "100");
+        if (withPilotsMineral) {
+            esi.adjustedPrice(PILOTS_MINERAL.value(), "8");
+        }
+        adjusted.refresh();
+    }
+
     @BeforeEach
     void giveCostingItsAdjustedPrices() {
-        adjustedPrices.put(TRITANIUM, "4");
-        adjustedPrices.put(PILOTS_MINERAL, "8");
-        adjustedPrices.put(COMPONENT, "100");
+        esiHasAdjustedPrices(true);
     }
 
     private FacilityId azbel(Viewer owner, String index) {
@@ -117,6 +133,7 @@ class ProjectCostingsIT extends IntegrationTest {
         assertThat(result.costedProjectVersion()).isEqualTo(stored.version());
         assertThat(result.sdeVersion()).isEqualTo("test-sde");
         assertThat(result.pricesAsOf()).isEqualTo(AS_OF);
+        assertThat(result.adjustedPricesAsOf()).isNotNull();
         // costing writes nothing
         assertThat(projects.find(owner, id).orElseThrow().version()).isEqualTo(stored.version());
     }
@@ -165,7 +182,7 @@ class ProjectCostingsIT extends IntegrationTest {
     void anItemWithNoAdjustedPriceWarnsAndBlocksTheQuote() {
         var owner = viewerFor(newSub());
         var id = twoHaulers(owner, azbel(owner, "2"));
-        adjustedPrices.remove(PILOTS_MINERAL);
+        esiHasAdjustedPrices(false);
 
         var result = costings.cost(owner, id);
 
@@ -206,6 +223,52 @@ class ProjectCostingsIT extends IntegrationTest {
         project.lock();
         projects.save(owner, project);
         assertThatThrownBy(() -> costings.cost(owner, id)).isInstanceOf(ProjectLockedException.class);
+    }
+
+    @Test
+    void askingToCostRefreshesTheAdjustedPricesFirstAndUsesThem() {
+        var owner = viewerFor(newSub());
+        var id = twoHaulers(owner, azbel(owner, "2"));
+        esi.reset();
+        esi.adjustedPrice(TRITANIUM.value(), "40");
+        esi.adjustedPrice(PILOTS_MINERAL.value(), "80");
+        esi.adjustedPrice(COMPONENT.value(), "1000");
+
+        var run = entry.cost(owner, id);
+
+        // ten times the adjusted prices, so ten times the estimated item values and the install cost: 899.84, not 89.984
+        assertThat(esi.pricesAsked()).isEqualTo(1);
+        assertThat(run.adjustedPricesProblem()).isNull();
+        assertThat(run.result().cost().amount(Component.INSTALL_COST)).isEqualByComparingTo("899.84");
+    }
+
+    @Test
+    void ifTheRefreshFailsTheStoredAdjustedPricesAreUsedAndTheRunSaysSo() {
+        var owner = viewerFor(newSub());
+        var id = twoHaulers(owner, azbel(owner, "2"));
+        esi.failPrices();
+
+        var run = entry.cost(owner, id);
+
+        assertThat(run.adjustedPricesProblem()).contains("down");
+        assertThat(run.result().cost().amount(Component.INSTALL_COST)).isEqualByComparingTo("89.984");
+        assertThat(run.result().adjustedPricesAsOf()).isNotNull();
+    }
+
+    @Test
+    void aQuotedProjectAndAnEmptyOneAreRefusedBeforeEsiIsAsked() {
+        var owner = viewerFor(newSub());
+        var id = twoHaulers(owner, azbel(owner, "2"));
+        var empty = projects.create(owner, "Empty", null);
+        var project = projects.find(owner, id).orElseThrow();
+        project.lock();
+        projects.save(owner, project);
+        esi.reset();
+
+        assertThatThrownBy(() -> entry.cost(owner, empty)).isInstanceOf(NothingToCostException.class);
+        assertThatThrownBy(() -> entry.cost(owner, id)).isInstanceOf(ProjectLockedException.class);
+        assertThatThrownBy(() -> entry.cost(viewerFor(newSub()), id)).isInstanceOf(ProjectNotFoundException.class);
+        assertThat(esi.pricesAsked()).as("ESI is not asked for these").isZero();
     }
 
     @Test

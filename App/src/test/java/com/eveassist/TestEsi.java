@@ -5,6 +5,7 @@ import com.eveassist.esi.CharacterBlueprint;
 import com.eveassist.esi.EsiClient;
 import com.eveassist.esi.EsiResult;
 import com.eveassist.esi.MarketOrder;
+import com.eveassist.esi.MarketPrice;
 import com.eveassist.esi.PublicContract;
 import com.eveassist.esi.PublicContractItem;
 import com.eveassist.esi.StructureLookup;
@@ -64,6 +65,41 @@ public class TestEsi implements EsiClient {
         refusedDirectors.clear();
         sells.put(34, new BigDecimal("5.00"));
         sells.put(35, new BigDecimal("10.00"));
+        indexPrices.clear();
+        pricesDown = false;
+        pricesAsked = 0;
+    }
+
+    private final Map<Integer, MarketPrice> indexPrices = new ConcurrentHashMap<>();
+    private volatile boolean pricesDown;
+    private volatile int pricesAsked;
+
+    /** CCP's adjusted price of an item, as ESI's {@code /markets/prices} would give it. A null average is left out, as ESI does. */
+    public void adjustedPrice(int type, String adjusted) {
+        indexPrices.put(type, new MarketPrice(type, new BigDecimal(adjusted), null));
+    }
+
+    /** From now on {@code /markets/prices} fails, as when ESI is down. */
+    public void failPrices() {
+        pricesDown = true;
+    }
+
+    /** How many times {@code /markets/prices} was asked since the last reset. */
+    public int pricesAsked() {
+        return pricesAsked;
+    }
+
+    @Override
+    public void forgetMarketPrices() {
+    }
+
+    @Override
+    public EsiResult<List<MarketPrice>> marketPrices() {
+        pricesAsked++;
+        if (pricesDown) {
+            return EsiResult.failed("test ESI is down for /markets/prices");
+        }
+        return EsiResult.updated(List.copyOf(indexPrices.values()), Instant.now().plusSeconds(3600));
     }
 
     public void sell(int type, String price) {

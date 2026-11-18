@@ -226,7 +226,7 @@ That determinism is what makes a stored [trace](../requirements/projects.md#cost
 |---|---|---|
 | Recipes, build times, packaged volumes | The in-memory SDE copy (see [above](#costing-in-memory)) | built (plan costing already reads them) |
 | Unit prices at the project's price basis | The project's own price rows, like [plan prices](#plan-prices): costing never reads the shared Jita orders | proposed |
-| Adjusted prices (the estimated item value) | ESI `GET /markets/prices`, public, shared by all users | **not read yet** |
+| Adjusted prices (the estimated item value) | ESI `GET /markets/prices`, public, shared by all users, stored in `adjusted_price` and refreshed when a project is costed (see [Adjusted prices](esi.md#adjusted-prices)) | built (2026-11-18) |
 | System cost index | ESI `GET /industry/systems`, public; a wormhole's is typed on the facility record because ESI has none | **not read yet** |
 | Owned blueprints (kind, ME, TE, runs left) | The blueprint tables, through the `inventory` module's API | proposed |
 | Facility terms, builder skills and implant | The project's facility records and the builder character | proposed |

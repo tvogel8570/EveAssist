@@ -18,6 +18,7 @@ import com.eveassist.industry.internal.domain.ProjectLockedException;
 import com.eveassist.industry.internal.domain.ProjectWarning;
 import com.eveassist.industry.internal.domain.ProjectWarning.Kind;
 import com.eveassist.industry.internal.domain.ProjectCost;
+import com.eveassist.market.AdjustedPriceService;
 import com.eveassist.sde.TypeId;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -35,7 +36,9 @@ import org.springframework.transaction.annotation.Transactional;
  * {@link ProjectCosting} and gives the result back. It writes nothing, and costing happens only when asked for (decided on
  * 2026-11-18), never as the side effect of an edit or of opening a project.
  *
- * <p>A project costs with its own prices, at its own price side, and never with anything fresher. An item with no facility chosen is
+ * <p>A project costs with its own prices, at its own price side, and never with anything fresher. The adjusted prices, which the install
+ * cost depends on, are CCP's and shared: they are the ones stored when this is called, and {@link ProjectEntry} refreshes them first
+ * when it is asked to cost. The result says how old they are. An item with no facility chosen is
  * costed with none, and the result says so, because its install cost is then missing and no quote may be issued from it.
  */
 @Service
@@ -46,10 +49,10 @@ public class ProjectCostings {
     private final ProjectRepository projects;
     private final ProjectRecipes recipes;
     private final FacilityTermsLookup facilities;
-    private final AdjustedPrices adjustedPrices;
+    private final AdjustedPriceService adjustedPrices;
 
     ProjectCostings(ProjectRepository projects, ProjectRecipes recipes, FacilityTermsLookup facilities,
-            AdjustedPrices adjustedPrices) {
+            AdjustedPriceService adjustedPrices) {
         this.projects = projects;
         this.recipes = recipes;
         this.facilities = facilities;
@@ -89,14 +92,15 @@ public class ProjectCostings {
         }
         var prices = project.prices();
         var side = config.priceSide();
+        var adjusted = adjustedPrices.of(recipes.requiredTypes(project.products()));
         var costing = new ProjectCosting(recipes::recipeFor, type -> unitPrice(prices.get(type), side),
-                adjustedPrices::adjustedPrice, recipes::unitVolume);
+                type -> Optional.ofNullable(adjusted.get(type)), recipes::unitVolume);
         var comparison = costing.compareToLeastCost(
                 new ProjectDefinition(project.products(), project.boughtParts(), builds, config.settings()));
         var warnings = new ArrayList<>(comparison.chosen().warnings());
         warnings.addAll(noFacility);
         return new ProjectCostResult(id, project.version(), recipes.sdeVersion(), oldestBoughtPrice(comparison.chosen(), prices),
-                comparison, warnings);
+                adjustedPrices.asOf().orElse(null), comparison, warnings);
     }
 
     /** The builder's level in each skill the item's blueprint requires that saves time. A skill the developer did not type is level 0. */

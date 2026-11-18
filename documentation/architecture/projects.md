@@ -135,7 +135,7 @@ costing does not change:
 |---|---|---|
 | Recipes, packaged volumes, a blueprint's time-saving skills | `sde` module | recipes exist. **Volumes and time skills are new SDE reads** (attribute 1982, `industryActivitySkills`) and belong to this step, because a project cannot be costed without them |
 | Unit prices | the project's `project_price` | built |
-| Adjusted prices | `AdjustedPrices` (a port in `industry`) | a fake in tests and an empty answer in the app. Every job then warns `MISSING_ADJUSTED_PRICE` and no quote can be issued, until step 2 provides the read |
+| Adjusted prices | `AdjustedPriceService` in the `market` module, over the shared `adjusted_price` table ([Adjusted prices](esi.md#adjusted-prices)) | built (step 2). `ProjectEntry.cost` refreshes them first, and a job whose material has no adjusted price warns `MISSING_ADJUSTED_PRICE` and blocks a quote |
 | Cost index, facility terms | the `facility` row | typed |
 | Builder | the project's columns and `project_item_skill` | typed |
 | Owned blueprints | none yet | typed ME and TE per item (`ProjectBuild.Typed`, cut at the 30-day limit and at a time bound, with the item's or the project's split policy); the splitter's `FromBlueprints` waits for step 5 |
@@ -174,7 +174,8 @@ only one in this module. A quote is deleted by `deleteQuote` or with its project
 
 - **Built** (2026-11-18), named by CLAUDE.md's rule (`VYYYYMMDD_HHMM__name.sql`, UTC, never edited once merged), four migrations so each is one change:
   `V20261118_1940__facility`; `V20261118_1941__projects` (the project and its product, bought part, item, item skill and price tables);
-  `V20261118_1942__project-quotes-and-costings` (quote, costing and trace); `V20261118_1943__freeze-project-quotes` (the trigger).
+  `V20261118_1942__project-quotes-and-costings` (quote, costing and trace); `V20261118_1943__freeze-project-quotes` (the trigger); and, for the adjusted prices
+  that are not the project's own, `V20261118_2100__adjusted-prices`.
   New builders start with Industry and Advanced Industry at 0 and no implant, and a new item at ME 10 and TE 20, as a plan assumes.
 - **Built:** `ProjectSchemaIT` shows what the tables enforce before any repository uses them: the cascade from an account, the plan's deletion leaving the
   project, a deleted facility falling back to the default, the frozen quote (it fails with the trigger migration taken out), one Draft costing, a costing
@@ -188,12 +189,11 @@ only one in this module. A quote is deleted by `deleteQuote` or with its project
   project), tested by `ProjectEditingIT`. Removing a product drops the prices and items nothing else needs, so a re-added product is priced again at once, and adding
   one fetches only for items the project has no price for. Removing the fetch-only-missing rule, the pruning, or the quoted check makes the matching tests fail.
 - **Built** (2026-11-18): `ProjectCostings.cost`, which costs a Draft on request and writes nothing. It reads the project, each item's facility (through
-  `FacilityTermsLookup`), the SDE and the adjusted prices (through `AdjustedPrices`), and hands them to `ProjectCosting`, returning a `ProjectCostResult` with the
+  `FacilityTermsLookup`), the SDE and the stored adjusted prices (through `AdjustedPriceService`), and hands them to `ProjectCosting`, returning a `ProjectCostResult` with the
   comparison against least cost, the version it was costed for, the SDE version and the age of the oldest price. The two SDE reads this needed are built:
   `unitVolume` (packaged volume where there is one) and `timeSkillsOf` (a blueprint's required skills that carry attribute 1982), checked against the real SDE
   (the Golem has three, Multispectrum Coating II two, a Vexor is hauled at its packaged 10,000 m³). An item with no facility chosen is costed with none and the result
-  says so (`NO_FACILITY`, which blocks a quote). An item typed as owned is refused until step 5. **`AdjustedPrices` has no source yet** (`NoAdjustedPrices` answers
-  empty, so every job warns and no quote can be issued) until step 2 reads ESI's `/markets/prices`. Tested by `ProjectCostingsIT` with numbers worked by hand
+  says so (`NO_FACILITY`, which blocks a quote). An item typed as owned is refused until step 5. **The adjusted prices come from step 2** (2026-11-18): `ProjectEntry.cost` first refreshes them from ESI's `/markets/prices` (only when ESI's hour is up, and a failure keeps the stored ones and is reported with their age), then costs. The result carries `adjustedPricesAsOf`. Tested by `ProjectCostingsIT` with numbers worked by hand
   from the fixture's recipes, and removing the product skills, the per-item facility, the warning or the price side makes the matching tests fail.
 - **Not yet written:** the repository's methods for the Draft's costing, quotes and traces (with their tests: replacing the Draft's costing, and the trace
   purge leaving the quote as it was), the facility repository, and the use cases `cost`, `issue`, `newVersionFrom`, `deleteQuote` and the queries.

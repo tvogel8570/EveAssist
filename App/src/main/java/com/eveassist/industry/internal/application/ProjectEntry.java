@@ -5,6 +5,7 @@ import com.eveassist.industry.ProjectId;
 import com.eveassist.industry.internal.domain.PlanProduct;
 import com.eveassist.industry.internal.domain.Project;
 import com.eveassist.industry.internal.domain.ProjectLockedException;
+import com.eveassist.market.AdjustedPriceService;
 import com.eveassist.market.JitaQuotes;
 import com.eveassist.market.MarketService;
 import java.util.ArrayList;
@@ -28,14 +29,18 @@ public class ProjectEntry {
     private final ProjectRecipes recipes;
     private final ProjectEditing editing;
     private final MarketService market;
+    private final AdjustedPriceService adjustedPrices;
+    private final ProjectCostings costings;
     private final TransactionTemplate reading;
 
     ProjectEntry(ProjectRepository projects, ProjectRecipes recipes, ProjectEditing editing, MarketService market,
-            PlatformTransactionManager transactions) {
+            AdjustedPriceService adjustedPrices, ProjectCostings costings, PlatformTransactionManager transactions) {
         this.projects = projects;
         this.recipes = recipes;
         this.editing = editing;
         this.market = market;
+        this.adjustedPrices = adjustedPrices;
+        this.costings = costings;
         this.reading = new TransactionTemplate(transactions);
         this.reading.setReadOnly(true);
     }
@@ -63,6 +68,20 @@ public class ProjectEntry {
         var fetched = market.currentPrices(recipes.requiredTypes(project.products()));
         var changed = editing.replacePrices(viewer, id, project.version(), fetched.quotes());
         return new ProjectPriceRefresh(changed, fetched.failed().keySet().stream().map(recipes::name).sorted().toList());
+    }
+
+    /**
+     * Costs the project, which is the one thing that is on request only. The adjusted prices are refreshed first (a call to ESI only
+     * when its hour is up), and if that fails the costing uses the ones that are stored and the result says so. A quoted project and a
+     * project with no product are refused before ESI is asked.
+     */
+    public ProjectCostRun cost(Viewer viewer, ProjectId id) {
+        var project = loadDraft(viewer, id);
+        if (project.products().isEmpty()) {
+            throw new NothingToCostException();
+        }
+        var refresh = adjustedPrices.refresh();
+        return new ProjectCostRun(costings.cost(viewer, id), refresh.problem());
     }
 
     private Project loadDraft(Viewer viewer, ProjectId id) {

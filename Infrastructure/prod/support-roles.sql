@@ -53,6 +53,8 @@ GRANT USAGE ON SCHEMA public TO support_ro;
 GRANT SELECT ON TABLE
     account,
     account_feature,
+    adjusted_price,
+    adjusted_price_fetch,
     character,
     character_asset,
     character_blueprint,

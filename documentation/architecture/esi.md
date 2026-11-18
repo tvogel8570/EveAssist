@@ -204,6 +204,28 @@ requirements make the share a user setting, and they would add a third-party ser
 
 Status: **agreed** (follows from the requirements).
 
+## Adjusted prices
+
+Built 2026-11-18 (step 2 of the project backend, issue #62). CCP's adjusted price of every item type, which a job's estimated item value, and so its
+install cost, is worked out from (see [Costing components](../requirements/costing-detail.md#3-component-details)).
+
+- **The route.** `GET /markets/prices`: public, one answer of about 16,000 rows (`type_id`, `adjusted_price`, `average_price`), no pages. ESI caches it for
+  an hour (`x-cache-age` 3,600 in the OpenAPI spec, with `ETag` and `Last-Modified`), so the client keeps to that: a call before the stored `Expires` is
+  answered from its own copy, and one after is asked with `If-None-Match`. The route has no per-route rate limit in the spec, so only the older error
+  limit applies. The client calls it as `EsiClient.marketPrices()` under the rate-limit group `market-price`, and sends no `page` parameter, which the
+  spec does not define for this route.
+- **Fields.** Only `type_id` is required. Either price may be missing, and the digits are kept exactly as ESI sends them, because the game's value matches
+  them to the ISK. **An adjusted price of 0 is a real value**: about half of the rows (7,758 of 16,234 on 2026-11-18) are 0, and the game uses them as
+  they are. Only a type with no row, or one whose adjusted price ESI left out, is treated as having none.
+- **Storage.** The whole answer replaces the table in one transaction (`adjusted_price`, with `adjusted_price_fetch` for when it was last known to be ESI's
+  current copy), shared by all users like the Jita orders. A refresh that finds ESI's copy unchanged only moves that time.
+- **When it is fetched.** On request, when a project is costed (`ProjectEntry.cost`), and only after ESI's hour is up, so costing twice in an hour makes
+  one call. A failure keeps the stored prices, and the costing says so and how old they are. A quoted project is refused before ESI is asked.
+- **A stuck copy.** If ESI says "unchanged" while nothing is stored (the table was emptied, or the client remembers an `ETag` from before), that would repeat
+  for as long as ESI's copy lasts. The client is told to forget the route (`forgetMarketPrices`) and ESI is asked once more for the whole answer.
+- **Not stored per quote.** The adjusted prices change with ESI's copy, so a costing records the ones it used and how old they were (in its trace), and a
+  quote keeps them with its own.
+
 ## Character assets
 
 Status: **proposed** (added 2026-11-09 with the asset fetch).

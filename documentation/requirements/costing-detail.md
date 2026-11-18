@@ -163,7 +163,7 @@ EIV = Σ over the blueprint's materials ( base quantity × R × adjusted price )
   CCP 2014 and Wiki say the same. CCP 2014 calls it "base cost"; the wiki and the game's window call it "Estimated Items value (EIV)" (**Game**).
 - **Adjusted price** is CCP's index, not the market price: `GET /markets/prices`, field `adjusted_price` (ESI). **Game:** ESI's prices
   gave **4,374,740.21** where the window showed 4,374,740 (G1); 537,646.30 against 537,646 (G8); 27,903,159.24 for G10.
-- A material with no adjusted price is counted and left out, so the EIV and the install cost are then too low (the code reports it).
+- A material with no adjusted price is counted and left out, so the EIV and the install cost are then too low (the code reports it). **The app reads `/markets/prices`** since 2026-11-18 ([ESI, adjusted prices](../architecture/esi.md#adjusted-prices)). Of its 16,234 rows, 7,758 have an adjusted price of **0**, which is a value (the game uses it), not a gap; 2,059 have no `average_price`, and only `type_id` is required.
 - For a built part used as a material, the game takes the part's adjusted price as an item (*unverified*).
 - Copying and invention use another base (2% of EIV, Wiki and CCP 2014). Not built.
 
@@ -472,8 +472,8 @@ Tests in `ProjectCostingTest`: two come from readings (`aProjectOfOneJobIsTheJob
 
 The other tests check hand-worked arithmetic, the limits (`impossibleLevelsAndPercentagesAreRefused`) and the missing-price count. `CostingTest` (the plan) still passes unchanged.
 
-Project-level costing (components 2 and 6 to 12) is [7.2](#72-project-level-costing). How it fits the application (inputs, what is stored and its lifecycle) is in [Data, project costing](../architecture/data.md#project-costing). Known gaps in the job costing: **no alpha clone tax**; **no rig table** (a facility is given its resolved percents); **no reading of `GET /markets/prices` and `GET /industry/systems`**;
-**no reading of which skills a blueprint requires** from the SDE (the caller gives the `ProductSkill` list); **no scaling of rigs by security** (the caller gives scaled values).
+Project-level costing (components 2 and 6 to 12) is [7.2](#72-project-level-costing). How it fits the application (inputs, what is stored and its lifecycle) is in [Data, project costing](../architecture/data.md#project-costing). Known gaps in the job costing: **no alpha clone tax**; **no rig table** (a facility is given its resolved percents); **no reading of `GET /industry/systems`** (`GET /markets/prices` is read since 2026-11-18);
+**which skills a blueprint requires** are read from the SDE for the project costing (`SdeService.timeSkillsOf`), and the job costing still takes the `ProductSkill` list from its caller; **no scaling of rigs by security** (the caller gives scaled values).
 
 ## 7. Next steps and open questions
 

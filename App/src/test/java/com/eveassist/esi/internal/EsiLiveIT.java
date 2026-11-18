@@ -53,4 +53,42 @@ class EsiLiveIT {
         // Straight away, the stored copy is still valid, so ESI is not asked again
         assertThat(client.marketOrders(10000002, 34).outcome()).isEqualTo(EsiResult.Outcome.UNCHANGED);
     }
+
+    /** The whole price list, as ESI really sends it: thousands of rows, adjusted prices of 0 among them, some with no average. */
+    @Test
+    void readsTheMarketPricesAndAsksOnlyOnce() {
+        var stored = new HashMap<String, EsiCache.Entry>();
+        EsiCache cache = new EsiCache() {
+            @Override
+            public Optional<Entry> find(String key) {
+                return Optional.ofNullable(stored.get(key));
+            }
+
+            @Override
+            public void save(String key, Entry entry, Instant fetchedAt) {
+                stored.put(key, entry);
+            }
+
+            @Override
+            public void forgetPrefix(String keyPrefix) {
+                stored.keySet().removeIf(key -> key.startsWith(keyPrefix));
+            }
+        };
+        var properties = new EsiProperties("https://esi.evetech.net", System.getProperty("eveassist.esi-contact", ""), "2026-08-18", 8);
+        var client = new HttpEsiClient(RestClient.builder(), properties, cache,
+                new EsiLimiter(Clock.systemUTC(), millis -> { }), Clock.systemUTC());
+
+        var result = client.marketPrices();
+
+        assertThat(result.outcome()).isEqualTo(EsiResult.Outcome.UPDATED);
+        assertThat(result.data().size()).isGreaterThan(10_000);
+        assertThat(result.data()).filteredOn(price -> price.typeId() == 34).singleElement()
+                .satisfies(price -> assertThat(price.adjustedPrice()).isPositive());
+        assertThat(result.data()).anySatisfy(price -> assertThat(price.adjustedPrice()).isEqualByComparingTo("0"));
+        assertThat(result.data()).anySatisfy(price -> assertThat(price.averagePrice()).isNull());
+        assertThat(result.expires()).isAfter(Instant.now());
+        System.out.println("market prices read: " + result.data().size() + " rows, expires " + result.expires());
+
+        assertThat(client.marketPrices().outcome()).isEqualTo(EsiResult.Outcome.UNCHANGED);
+    }
 }
