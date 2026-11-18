@@ -77,13 +77,12 @@ public final class Costing {
      * never less than one for each run.
      */
     static long materialsNeeded(long baseQuantity, long runs) {
-        long reduced = Math.ceilDiv(Math.multiplyExact(Math.multiplyExact(baseQuantity, runs), 100L - ME), 100L);
-        return Math.max(runs, reduced);
+        return JobCosting.materialQuantity(baseQuantity, runs, JobTerms.PLAN);
     }
 
     /** How long a job of that many runs takes at {@link #TE}, in whole seconds. */
     static long secondsNeeded(Recipe recipe, long runs) {
-        return Math.ceilDiv(Math.multiplyExact(Math.multiplyExact(recipe.secondsPerRun(), runs), 100L - TE), 100L);
+        return JobCosting.seconds(recipe.secondsPerRun(), runs, JobTerms.PLAN);
     }
 
     /** Every item's demand is complete by the time it is reached, because all that use it come earlier. */

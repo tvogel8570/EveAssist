@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Project page mockups</title>
+<style>
+:root{--bg:#1d232a;--panel:#232a33;--panel2:#2a323d;--line:#38424f;--text:#e6ebf2;--dim:#9aa7b8;--pri:#6d78f0;--ok:#35c28d;--warn:#e8b64a;--err:#ee6b7e;--r:8px}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,sans-serif}
+.bar{position:sticky;top:0;z-index:20;display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:8px 16px;background:#3a2f12;border-bottom:1px solid #6b5518;color:#f3d98a}
+.bar b{letter-spacing:.03em}
+.bar button{background:#2a2410;color:#f3d98a;border:1px solid #6b5518;border-radius:6px;padding:4px 10px;cursor:pointer}
+.bar button.on{background:#f3d98a;color:#2a2410}
+.bar .sp{flex:1}
+main{max-width:1280px;margin:0 auto;padding:16px}
+h1{font-size:22px;margin:0 0 2px} h2{font-size:15px;margin:0 0 8px;color:var(--text)}
+.sub{color:var(--dim);margin-bottom:12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:14px}
+.grid{display:grid;gap:14px}.g2{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.sp{flex:1}
+.badge{display:inline-block;padding:1px 8px;border-radius:99px;font-size:12px;border:1px solid var(--line);color:var(--dim)}
+.badge.ok{color:var(--ok);border-color:var(--ok)}.badge.warn{color:var(--warn);border-color:var(--warn)}.badge.pri{color:#aab2ff;border-color:var(--pri)}
+table{width:100%;border-collapse:collapse}
+th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+th{color:var(--dim);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+tr.total td{font-weight:700;border-top:2px solid var(--line);border-bottom:none}
+tr.sub td{color:var(--dim)}
+label{display:block;color:var(--dim);font-size:12px;margin-bottom:2px}
+select,input{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:5px 8px;font:inherit;max-width:100%}
+input[type=number]{width:90px;text-align:right}
+button.b{background:var(--pri);color:#fff;border:0;border-radius:6px;padding:7px 14px;cursor:pointer;font:inherit}
+button.b.ghost{background:transparent;border:1px solid var(--line);color:var(--text)}
+button.b:disabled{opacity:.45;cursor:not-allowed}
+.quote{font-size:30px;font-weight:700;font-variant-numeric:tabular-nums}
+.dim{color:var(--dim)} .ok{color:var(--ok)} .warn{color:var(--warn)} .err{color:var(--err)}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:14px}
+.tabs button{background:none;border:0;border-bottom:2px solid transparent;color:var(--dim);padding:8px 14px;cursor:pointer;font:inherit}
+.tabs button.on{color:var(--text);border-color:var(--pri)}
+.sticky{position:sticky;top:46px;z-index:10;background:var(--panel2);border:1px solid var(--line);border-radius:var(--r);padding:10px 14px;margin-bottom:14px}
+.two{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(300px,1fr);gap:14px;align-items:start}
+.two .right{position:sticky;top:56px}
+@media(max-width:900px){.two{grid-template-columns:1fr}.two .right{position:static}}
+pre{overflow-x:auto;overflow-wrap:anywhere;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:10px;white-space:pre-wrap;margin:8px 0 0}
+.note{border-left:3px solid var(--warn);padding:4px 10px;color:var(--dim);margin:8px 0}
+.locked{opacity:.7}
+.hide{display:none}
+.scroll{overflow-x:auto}
+td.item{min-width:110px}
+td.item .dim{white-space:nowrap}
+.card{min-width:0}
+.two>div{min-width:0}
+td select{width:100%;min-width:200px}
+</style>
+</head>
+<body>
+<div class="bar">
+  <b>Mockup, fake data</b>
+  <span>Layout:</span>
+  <button data-v="A" class="on">A · One page</button>
+  <button data-v="B">B · Tabs</button>
+  <button data-v="C">C · Quote beside the work</button>
+  <span class="sp"></span>
+  <span id="barnote"></span>
+</div>
+<main id="app"></main>
+
+<script>
+"use strict";
+// ---------- fake data ----------
+const S = {
+  view: 'A', tab: 'setup', status: 'Draft', version: 0, issued: null,
+  mode: 'margin',           // 'margin' | 'market'
+  margin: 12,               // percent of the price
+  premium: -5,              // percent against the Jita price
+  rate: 150,                // ISK per m3 hauled
+  fee: 10000,               // flat contract fee
+  timeValue: 0,             // ISK per hour
+  buyer: 'Kestrel Dawn', note: 'Delivery to Perimeter, contract to Kestrel Dawn Industrial.',
+  expiry: '2026-12-01',
+  builder: 'Aria Voss',
+  units: 5, jita: 52000000,
+  jobs: [
+    {item:'Vexor', kind:'part', runs:5, bp:'BPO ME 10 / TE 20 · Aria Voss', facility:'Raitaru · Mercury Rising', mats:11400000, install:310000, bpcost:0, seconds:3*3600+20*60, vol:1.2},
+    {item:'Ishtar', kind:'product', runs:5, bp:'BPC ME 2 / TE 4 · 5 runs · Aria Voss', facility:'Raitaru · Mercury Rising', mats:168000000, install:2900000, bpcost:6000000, seconds:14*3600, vol:4.1}
+  ],
+  blueprints:['BPO ME 10 / TE 20 · Aria Voss','BPO ME 8 / TE 16 · Corp hangar','BPC ME 2 / TE 4 · 5 runs · Aria Voss','BPC ME 0 / TE 0 · 1 run · Dax Holt','Typed ME/TE (not owned)…'],
+  facilities:[
+    {name:'Mercury Rising', type:'Raitaru', system:'Perimeter (high 0.9)', rigs:'M Equipment ME I, M Equipment TE I', tax:'1.0%', idx:'3.21%'},
+    {name:'Isanamo Forge', type:'Azbel', system:'Isanamo (low 0.4)', rigs:'L Ship ME II', tax:'0.5%', idx:'1.87%'}
+  ],
+  surplus: 400000,
+  inboundM3: 4100, outboundM3: 50000
+};
+const num = n => Math.round(n).toLocaleString('en-US');
+const isk = n => Math.round(n).toLocaleString('en-US') + ' ISK';
+const hms = s => Math.floor(s/3600)+'h '+String(Math.floor(s%3600/60)).padStart(2,'0')+'m';
+function calc(){
+  const mats = S.jobs.reduce((a,j)=>a+j.mats,0);
+  const install = S.jobs.reduce((a,j)=>a+j.install,0);
+  const bp = S.jobs.reduce((a,j)=>a+j.bpcost,0);
+  const secs = S.jobs.reduce((a,j)=>a+j.seconds,0);
+  const time = secs/3600*S.timeValue;
+  const haul = (S.inboundM3+S.outboundM3)*S.rate;
+  const cost = mats+install+bp+time+haul+S.fee-S.surplus;
+  const market = S.jita*S.units;
+  const quote = S.mode==='margin' ? cost/(1-S.margin/100) : market*(1+S.premium/100);
+  const other = S.mode==='margin' ? market*(1+S.premium/100) : cost/(1-S.margin/100);
+  return {mats,install,bp,secs,time,haul,cost,market,quote,other,profit:quote-cost,realMargin:(quote-cost)/quote*100};
+}
+const locked = () => S.status==='Quoted';
+const dis = () => locked()?'disabled':'';
+
+// ---------- blocks ----------
+function header(){
+  return `<div class="row"><div><h1>Ishtar ×5 for Kestrel Dawn</h1>
+  <div class="sub">From plan <b>Ishtar fleet</b> · started 2026-11-17 · builder ${S.builder}</div></div>
+  <span class="sp"></span>
+  <span class="badge ${locked()?'ok':'warn'}">${locked()?'Quoted · version '+S.version:'Draft'}</span>
+  <button class="b ghost" data-act="archive">Archive</button></div>`;
+}
+function summary(c){
+  return `<div class="row"><div><div class="dim">Delivered cost</div><b>${isk(c.cost)}</b></div>
+  <div><div class="dim">Quote (${S.mode==='margin'?'cost + '+S.margin+'% margin':'Jita '+(S.premium>=0?'+':'')+S.premium+'%'})</div><b>${isk(c.quote)}</b></div>
+  <div><div class="dim">Per unit</div><b>${isk(c.quote/S.units)}</b></div>
+  <div><div class="dim">Profit</div><b class="${c.profit>=0?'ok':'err'}">${isk(c.profit)} (${c.realMargin.toFixed(1)}%)</b></div>
+  <span class="sp"></span>${issueButton()}</div>`;
+}
+function issueButton(){
+  return locked()
+   ? `<button class="b ghost" data-act="newver">New version from this quote</button>`
+   : `<button class="b" data-act="issue">Issue quote</button>`;
+}
+function setup(){
+  const f = S.facilities.map(x=>`<tr><td>${x.name}</td><td>${x.type}</td><td>${x.system}</td><td>${x.rigs}</td><td class="n">${x.tax}</td><td class="n">${x.idx}</td></tr>`).join('');
+  return `<div class="card ${locked()?'locked':''}"><h2>Settings</h2><div class="row">
+   <div><label>Builder (one for the whole project)</label><select ${dis()}><option>Aria Voss · Industry V, Adv. Industry V, +4% implant</option><option>Dax Holt · Industry IV, Adv. Industry III</option></select></div>
+   <div><label>Price basis</label><select ${dis()}><option>Jita sell (inherited from plan)</option><option>Jita buy</option></select></div>
+   <div><label>Hauling, ISK per m³</label><input type="number" id="rate" value="${S.rate}" ${dis()}></div>
+   <div><label>Contract fee (flat)</label><input type="number" id="fee" value="${S.fee}" ${dis()}></div>
+   <div><label>Time value, ISK per hour</label><input type="number" id="tv" value="${S.timeValue}" ${dis()}></div>
+  </div><div class="note">Sales tax is 0 and there is no broker fee: every project is delivered by contract. Time value is 0 until the developer decides on it.</div></div>
+  <div class="card ${locked()?'locked':''}"><h2>Facilities <span class="dim">(entered by hand; cost index from ESI)</span></h2>
+  <div class="scroll"><table><tr><th>Name</th><th>Type</th><th>System</th><th>Rigs</th><th class="n">Tax</th><th class="n">Cost index</th></tr>${f}</table></div>
+  <div class="row" style="margin-top:8px"><button class="b ghost" ${dis()}>Add facility</button><span class="dim">Default per activity: Manufacturing → Mercury Rising</span></div></div>`;
+}
+function jobs(){
+  const rows = S.jobs.map((j,i)=>`<tr><td class="item"><b>${j.item}</b><div class="dim">${j.kind==='product'?'product':'built part'} · ${j.runs} runs · 1 job</div></td>
+   <td><select ${dis()}>${S.blueprints.map(b=>`<option ${b===j.bp?'selected':''}>${b}</option>`).join('')}</select></td>
+   <td><select ${dis()}><option>${j.facility}</option><option>Isanamo Forge</option></select></td>
+   <td class="n">${num(j.mats)}</td><td class="n">${num(j.install)}</td><td class="n">${hms(j.seconds)}</td></tr>`).join('');
+  return `<div class="card ${locked()?'locked':''}"><h2>Jobs <span class="dim">(each is independent; a BPO is always available)</span></h2>
+  <div class="scroll"><table><tr><th>Item</th><th>Blueprint</th><th>Facility</th><th class="n">Materials, ISK</th><th class="n">Install, ISK</th><th class="n">Time</th></tr>${rows}</table></div>
+  <div class="note">A BPC with too few runs would split its job; this one has exactly 5 runs left. Materials of the Vexor job are the Ishtar's input and are built, not bought.</div></div>`;
+}
+function costTable(c){
+  const L=(a,b,note='')=>`<tr><td>${a}${note?`<div class="dim">${note}</div>`:''}</td><td class="n">${b<0?'−':''}${isk(Math.abs(b))}</td></tr>`;
+  return `<div class="card"><h2>Delivered cost</h2><table>
+  ${L('Materials to buy',c.mats,'at Jita sell, from the last refresh (14 min old)')}
+  ${L('Job install cost',c.install,'EIV × system cost index, structure bonus, facility tax, SCC')}
+  ${L('Blueprint cost per run',c.bp,'invention share of the Ishtar BPC')}
+  ${L('Time value',c.time,hms(c.secs)+' × '+isk(S.timeValue)+' per hour')}
+  ${L('Hauling',c.haul,(S.inboundM3+S.outboundM3).toLocaleString()+' m³ × '+S.rate+' ISK, flat rate')}
+  ${L('Contract fee',S.fee,'flat, sales tax 0')}
+  ${L('Surplus credit',-S.surplus,'extra units left over by rounding')}
+  <tr class="total"><td>Delivered cost</td><td class="n">${isk(c.cost)}</td></tr></table></div>`;
+}
+function quoteCard(c){
+  const mk = S.mode==='margin';
+  return `<div class="card"><h2>Quote</h2>
+  <div class="row"><label style="margin:0"><input type="radio" name="mode" value="margin" ${mk?'checked':''} ${dis()}> Cost plus margin</label>
+  <label style="margin:0"><input type="radio" name="mode" value="market" ${!mk?'checked':''} ${dis()}> Market-referenced</label></div>
+  <div class="row" style="margin:10px 0">
+   ${mk?`<div><label>Margin on price, %</label><input type="number" id="margin" value="${S.margin}" min="0" max="90" ${dis()}></div>`
+       :`<div><label>Against Jita sell, %</label><input type="number" id="premium" value="${S.premium}" ${dis()}></div>`}
+   <div><label>Buyer</label><input id="buyer" value="${S.buyer}" ${dis()}></div>
+   <div><label>Expires</label><input id="expiry" type="date" value="${S.expiry}" ${dis()}></div></div>
+  <div class="dim">Quote to the buyer</div><div class="quote">${isk(c.quote)}</div>
+  <div class="dim">${isk(c.quote/S.units)} per unit × ${S.units}</div>
+  <table style="margin-top:10px">
+   <tr class="sub"><td>Profit (only you see this)</td><td class="n ${c.profit>=0?'ok':'err'}">${isk(c.profit)} · ${c.realMargin.toFixed(1)}% of price</td></tr>
+   <tr class="sub"><td>${mk?'Jita sell '+(S.premium>=0?'+':'')+S.premium+'% would be':'Cost + '+S.margin+'% margin would be'}</td><td class="n">${isk(c.other)}</td></tr>
+   <tr class="sub"><td>Jita sell, ${S.units} × ${isk(S.jita)}</td><td class="n">${isk(c.market)}</td></tr></table>
+  ${S.version?`<div class="note">Quote ${S.version} issued ${S.issued}. Current prices differ from the frozen ones by +0.8%.</div>`:''}
+  <div class="row" style="margin-top:10px">${issueButton()}<button class="b ghost" data-act="copy">Copy quote text</button><button class="b ghost" data-act="csv">Download CSV</button></div>
+  <pre id="qtext" class="${S.showText?'':'hide'}">${quoteText(c)}</pre></div>`;
+}
+function quoteText(c){
+  return `Quote ${S.version||'(draft)'} for ${S.buyer}\n${S.units} × Ishtar, delivered by contract\nPrice per unit: ${isk(c.quote/S.units)}\nTotal: ${isk(c.quote)}\nValid until ${S.expiry}\n${S.note}`;
+}
+
+// ---------- layouts ----------
+function layoutA(c){ // one long page, summary sticks to the top
+  return header()+`<div class="sticky">${summary(c)}</div>`+setup()+jobs()+'<div class="grid g2">'+costTable(c)+quoteCard(c)+'</div>';
+}
+function layoutB(c){ // tabs
+  const t=[['setup','1 Setup'],['jobs','2 Jobs'],['cost','3 Cost'],['quote','4 Quote']];
+  const body={setup:setup(),jobs:jobs(),cost:costTable(c),quote:quoteCard(c)}[S.tab];
+  return header()+`<div class="tabs">${t.map(([k,l])=>`<button data-tab="${k}" class="${S.tab===k?'on':''}">${l}</button>`).join('')}</div>`+body
+   +`<div class="sticky" style="position:static;margin-top:14px">${summary(c)}</div>`;
+}
+function layoutC(c){ // work on the left, quote always visible on the right
+  return header()+`<div class="two"><div>${setup()}${jobs()}${costTable(c)}</div><div class="right">${quoteCard(c)}</div></div>`;
+}
+
+// ---------- wiring ----------
+const app=document.getElementById('app');
+function render(){
+  const c=calc();
+  app.innerHTML={A:layoutA,B:layoutB,C:layoutC}[S.view](c);
+  document.querySelectorAll('.bar [data-v]').forEach(b=>b.classList.toggle('on',b.dataset.v===S.view));
+  document.getElementById('barnote').textContent = S.status==='Quoted'?'Quoted: fields are locked':'Draft: change anything, then Issue quote';
+  const num=(id,key)=>{const e=document.getElementById(id);if(e)e.onchange=()=>{S[key]=+e.value||0;render()}};
+  num('rate','rate');num('fee','fee');num('tv','timeValue');num('margin','margin');num('premium','premium');
+  [['buyer','buyer'],['expiry','expiry']].forEach(([id,k])=>{const e=document.getElementById(id);if(e)e.onchange=()=>{S[k]=e.value;render()}});
+  document.querySelectorAll('input[name=mode]').forEach(r=>r.onchange=()=>{S.mode=r.value;render()});
+  document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{S.tab=b.dataset.tab;render()});
+  document.querySelectorAll('[data-act]').forEach(b=>b.onclick=()=>{
+    const a=b.dataset.act;
+    if(a==='issue'){S.status='Quoted';S.version++;S.issued='2026-11-17 21:40 UTC'}
+    if(a==='newver'){S.status='Draft'}
+    if(a==='copy'||a==='csv'){S.showText=true}
+    render();
+  });
+}
+document.querySelectorAll('.bar [data-v]').forEach(b=>b.onclick=()=>{S.view=b.dataset.v;render()});
+render();
+</script>
+</body>
+</html>
