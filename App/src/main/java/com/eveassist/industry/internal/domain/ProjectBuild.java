@@ -24,9 +24,9 @@ public sealed interface ProjectBuild {
         return this;
     }
 
-    /** One job with all the runs needed under typed terms, and a blueprint that adds no cost. */
+    /** A typed blueprint under the given terms that adds no cost, cut only at the 30-day limit. */
     static ProjectBuild oneJob(JobTerms terms) {
-        return new OneJob(terms, BigDecimal.ZERO);
+        return new Typed(terms, BigDecimal.ZERO);
     }
 
     /** Jobs that are given, whatever the item needs. Runs beyond the need are surplus and too few are a warning. */
@@ -45,12 +45,36 @@ public sealed interface ProjectBuild {
         }
     }
 
-    /** One job with exactly the runs needed, under typed terms (a blueprint not owned, or a what-if). */
-    record OneJob(JobTerms terms, BigDecimal blueprintCostPerRun) implements ProjectBuild {
+    /**
+     * A blueprint whose ME and TE are typed in, which is not owned (or is a what-if): it has no limit on its runs, and they go into the
+     * fewest jobs that fit the 30-day limit and the policy's time bound.
+     */
+    record Typed(JobTerms terms, BigDecimal blueprintCostPerRun, SplitPolicy policy) implements ProjectBuild {
+
+        public Typed {
+            if (terms == null || blueprintCostPerRun == null || policy == null) {
+                throw new IllegalArgumentException("A typed build needs terms, a blueprint cost and a split policy");
+            }
+        }
+
+        /** With no time bound. */
+        public Typed(JobTerms terms, BigDecimal blueprintCostPerRun) {
+            this(terms, blueprintCostPerRun, SplitPolicy.LEAST_COST);
+        }
 
         @Override
         public List<ProjectJob> jobsFor(Recipe recipe, long runsNeeded) {
-            return List.of(new ProjectJob(runsNeeded, terms, blueprintCostPerRun, BlueprintKind.TYPED));
+            return BlueprintSplitter.cut(recipe, runsNeeded, terms, blueprintCostPerRun, BlueprintKind.TYPED, policy);
+        }
+
+        @Override
+        public OptionalLong timeBound() {
+            return policy.maxJobSeconds() == null ? OptionalLong.empty() : OptionalLong.of(policy.maxJobSeconds());
+        }
+
+        @Override
+        public ProjectBuild withPolicy(SplitPolicy other) {
+            return new Typed(terms, blueprintCostPerRun, other);
         }
     }
 

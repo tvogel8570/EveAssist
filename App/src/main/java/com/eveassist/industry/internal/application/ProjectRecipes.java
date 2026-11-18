@@ -4,8 +4,11 @@ import com.eveassist.industry.internal.domain.Costing;
 import com.eveassist.industry.internal.domain.LineCost;
 import com.eveassist.industry.internal.domain.PlanProduct;
 import com.eveassist.industry.internal.domain.Project;
+import com.eveassist.sde.Recipe;
 import com.eveassist.sde.SdeService;
+import com.eveassist.sde.TimeSkill;
 import com.eveassist.sde.TypeId;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -43,6 +46,30 @@ class ProjectRecipes {
     /** Only an item with a blueprint can be a product, or have a blueprint chosen for it. */
     boolean isBuildable(TypeId type) {
         return sde.recipeFor(type).isPresent();
+    }
+
+    /** What the project builds, in the order costing reaches it: the products, the parts not bought, and the parts of those. */
+    Set<TypeId> builtItems(Project project) {
+        return new Costing(sde::recipeFor, type -> Optional.empty()).cost(project.products(), project.boughtParts()).lines()
+                .stream().filter(LineCost::built).map(LineCost::type)
+                .collect(Collectors.toCollection(java.util.LinkedHashSet::new));
+    }
+
+    Optional<Recipe> recipeFor(TypeId type) {
+        return sde.recipeFor(type);
+    }
+
+    /** The skills the item's blueprint requires that shorten its time, which the project types the builder's levels for. */
+    List<TimeSkill> timeSkills(TypeId type) {
+        return sde.timeSkillsOf(type);
+    }
+
+    Optional<BigDecimal> unitVolume(TypeId type) {
+        return sde.unitVolume(type);
+    }
+
+    String sdeVersion() {
+        return sde.version();
     }
 
     String name(TypeId type) {

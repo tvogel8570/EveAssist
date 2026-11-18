@@ -47,6 +47,16 @@ public class SdeService {
         return data.isAbyssal(id);
     }
 
+    /** The volume of one unit in cubic meters, packaged where it has a packaged volume, for hauling. */
+    public Optional<java.math.BigDecimal> unitVolume(TypeId id) {
+        return data.unitVolume(id);
+    }
+
+    /** The skills a product's blueprint requires that shorten its manufacturing time (SDE attribute 1982). */
+    public List<TimeSkill> timeSkillsOf(TypeId product) {
+        return data.timeSkillsOf(product);
+    }
+
     public boolean isBlueprint(TypeId id) {
         return data.isBlueprint(id);
     }

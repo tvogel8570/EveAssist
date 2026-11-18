@@ -42,20 +42,31 @@ public final class BlueprintSplitter {
                 continue;
             }
             var terms = new JobTerms(blueprint.me(), blueprint.te(), facility, builder);
-            long cap = JobCosting.maximumRuns(recipe.secondsPerRun(), terms);
-            boolean boundLimits = false;
-            if (policy.maxJobSeconds() != null) {
-                long boundCap = JobCosting.maximumRunsWithin(recipe.secondsPerRun(), terms, policy.maxJobSeconds());
-                boundLimits = boundCap < cap;
-                cap = Math.min(cap, boundCap);
-            }
-            for (long size : jobSizes(runs, cap, boundLimits)) {
-                jobs.add(new ProjectJob(size, terms, blueprint.costPerRun(), blueprint.kind()));
-            }
+            jobs.addAll(cut(recipe, runs, terms, blueprint.costPerRun(), blueprint.kind(), policy));
             remaining -= runs;
             if (remaining == 0) {
                 break;
             }
+        }
+        return jobs;
+    }
+
+    /**
+     * Cuts the runs of one blueprint into the fewest jobs that fit the 30-day limit and the policy's time bound, if it has one.
+     * The same rule serves a typed blueprint, which is not owned and has no limit on its runs.
+     */
+    public static List<ProjectJob> cut(
+            Recipe recipe, long runs, JobTerms terms, java.math.BigDecimal costPerRun, BlueprintKind kind, SplitPolicy policy) {
+        long cap = JobCosting.maximumRuns(recipe.secondsPerRun(), terms);
+        boolean boundLimits = false;
+        if (policy.maxJobSeconds() != null) {
+            long boundCap = JobCosting.maximumRunsWithin(recipe.secondsPerRun(), terms, policy.maxJobSeconds());
+            boundLimits = boundCap < cap;
+            cap = Math.min(cap, boundCap);
+        }
+        List<ProjectJob> jobs = new ArrayList<>();
+        for (long size : jobSizes(runs, cap, boundLimits)) {
+            jobs.add(new ProjectJob(size, terms, costPerRun, kind));
         }
         return jobs;
     }

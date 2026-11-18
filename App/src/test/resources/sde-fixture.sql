@@ -5,7 +5,8 @@ CREATE TABLE sde."invCategories" ("categoryID" integer PRIMARY KEY, "categoryNam
 INSERT INTO sde."invCategories" VALUES (4, 'Material'), (6, 'Ship'), (9, 'Blueprint'), (17, 'Commodity');
 
 CREATE TABLE sde."invGroups" ("groupID" integer PRIMARY KEY, "categoryID" integer, "groupName" varchar(100));
-INSERT INTO sde."invGroups" VALUES (1, 6, 'Ship'), (2, 17, 'Component'), (3, 4, 'Mineral'), (4, 9, 'Blueprint');
+INSERT INTO sde."invGroups" VALUES (1, 6, 'Ship'), (2, 17, 'Component'), (3, 4, 'Mineral'), (4, 9, 'Blueprint'),
+    (5, 16, 'Engineering');
 
 -- Where assets can be: real ids and names, a few of each, for the inventory page
 CREATE TABLE sde."mapRegions" ("regionID" integer PRIMARY KEY, "regionName" varchar(100));
@@ -20,7 +21,8 @@ INSERT INTO sde."staStations" VALUES
     (60003760, 30000142, 10000002, 'Jita IV - Moon 4 - Caldari Navy Assembly Plant'),
     (60008494, 30002187, 10000043, 'Amarr VIII (Oris) - Emperor Family Academy');
 
-CREATE TABLE sde."invTypes" ("typeID" integer PRIMARY KEY, "groupID" integer, "typeName" varchar(100), published boolean);
+CREATE TABLE sde."invTypes" ("typeID" integer PRIMARY KEY, "groupID" integer, "typeName" varchar(100), published boolean,
+    volume double precision, "packagedVolume" double precision);
 INSERT INTO sde."invTypes" VALUES
     (1001, 1, 'Test Hauler', true),
     (1002, 2, 'Test Component', true),
@@ -42,7 +44,14 @@ INSERT INTO sde."invTypes" VALUES
     (2006, 4, 'Mid Part Blueprint', true),
     (2007, 4, 'Deep Part Blueprint', true),
     (2011, 4, 'Spare Hull A Blueprint', true), (2012, 4, 'Spare Hull B Blueprint', true),
-    (2013, 4, 'Spare Hull C Blueprint', true), (2014, 4, 'Spare Hull D Blueprint', true);
+    (2013, 4, 'Spare Hull C Blueprint', true), (2014, 4, 'Spare Hull D Blueprint', true),
+    (3380, 5, 'Industry', true), (11442, 5, 'Nanite Engineering', true), (11452, 5, 'Mechanical Engineering', true);
+
+-- Volumes in cubic meters: a ship is 5,000 assembled and 1,000 packaged, a component has no packaged volume, the ore is 0.01
+UPDATE sde."invTypes" SET volume = 5000, "packagedVolume" = 1000 WHERE "typeID" = 1001;
+UPDATE sde."invTypes" SET volume = 2 WHERE "typeID" = 1002;
+UPDATE sde."invTypes" SET volume = 100 WHERE "typeID" = 1003;
+UPDATE sde."invTypes" SET volume = 0.01 WHERE "typeID" IN (34, 35, 36);
 
 CREATE TABLE sde."industryActivityProducts" ("typeID" integer, "activityID" integer, "productTypeID" integer, quantity integer);
 INSERT INTO sde."industryActivityProducts" VALUES
@@ -84,3 +93,13 @@ INSERT INTO sde."invMetaGroups" VALUES (1, 'Tech I'), (2, 'Tech II'), (3, 'Story
 
 CREATE TABLE sde."invMetaTypes" ("typeID" integer PRIMARY KEY, "parentTypeID" integer, "metaGroupID" integer);
 INSERT INTO sde."invMetaTypes" VALUES (1004, NULL, 54), (1006, NULL, 4), (1007, NULL, 3);
+
+-- The skills a blueprint requires for manufacturing (activity 1). Industry has no manufactureTimePerLevel, as in the real SDE.
+-- Mechanical Engineering saves 2% a level and Nanite Engineering 1%, so they carry attribute 1982 (the values are negative).
+CREATE TABLE sde."industryActivitySkills" ("typeID" integer, "activityID" integer, "skillID" integer, level integer);
+INSERT INTO sde."industryActivitySkills" VALUES
+    (2001, 1, 3380, 1), (2001, 1, 11452, 1), (2001, 1, 11442, 1),
+    (2002, 1, 3380, 1),
+    (2003, 1, 3380, 1), (2003, 1, 11442, 3);
+INSERT INTO sde."dgmTypeAttributes" VALUES (11452, 1982, NULL, -2.0), (11442, 1982, NULL, -1.0);
+

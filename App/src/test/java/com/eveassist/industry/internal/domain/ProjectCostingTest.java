@@ -181,7 +181,7 @@ class ProjectCostingTest {
         prices.put(SHIP_A, bd("20000"));
         volumes.put(ORE, bd("2"));
         volumes.put(SHIP_A, bd("10"));
-        var build = new ProjectBuild.OneJob(JobTerms.PLAN, bd("50"));
+        var build = new ProjectBuild.Typed(JobTerms.PLAN, bd("50"));
         var settings = settings("1000", "5", "10000", QuoteMode.MARGIN, "20", "-5", "1000");
 
         var cost = costing().cost(project(List.of(new PlanProduct(SHIP_A, 2)), Set.of(), Map.of(SHIP_A, build), settings));
@@ -343,6 +343,20 @@ class ProjectCostingTest {
 
         assertThat(comparison.deliveredCostDelta()).isEqualByComparingTo("0");
         assertThat(comparison.costPerHourSaved()).isNull();
+    }
+
+    @Test
+    void aTypedBlueprintIsCutAtTheThirtyDayLimitAndAtATimeBoundLikeAnyOther() {
+        // PART makes 10 a run in 600 s, 480 s a run at TE 20. 3,600 s is 7 runs a job, so 4 runs are one job and 40 units of
+        // 10 runs are 2 jobs. And 30 days is 5,400 runs of 480 s: 6,000 runs are cut into 5,400 and 600.
+        var typed = new ProjectBuild.Typed(JobTerms.PLAN, BigDecimal.ZERO, SplitPolicy.LEAST_COST.withMaxJobSeconds(3_600L));
+
+        assertThat(typed.jobsFor(recipes.get(PART), 10)).extracting(ProjectJob::runs).containsExactly(5L, 5L);
+        assertThat(typed.jobsFor(recipes.get(PART), 4)).extracting(ProjectJob::runs).containsExactly(4L);
+        assertThat(typed.jobsFor(recipes.get(PART), 4)).extracting(ProjectJob::kind).containsOnly(BlueprintKind.TYPED);
+        assertThat(ProjectBuild.oneJob(JobTerms.PLAN).jobsFor(recipes.get(PART), 6000)).extracting(ProjectJob::runs)
+                .containsExactly(5400L, 600L);
+        assertThat(typed.timeBound()).hasValue(3_600L);
     }
 
     @Test

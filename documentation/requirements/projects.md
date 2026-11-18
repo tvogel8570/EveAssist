@@ -237,7 +237,7 @@ Scenario 2 on its own is Least cost with a time bound, and it combines with scen
   "the longest job is 2 d 1 h shorter for 184,000 ISK more". Splitting leaves the install cost unchanged (it comes from the base
   materials), so the increase is the extra rounding of materials, and in scenario 3 also the different blueprints' ME and price per run.
   A negative figure is a saving. The cost per hour is shown only when the longest job is shorter.
-- The hand-built path stays: the jobs of an item can be given (`FixedJobs`), or one job under typed terms (`OneJob`, a blueprint that
+- The hand-built path stays: the jobs of an item can be given (`FixedJobs`), or a blueprint under typed terms (`Typed`, cut at the 30-day limit and at a time bound like any other, a blueprint that
   is not owned, or a what-if).
 
 ## Costing trace

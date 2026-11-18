@@ -23,6 +23,8 @@ public record ProjectWarning(Kind kind, TypeId type) {
         MISSING_VOLUME,
         /** The jobs' runs make fewer units than the project needs. */
         TOO_FEW_RUNS,
+        /** An item is built where no facility has been chosen, so its install cost is left out and the cost is too low. */
+        NO_FACILITY,
         /** A job uses a blueprint original, which is always available and so is easy to use without meaning to. A notice. */
         USES_ORIGINAL,
         /** One run already takes longer than the time bound, so a job is over it. A notice: the bound cannot be met. */

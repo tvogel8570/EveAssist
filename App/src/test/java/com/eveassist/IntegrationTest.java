@@ -35,9 +35,13 @@ public abstract class IntegrationTest {
     @Autowired
     protected TestEsi esi;
 
+    @Autowired
+    protected TestAdjustedPrices adjustedPrices;
+
     @BeforeEach
     void freshEsi() {
         esi.reset();
+        adjustedPrices.reset();
     }
 
     protected String newSub() {
