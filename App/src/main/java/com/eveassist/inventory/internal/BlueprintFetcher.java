@@ -31,6 +31,8 @@ import org.springframework.stereotype.Service;
 public class BlueprintFetcher {
 
     private static final Logger log = LoggerFactory.getLogger(BlueprintFetcher.class);
+    /** The name this route has in {@link DirectorHistory}. */
+    private static final String ROUTE = "blueprints";
 
     public enum Phase {
         NEVER, RUNNING, CURRENT, FAILED, NEEDS_REAUTHORIZATION, MISSING_SCOPE
@@ -63,6 +65,7 @@ public class BlueprintFetcher {
     private final CorporationRepository corporations;
     private final CorporationFetcher corporationFetcher;
     private final AssetFetcher assetFetcher;
+    private final DirectorHistory directorHistory;
     private final Clock clock;
     private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
     private final Set<UUID> characterRunning = ConcurrentHashMap.newKeySet();
@@ -71,7 +74,8 @@ public class BlueprintFetcher {
 
     BlueprintFetcher(LinkedCharacters linked, EsiClient esi, BlueprintRepository blueprints,
             CorporationRepository corporations, CorporationFetcher corporationFetcher, AssetFetcher assetFetcher,
-            Clock clock, MeterRegistry meters) {
+            DirectorHistory directorHistory, Clock clock, MeterRegistry meters) {
+        this.directorHistory = directorHistory;
         this.linked = linked;
         this.esi = esi;
         this.blueprints = blueprints;
@@ -86,6 +90,14 @@ public class BlueprintFetcher {
 
     /** Queues the account's blueprint reads and asset refreshes, then returns without waiting for ESI. */
     public void refresh(Viewer viewer) {
+        refresh(viewer, false);
+    }
+
+    /**
+     * As above. With {@code retryFailedDirectors}, which a button press asks for, a Director who recently failed is
+     * asked again at once instead of after a while.
+     */
+    public void refresh(Viewer viewer, boolean retryFailedDirectors) {
         var features = linked.featuresOn(viewer);
         if (!features.contains(Feature.BLUEPRINTS) && !features.contains(Feature.CORPORATION_BLUEPRINTS)) {
             return;
@@ -113,7 +125,7 @@ public class BlueprintFetcher {
         if (features.contains(Feature.CORPORATION_BLUEPRINTS) && accountsRunning.add(accountId)) {
             executor.execute(() -> {
                 try {
-                    fetchCorporations(viewer);
+                    fetchCorporations(viewer, retryFailedDirectors);
                 } finally {
                     accountsRunning.remove(accountId);
                 }
@@ -142,7 +154,7 @@ public class BlueprintFetcher {
     }
 
     /** Learns corporation ownership and assets first, then reads each corporation through one of its Directors. */
-    private void fetchCorporations(Viewer viewer) {
+    private void fetchCorporations(Viewer viewer, boolean retryFailedDirectors) {
         try {
             corporationFetcher.runGuarded(viewer, BlueprintFetcher::canReadCorporation);
         } catch (RuntimeException e) {
@@ -154,13 +166,22 @@ public class BlueprintFetcher {
             if (directors.isEmpty()) {
                 continue;
             }
+            if (retryFailedDirectors) {
+                directorHistory.forgetFailures(corporation.id(), ROUTE);
+            }
             fetchCorporation(corporation.id(), corporation.eveCorporationId(), directors);
         }
     }
 
     private void fetchCorporation(UUID corporationId, long eveCorporationId, List<LinkedCharacter> directors) {
         String lastProblem = "A Director could not read corporation blueprints";
-        for (var director : directors) {
+        var ordered = directorHistory.order(corporationId, ROUTE, directors);
+        if (ordered.isEmpty()) {
+            // every Director failed a moment ago while another worked: what is stored stays, and they are asked later
+            return;
+        }
+        var failedBefore = new java.util.ArrayList<LinkedCharacter>();
+        for (var director : ordered) {
             var now = clock.instant();
             try {
                 var result = esi.corporationBlueprints(eveCorporationId, director.eveCharacterId());
@@ -171,13 +192,18 @@ public class BlueprintFetcher {
                 switch (result.outcome()) {
                     case UPDATED -> {
                         blueprints.replaceCorporation(corporationId, result.data(), now);
+                        directorHistory.worked(corporationId, ROUTE, director, failedBefore);
                         return;
                     }
                     case UNCHANGED -> {
                         blueprints.unchangedCorporation(corporationId, now);
+                        directorHistory.worked(corporationId, ROUTE, director, failedBefore);
                         return;
                     }
-                    case FAILED -> lastProblem = result.problem();
+                    case FAILED -> {
+                        lastProblem = result.problem();
+                        failedBefore.add(director);
+                    }
                 }
             } catch (RuntimeException e) {
                 log.warn("Fetching the blueprints of a corporation failed: {}", e.getClass().getSimpleName());

@@ -38,6 +38,8 @@ import org.springframework.stereotype.Service;
 public class CorporationFetcher {
 
     private static final Logger log = LoggerFactory.getLogger(CorporationFetcher.class);
+    /** The name this route has in {@link DirectorHistory}. */
+    private static final String ROUTE = "assets";
 
     /** The corporation's name and the names of its hangars change rarely. ESI caches both for an hour. */
     static final Duration NAME_TRUSTED_FOR = Duration.ofDays(1);
@@ -71,12 +73,14 @@ public class CorporationFetcher {
     private final EsiClient esi;
     private final CorporationRepository corporations;
     private final StructureResolver resolver;
+    private final DirectorHistory directorHistory;
     private final Clock clock;
     private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
     private final Set<UUID> running = ConcurrentHashMap.newKeySet();
 
     CorporationFetcher(LinkedCharacters linked, EsiClient esi, CorporationRepository corporations,
-            StructureResolver resolver, Clock clock) {
+            StructureResolver resolver, DirectorHistory directorHistory, Clock clock) {
+        this.directorHistory = directorHistory;
         this.linked = linked;
         this.esi = esi;
         this.corporations = corporations;
@@ -183,9 +187,13 @@ public class CorporationFetcher {
     }
 
     /** Reads the hangar names and the assets with the first Director that gets an answer. */
-    private void fetch(CorporationRepository.Corporation corporation, List<LinkedCharacter> directors,
+    private void fetch(CorporationRepository.Corporation corporation, List<LinkedCharacter> candidates,
             boolean rereadNames) {
-        for (var director : directors) {
+        if (rereadNames) {
+            directorHistory.forgetFailures(corporation.id(), ROUTE);
+        }
+        var failedBefore = new java.util.ArrayList<LinkedCharacter>();
+        for (var director : directorHistory.order(corporation.id(), ROUTE, candidates)) {
             var now = clock.instant();
             EsiResult<List<com.eveassist.esi.CharacterAsset>> result;
             try {
@@ -224,6 +232,7 @@ public class CorporationFetcher {
                 }
                 if (result.outcome() != EsiResult.Outcome.FAILED) {
                     resolver.resolveForCorporation(corporation.id(), director);
+                    directorHistory.worked(corporation.id(), ROUTE, director, failedBefore);
                     return;
                 }
             } catch (DataIntegrityViolationException gone) {
@@ -231,6 +240,7 @@ public class CorporationFetcher {
                 return;
             }
             // this Director failed (it may have lost the role): the next one gets its turn
+            failedBefore.add(director);
         }
     }
 

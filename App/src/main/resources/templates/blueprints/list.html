@@ -23,9 +23,7 @@
               th:if="${view.hasSources}" th:attr="hx-get=@{/blueprints}" hx-target="#blueprint-results"
               hx-push-url="true" hx-sync="this:replace" hx-indicator="#request-indicator" hx-trigger="change, submit">
             <div class="card-body p-3 gap-2">
-                <input type="hidden" name="sort" th:value="${filter.sort}">
-                <input type="hidden" name="dir" th:value="${filter.direction}">
-                <input th:if="${filter.typeId != null}" type="hidden" name="type" th:value="${filter.typeId}">
+                <div th:replace="~{blueprints/results :: state(false)}"></div>
                 <div class="flex flex-wrap gap-2 items-center">
                     <input type="search" name="q" class="input input-sm grow min-w-40" autocomplete="off"
                            th:value="${search}" th:placeholder="#{blueprints.search}" aria-label="Search blueprints">
@@ -58,8 +56,8 @@
             </div>
         </form>
 
-        <div id="blueprint-results" th:if="${view.hasSources}" th:attr="hx-get=@{/blueprints}" hx-include="#blueprint-filters"
-             hx-trigger="blueprints-refresh from:body" hx-swap="innerHTML">
+        <div id="blueprint-results" th:if="${view.hasSources}" th:attr="hx-get=@{/blueprints}" hx-include="#blueprint-filters, #blueprint-view"
+             hx-trigger="blueprints-refresh from:document" hx-swap="innerHTML">
             <th:block th:replace="~{blueprints/results :: results}"></th:block>
         </div>
         <div id="blueprint-drawer-scrim" class="blueprint-drawer-scrim" data-close-blueprint-drawer></div>

@@ -46,9 +46,11 @@ class InventoryController {
     private final CorporationFetcher corporationFetcher;
     private final BrowseService browse;
     private final MessageSource messages;
+    private final RememberedFilters remembered;
 
     InventoryController(AssetFetcher fetcher, CorporationFetcher corporationFetcher, BrowseService browse,
-            MessageSource messages) {
+            MessageSource messages, RememberedFilters remembered) {
+        this.remembered = remembered;
         this.fetcher = fetcher;
         this.corporationFetcher = corporationFetcher;
         this.browse = browse;
@@ -70,8 +72,13 @@ class InventoryController {
             @RequestHeader(value = "HX-Request", required = false) String htmx) {
         // the same address answers the whole page and, to htmx, only the list, so the browser must not mix them up
         response.addHeader("Vary", "HX-Request");
-        var filter = BrowseFilter.parse(request.getParameterMap());
         var partial = htmx != null;
+        if (!partial && RememberedFilters.resumes(request)) {
+            // the menu link: the page as it was left, at its own address, which the marker is not part of
+            return remembered.resumeAt(request, RememberedFilters.Page.INVENTORY, "/inventory");
+        }
+        var filter = BrowseFilter.parse(request.getParameterMap());
+        remembered.remember(request, RememberedFilters.Page.INVENTORY, filter.withLimit(BrowseFilter.FIRST_PAGE).toQuery());
         var open = partial ? openList(request) : null;
         if (!partial) {
             // The page is answered from what is stored. The fetch starts after it is on screen: the status block asks
@@ -162,16 +169,19 @@ class InventoryController {
      * and the fetches are skipped when ESI's copy is still current or one is already running.
      */
     @GetMapping("/inventory/status")
-    String status(Viewer viewer, Model model, HttpServletResponse response,
+    String status(Viewer viewer, HttpServletRequest request, Model model, HttpServletResponse response,
             @RequestHeader(value = "HX-Request", required = false) String htmx,
-            @RequestParam(name = "start", required = false) String start) {
+            @RequestParam(name = "start", required = false) String start,
+            @RequestParam(name = "seen", required = false) String seen) {
         if (start != null) {
             fetcher.refresh(viewer);
             corporationFetcher.refresh(viewer);
         }
         fillStatus(viewer, model);
-        if (htmx != null && !Boolean.TRUE.equals(model.getAttribute("running"))) {
-            // the last answer of a poll: tell the list, once, that what it shows may have changed
+        if (htmx != null && seen != null && !Boolean.TRUE.equals(model.getAttribute("running"))
+                && !browse.browse(viewer, BrowseFilter.parse(request.getParameterMap())).fingerprint().equals(seen)) {
+            // the last answer of a poll: tell the list, once, that what it shows is no longer what is stored. The page
+            // says what it shows with seen, and the poll carries the filter, so the same list can be worked out.
             response.setHeader("HX-Trigger", "browse-refresh");
         }
         return "inventory/fragments :: status";

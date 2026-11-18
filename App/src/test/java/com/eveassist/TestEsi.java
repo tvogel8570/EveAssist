@@ -56,10 +56,12 @@ public class TestEsi implements EsiClient {
         namesAsked.clear();
         namesFailure = null;
         assetsGate = null;
+        corporationAssetsGate = null;
         assetsFailure = null;
         corporationBlueprints.clear();
         blueprintsAsked.clear();
         corporationBlueprintsAsked.clear();
+        refusedDirectors.clear();
         sells.put(34, new BigDecimal("5.00"));
         sells.put(35, new BigDecimal("10.00"));
     }
@@ -79,6 +81,18 @@ public class TestEsi implements EsiClient {
     private final List<Long> blueprintsAsked = new CopyOnWriteArrayList<>();
     private final Map<Long, EsiResult<List<CharacterBlueprint>>> corporationBlueprints = new ConcurrentHashMap<>();
     private final List<String> corporationBlueprintsAsked = new CopyOnWriteArrayList<>();
+    private final java.util.Set<Long> refusedDirectors = ConcurrentHashMap.newKeySet();
+
+    /** From now on corporation calls made through this character fail, as for a Director who lost the role. */
+    public void refuseDirector(long eveCharacterId) {
+        refusedDirectors.add(eveCharacterId);
+    }
+
+    /** Undoes {@link #refuseDirector}, as if the role was given back. */
+    public void acceptDirector(long eveCharacterId) {
+        refusedDirectors.remove(eveCharacterId);
+    }
+
 
     public void blueprintsOf(long eveCharacterId, List<CharacterBlueprint> list) {
         blueprints.put(eveCharacterId, EsiResult.updated(List.copyOf(list), Instant.now().plusSeconds(3600)));
@@ -107,6 +121,9 @@ public class TestEsi implements EsiClient {
     @Override
     public EsiResult<List<CharacterBlueprint>> corporationBlueprints(long eveCorporationId, long viaEveCharacterId) {
         corporationBlueprintsAsked.add(eveCorporationId + ":" + viaEveCharacterId);
+        if (refusedDirectors.contains(viaEveCharacterId)) {
+            return EsiResult.failed("ESI refused the Director (403)");
+        }
         return corporationBlueprints.getOrDefault(eveCorporationId,
                 EsiResult.updated(List.of(), Instant.now().plusSeconds(3600)));
     }
@@ -177,6 +194,12 @@ public class TestEsi implements EsiClient {
 
     private volatile java.util.concurrent.CountDownLatch assetsGate;
     private volatile RuntimeException assetsFailure;
+    private volatile java.util.concurrent.CountDownLatch corporationAssetsGate;
+
+    /** Holds every corporation asset call until the latch opens, so a test can look at a run that is still going. */
+    public void holdCorporationAssetCalls(java.util.concurrent.CountDownLatch gate) {
+        corporationAssetsGate = gate;
+    }
 
     /** Makes every asset call throw, as an ESI client does for a failure it did not expect. */
     public void throwOnAssets(RuntimeException failure) {
@@ -297,6 +320,17 @@ public class TestEsi implements EsiClient {
     @Override
     public EsiResult<List<CharacterAsset>> corporationAssets(long eveCorporationId, long viaEveCharacterId) {
         corporationAssetsAsked.add(eveCorporationId + ":" + viaEveCharacterId);
+        var gate = corporationAssetsGate;
+        if (gate != null) {
+            try {
+                gate.await();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+        if (refusedDirectors.contains(viaEveCharacterId)) {
+            return EsiResult.failed("ESI refused the Director (403)");
+        }
         return corporationAssets.getOrDefault(eveCorporationId,
                 EsiResult.updated(List.of(), Instant.now().plusSeconds(3600)));
     }

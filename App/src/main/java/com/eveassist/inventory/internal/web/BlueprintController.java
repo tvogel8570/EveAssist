@@ -35,8 +35,11 @@ class BlueprintController {
     private final BlueprintFetcher fetcher;
     private final BlueprintService blueprints;
     private final MessageSource messages;
+    private final RememberedFilters remembered;
 
-    BlueprintController(BlueprintFetcher fetcher, BlueprintService blueprints, MessageSource messages) {
+    BlueprintController(BlueprintFetcher fetcher, BlueprintService blueprints, MessageSource messages,
+            RememberedFilters remembered) {
+        this.remembered = remembered;
         this.fetcher = fetcher;
         this.blueprints = blueprints;
         this.messages = messages;
@@ -44,29 +47,43 @@ class BlueprintController {
 
     @GetMapping("/blueprints")
     String page(Viewer viewer, HttpServletRequest request, HttpServletResponse response, Model model,
-            @RequestHeader(value = "HX-Request", required = false) String htmxHeader,
-            @RequestHeader(value = "HX-History-Restore-Request", required = false) String restore) {
-        response.addHeader("Vary", "HX-Request, HX-History-Restore-Request");
-        var htmx = partial(htmxHeader, restore);
+            @RequestHeader(value = "HX-Request", required = false) String htmx) {
+        response.addHeader("Vary", "HX-Request");
+        if (htmx == null && RememberedFilters.resumes(request)) {
+            // the menu link: the page as it was left, at its own address, which the marker is not part of
+            return remembered.resumeAt(request, RememberedFilters.Page.BLUEPRINTS, "/blueprints");
+        }
         var filter = BlueprintFilter.parse(request.getParameterMap());
+        remembered.remember(request, RememberedFilters.Page.BLUEPRINTS, filter.withLimit(BlueprintFilter.FIRST_PAGE).query());
+        if (htmx != null && !"div#blueprint-results".equals(request.getHeader("HX-Source"))) {
+            // A change of the filter is pushed to the history at the address the filter has, and not at the one the
+            // form or the link happened to build: the same filter is one address, whichever part was chosen first. The
+            // table asking for itself when a read is done changes nothing the user chose, so it is left alone.
+            response.setHeader("HX-Push-Url", "/blueprints?" + filter.query());
+        }
         fill(viewer, filter, model);
         if (htmx == null) {
             fillStatus(viewer, model);
             model.addAttribute("startOnLoad", true);
         }
-        return htmx == null ? "blueprints/list" : "blueprints/results :: results";
+        return htmx == null ? "blueprints/list" : "blueprints/results :: partial";
     }
 
     @GetMapping("/blueprints/status")
-    String status(Viewer viewer, Model model, HttpServletResponse response,
+    String status(Viewer viewer, HttpServletRequest request, Model model, HttpServletResponse response,
             @RequestHeader(value = "HX-Request", required = false) String htmx,
-            @RequestParam(name = "start", required = false) String start) {
+            @RequestParam(name = "start", required = false) String start,
+            @RequestParam(name = "seen", required = false) String seen) {
         // only start=1 starts a read: the poll must never restart the read it is waiting for
         if ("1".equals(start)) {
             fetcher.refresh(viewer);
         }
         fillStatus(viewer, model);
-        if (htmx != null && !Boolean.TRUE.equals(model.getAttribute("running"))) {
+        // the last answer of a poll: the table is asked for again only when what it shows is no longer what is stored.
+        // The page says what it shows with seen, and the poll carries the filter, so the same rows can be worked out.
+        if (htmx != null && seen != null && !Boolean.TRUE.equals(model.getAttribute("running"))
+                && !blueprints.browse(viewer, BlueprintFilter.parse(request.getParameterMap())).fingerprint()
+                        .equals(seen)) {
             response.setHeader("HX-Trigger", "blueprints-refresh");
         }
         return "blueprints/fragments :: status";
@@ -74,16 +91,16 @@ class BlueprintController {
 
     @PostMapping("/blueprints/refresh")
     String refresh(Viewer viewer) {
-        fetcher.refresh(viewer);
+        // the button asks for everything again, a Director who failed a moment ago included
+        fetcher.refresh(viewer, true);
         return "redirect:/blueprints";
     }
 
     @GetMapping("/blueprints/{itemId}")
     String detail(Viewer viewer, @PathVariable long itemId, HttpServletRequest request, HttpServletResponse response,
-            Model model, @RequestHeader(value = "HX-Request", required = false) String htmxHeader,
-            @RequestHeader(value = "HX-History-Restore-Request", required = false) String restore) {
-        response.addHeader("Vary", "HX-Request, HX-History-Restore-Request");
-        var htmx = partial(htmxHeader, restore);
+            Model model, @RequestHeader(value = "HX-Request", required = false) String htmx) {
+        // the same address answers the whole page and, to htmx, only the drawer
+        response.addHeader("Vary", "HX-Request");
         var filter = BlueprintFilter.parse(request.getParameterMap());
         var detail = blueprints.detail(viewer, itemId, filter)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
@@ -111,20 +128,16 @@ class BlueprintController {
         var out = response.getWriter();
         var header = new String[] {"blueprints.csv.type", "blueprints.csv.kind", "blueprints.csv.status",
                 "blueprints.csv.me", "blueprints.csv.te", "blueprints.csv.runs", "blueprints.csv.holder",
-                "blueprints.csv.place"};
+                "blueprints.csv.place", "blueprints.csv.tech"};
         out.write(InventoryController.csvLine(java.util.Arrays.stream(header)
                 .map(key -> messages.getMessage(key, null, key, locale)).toArray(String[]::new)));
         for (var item : visible) {
             out.write(InventoryController.csvLine(item.name(), item.kind(),
                     messages.getMessage("blueprints.status.notRead", null, locale),
                     Integer.toString(item.materialEfficiency()), Integer.toString(item.timeEfficiency()),
-                    item.runs() < 0 ? "" : Integer.toString(item.runs()), item.holderName(), fullPlace(item)));
+                    item.runs() < 0 ? "" : Integer.toString(item.runs()), item.holderName(), fullPlace(item),
+                    messages.getMessage("blueprints.tech." + item.tech(), null, locale)));
         }
-    }
-
-    /** htmx asks for a history entry with the same header as for a fragment, but wants the whole page back. */
-    private static String partial(String htmx, String historyRestore) {
-        return historyRestore != null ? null : htmx;
     }
 
     private void fill(Viewer viewer, BlueprintFilter filter, Model model) {

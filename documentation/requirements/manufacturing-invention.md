@@ -48,16 +48,36 @@ place to see and work with them, like the blueprint window in the game.
   [Pilot inventory](pilot-inventory.md#browse-view), because each blueprint is matched to its asset row by item id.
 - **Not matched yet.** ESI's blueprint and asset lists are cached apart, so a blueprint can arrive before its asset row.
   Such a blueprint is still shown: its place is named from its own location id and marked "not matched yet".
-- **Status.** The column is there, but industry jobs are not read yet, so every blueprint shows "Available / not read
-  yet". Manufacturing, copying, ME and TE research and invention come when industry jobs are fetched, with their own
+- **Status.** The column is there, but industry jobs are not read yet, so every blueprint shows "Under development".
+  Manufacturing, copying, ME and TE research and invention come when industry jobs are fetched, with their own
   scopes.
+- **The holder has its colour** (the developer decided on 2026-11-18). The holder's name has a square of the holder's
+  colour in front of it, the same colour as in the bars of the inventory page: the characters in the order they were
+  linked, then the corporations by name. A corporation's colour is its place among all the account's corporations, not
+  among the ones this page shows, so it matches the inventory page even though this page leaves some out
+  (`HolderColors`).
 - **Search, sort and filter**: by text, type, BPO or BPC, status, a minimum ME or TE, holder, or originals that still
-  need research. As on the inventory page, the address is the filter.
+  need research. As on the inventory page, the address is the filter, and the menu link brings the page back with the
+  filter it last had in the session (see [Pilot inventory](pilot-inventory.md#browse-view)). The order in which the parts of a filter were chosen does
+  not matter: a search, a kind, a tech level and a sort give the same list and the same address whichever came first.
+  The server says the address for each change of the filter, and the hidden fields of the form (sort, direction, type
+  and tech level) are made new with every list, so a later change does not forget an earlier one.
 - **Paged like the inventory page** (the developer decided on 2026-11-17, with 14,000 blueprints in the first real
   account). The list shows 100 rows, "Show more" adds 100, and it stops at 1,000 with a note to narrow the filters. The
   summary says "Showing 300 of 14,213 blueprints", and the total is counted in the database for the current filter.
   A new sort order starts again at the first page, and a blueprint's drawer closes back to the page size it had. The
   tick box in the header picks the rows on screen. Export takes every picked row, however many pages they came from.
+- **Tech level** (the developer decided on 2026-11-18). A row has a Tech column (T1, T2, T3, or a dash), and buttons
+  above the table separate the list: All, T1, T2, T3 and **No tech level**, each with how many blueprints it holds under
+  the other filters (a level with none has no button). The level is the `techLevel` attribute (422) of what the
+  blueprint makes. A Structure item that has none is read from its meta group: Structure Tech I and Structure Faction
+  are T1, and Structure Tech II is T2. What has no tech level in the game, mostly components, fuel blocks and tools,
+  is "No tech level" (15.6% of the first real account). The address carries it (`tech=0` to `tech=3`), so it is
+  remembered with the rest of the filter, and the list can be sorted by it, with "No tech level" last.
+- **Variant badge.** A different matter from the tech level: a small badge beside the blueprint's name for the meta
+  group of what it makes, such as Faction, Storyline, Officer, Deadspace or Abyssal, and "Structure" for Upwell items.
+  Tech I, Tech II, Tech III and items with no meta group have none. The two disagree in places (a Storyline item can be
+  T2), which is why they are not one list. A filter by variant can follow when it is wanted.
 - **Actions on ticked rows.** A menu offers Load into project (shown but off until the plan → project function defines
   its workflow), Show in Inventory, Export picked as CSV and Clear selection. Ticks survive filtering, and the server
   checks again that every picked blueprint belongs to the account.

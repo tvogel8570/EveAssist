@@ -14,12 +14,33 @@ class BlueprintQueries {
 
     record Row(long itemId, int typeId, String typeName, String kind, int materialEfficiency, int timeEfficiency,
             long quantity, int runs, UUID holderId, String holderName, boolean corporation, String place,
-            String held, String hangar, String container, boolean matched) {
+            String held, String hangar, String container, boolean matched, int tech, String variant) {
     }
 
     private static final String ROOT_ID = "COALESCE(a.root_location_id, b.location_id)";
     private static final String PLACE_NAME = "COALESCE(st.\"stationName\", sy.\"solarSystemName\", cs.name, "
             + "'Unknown location ' || " + ROOT_ID + "::text)";
+    /**
+     * The tech level of what a blueprint makes: 1, 2 or 3, and 0 for none. It is the product's {@code techLevel}
+     * attribute (422), which is stored as an integer or a float. A Structure item that has none is read from its meta
+     * group: Structure Tech I and Structure Faction are 1, and Structure Tech II is 2. Components, fuel blocks and tools
+     * have no tech level in the game, and 0 is what they get.
+     */
+    private static final String TECH = """
+            CASE COALESCE(ta."valueInt", ta."valueFloat"::integer,
+                    CASE pm."metaGroupID" WHEN 54 THEN 1 WHEN 52 THEN 1 WHEN 53 THEN 2 END)
+                WHEN 1 THEN 1 WHEN 2 THEN 2 WHEN 3 THEN 3 ELSE 0 END""";
+
+    /**
+     * The variant of what a blueprint makes, which is a different matter from its tech level: the meta group's name
+     * for Faction, Storyline, Officer, Deadspace, Abyssal and the like, and "Structure" for the Upwell items. Tech I,
+     * Tech II, Tech III and items with no meta group are not a variant, so they have none.
+     */
+    private static final String VARIANT = """
+            CASE WHEN pm."metaGroupID" IN (52, 53, 54) THEN 'Structure'
+                WHEN pm."metaGroupID" IS NULL OR pm."metaGroupID" IN (1, 2, 14) THEN NULL
+                ELSE pg."metaGroupName" END""";
+
     private static final String BLUEPRINTS_CTE = """
             WITH blueprints AS (
                 SELECT b.character_id AS holder_id, false AS corporation, b.item_id, b.type_id, b.location_id,
@@ -52,6 +73,10 @@ class BlueprintQueries {
             LEFT JOIN sde."invTypes" container_type ON container_type."typeID" = a.container_type_id
             LEFT JOIN corporation_division division ON division.corporation_id = b.holder_id
                 AND division.division = a.division
+            LEFT JOIN sde."industryActivityProducts" ap ON ap."typeID" = b.type_id AND ap."activityID" = 1
+            LEFT JOIN sde."dgmTypeAttributes" ta ON ta."typeID" = ap."productTypeID" AND ta."attributeID" = 422
+            LEFT JOIN sde."invMetaTypes" pm ON pm."typeID" = ap."productTypeID"
+            LEFT JOIN sde."invMetaGroups" pg ON pg."metaGroupID" = pm."metaGroupID"
             """.formatted(ROOT_ID, ROOT_ID, ROOT_ID, ROOT_ID);
 
     private final JdbcClient jdbc;
@@ -71,6 +96,21 @@ class BlueprintQueries {
                 .params(selection.params()).query(Long.class).single();
     }
 
+    /**
+     * How many blueprints each tech level has under the filter, without the filter's own tech level, so that the buttons
+     * above the table say what each would show. A level with none is left out.
+     */
+    Map<Integer, Long> techCounts(UUID[] characters, UUID[] corporations, UUID[] structureCharacters,
+            BlueprintFilter filter) {
+        var selection = selection(characters, corporations, structureCharacters, filter.withTech(null), null);
+        var counts = new java.util.TreeMap<Integer, Long>();
+        jdbc.sql("%s SELECT %s AS tech, count(*) AS n %s%s GROUP BY 1".formatted(BLUEPRINTS_CTE, TECH, COMMON_FROM,
+                        selection.where()))
+                .params(selection.params())
+                .query((rs, row) -> counts.put(rs.getInt("tech"), rs.getLong("n"))).list();
+        return counts;
+    }
+
     private record Selection(String where, Map<String, Object> params) {
     }
 
@@ -85,6 +125,10 @@ class BlueprintQueries {
         if (filter.typeId() != null) {
             conditions.add("b.type_id = :type");
             params.put("type", filter.typeId());
+        }
+        if (filter.tech() != null) {
+            conditions.add("(" + TECH + ") = :tech");
+            params.put("tech", filter.tech());
         }
         if (!filter.kind().isBlank()) {
             conditions.add("CASE WHEN b.quantity = -2 THEN 'BPC' ELSE 'BPO' END = :kind");
@@ -125,6 +169,8 @@ class BlueprintQueries {
             case "kind" -> "b.quantity";
             // every blueprint has the same status until industry jobs are read, and ORDER BY refuses a bare literal
             case "status" -> "CAST('NOT_READ' AS text)";
+            // 1, 2, 3 and then the blueprints with no tech level
+            case "tech" -> "CASE (" + TECH + ") WHEN 0 THEN 9 ELSE (" + TECH + ") END";
             case "me" -> "b.material_efficiency";
             case "te" -> "b.time_efficiency";
             case "runs" -> "b.runs";
@@ -147,17 +193,18 @@ class BlueprintQueries {
                     CASE WHEN a.division IS NOT NULL THEN COALESCE(division.name, 'Hangar ' || a.division::text) END AS hangar,
                     CASE WHEN a.container_id IS NOT NULL THEN COALESCE(NULLIF(container.name, ''),
                         container_type."typeName", 'Container') END AS container,
-                    a.item_id IS NOT NULL AS matched
+                    a.item_id IS NOT NULL AS matched, %s AS tech, %s AS variant
                 %s%s
                 ORDER BY %s %s, b.item_id%s
-                """.formatted(BLUEPRINTS_CTE, PLACE_NAME, COMMON_FROM, selection.where(), order, direction, limit))
+                """.formatted(BLUEPRINTS_CTE, PLACE_NAME, TECH, VARIANT, COMMON_FROM, selection.where(), order, direction,
+                limit))
                 .params(params)
                 .query((rs, row) -> new Row(rs.getLong("item_id"), rs.getInt("type_id"), rs.getString("type_name"),
                         rs.getString("kind"), rs.getInt("material_efficiency"), rs.getInt("time_efficiency"),
                         rs.getLong("quantity"), rs.getInt("runs"), rs.getObject("holder_id", UUID.class),
                         rs.getString("holder_name"), rs.getBoolean("corporation"), rs.getString("place"),
                         rs.getString("held"), rs.getString("hangar"), rs.getString("container"),
-                        rs.getBoolean("matched")))
+                        rs.getBoolean("matched"), rs.getInt("tech"), rs.getString("variant")))
                 .list();
     }
 

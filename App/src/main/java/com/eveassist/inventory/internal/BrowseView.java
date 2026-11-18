@@ -15,6 +15,14 @@ public record BrowseView(List<ItemView> items, int itemTypes, long stacks, long 
         List<Chip> chips, String clearAllQuery, String exportQuery, String moreQuery, boolean unfiltered,
         boolean hasAssets, boolean corporations) {
 
+    /**
+     * A short text that stands for everything this list shows. The page sends it back with the status poll, and the
+     * list is fetched again only when it no longer matches, so a fetch that changed nothing sends nothing.
+     */
+    public String fingerprint() {
+        return Integer.toHexString(hashCode());
+    }
+
     /** One item type: its total, and who holds it as the pieces of one bar. */
     public record ItemView(int typeId, String name, String groupName, String categoryName, long total, int places,
             boolean blueprintCopy, boolean blueprintOriginal, List<Segment> segments, int holderCount,
