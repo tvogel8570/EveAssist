@@ -68,9 +68,9 @@ Every table is account-owned through `project`, which references the account wit
 | `project_item_skill` | `project_id`, `item_type_id`, `skill_type_id`, `level` | the builder's level in each time-saving skill the item's blueprint requires. The percent per level is read from the SDE, not stored |
 | `project_price` | like `plan_price`: `type_id`, `source` (`market` or `manual`), `sell`, `buy`, `as_of` | copied from the plan at start, then **the project's own**, refreshed only when the user asks. Costing never reads the shared Jita orders |
 | `facility` | account-owned: name, the eight terms of `FacilityTerms` (structure and rig material, time and cost percents, cost index, tax, SCC), and later the structure type, rigs and system | typed percents first. An item points at one, or the project's default. Deleting a facility sets `facility_id` to null |
-| `project_costing` | the Draft's latest costing and each quote's: provenance (`costed_project_version`, `costed_sde_version`, `prices_as_of`, `costed_at`), `delivered_cost`, `quotable`, `document_format_version`, and one `jsonb` **display document** of the costing | one row with no quote number per project (a partial unique index), replaced on each costing. A quote's row is never changed |
+| `project_costing` | the Draft's latest costing (`quote_id` null) and each quote's (`quote_id` set, and the project must be the quote's, by a composite foreign key): provenance (`costed_project_version`, `costed_sde_version`, `prices_as_of`, `costed_at`), `delivered_cost`, `quotable`, `document_format_version`, and one `jsonb` **display document** of the costing | one row with no quote per project (a partial unique index), replaced on each costing. A quote's row is never changed, and **the database refuses an update** of it |
 | `project_trace` | `costing_id`, `document_format_version`, `jsonb` **display document** of the trace | **its own table**, with `ON DELETE CASCADE` from the costing, so that the 30-day purge of an archived project's traces **deletes rows and never modifies a frozen quote** |
-| `project_quote` | `project_id`, `number`, `issued_at`, `expires_at`, `buyer_name`, `note`, the price and its mode, `costing_id`, and the **inputs snapshot** (`jsonb`, with `inputs_format_version`) | frozen. Quote numbers are 1, 2, 3 per project |
+| `project_quote` | `project_id`, `number`, `issued_at`, `expires_at`, `buyer_name`, `note`, the price and its mode, and the **inputs snapshot** (`jsonb`, with `inputs_format_version`) | frozen, and **the database refuses an update**. Quote numbers are 1, 2, 3 per project. Its costing points back at it (`project_costing.quote_id`), so deleting a quote deletes its costing and trace |
 
 **Why quotes are snapshots and the Draft is tables.** The Draft changes all the time and is queried (the list shows a total, an archive filter, a
 staleness check), so it is in tables. A quote never changes and is read as a whole, so a snapshot is enough and it avoids copying nine tables
@@ -161,7 +161,8 @@ only one in this module. A quote is deleted by `deleteQuote` or with its project
 - **A quote can only be issued from a costing of the current version.** If the Draft changed after the last costing, *issue* is refused with
   "cost it again". This is the one place a stale costing is never allowed.
 - **A quoted project is locked.** Every edit, price refresh and costing is refused until *New version from this quote*.
-- **A quote is never updated.** The only way to change one is a new quote.
+- **A quote is never updated.** The only way to change one is a new quote. The application has no update for it, and a trigger makes the database refuse one for a quote
+  and for a quote's costing. A migration that converts stored documents to a newer format version switches the trigger off for its own transaction.
 - **Deleting a quote** deletes its row, its costing and its trace, and nothing else. Quote numbers are **never reused** (the project keeps a
   `last_quote_number`), so a number a buyer was given never means a different quote. If the project is **Quoted** and the deleted quote was the
   only one, the project becomes a **Draft** again, since no quote stands any more. In every other case the state is unchanged. *(Proposed:
@@ -169,16 +170,27 @@ only one in this module. A quote is deleted by `deleteQuote` or with its project
 
 ## Migrations and tests
 
-- Migrations, named by CLAUDE.md's rule (`VYYYYMMDD_HHMM__name.sql`, UTC, never edited once merged), in three steps so each is reviewable:
-  `facility`; `project` with its product, bought part, item, skill and price tables; `project_costing`, `project_trace` and `project_quote`.
-- `JdbcProjectRepositoryIT` (Testcontainers): create, find as the owner and as someone else (another account's project looks missing), the
-  version conflict, copy from a plan, the unique Draft costing, a quote's row refusing an update, the trace purge leaving the quote as it was,
-  and cascade on account deletion.
+- **Built** (2026-11-18), named by CLAUDE.md's rule (`VYYYYMMDD_HHMM__name.sql`, UTC, never edited once merged), four migrations so each is one change:
+  `V20261118_1940__facility`; `V20261118_1941__projects` (the project and its product, bought part, item, item skill and price tables);
+  `V20261118_1942__project-quotes-and-costings` (quote, costing and trace); `V20261118_1943__freeze-project-quotes` (the trigger).
+  New builders start with Industry and Advanced Industry at 0 and no implant, and a new item at ME 10 and TE 20, as a plan assumes.
+- **Built:** `ProjectSchemaIT` shows what the tables enforce before any repository uses them: the cascade from an account, the plan's deletion leaving the
+  project, a deleted facility falling back to the default, the frozen quote (it fails with the trigger migration taken out), one Draft costing, a costing
+  that must agree with its quote's project, quote numbers, and the checks.
+- `JdbcProjectRepositoryIT` (Testcontainers), **not yet written**: create, find as the owner and as someone else (another account's project looks
+  missing), the version conflict, copy from a plan, replacing the Draft's costing, and the trace purge leaving the quote as it was.
 - Use case tests with a fake repository and fake ports: *issue refused on a stale costing*, *edit refused on a quoted project*, *new version from a
   quote* round trip, *add a product the plan did not have*.
 - A document test per stored version, loading or rendering a stored example (see the version rules above).
 - The account deletion test lists projects, facilities and their costings among what is gone.
 - The architecture checks run as always; no new rule is expected.
+
+## Support access
+
+The support role (`support_ro`) reads an allowlist of tables, and a test fails for a table that is neither on it nor excluded on purpose. The project tables are
+**excluded for now** (the developer decided on 2026-11-18): the privacy statement lists what the operator may look at, and it does not yet cover projects, facilities
+or quotes, and a quote holds a buyer's name and note. Until that changes the operator cannot read a costing or its trace, which is what the trace is for. The decision
+and the options (readable with the buyer's name and note in separate tables, readable in full, or stay excluded) are in issue #63.
 
 ## Open questions
 
