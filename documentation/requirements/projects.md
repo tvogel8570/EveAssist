@@ -19,15 +19,20 @@ below the work. Layouts A (one long page) and B (tabs) were not chosen.
 
 ## Lifecycle
 
-Decided with the developer on 2026-11-17.
+Decided with the developer on 2026-11-17, and made exact on 2026-11-18 (the lock, the products and the prices).
 
-- **Start project** on a plan copies it. The plan is not changed, and one plan can have many projects.
-- **Draft.** The project can be changed freely: blueprints, facilities, builder, rates, price basis, margin. It costs
-  again on demand, and prices change only when the user asks (see [Market and logistics](market-logistics.md#price-source)).
-- **Quoted.** *Issue quote* freezes the costing and the price as a numbered version (quote 1, 2, …) with its date. A
-  quoted version cannot be edited. *New version from this quote* makes a Draft that starts as a copy of it, so the earlier
-  quote stays as it was sent. Current prices are shown beside the frozen ones so the drift is visible.
-- Archive and delete work as for plans (see [Working with plans](manufacturing-invention.md#working-with-plans)).
+- **Start project** on a plan copies it. The plan is not changed, and one plan can have many projects. The plan provides the project's
+  **initial** products and prices. After that the project is its own: a change to the plan, or deleting it, does not reach the project.
+- **Draft.** The project can be changed freely: **its products (including ones the plan does not have)**, blueprints, facilities, builder, rates,
+  price side, margin. It has **its own prices**, copied from the plan at start. It costs again on demand, and prices change only when the user asks
+  (see [Market and logistics](market-logistics.md#price-source)).
+- **Quoted.** *Issue quote* freezes the costing and the price as a numbered version (quote 1, 2, …) with its date. **Once a project has been
+  quoted it is no longer a Draft and cannot be edited**: no change, no price refresh, no costing. *New version from this quote* makes it a Draft
+  again, starting as a copy of that quote, so the earlier quote stays as it was sent. Current prices are shown beside the frozen ones so the drift
+  is visible.
+- **A single quote can be deleted** (the developer decided on 2026-11-18), and quote numbers are not reused.
+- Archive and delete work as for plans (see [Working with plans](manufacturing-invention.md#working-with-plans)), in either state. Archiving
+  changes nothing else. The tables, use cases and what happens on a delete are in [Projects: persistence and use cases](../architecture/projects.md).
 
 ## What the project is made of
 
@@ -52,7 +57,7 @@ Decided with the developer on 2026-11-17: **pick per built item, from owned blue
   is marked "not owned", like a hand-entered blueprint (see [Blueprints](manufacturing-invention.md#blueprints)).
 - A BPC with fewer runs than the item needs makes the job split: the BPC's runs first, then the next blueprint chosen
   for the rest. A job never uses more runs than its blueprint has. Where no owned blueprint covers the runs, the project
-  says what is missing instead of guessing.
+  says what is missing instead of guessing. The rules are in [The splitter](#the-splitter).
 - The project's job size per built item is the project's own choice (a plan assumes one job per item). Materials are
   rounded per job (see [Plans](manufacturing-invention.md#plans)).
 - **Each job is independent** (the developer decided on 2026-11-17, for the first version). A BPO is always available to
@@ -140,7 +145,9 @@ by reading down the page.
    invention.
 3. **Blueprint cost per run** (see above).
 4. **Time.** Job time from blueprint TE, builder skills and implants, facility TE bonus and rigs, rounded to the nearest second. Total job time is
-   summed, because one builder runs them one after another for this purpose.
+   summed, because one builder runs them one after another for this purpose. The page also shows the **single longest job**
+   (the developer asked for it on 2026-11-18), a stand-in for the time with several builder slots. It is a lower bound, not
+   a lead time: it ignores that a job waits for the parts it uses.
 5. **Time value.** The project has an ISK per hour (default from the account, default 0). Total time times that rate is
    a cost line, so a build that saves materials by taking many hours is seen as it is.
 6. **Hauling.** ISK per m³ times inbound m³ (materials still to buy) plus outbound m³ (what is built). Volumes are from
@@ -198,6 +205,76 @@ input is a value, as with `JobCosting`):
 - Not in this slice: persistence and the page, reading ESI, material on hand, the structure and rig table, invention and
   copying, and reading a blueprint's time-bonus skills from the SDE (taken as input).
 
+## The splitter
+
+Decided with the developer on 2026-11-18, built as `BlueprintSplitter`, `SplitPolicy` and `ProjectBuild.FromBlueprints`. It shares the
+runs an item needs among the blueprints the developer owns, and cuts them into jobs. (A **job** is one industry job of several runs.)
+
+**Two strategies, and a time bound that goes with either.** Splitting an item into more jobs can use slightly more material, because
+every job rounds its materials up on its own, but it lets the jobs run in parallel slots and the project finish sooner. So the
+developer chooses how to trade the two.
+
+| Scenario | Rule |
+|---|---|
+| 1. **Least cost** (the default) | The best ME first, then the best TE, a copy before an original on a tie. A blueprint's runs go into **one job**, cut only at the 30-day limit (full jobs, the remainder last). The least material for the runs. |
+| 2. **Time bound** (a limit set on top of either strategy) | The developer gives the longest time any job may take. Each blueprint's runs go into the **fewest jobs that each fit under it**, divided **evenly** so the jobs finish together. A bound that limits nothing (longer than the 30 days, or than one job already is) changes nothing. |
+| 3. **Copies first** | Every copy first, **the one with the most runs first**, down to the fewest, using only as many runs of a copy as are needed. Then the **originals** finish what the copies cannot, the best ME first. Spends the copies the developer has before the originals. |
+
+Scenario 2 on its own is Least cost with a time bound, and it combines with scenario 3. The developer asked to be told if this gets too complex.
+
+- **What each splits.** A copy gives at most the runs it has left, an original as many as are still needed, and a copy with no runs is
+  skipped. Where the blueprints cannot cover the runs, the jobs make too few units and the project shows a warning that blocks the quote.
+- **Job length.** A job has at most `ceil(30 days ÷ seconds of one run)` runs. The developer remembers that the limit applies to every
+  job of more than one run, so one run is always allowed even when it takes longer than 30 days. **To be confirmed in the game**
+  ([costing details](costing-detail.md#314-maximum-runs-of-a-job)): the readings were of originals only.
+- **When one run is already longer than the time bound,** each job is one run and the project says the bound could not be met
+  (`TIME_BOUND_NOT_MET`, a notice that does not block a quote).
+- **An original is always flagged.** A project that uses a blueprint original gets a notice (`USES_ORIGINAL`) on that item, because an
+  original is always available and is easy to use without meaning to. It does not block a quote.
+- **What the choice costs.** For scenarios 2 and 3 the project shows the cost against scenario 1 for the same project
+  (`ProjectCosting.compareToLeastCost`): for each cost line the extra amount, the delivered cost's increase, how much shorter the
+  **longest job** is and how the **total time** changes, and the extra cost for each hour the longest job is shortened. The page can say
+  "the longest job is 2 d 1 h shorter for 184,000 ISK more". Splitting leaves the install cost unchanged (it comes from the base
+  materials), so the increase is the extra rounding of materials, and in scenario 3 also the different blueprints' ME and price per run.
+  A negative figure is a saving. The cost per hour is shown only when the longest job is shorter.
+- The hand-built path stays: the jobs of an item can be given (`FixedJobs`), or one job under typed terms (`OneJob`, a blueprint that
+  is not owned, or a what-if).
+
+## Costing trace
+
+Decided with the developer on 2026-11-18: the trace for troubleshooting a difference between the game and the app is **saved with the
+costing and shown on the page** (not a DEBUG log). Logs carry only the project id and a costing id. The developer also asked that it be
+**cleaned up**, both for table size and when an account is deleted.
+
+**Why logs are not enough.** Every difference found so far was settled by comparing specific values with the game's Industry window
+(the material quantities, the cost index line, the role bonus, the skills line, the rounding of a 2,722.005). A count of jobs and
+warnings cannot show which of those differs, and a trace that lacks the prices' times cannot be reproduced an hour later.
+
+**What a trace holds**, one per costing, in the shape of the game's window so the two can be read line against line:
+
+| Group | Values |
+|---|---|
+| Inputs per job | blueprint kind, ME, TE, runs; the facility (structure bonuses, rig bonuses as scaled, index and its source, tax, SCC); the builder's levels, product skills and implant; the recipe's base quantities and base time |
+| Data behind them | each material's adjusted price and unit price with their times; the SDE version; the app's commit id |
+| Outputs per job | each material's exact product before rounding and its quantity; the time with its modifier lines (blueprint TE, skills and implants, structure); the EIV; the install cost as the window shows it (job fee, structure role bonus, SCC, tax, total) |
+| Project | demand per part, the runs and split chosen, the warnings and notices |
+
+`JobCost` does not yet carry the install cost lines or the unrounded material products, so the domain output grows to hold them.
+
+**Lifecycle** (the three answers are the developer's, 2026-11-18; the rest is proposed to confirm):
+
+- **Account deletion.** The trace belongs to a project, and the project to the account, with `ON DELETE CASCADE` as every other
+  account table has it (see [Data](../architecture/data.md)). A test deletes an account that has traces and checks none are left.
+- **Table size.** One JSON document per costing, not a row per job, so a project of nine jobs is one row of a few kilobytes.
+  A Draft keeps only its **latest** trace and replaces it each time it is costed. An issued quote keeps its trace for as long as
+  the quote exists, because the quote is frozen and its trace explains it. Deleting a project, or a quote version, deletes its trace.
+- **Archived projects.** Their traces are removed **30 days** after archiving and the quotes stay. The 30 days is a setting, and is
+  to become **a preference of each user** when preferences are written (until then one account-wide default).
+- **Who can see it.** **Every user** can open the trace page of their own projects.
+- **Account data export.** The traces are **not** in it (the developer decided).
+- **What it must not hold:** tokens or secrets, and no names of the buyer or the characters, since the trace needs only type ids and numbers.
+  The buyer's name and the note belong to the quote.
+
 ## Later
 
 - Matching ESI industry jobs to the project's jobs, reservations of materials on hand and actual profit from sales, as
@@ -206,7 +283,7 @@ input is a value, as with `JobCosting`):
 - Hauling quotes from Red Frog Freight and similar tools.
 - Slot-aware lead time and a delivery date to quote.
 - Buyer-supplied materials.
-- Invention, copy and research jobs inside a project (see [Invention](manufacturing-invention.md#invention)).
+- Choosing the cheapest split by trying the combinations, instead of the best ME first. Invention, copy and research jobs inside a project (see [Invention](manufacturing-invention.md#invention)).
 
 ## Open questions
 

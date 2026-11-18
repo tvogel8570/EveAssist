@@ -20,6 +20,7 @@ questions, and nothing depends on them.
 - [Identity and ESI tokens](identity-and-tokens.md): sign-in, character linking, token storage and refresh
 - [ESI access](esi.md): the ESI client, background fetches, freshness, prices and alerts
 - [Data and ownership](data.md): database layout, ownership and sharing, SDE import and versioning
+- [Projects: persistence and use cases](projects.md): the project's tables, use cases, quotes as snapshots and the steps to a UI-ready backend (proposed)
 - [External REST API](api.md): the API for outside clients and automation, designed now and built later
 - [Deployment and operations](deployment.md): dev, prod in AWS, backups, secrets and monitoring
 - [Automating the deployment](deployment-pipeline.md): options for a deployment pipeline, **potential** (not proposed, nothing depends on them)

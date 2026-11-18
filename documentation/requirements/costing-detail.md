@@ -39,10 +39,10 @@ other time-saving skills, and the implant is a further factor (see [3.5](#35-job
 
 ### 1.2 What the readings in the game settled
 
-Twelve readings, in two Azbels (high-sec and a wormhole) with no rigs, one builder with all industry skills at V ([5](#5-readings-from-the-game)).
+Thirteen readings, in two Azbels (high-sec and a wormhole) with no rigs, one builder with all industry skills at V ([5](#5-readings-from-the-game)).
 
 - **Materials.** ME and the structure's bonus **multiply**. The product is rounded to **two decimals, half up, and then up to a
-  whole unit**, **once per job** (not per run), and a job uses at least **one per run**.
+  whole unit**, **once per job** (not per run). A job uses at least **one per run**, confirmed in the game (G13).
 - **Time.** The blueprint's TE, the builder's skills, the implant and the structure all **multiply**. Skills include the
   blueprint's required skills that carry `manufactureTimePerLevel` (the Tech II skills). The result is rounded to the
   **nearest second**, not up.
@@ -137,7 +137,7 @@ q = max( R , ceil( round2( base × R × (1 − ME/100) × (1 − structure/100) 
   21,106.008 showed **21,107**. Rounding the exact product up would give 10,554, and dropping the third decimal would give 21,106.
   **Exactly on the half: Game** (G11). 13 × 235 × 0.891 = **2,722.005** showed **2,723**: half up, where half even would give 2,722. The game may work in floating point, so this is what
   it does and not a rule it states; the code follows it (`RoundingMode.HALF_UP`).
-- **Minimum one per run:** **Game** (G7): a job whose seven materials each have a base of 1 and 10 runs at ME 2 and the Azbel's 1% (9.70) used **10** of each.
+- **Minimum one per run:** **Game** (G13). 1,000 runs of a Combat Scanner Probe I copy at ME 10 in the Azbel: Isogen and Nocxium have a base of 1, so 1,000 × 0.891 = 891.00, and both showed **1,000**. The rule is the wiki's, and it holds. G7 (10 runs at ME 2, 9.70) had first been recorded as showing it, which was wrong, because 9.70 rounds up to 10 anyway (found 2026-11-18, when a test for it failed); G13 is the reading that separates it.
 - **The reductions multiply:** **Game** (G3). At ME 10 in an Azbel, Nocxium 1,159, Zydrine 535 and Megacyte 535 (adding the 10% and 1% would give
   1,157 / 534 / 534); the same at ME 8 (G10) and ME 2 (G7).
 - **Which rigs apply to which product** is not read from the SDE. The rigs are named by what they build (Equipment, Ammunition,
@@ -250,7 +250,7 @@ the invention work, and the leftover runs of an invented BPC keep their share of
 time value = total job seconds ÷ 3600 × ISK per hour
 ```
 
-**Own**, default 0. The developer needs more information before deciding on it. With one builder and independent jobs the total is the sum of the jobs' times.
+**Own**, default 0. The developer needs more information before deciding on it. With one builder and independent jobs the total is the sum of the jobs' times. `ProjectCost` also gives `longestJobSeconds`, the time of the single longest job, as a stand-in for builder slots (asked for on 2026-11-18). It is a lower bound for the lead time, because it ignores that a job waits for the parts it uses.
 
 ### 3.8 Hauling
 
@@ -286,7 +286,7 @@ delivered cost = materials (2) + install cost (4) + blueprint cost (6) + time va
 per unit       = delivered cost ÷ units delivered
 ```
 
-**Own.** Job time (5) is not ISK and enters only through the time value (7).
+**Own.** Job time (5) is not ISK and enters only through the time value (7). In `ProjectCosting`, "units delivered" is the sum of all products' quantities, so the per-unit figure means something only for a one-product project.
 
 ### 3.12 Quote
 
@@ -296,7 +296,9 @@ market-referenced:  quote = Jita price × units × (1 + premium/100)
 profit              = quote − delivered cost
 ```
 
-**Own**, decided on 2026-11-17: a margin of 20 gives a profit that is 20% of the quote. The other mode is shown as a comparison. The rounding of the quote is open.
+**Own**, decided on 2026-11-17: a margin of 20 gives a profit that is 20% of the quote. The other mode is shown as a comparison.
+
+**Rounding** (decided on 2026-11-18): the cost and the profit are exact. The quote is rounded **up** to a multiple of a step, a setting that defaults to 1,000 ISK, and a step of 0 means no rounding (two decimals). The profit shown is therefore at least the margin asked for. In market mode the price is `Σ (product unit price × quantity) × (1 + premium/100)`, and it is not worked out (the quote is empty) when any product has no price.
 
 ### 3.13 Security space
 
@@ -336,10 +338,12 @@ a job at the maximum lasts a little **more** than 30 days (by up to one run).
 | G3: ME 10 / TE 20 | 391.6800 | 6,617.6 | **6,618** |
 | G9: ME 10 / TE 20 with a BX-804 | 376.0128 | 6,893.4 | **6,894** |
 | G10: 10000MN Afterburner I, ME 8 / TE 14, BX-804 | 16,168.5504 | 160.3 | **161** |
+| G13: Combat Scanner Probe I, ME 10 / TE 0, BX-804 | 313.3440 | 8,272.1 | **8,273** |
 
-**Game, 2026-11-18** (read from the "Maximum runs" figure in four screenshots). Together the four readings allow a limit between **2,591,942 s and 2,592,134 s**, and 30 days is 2,592,000 s. The 30 days
+**Game, 2026-11-18** (read from the "Maximum runs" figure in five screenshots). Together the five readings allow a limit between **2,591,982 s and 2,592,138 s**, and 30 days is 2,592,000 s. The 30 days
 is therefore **inferred** from the readings and not stated by a source; the limit itself is not in the SDE or in ESI.
 
+- **The developer's recollection (2026-11-18), not yet confirmed:** the cap applies to every job of **more than one run**, so a single run is always allowed, even when it takes longer than 30 days. The formula gives that for free (the ceiling is never below 1), and `JobCosting.maximumRuns` returns at least 1. The splitter caps every job, copy or original ([Projects](projects.md#the-splitter)).
 - **Not tested:** whether a **copy** (BPC) is capped the same way (it shows "Runs remaining", and the readings had at most 1,500 runs over 6.8 days), and the cap when the duration is **below** it.
 - **Use:** a job size for an item is at most this many runs, so a long build is split into several jobs, each rounding its materials once (see [3.1](#31-material-quantity)).
 
@@ -417,6 +421,7 @@ Zydrine 6, Megacyte 6) unless stated. Money is ISK.
 | G10 | high-sec | 10000MN Afterburner I copy ME 8 / TE 14, 1, BX-804 | 1.20M / 0.39M / 0.12M / 28.81K / 4,992 / 1,593 / 1,044; **04:29:29**; hover TE −14.0%, −34.7%, −20.0%; total **1,653,860** | the TE line is the blueprint's TE; Capital Ship Construction not listed; ME 8; cost to the ISK |
 | G11 | wormhole | ME 10 / TE 20, 235 | output ×2,350; Nocxium **2,723**, Zydrine 1,257, Megacyte 1,257; **1D 01:34:05** (92,045 s); EIV 10,280,639; index line 58,430, bonus −2,337, gross 56,093; SCC 411,226; total **467,319** | an exact half (2,722.005) rounds up; the wormhole index is 0.56835% (index line); the total is again the sum of the rounded gross and taxes (exact 467,318.3) |
 | G12 | high-sec | Atron Blueprint copy (a standard T1 frigate) ME 10 / TE 20, 1, BX-804 | 28.51K / 5,346 / 2,228 / 446; **00:41:47** (2,507 s); EIV 367,708; index line 7,382, bonus −295 (−4.0%), gross 7,086; SCC 14,708; total **21,794** | a ship is costed like a module; the BX-804 is still fitted; products on a half unit (2,227.5, 445.5) round up; index about 2.0074% |
+| G13 | high-sec | Combat Scanner Probe I copy ME 10 / TE 0, 1,000, BX-804 | 2,673 / 8,019 / 12.47K / 1,000 / 1,000 / 1,782 / 6,237; **3D 15:02:24** (313,344 s); "Maximum runs" **8,273**; total **374,738** | Isogen and Nocxium (base 1) show **1,000**, not 891: the one-per-run minimum; the index worked back from the total is 2.0021% (not an independent check) |
 
 Notes on reading the window:
 
@@ -437,8 +442,14 @@ In the `industry` module, `com.eveassist.industry.internal.domain`:
 | `FacilityTerms` | structure and rig material, time and cost percents (rigs already scaled by security), the index in percent, tax, SCC. Every value is an input |
 | `BuilderTerms` | Industry and Advanced Industry levels, a list of `ProductSkill`, implant percent. `skillFactor()` is the skills alone, `timeFactor()` includes the implant (the window's "Skills and Implants" line) |
 | `ProductSkill` | one time-saving required skill: the builder's level and the percent per level |
-| `JobCost` | materials, seconds, EIV, install cost, units made, the count of materials without an adjusted price |
+| `JobCost` | materials, seconds, EIV, install cost, units made, the count of materials without an adjusted price, and the detail a trace needs: `materialUses`, `time`, `installBreakdown` |
+| `MaterialUse`, `TimeBreakdown`, `InstallCostBreakdown` | how a job's numbers came about, in the shape of the game's windows: each material's exact product, its two-decimal figure and whether the minimum applied; the time's modifiers (blueprint TE, skills and implants, structure, rigs), its exact and rounded seconds and the maximum runs; the install cost's lines (job fee, structure bonus, gross cost, facility tax, SCC, total). The raw material for the [costing trace](projects.md#costing-trace) |
 | `Costing` | the plan costing, whose rounding and time now come from `JobCosting` |
+| `BlueprintSplitter`, `OwnedBlueprint`, `ProjectJob`, `BlueprintKind` | shares an item's runs among owned blueprints and cuts them into jobs of at most `JobCosting.maximumRuns` (30 days) and, with a time bound, `maximumRunsWithin`. `ProjectBuild` is `FixedJobs`, `OneJob` or `FromBlueprints`, and gives its jobs when told how many runs are needed |
+| `SplitPolicy`, `SplitStrategy`, `SplitComparison` | the strategy (`LEAST_COST`, `COPIES_FIRST`) plus an optional longest job time; and the project costed under its policy next to the same project at least cost, with the extra cost per line, the time saved and the cost of each hour saved ([Projects, the splitter](projects.md#the-splitter)) |
+| `ProjectCosting` | the project's cost: `cost(ProjectDefinition)` returns a `ProjectCost`. Reads nothing; recipes, unit prices, adjusted prices and volumes arrive as functions |
+| `ProjectDefinition`, `ProjectBuild`, `ProjectSettings` | the inputs: products, bought parts, per built item the `JobTerms`, the runs of each job (empty is one job) and the blueprint cost per run, and the rates, margin, premium and quote step |
+| `ProjectCost`, `CostLine`, `ProjectJobCost`, `BoughtMaterial`, `ProjectQuote`, `ProjectWarning` | the output: the jobs, the items bought, seven labelled lines (materials, install cost, blueprint, time value, hauling, contract fee, surplus credit), the warnings, and the quote with its comparison |
 
 Tests in `JobCostingTest` that come from a reading (each was written with the reading's inputs; those marked * failed on the old code):
 
@@ -457,9 +468,11 @@ Tests in `JobCostingTest` that come from a reading (each was written with the re
 | `aBlueprintWithItsOwnMeAndTeIsRead` | G10 |
 | `aStandardShipBlueprintIsCostedLikeAnyOther` | G12 |
 
+Tests in `ProjectCostingTest`: two come from readings (`aProjectOfOneJobIsTheJobPlusTheLines` from G1, and `aBlueprintWithItsOwnMeAndTeWorksThroughTheWholeProject` from G10, each with every material priced at 1 ISK so the material line is the window's quantities added up). The rest are hand-worked on a small recipe: a shared part built once from the demand of two jobs, splitting an item into four 1-run jobs (28 ore where one job uses 26), a bought part with no job, surplus credited and not hauled, every rate and line adding up, the margin, a missing price, too few runs and a missing blueprint choice.
+
 The other tests check hand-worked arithmetic, the limits (`impossibleLevelsAndPercentagesAreRefused`) and the missing-price count. `CostingTest` (the plan) still passes unchanged.
 
-Project-level costing (components 2 and 6 to 12) is [7.2](#72-project-level-costing). Known gaps in the job costing: **no alpha clone tax**; **no rig table** (a facility is given its resolved percents); **no reading of `GET /markets/prices` and `GET /industry/systems`**;
+Project-level costing (components 2 and 6 to 12) is [7.2](#72-project-level-costing). How it fits the application (inputs, what is stored and its lifecycle) is in [Data, project costing](../architecture/data.md#project-costing). Known gaps in the job costing: **no alpha clone tax**; **no rig table** (a facility is given its resolved percents); **no reading of `GET /markets/prices` and `GET /industry/systems`**;
 **no reading of which skills a blueprint requires** from the SDE (the caller gives the `ProductSkill` list); **no scaling of rigs by security** (the caller gives scaled values).
 
 ## 7. Next steps and open questions
@@ -477,23 +490,35 @@ Project-level costing (components 2 and 6 to 12) is [7.2](#72-project-level-cost
 8. ~~A ship blueprint.~~ **Done (G12): an ordinary ship costs like any other blueprint.** What stays unchecked is **attribute 1954** (`industryJobCostMultiplier`, 0), which is only on the 86
    special-edition ship blueprints (such as the Merlin Wiyrkomi Edition), not on ordinary ones. One cost hover on such a blueprint would show whether the usual formula holds there; they are rare and
    not a likely build, so it is low priority.
-9. **Whether a copy is capped by length** like an original ([3.14](#314-maximum-runs-of-a-job)): a copy with more runs than fit in 30 days, for example a slow blueprint with 200 runs.
-10. **Facility tax by standing.** Upwell structure owners can set different taxes by the builder's standing to them (not read; the two Azbels had no tax). The facility record holds the one rate that applies to the builder.
-11. **ESI's job `cost` against the window's total** (see [3.4](#34-job-install-cost)): one of the developer's jobs, to see whether ESI's field includes the SCC surcharge. Needed only if the app derives an index from jobs.
+9. ~~The one-per-run minimum.~~ **Done (G13): the minimum applies.**
+10. **Whether a copy is capped by length** like an original ([3.14](#314-maximum-runs-of-a-job)): a copy with more runs than fit in 30 days, for example a slow blueprint with 200 runs. Also **whether one run is always allowed** when it takes longer than 30 days (the developer's recollection): a slow capital or structure blueprint, one run against two.
+11. **Facility tax by standing.** Upwell structure owners can set different taxes by the builder's standing to them (not read; the two Azbels had no tax). The facility record holds the one rate that applies to the builder.
+12. **ESI's job `cost` against the window's total** (see [3.4](#34-job-install-cost)): one of the developer's jobs, to see whether ESI's field includes the SCC surcharge. Needed only if the app derives an index from jobs.
 
 ### 7.2 Project-level costing
 
-Components 2 and 6 to 12 belong to the project, not to a single job, and are built apart from `JobCosting` as `ProjectCosting`: a pure domain class that walks the project's tree (parents first, as `Costing` does),
-builds each item's jobs with `JobCosting`, and adds the project's lines (materials, blueprint cost, time value, hauling, contract fee, surplus), warnings for what is missing, and the quote in both modes.
+Components 2 and 6 to 12 belong to the project, not to a single job, and are built apart from `JobCosting` as `ProjectCosting` (2026-11-18, [6](#6-code-and-tests)): a pure domain class that walks the project's tree (parents first, as `Costing` does),
+builds each item's jobs with `JobCosting`, and adds the project's lines, warnings for what is missing, and the quote in both modes. An item's demand is the sum of what every job above it uses **after** those jobs' own rounding, and its runs are then
+`ceil(demand ÷ units per run)`.
 
 The developer decided its first slice on 2026-11-18; the decisions are in [Projects, first costing slice](projects.md#first-costing-slice-decisions):
 
-- job sizes are an input, one job per item by default, and the splitter for BPC run limits comes later (the limit itself is [3.14](#314-maximum-runs-of-a-job));
-- a surplus unit is credited at the project's price basis;
-- an incomplete cost (an unpriced material, a missing adjusted price, a wormhole facility with no typed index) is shown with a warning, and *Issue quote* is refused until every line is priced;
+- job sizes come from the build: given, one job, or the splitter ([Projects, the splitter](projects.md#the-splitter), built 2026-11-18, with the limit of [3.14](#314-maximum-runs-of-a-job)). The splitter has two strategies (least cost, copies first) and an optional time bound, and `compareToLeastCost` prices the difference;
+- a surplus unit is credited at the project's price basis, and only what the buyer gets is hauled, not the surplus;
+- an incomplete cost is shown with a warning, and *Issue quote* is refused until every line is priced (`ProjectCost.quotable()`);
 - the cost and the profit are exact, and the quote is rounded up to a step (a setting, 1,000 ISK by default).
 
-The formulas for those components (3.2 and 3.6 to 3.12) are the project's own rules, not the game's, so there is nothing to read from the game for them.
+The warnings, each of which blocks a quote: an unpriced item that is bought, an unpriced surplus, a job material with no adjusted price (so the install cost is too low), an item with no volume while a hauling rate is set, and jobs that make
+fewer units than the project needs. A **notice**, which does not block a quote, says that a job uses a blueprint original, and another that a time bound could not be met. **Not a warning in `ProjectCosting`:** a wormhole facility with no typed cost index. That is a facility record without an index and has to be refused where the record is made, since the class gets the
+index as a number.
+
+Choices made in the code that the developer did not pick, to be confirmed:
+
+- An item whose price is 0 is treated as priced. Nothing in ESI or `PlanPrice` gives a zero price (a side with no orders is null), so no rule was made for it.
+- Each job carries its own blueprint cost per run, so a split across a copy and an original charges each its own.
+- The time value, hauling and blueprint lines use the jobs' own times and runs, and the install cost is the sum of each job's install cost with the index the facility terms carry at that moment.
+
+The formulas for those components (3.2 and 3.6 to 3.12) are the project's own rules, not the game's, so there is nothing to read from the game for them. The code is checked against two readings and by hand.
 
 ## 8. Invention and copy readings
 
