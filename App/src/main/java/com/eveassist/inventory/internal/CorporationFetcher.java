@@ -38,6 +38,8 @@ import org.springframework.stereotype.Service;
 public class CorporationFetcher {
 
     private static final Logger log = LoggerFactory.getLogger(CorporationFetcher.class);
+    /** The name this route has in {@link DirectorHistory}. */
+    private static final String ROUTE = "assets";
 
     /** The corporation's name and the names of its hangars change rarely. ESI caches both for an hour. */
     static final Duration NAME_TRUSTED_FOR = Duration.ofDays(1);
@@ -71,12 +73,14 @@ public class CorporationFetcher {
     private final EsiClient esi;
     private final CorporationRepository corporations;
     private final StructureResolver resolver;
+    private final DirectorHistory directorHistory;
     private final Clock clock;
     private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
     private final Set<UUID> running = ConcurrentHashMap.newKeySet();
 
     CorporationFetcher(LinkedCharacters linked, EsiClient esi, CorporationRepository corporations,
-            StructureResolver resolver, Clock clock) {
+            StructureResolver resolver, DirectorHistory directorHistory, Clock clock) {
+        this.directorHistory = directorHistory;
         this.linked = linked;
         this.esi = esi;
         this.corporations = corporations;
@@ -113,12 +117,35 @@ public class CorporationFetcher {
         }
     }
 
+    /**
+     * One run on the calling thread under the same per-account guard as {@link #refresh}, for a caller that needs the
+     * corporations learned before it goes on. Only corporations with a Director that {@code mayRead} accepts are
+     * learned, so ESI is not asked about the others. Returns false, and does nothing, when a run for the account is
+     * going.
+     */
+    public boolean runGuarded(Viewer viewer, java.util.function.Predicate<LinkedCharacter> mayRead) {
+        var account = viewer.accountId().value();
+        if (!running.add(account)) {
+            return false;
+        }
+        try {
+            run(viewer, false, mayRead);
+            return true;
+        } finally {
+            running.remove(account);
+        }
+    }
+
     /** One run on the calling thread. Used by the background task and by tests. */
     void run(Viewer viewer) {
         run(viewer, false);
     }
 
     void run(Viewer viewer, boolean rereadNames) {
+        run(viewer, rereadNames, null);
+    }
+
+    private void run(Viewer viewer, boolean rereadNames, java.util.function.Predicate<LinkedCharacter> mayRead) {
         var account = viewer.accountId().value();
         // which corporation each character is in, and who is a Director, as the characters module reads it from ESI
         linked.learnCorporations(viewer);
@@ -129,6 +156,10 @@ public class CorporationFetcher {
                 .forEach(c -> members.computeIfAbsent(c.eveCorporationId(), id -> new ArrayList<>()).add(c));
         corporations.dropAbandoned(account, members.keySet());
         for (var entry : members.entrySet()) {
+            if (mayRead != null && entry.getValue().stream()
+                    .noneMatch(c -> Boolean.TRUE.equals(c.director()) && mayRead.test(c))) {
+                continue;
+            }
             var corporation = learnCorporation(account, entry.getKey());
             var directors = entry.getValue().stream().filter(c -> Boolean.TRUE.equals(c.director()) && canRead(c))
                     .toList();
@@ -156,9 +187,13 @@ public class CorporationFetcher {
     }
 
     /** Reads the hangar names and the assets with the first Director that gets an answer. */
-    private void fetch(CorporationRepository.Corporation corporation, List<LinkedCharacter> directors,
+    private void fetch(CorporationRepository.Corporation corporation, List<LinkedCharacter> candidates,
             boolean rereadNames) {
-        for (var director : directors) {
+        if (rereadNames) {
+            directorHistory.forgetFailures(corporation.id(), ROUTE);
+        }
+        var failedBefore = new java.util.ArrayList<LinkedCharacter>();
+        for (var director : directorHistory.order(corporation.id(), ROUTE, candidates)) {
             var now = clock.instant();
             EsiResult<List<com.eveassist.esi.CharacterAsset>> result;
             try {
@@ -197,6 +232,7 @@ public class CorporationFetcher {
                 }
                 if (result.outcome() != EsiResult.Outcome.FAILED) {
                     resolver.resolveForCorporation(corporation.id(), director);
+                    directorHistory.worked(corporation.id(), ROUTE, director, failedBefore);
                     return;
                 }
             } catch (DataIntegrityViolationException gone) {
@@ -204,6 +240,7 @@ public class CorporationFetcher {
                 return;
             }
             // this Director failed (it may have lost the role): the next one gets its turn
+            failedBefore.add(director);
         }
     }
 

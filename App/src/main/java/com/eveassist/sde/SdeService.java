@@ -28,6 +28,11 @@ public class SdeService {
         return data.recipeFor(product);
     }
 
+    /** The manufacturing recipe produced by a blueprint type, when its output is in the SDE. */
+    public Optional<Recipe> recipeOfBlueprint(TypeId blueprint) {
+        return data.recipeOfBlueprint(blueprint);
+    }
+
     public List<ItemType> searchBuildable(String text, int limit) {
         return data.searchBuildable(text, limit);
     }

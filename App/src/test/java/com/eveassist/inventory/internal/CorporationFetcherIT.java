@@ -135,6 +135,42 @@ class CorporationFetcherIT extends IntegrationTest {
                 Map.entry(3, "Ammo"));
     }
 
+    /**
+     * The Inventory page starts a run in the background, and the Blueprints page asks for one it can wait for. Two runs
+     * over one account's corporations would each replace the same rows and the second would hit duplicate keys, so the
+     * second must find the first running and do nothing. The overlap is a matter of timing that is hard to see in use,
+     * so the first run is held inside ESI while the second asks.
+     */
+    @Test
+    void aRunAskedForWhileAnotherIsRunningDoesNothing() throws Exception {
+        var viewer = viewerFor(newSub());
+        turnOn(viewer);
+        var corporation = corporationId();
+        var boss = linkWithCorporationScopes(viewer, "The Director");
+        esi.inCorporation(boss.eveId(), corporation, "Director");
+        esi.corporationNamed(corporation, "Test Industries");
+        esi.corporationAssetsOf(corporation, List.of(office(), inOffice(1, 34, 900, "CorpSAG2")));
+        var gate = new java.util.concurrent.CountDownLatch(1);
+        esi.holdCorporationAssetCalls(gate);
+        try {
+            fetcher.refresh(viewer);
+            await().atMost(10, TimeUnit.SECONDS).until(() -> esi.corporationAssetsAsked().size() == 1);
+            assertThat(fetcher.anyRunning(viewer)).isTrue();
+
+            var second = java.util.concurrent.CompletableFuture.supplyAsync(() -> fetcher.runGuarded(viewer, c -> true));
+            assertThat(second.get(3, TimeUnit.SECONDS)).as("the second run found the first running").isFalse();
+            assertThat(esi.corporationAssetsAsked()).as("and asked ESI for nothing").hasSize(1);
+        } finally {
+            gate.countDown();
+        }
+        await().atMost(10, TimeUnit.SECONDS).until(() -> !fetcher.anyRunning(viewer));
+        assertThat(storedRows(only(viewer).corporationId())).isEqualTo(1);
+
+        // with nothing running, the same call runs
+        esi.holdCorporationAssetCalls(null);
+        assertThat(fetcher.runGuarded(viewer, c -> true)).isTrue();
+    }
+
     /** As for a character's assets: an ETag that outlived the rows must not make "unchanged" the answer for ever. */
     @Test
     void aCorporationWhoseEtagOutlivedItsRowsIsFetchedInFull() {

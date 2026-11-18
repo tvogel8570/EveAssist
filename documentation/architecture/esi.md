@@ -115,8 +115,12 @@ carry the corporation's id), so phase 2 can share them with a group. A run is on
    (asked again after a day). A corporation no known character is in is dropped, with its rows. A failed lookup keeps
    what was known.
 3. For each corporation with a Director that granted the assets and divisions scopes, read the hangar names (after an
-   hour) and the assets with that Director's token. The first Director ESI answers for is used. The assets go through
-   the client's usual cache (`ETag`, `Expires`), so a page opened again within an hour asks nothing.
+   hour) and the assets with that Director's token. The first Director ESI answers for is used, and the one who last
+   worked is asked first. A Director who failed while another worked is left out for 15 minutes, because every refused
+   call costs 5 rate-limit tokens and counts towards the error limit; the Refresh button forgets that. (`DirectorHistory`,
+   in memory, so a restart starts in list order again. When every Director fails nobody is avoided, since ESI is the likelier
+   cause.) The Blueprints page reads corporation blueprints the same way. The assets go through the client's usual cache
+   (`ETag`, `Expires`), so a page opened again within an hour asks nothing.
 4. Name the structures the corporation has items in with the Director's token (see Character assets), and store the
    name under the Director.
 
@@ -165,6 +169,9 @@ it (flags `CorpSAG1` to `CorpSAG7`); the office is not stored, and the division 
   price. A migration flags the contracts already stored. Contracts up to 100 m³ are kept, newest first,
   and each batch reads up to 500 sets of lines (see [Background fetches](#background-fetches)). ESI's OpenAPI spec names
   no rate-limit group for these routes and the responses carry no rate-limit headers, so only the error limit applies.
+  The same can hold for `/characters/{id}/blueprints` and `/corporations/{id}/blueprints`, whose spec also says `runs` is
+  -1 for an original. Not yet checked against real responses. `HttpEsiClient` reads `runs` as optional and stores -1 when it
+  is missing, so an original shows no runs and is never taken for a copy with none left.
   The prices are worked out from the stored rows (see
   [Contract prices](../requirements/market-logistics.md#contract-prices)).
 
@@ -227,6 +234,16 @@ Status: **proposed** (added 2026-11-09 with the asset fetch).
   fetched, on virtual threads. ESI's cache time decides whether ESI is asked at all, so opening the page again costs
   nothing while its copy is current. A character already being fetched is skipped (an in-memory flag per character). The
   page shows stored data at once and polls a status block every two seconds while a task runs.
+- **The list is fetched again only when it changed** (the developer decided on 2026-11-18, for mobile data). When the last
+  poll says the tasks are done, the list used to be fetched again every time, so the same table was sent twice on a
+  visit, 128 KB for 100 blueprints before compression. Now the list on the page carries a fingerprint of the rows it
+  shows (`Page.fingerprint()` for Blueprints, `BrowseView.fingerprint()` for Inventory), and the poll sends it back with
+  the filter. The server works out the list again, which costs the same query as before, and sends the
+  `browse-refresh` or `blueprints-refresh` event only when the fingerprints differ. It compares what is shown, not when
+  ESI answered, because the list also depends on things that change apart from the asset fetch, such as structure and
+  container names and a blueprint's place. The page listens for the event on `document`, not `body`: htmx sends the event of
+  a response header from the element that made the request, and when that element was swapped out it falls back to
+  `document`, which a listener on `body` never hears.
 - **Storage**: each fetch replaces the character's rows in one transaction (`character_asset`, no history), after the
   ESI call and never inside it. `character_fetch` records when ESI last answered, when the rows last changed, how many
   rows there are and the last problem. A failed fetch keeps the stored rows and their age.

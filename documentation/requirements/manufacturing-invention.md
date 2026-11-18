@@ -37,6 +37,78 @@ All of these are in scope:
   plans and profit analysis.
 - Imported and hand-entered blueprints must be told apart.
 
+### Blueprints page
+
+Decided with the developer on 2026-11-17, and built the same day from the table mockup
+(`documentation/mockups/blueprints-page.html`). Blueprints have a page of their own (`/blueprints`), and it is the main
+place to see and work with them, like the blueprint window in the game.
+
+- **One row per blueprint**: a tick box, its type, BPO or BPC, status, ME, TE, runs (for a BPC), the character or
+  corporation that holds it, and where it is. The place, container and hangar are worded as in
+  [Pilot inventory](pilot-inventory.md#browse-view), because each blueprint is matched to its asset row by item id.
+- **Not matched yet.** ESI's blueprint and asset lists are cached apart, so a blueprint can arrive before its asset row.
+  Such a blueprint is still shown: its place is named from its own location id and marked "not matched yet".
+- **Status.** The column is there, but industry jobs are not read yet, so every blueprint shows "Under development".
+  Manufacturing, copying, ME and TE research and invention come when industry jobs are fetched, with their own
+  scopes.
+- **The holder has its colour** (the developer decided on 2026-11-18). The holder's name has a square of the holder's
+  colour in front of it, the same colour as in the bars of the inventory page: the characters in the order they were
+  linked, then the corporations by name. A corporation's colour is its place among all the account's corporations, not
+  among the ones this page shows, so it matches the inventory page even though this page leaves some out
+  (`HolderColors`).
+- **Search, sort and filter**: by text, type, BPO or BPC, status, a minimum ME or TE, holder, or originals that still
+  need research. As on the inventory page, the address is the filter, and the menu link brings the page back with the
+  filter it last had in the session (see [Pilot inventory](pilot-inventory.md#browse-view)). The order in which the parts of a filter were chosen does
+  not matter: a search, a kind, a tech level and a sort give the same list and the same address whichever came first.
+  The server says the address for each change of the filter, and the hidden fields of the form (sort, direction, type
+  and tech level) are made new with every list, so a later change does not forget an earlier one.
+- **Paged like the inventory page** (the developer decided on 2026-11-17, with 14,000 blueprints in the first real
+  account). The list shows 100 rows, "Show more" adds 100, and it stops at 1,000 with a note to narrow the filters. The
+  summary says "Showing 300 of 14,213 blueprints", and the total is counted in the database for the current filter.
+  A new sort order starts again at the first page, and a blueprint's drawer closes back to the page size it had. The
+  tick box in the header picks the rows on screen. Export takes every picked row, however many pages they came from.
+- **Tech level** (the developer decided on 2026-11-18). A row has a Tech column (T1, T2, T3, or a dash), and buttons
+  above the table separate the list: All, T1, T2, T3 and **No tech level**, each with how many blueprints it holds under
+  the other filters (a level with none has no button). The level is the `techLevel` attribute (422) of what the
+  blueprint makes. A Structure item that has none is read from its meta group: Structure Tech I and Structure Faction
+  are T1, and Structure Tech II is T2. What has no tech level in the game, mostly components, fuel blocks and tools,
+  is "No tech level" (15.6% of the first real account). The address carries it (`tech=0` to `tech=3`), so it is
+  remembered with the rest of the filter, and the list can be sorted by it, with "No tech level" last.
+- **Variant badge.** A different matter from the tech level: a small badge beside the blueprint's name for the meta
+  group of what it makes, such as Faction, Storyline, Officer, Deadspace or Abyssal, and "Structure" for Upwell items.
+  Tech I, Tech II, Tech III and items with no meta group have none. The two disagree in places (a Storyline item can be
+  T2), which is why they are not one list. A filter by variant can follow when it is wanted.
+- **Actions on ticked rows.** A menu offers Load into project (shown but off until the plan → project function defines
+  its workflow), Show in Inventory, Export picked as CSV and Clear selection. Ticks survive filtering, and the server
+  checks again that every picked blueprint belongs to the account.
+- **Detail.** A blueprint's name opens a drawer over the list (its own address, `/blueprints/{itemId}`, so it can be
+  linked; Esc or the backdrop closes it). It shows ME, TE, runs, holder and place, one run's materials at the
+  blueprint's own ME next to ME 10 and the build time at its own TE next to TE 20, and the other blueprints of the same
+  type the account holds. Another account's blueprint is not found.
+- **Fetch state is one line** (the developer decided on 2026-11-17). Under the heading it says, for example, "16 holders
+  · all up to date · read 20:23 UTC", "3 holders · 1 needs attention" (in the warning color) or "reading from ESI…".
+  Opening it shows each holder's state, when it was read, how many blueprints it holds, and the characters that need
+  authorization again. It stays open while the line is refreshed.
+- **Corporations without a Director who can read blueprints are left out.** A corporation is listed, filtered on and
+  read only when one of the account's characters is a Director of it with the corporation blueprints scope. For the
+  others nothing is shown and ESI is not asked about the corporation (not even for its name, which the inventory page
+  still reads for its own list). The Characters page is where a character is asked to authorize again.
+- **Refresh** is the same button as on the Inventory page (one shared template), so changing its look changes both.
+- **Fetch.** Character ME, TE and runs are read from `GET /characters/{id}/blueprints` (scope
+  `esi-characters.read_blueprints.v1`), under the same rules as assets (see
+  [Pilot inventory](pilot-inventory.md#fetching)). Corporation ME, TE and runs are read from
+  `GET /corporations/{id}/blueprints` (scope `esi-corporations.read_blueprints.v1`) through a Director, alongside
+  corporation assets. The character and corporation blueprint scopes are separate features, and each requires its
+  corresponding assets feature. The developer accepts asking already-linked characters to authorize the new scopes
+  again, since EveAssist has only one user; the page says which characters need authorization.
+- **The inventory page links here.** Inventory keeps showing a blueprint as an item, tagged BPC or BPO. The item's name
+  links to this page filtered to that blueprint type (`/blueprints?type={typeId}`), so ME, TE and runs are read here
+  and not repeated in the inventory rows.
+- **Loading into jobs.** The list of blueprints with their ME and TE can be loaded into jobs: the user picks a
+  blueprint, and the job takes its ME, TE and remaining runs instead of the ME 10 / TE 20 a plan assumes. The page
+  where jobs are set up is not designed yet (see [Open questions](#open-questions)), and plans keep costing at ME 10 /
+  TE 20 (see [Plans](#plans)).
+
 ## Facilities
 
 - Builds happen in Upwell structures that the user or their corporation owns.
@@ -218,6 +290,9 @@ Prices, the price basis and fees are defined in [Market and logistics](market-lo
 
 ## Open questions
 
+- Blueprints: which page loads a blueprint into a job (a project's jobs, or an industry jobs page not designed yet),
+  whether one blueprint can be loaded into several jobs at once, and when hand-entered blueprints are added to the
+  Blueprints page.
 - Where the material efficiency comparison sits: a page of its own that a plan links to is the proposal, and a project
   could open it with the ME of the blueprint the user really has. Whether visitors without an account may use it.
 - Updating the stored prices in the background, so that a price is not old when someone opens a plan, is worth

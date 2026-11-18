@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Blueprints page mockup</title>
+<!-- Self-contained: hand-written CSS in the colours of the app's dark theme, no network needed. -->
+<style>
+:root{--b1:#1d232a;--b2:#191e24;--b3:#15191e;--bc:#a6adbb;--p:#605dff;--pc:#edf1fe;--s:#f43098;--a:#00d3bb;
+  --in:#00bafe;--su:#00d390;--wa:#fcb700;--wac:#793205;--er:#ff627d;--line:#2a323c;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue","Noto Sans",Arial,sans-serif}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:var(--b1);color:var(--bc);font-size:14px}
+a{color:var(--in);text-decoration:none}a:hover{text-decoration:underline}
+.chrome{position:sticky;top:0;z-index:40;background:var(--wa);color:var(--wac);padding:.5rem 1rem;display:flex;
+  flex-wrap:wrap;gap:.5rem 1.5rem;align-items:center;font-size:13px}
+.chrome .note{opacity:.85}
+.nav{display:flex;gap:1.25rem;align-items:center;padding:.75rem 1rem;background:var(--b2);border-bottom:1px solid var(--line)}
+.nav .brand{font-weight:700;color:#fff;font-size:16px}.nav .on{color:#fff;font-weight:600}
+main{max-width:76rem;margin:0 auto;padding:1rem}
+h1{font-size:20px;color:#fff;margin:0;font-weight:600}
+h2{font-size:15px;color:#fff;margin:0 0 .4rem}
+.head{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin-bottom:.75rem}.grow{flex:1}
+.muted{opacity:.7}.xs{font-size:12px}.note-line{font-size:13px;opacity:.7;margin:0 0 .75rem}
+.btn{display:inline-flex;align-items:center;gap:.25rem;border:1px solid var(--line);background:var(--b2);color:var(--bc);
+  border-radius:.4rem;padding:.3rem .7rem;font-size:13px;cursor:pointer;white-space:nowrap}
+.btn:hover{background:var(--b3)}.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn-primary{background:var(--p);border-color:var(--p);color:var(--pc)}.btn-primary:hover{background:#4f4bf0}
+.btn-xs{padding:.1rem .45rem;font-size:12px}
+/*
+  The one Refresh style. The Inventory page's Refresh is `btn btn-primary btn-sm`; in the app both pages would use a
+  shared Thymeleaf fragment (or one .btn-refresh class in app.css), so changing it there changes every Refresh button.
+*/
+.btn-refresh{background:var(--p);border-color:var(--p);color:var(--pc);padding:.35rem .8rem;font-weight:600}
+.btn-refresh:hover{background:#4f4bf0}
+.chrome .btn{background:#fff3;border-color:#0002;color:var(--wac)}.chrome .btn.sel{background:var(--wac);color:var(--wa)}
+.join{display:inline-flex}.join .btn{border-radius:0}.join .btn:first-child{border-radius:.4rem 0 0 .4rem}
+.join .btn:last-child{border-radius:0 .4rem .4rem 0}.join .btn.sel{background:var(--p);color:var(--pc);border-color:var(--p)}
+.filters{display:flex;flex-wrap:wrap;gap:.5rem 1rem;align-items:center;background:var(--b2);border:1px solid var(--line);
+  border-radius:.5rem;padding:.6rem .75rem;margin-bottom:.75rem}
+.filters label{display:inline-flex;gap:.35rem;align-items:center}
+input[type=search],input[type=number],select{background:var(--b1);color:var(--bc);border:1px solid var(--line);border-radius:.4rem;
+  padding:.3rem .5rem;font-size:13px}
+input[type=number]{width:4.2rem}input[type=search]{width:14rem}
+input[type=checkbox]{accent-color:var(--p);width:1rem;height:1rem;cursor:pointer}
+.url{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;background:var(--b3);border:1px solid var(--line);
+  border-radius:.4rem;padding:.3rem .5rem;margin-bottom:.75rem;overflow-x:auto;white-space:nowrap}
+.toolbar{display:flex;gap:.75rem;align-items:center;margin-bottom:.4rem;min-height:2rem}
+.menu-wrap{position:relative}
+.menu{position:absolute;top:110%;left:0;z-index:30;background:#232a33;border:1px solid var(--line);border-radius:.5rem;
+  padding:.3rem;min-width:17rem;box-shadow:0 6px 20px #0008;display:none}
+.menu.open{display:block}
+.menu button{display:block;width:100%;text-align:left;background:none;border:0;color:var(--bc);padding:.4rem .6rem;
+  border-radius:.35rem;font-size:13px;cursor:pointer}
+.menu button:hover:not(:disabled){background:var(--b2)}.menu button:disabled{opacity:.45;cursor:not-allowed}
+.menu .sub{display:block;font-size:11px;opacity:.65}
+.menu hr{border:0;border-top:1px solid var(--line);margin:.25rem 0}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:.4rem .6rem;border-bottom:1px solid var(--line);vertical-align:middle}
+th{font-size:12px;font-weight:600;opacity:.8;user-select:none;white-space:nowrap}th[data-sort]{cursor:pointer}
+th.num,td.num{text-align:right;font-variant-numeric:tabular-nums}
+th.sel,td.sel{width:2rem;padding-right:0}
+tbody tr:hover{background:var(--b2)}tbody tr.picked{background:#605dff1f}
+.badge{display:inline-block;border-radius:1rem;padding:0 .5rem;font-size:11px;font-weight:600;border:1px solid;white-space:nowrap}
+.bpo{color:var(--a);border-color:var(--a)}.bpc{color:var(--s);border-color:var(--s)}
+.unm{color:var(--bc);border-color:var(--line);font-weight:400}
+.st-available{color:var(--su);border-color:var(--su)}.st-manufacturing{color:var(--in);border-color:var(--in)}
+.st-copying{color:var(--s);border-color:var(--s)}.st-me{color:var(--wa);border-color:var(--wa)}
+.st-te{color:#ff9f43;border-color:#ff9f43}.st-invention{color:#c77dff;border-color:#c77dff}
+.dot{display:inline-block;width:.6rem;height:.6rem;border-radius:50%;margin-right:.35rem;vertical-align:middle}
+.alert{border:1px solid var(--wa);color:var(--wa);border-radius:.5rem;padding:.5rem .75rem;margin-bottom:.75rem;font-size:13px}
+.foot{display:flex;justify-content:space-between;flex-wrap:wrap;gap:.5rem;margin-top:.6rem;font-size:12px;opacity:.8}
+.empty{opacity:.6;font-style:italic;padding:.5rem}
+.toast{position:fixed;bottom:1rem;right:1rem;z-index:60;background:var(--p);color:var(--pc);padding:.5rem .8rem;
+  border-radius:.5rem;font-size:13px;display:none;max-width:28rem}
+/* Detail: as a drawer over the list, or as its own page. */
+.scrim{position:fixed;inset:0;background:#0007;z-index:45;display:none}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(34rem,100%);background:var(--b1);border-left:1px solid var(--line);
+  z-index:50;overflow-y:auto;padding:1rem;display:none;box-shadow:-8px 0 24px #0009}
+body.drawer-open .scrim,body.drawer-open .drawer{display:block}
+body.detail-page #list-view{display:none}
+#page-view{display:none}body.detail-page #page-view{display:block}
+.dl{display:grid;grid-template-columns:8rem 1fr;gap:.3rem .75rem;font-size:13px;margin-bottom:1rem}
+.dl dt{opacity:.65}.dl dd{margin:0}
+.box{background:var(--b2);border:1px solid var(--line);border-radius:.5rem;padding:.7rem .8rem;margin-bottom:.75rem}
+.box table td,.box table th{padding:.25rem .4rem}
+.links{display:flex;flex-wrap:wrap;gap:.4rem}
+.detail-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(20rem,1fr));gap:.75rem}
+.bar{height:.4rem;background:var(--b3);border-radius:.2rem;overflow:hidden;margin-top:.3rem}.bar>span{display:block;height:100%;background:var(--in)}
+</style>
+</head>
+<body>
+
+<!-- Mockup chrome: not part of the page. -->
+<div class="chrome">
+  <strong>Mockup, fake data</strong>
+  <span>Blueprint name opens:
+    <span class="join">
+      <button class="btn btn-xs" data-detail="drawer">1: a drawer over the list</button>
+      <button class="btn btn-xs" data-detail="page">2: its own page</button>
+    </span>
+  </span>
+  <span class="note">Click a blueprint's name to see its detail. Tick rows and open Actions.</span>
+</div>
+
+<nav class="nav">
+  <span class="brand">EveAssist</span>
+  <a href="#">Plans</a><a href="#">Market</a><a href="#">Inventory</a><a class="on" href="#" onclick="closeDetail();return false">Blueprints</a>
+  <a href="#">Characters</a>
+</nav>
+
+<main>
+ <div id="list-view">
+  <div class="head">
+    <h1>Blueprints</h1>
+    <span class="grow"></span>
+    <button id="refresh-blueprints" class="btn btn-refresh" type="button" onclick="toast('Would read blueprints and industry jobs again, within ESI cache times.')">Refresh</button>
+  </div>
+  <p class="note-line">EVE keeps its copy for a while, so a refresh may find nothing new. Fetched 10:02 · Jobs read 10:02.</p>
+
+  <div class="alert">2 characters need to authorize again to read blueprints: Henre Member, Nova Alt.
+    <a href="#">Characters page →</a></div>
+
+  <form class="filters" id="filters" onsubmit="return false">
+    <label><input type="search" id="q" placeholder="Search type or place"></label>
+    <span class="join" id="kind">
+      <button type="button" class="btn btn-xs sel" data-kind="">All</button>
+      <button type="button" class="btn btn-xs" data-kind="BPO">BPO</button>
+      <button type="button" class="btn btn-xs" data-kind="BPC">BPC</button>
+    </span>
+    <label>Status <select id="status"><option value="">All</option></select></label>
+    <label>ME ≥ <input type="number" id="me" min="0" max="10" placeholder="0"></label>
+    <label>TE ≥ <input type="number" id="te" min="0" max="20" step="2" placeholder="0"></label>
+    <label>Holder <select id="holder"><option value="">All</option></select></label>
+    <label><input type="checkbox" id="research"> Needs research only</label>
+    <button type="button" class="btn btn-xs" id="clear">Clear</button>
+  </form>
+
+  <div class="url" id="url"></div>
+
+  <div class="toolbar">
+    <div class="menu-wrap">
+      <button type="button" class="btn" id="actions-btn" disabled>Actions ▾</button>
+      <div class="menu" id="actions-menu">
+        <button type="button" data-act="project">Load into project…
+          <span class="sub">Workflow to be defined with the plan → project function</span></button>
+        <hr>
+        <button type="button" data-act="inventory">Show in Inventory<span class="sub">Inventory filtered to the picked items</span></button>
+        <button type="button" data-act="csv">Export picked as CSV</button>
+        <button type="button" data-act="clear">Clear selection</button>
+      </div>
+    </div>
+    <span class="xs muted" id="picked-count">Tick blueprints to act on them.</span>
+  </div>
+
+  <table>
+    <thead><tr>
+      <th class="sel"><input type="checkbox" id="pick-all" title="Pick every blueprint shown"></th>
+      <th data-sort="type">Type</th><th data-sort="kind">Kind</th><th data-sort="status">Status</th>
+      <th class="num" data-sort="me">ME</th><th class="num" data-sort="te">TE</th><th class="num" data-sort="runs">Runs</th>
+      <th data-sort="holder">Holder</th><th data-sort="place">Place</th>
+    </tr></thead>
+    <tbody id="rows"></tbody>
+  </table>
+  <div class="foot"><span id="count"></span><span>Status comes from industry jobs, which need their own read scope.</span></div>
+ </div>
+
+ <!-- Detail as its own page: /blueprints/{itemId} -->
+ <div id="page-view"></div>
+</main>
+
+<div class="scrim" onclick="closeDetail()"></div>
+<aside class="drawer" id="drawer"></aside>
+<div class="toast" id="toast"></div>
+
+<script>
+const holders = {
+  'Cass Director': '#605dff', 'Henre Member': '#f43098', 'Nova Alt': '#00d3bb', 'Corp [TEST]': '#fcb700'
+};
+const statuses = {
+  available: {label: 'Available', cls: 'st-available'},
+  manufacturing: {label: 'Manufacturing', cls: 'st-manufacturing'},
+  copying: {label: 'Copying', cls: 'st-copying'},
+  me: {label: 'ME research', cls: 'st-me'},
+  te: {label: 'TE research', cls: 'st-te'},
+  invention: {label: 'Invention', cls: 'st-invention'}
+};
+// runs: -1 for an original. matched: false when ESI has the blueprint but the stored assets don't yet.
+// job: the industry job using the blueprint, when status is not available.
+const bps = [
+  {id: 1001, type: 'Rifter Blueprint', product: 'Rifter', kind: 'BPO', me: 10, te: 20, runs: -1, holder: 'Cass Director', place: 'Jita IV - Moon 4 - Caldari Navy Assembly Plant › Box "T1"', matched: true,
+    status: 'copying', job: {runs: 10, started: '2026-11-16 18:40', ends: '2026-11-17 22:10', done: 62, facility: 'Jita IV - Moon 4 - Caldari Navy Assembly Plant', by: 'Cass Director'}},
+  {id: 1002, type: 'Rifter Blueprint', product: 'Rifter', kind: 'BPC', me: 10, te: 20, runs: 12, holder: 'Henre Member', place: 'Amarr VIII (Oris) - Emperor Family Academy', matched: true, status: 'available'},
+  {id: 1003, type: 'Rifter Blueprint', product: 'Rifter', kind: 'BPC', me: 8, te: 16, runs: 15, holder: 'Cass Director', place: 'Jita IV - Moon 4 - Caldari Navy Assembly Plant › Box "T1"', matched: true,
+    status: 'manufacturing', job: {runs: 5, started: '2026-11-17 08:00', ends: '2026-11-17 14:20', done: 40, facility: 'Jita IV - Moon 4 - Caldari Navy Assembly Plant', by: 'Cass Director'}},
+  {id: 1004, type: 'Rifter Blueprint', product: 'Rifter', kind: 'BPC', me: 10, te: 20, runs: 10, holder: 'Cass Director', place: 'Jita IV - Moon 4 - Caldari Navy Assembly Plant › Box "T1"', matched: true, status: 'available'},
+  {id: 1005, type: 'Raven Blueprint', product: 'Raven', kind: 'BPO', me: 4, te: 8, runs: -1, holder: 'Corp [TEST]', place: 'Home citadel › Hangar 2 "Research"', matched: true,
+    status: 'me', job: {runs: 1, started: '2026-11-12 20:00', ends: '2026-11-21 03:15', done: 55, facility: 'Home citadel', by: 'Cass Director', note: 'ME 4 → 5'}},
+  {id: 1006, type: 'Drake Blueprint', product: 'Drake', kind: 'BPC', me: 0, te: 0, runs: 1, holder: 'Cass Director', place: 'Ship "Hauler" › Cargo', matched: true, status: 'available'},
+  {id: 1007, type: 'Drake Blueprint', product: 'Drake', kind: 'BPC', me: 0, te: 0, runs: 1, holder: 'Nova Alt', place: 'Perimeter - Tranquility Trading Tower', matched: false, status: 'available'},
+  {id: 1008, type: 'Hulk Blueprint', product: 'Hulk', kind: 'BPO', me: 0, te: 0, runs: -1, holder: 'Corp [TEST]', place: 'Home citadel › Hangar 1 "Blueprints"', matched: true,
+    status: 'te', job: {runs: 1, started: '2026-11-15 11:30', ends: '2026-11-19 09:45', done: 48, facility: 'Home citadel', by: 'Henre Member', note: 'TE 0 → 2'}},
+  {id: 1009, type: 'Drake Blueprint', product: 'Drake', kind: 'BPO', me: 10, te: 20, runs: -1, holder: 'Corp [TEST]', place: 'Home citadel › Hangar 1 "Blueprints"', matched: true, status: 'available'},
+  {id: 1010, type: 'Hobgoblin I Blueprint', product: 'Hobgoblin I', kind: 'BPO', me: 10, te: 14, runs: -1, holder: 'Cass Director', place: 'Jita IV - Moon 4 - Caldari Navy Assembly Plant', matched: true, status: 'available'},
+  {id: 1011, type: 'Hobgoblin I Blueprint', product: 'Hobgoblin I', kind: 'BPC', me: 10, te: 14, runs: 100, holder: 'Henre Member', place: 'Amarr VIII (Oris) - Emperor Family Academy', matched: true,
+    status: 'invention', job: {runs: 20, started: '2026-11-17 06:10', ends: '2026-11-17 16:50', done: 39, facility: 'Amarr VIII (Oris) - Emperor Family Academy', by: 'Henre Member', note: 'For Hobgoblin II'}},
+  {id: 1012, type: 'Antimatter Charge S Blueprint', product: 'Antimatter Charge S', kind: 'BPO', me: 9, te: 18, runs: -1, holder: 'Cass Director', place: 'Unknown structure 1035466617946', matched: true, status: 'available'},
+  {id: 1013, type: 'Hammerhead II Blueprint', product: 'Hammerhead II', kind: 'BPC', me: 2, te: 4, runs: 10, holder: 'Corp [TEST]', place: 'Home citadel › Hangar 3 "Invention"', matched: true,
+    status: 'manufacturing', job: {runs: 10, started: '2026-11-17 07:30', ends: '2026-11-18 01:00', done: 15, facility: 'Home citadel', by: 'Cass Director'}}
+];
+// Fake bill of materials at ME 0 per run, and build time at TE 0, by product.
+const recipes = {
+  'Rifter': {mats: [['Tritanium', 32000], ['Pyerite', 6000], ['Mexallon', 2500], ['Isogen', 500]], secs: 6000},
+  'Raven': {mats: [['Tritanium', 2600000], ['Pyerite', 660000], ['Mexallon', 200000], ['Isogen', 50000], ['Nocxium', 12000], ['Zydrine', 3000], ['Megacyte', 1400]], secs: 18000},
+  'Drake': {mats: [['Tritanium', 590000], ['Pyerite', 180000], ['Mexallon', 46000], ['Isogen', 11000], ['Nocxium', 3000], ['Zydrine', 900]], secs: 12000},
+  'Hulk': {mats: [['Retriever', 1], ['Construction Blocks', 125], ['Fermionic Condensates', 30], ['Nanoelectrical Microprocessor', 1100]], secs: 72000},
+  'Hobgoblin I': {mats: [['Tritanium', 2700], ['Pyerite', 550], ['Mexallon', 200]], secs: 300},
+  'Antimatter Charge S': {mats: [['Tritanium', 150], ['Pyerite', 20], ['Nocxium', 1]], secs: 180, per: 100},
+  'Hammerhead II': {mats: [['Hammerhead I', 1], ['Morphite', 18], ['Robotics', 1], ['Sustained Shield Emitter', 6]], secs: 3000}
+};
+const state = {kind: '', sort: 'type', dir: 1, picked: new Set(), detail: 'drawer', open: null};
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
+const researched = b => b.me >= 10 && b.te >= 20;
+const runs = b => b.runs < 0 ? '–' : b.runs;
+const fmt = n => n.toLocaleString('en-US');
+
+Object.keys(holders).forEach(h => $('holder').insertAdjacentHTML('beforeend', `<option>${esc(h)}</option>`));
+Object.entries(statuses).forEach(([k, s]) => $('status').insertAdjacentHTML('beforeend', `<option value="${k}">${s.label}</option>`));
+
+function filtered() {
+  const q = $('q').value.trim().toLowerCase(), me = +$('me').value || 0, te = +$('te').value || 0;
+  const holder = $('holder').value, status = $('status').value;
+  return bps.filter(b =>
+    (!q || (b.type + ' ' + b.place).toLowerCase().includes(q)) &&
+    (!holder || b.holder === holder) && (!status || b.status === status) &&
+    (!state.kind || b.kind === state.kind) && b.me >= me && b.te >= te &&
+    (!$('research').checked || (b.kind === 'BPO' && !researched(b))));
+}
+const kindBadge = b => `<span class="badge ${b.kind.toLowerCase()}">${b.kind}</span>`;
+const statusBadge = b => {
+  const s = statuses[b.status];
+  const tip = b.job ? `${s.label}, ${b.job.runs} runs, ends ${b.job.ends} UTC` : 'Not in an industry job';
+  return `<span class="badge ${s.cls}" title="${esc(tip)}">${s.label}</span>` + (b.job ? ` <span class="xs muted">ends ${b.job.ends.slice(11)}</span>` : '');
+};
+const holderCell = b => `<span class="dot" style="background:${holders[b.holder]}"></span>${esc(b.holder)}`;
+const placeCell = b => esc(b.place) + (b.matched ? '' : ' <span class="badge unm" title="ESI lists this blueprint but the stored assets do not have it yet; the place is read from its own location">not matched yet</span>');
+
+function render() {
+  const rows = filtered().sort((x, y) => {
+    const k = state.sort, vx = k === 'status' ? statuses[x.status].label : x[k], vy = k === 'status' ? statuses[y.status].label : y[k];
+    return (vx < vy ? -1 : vx > vy ? 1 : x.id - y.id) * state.dir;
+  });
+  document.querySelectorAll('[data-kind]').forEach(b => b.classList.toggle('sel', b.dataset.kind === state.kind));
+  document.querySelectorAll('[data-detail]').forEach(b => b.classList.toggle('sel', b.dataset.detail === state.detail));
+  document.querySelectorAll('th[data-sort]').forEach(th => {
+    th.textContent = th.textContent.replace(/ [▲▼]$/, '') + (th.dataset.sort === state.sort ? (state.dir > 0 ? ' ▲' : ' ▼') : '');
+  });
+  $('rows').innerHTML = rows.map(b => `<tr class="${state.picked.has(b.id) ? 'picked' : ''}">
+      <td class="sel"><input type="checkbox" data-pick="${b.id}"${state.picked.has(b.id) ? ' checked' : ''}></td>
+      <td><a href="/blueprints/${b.id}" onclick="openDetail(${b.id});return false">${esc(b.type)}</a></td><td>${kindBadge(b)}</td>
+      <td>${statusBadge(b)}</td><td class="num">${b.me}</td><td class="num">${b.te}</td>
+      <td class="num">${runs(b)}</td><td>${holderCell(b)}</td><td>${placeCell(b)}</td></tr>`).join('')
+    || '<tr><td colspan="9" class="empty">No blueprint matches the filter.</td></tr>';
+  $('count').textContent = `${rows.length} of ${bps.length} blueprints`;
+  const shown = rows.map(b => b.id), pickedShown = shown.filter(id => state.picked.has(id)).length;
+  $('pick-all').checked = shown.length > 0 && pickedShown === shown.length;
+  $('pick-all').indeterminate = pickedShown > 0 && pickedShown < shown.length;
+  const n = state.picked.size, hidden = n - pickedShown;
+  $('actions-btn').disabled = n === 0;
+  $('actions-btn').textContent = n ? `Actions (${n}) ▾` : 'Actions ▾';
+  $('picked-count').textContent = n ? `${n} picked` + (hidden ? `, ${hidden} hidden by the filter` : '') : 'Tick blueprints to act on them.';
+  if (!n) $('actions-menu').classList.remove('open');
+  document.querySelectorAll('[data-pick]').forEach(cb => cb.onchange = () => {
+    const id = +cb.dataset.pick; cb.checked ? state.picked.add(id) : state.picked.delete(id); render();
+  });
+
+  const p = new URLSearchParams();
+  if ($('q').value) p.set('q', $('q').value);
+  if (state.kind) p.set('kind', state.kind);
+  if ($('status').value) p.set('status', $('status').value);
+  if ($('me').value) p.set('me', $('me').value);
+  if ($('te').value) p.set('te', $('te').value);
+  if ($('holder').value) p.set('holder', $('holder').value);
+  if ($('research').checked) p.set('research', 'needed');
+  if (state.sort !== 'type' || state.dir < 0) p.set('sort', (state.dir < 0 ? '-' : '') + state.sort);
+  const qs = p.toString(), base = 'https://dev.eveassist.com:7444/blueprints';
+  $('url').textContent = state.open && state.detail === 'drawer' ? `${base}?${qs ? qs + '&' : ''}open=${state.open}`
+    : state.open ? `${base}/${state.open}` : base + (qs ? '?' + qs : '');
+}
+
+function secs(s) {
+  const d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.round(s % 3600 / 60);
+  return [d && d + 'd', h && h + 'h', m && m + 'm'].filter(Boolean).join(' ') || '0m';
+}
+function detailHtml(b, asPage) {
+  const r = recipes[b.product], s = statuses[b.status];
+  const mats = r.mats.map(([name, q]) => {
+    const at = q === 1 ? 1 : Math.max(1, Math.ceil(q * (1 - b.me / 100))), at10 = q === 1 ? 1 : Math.max(1, Math.ceil(q * 0.9));
+    return `<tr><td>${esc(name)}</td><td class="num">${fmt(at)}</td><td class="num muted">${fmt(at10)}</td></tr>`;
+  }).join('');
+  const others = bps.filter(x => x.type === b.type && x.id !== b.id);
+  const job = b.job ? `<div class="box"><h2>${s.label} <span class="badge ${s.cls}">${s.label}</span></h2>
+      <dl class="dl"><dt>Runs</dt><dd>${b.job.runs}${b.job.note ? ' · ' + esc(b.job.note) : ''}</dd>
+      <dt>Started</dt><dd>${b.job.started} UTC</dd><dt>Ends</dt><dd>${b.job.ends} UTC</dd>
+      <dt>Facility</dt><dd>${esc(b.job.facility)}</dd><dt>Installed by</dt><dd>${esc(b.job.by)}</dd></dl>
+      <div class="bar"><span style="width:${b.job.done}%"></span></div><div class="xs muted">${b.job.done}% done</div></div>`
+    : `<div class="box"><span class="badge st-available">Available</span> <span class="xs muted">Not in an industry job.</span></div>`;
+  return `
+    ${asPage ? '<div class="xs" style="margin-bottom:.5rem"><a href="#" onclick="closeDetail();return false">← Blueprints</a></div>' : ''}
+    <div class="head" style="margin-bottom:.4rem"><h1>${esc(b.type)}</h1> ${kindBadge(b)}<span class="grow"></span>
+      ${asPage ? '' : '<button class="btn btn-xs" onclick="closeDetail()" title="Close">✕</button>'}</div>
+    <div class="xs muted" style="margin-bottom:.75rem">Makes ${esc(b.product)}${r.per ? ' ×' + r.per + ' per run' : ''} · item id ${b.id}</div>
+    <div class="${asPage ? 'detail-grid' : ''}">
+     <div>
+      <dl class="dl box" style="display:grid">
+        <dt>ME</dt><dd>${b.me} <span class="muted">of 10</span></dd><dt>TE</dt><dd>${b.te} <span class="muted">of 20</span></dd>
+        <dt>Runs</dt><dd>${b.runs < 0 ? 'Unlimited (original)' : b.runs + ' left'}</dd>
+        <dt>Holder</dt><dd>${holderCell(b)}</dd><dt>Place</dt><dd>${placeCell(b)}</dd>
+      </dl>
+      ${job}
+     </div>
+     <div>
+      <div class="box"><h2>One run at this blueprint</h2>
+        <table><thead><tr><th>Material</th><th class="num">ME ${b.me}</th><th class="num">ME 10</th></tr></thead><tbody>${mats}</tbody></table>
+        <div class="xs muted" style="margin-top:.4rem">Build time ${secs(r.secs * (1 - b.te / 100))} at TE ${b.te} (${secs(r.secs * 0.8)} at TE 20).
+          No skills, facility or rigs yet, as in plans.</div></div>
+      <div class="box"><h2>Other ${esc(b.type)}s you hold</h2>
+        ${others.length ? '<table><tbody>' + others.map(o => `<tr><td><a href="#" onclick="openDetail(${o.id});return false">${o.kind} ME ${o.me} / TE ${o.te}${o.runs < 0 ? '' : ', ' + o.runs + ' runs'}</a></td><td>${statusBadge(o)}</td><td class="xs">${esc(o.holder)}</td></tr>`).join('') + '</tbody></table>' : '<div class="empty">None.</div>'}
+      </div>
+     </div>
+    </div>
+    <div class="links">
+      <button class="btn btn-primary btn-xs" onclick="toast('Load into project: the workflow is defined together with the plan → project function.')">Load into project…</button>
+      <a class="btn btn-xs" href="#" onclick="toast('Would open Inventory at this item.');return false">Show in Inventory</a>
+      <a class="btn btn-xs" href="#" onclick="toast('Would open the Blueprints list filtered to ${esc(b.type)}.');return false">All of this type</a>
+      ${b.kind === 'BPC' ? `<a class="btn btn-xs" href="#" onclick="toast('Would open Blueprint copy prices for ${esc(b.type)} at ME ${b.me} / TE ${b.te}.');return false">Copy prices</a>` : ''}
+    </div>`;
+}
+function openDetail(id) {
+  const b = bps.find(x => x.id === id);
+  state.open = id;
+  if (state.detail === 'drawer') {
+    document.body.classList.remove('detail-page');
+    $('drawer').innerHTML = detailHtml(b, false);
+    document.body.classList.add('drawer-open');
+  } else {
+    document.body.classList.remove('drawer-open');
+    $('page-view').innerHTML = detailHtml(b, true);
+    document.body.classList.add('detail-page');
+    window.scrollTo(0, 0);
+  }
+  render();
+}
+function closeDetail() {
+  state.open = null;
+  document.body.classList.remove('drawer-open', 'detail-page');
+  render();
+}
+
+function toast(text) {
+  const t = $('toast');
+  t.textContent = text;
+  t.style.display = 'block';
+  clearTimeout(t.timer);
+  t.timer = setTimeout(() => t.style.display = 'none', 4000);
+}
+
+$('actions-btn').onclick = e => { e.stopPropagation(); $('actions-menu').classList.toggle('open'); };
+document.addEventListener('click', e => { if (!e.target.closest('.menu-wrap')) $('actions-menu').classList.remove('open'); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeDetail(); $('actions-menu').classList.remove('open'); } });
+document.querySelectorAll('[data-act]').forEach(btn => btn.onclick = () => {
+  const list = bps.filter(b => state.picked.has(b.id)), busy = list.filter(b => b.status !== 'available').length;
+  $('actions-menu').classList.remove('open');
+  if (btn.dataset.act === 'project') toast(`Would load ${list.length} blueprints (with their own ME, TE and runs) into a project`
+    + (busy ? `; ${busy} are in a job now and would be flagged` : '') + '. The workflow is defined with the plan → project function.');
+  if (btn.dataset.act === 'inventory') toast(`Would open Inventory filtered to these ${list.length} items.`);
+  if (btn.dataset.act === 'csv') toast(`Would download ${list.length} rows as CSV.`);
+  if (btn.dataset.act === 'clear') { state.picked.clear(); render(); }
+});
+$('pick-all').onchange = () => {
+  filtered().forEach(b => $('pick-all').checked ? state.picked.add(b.id) : state.picked.delete(b.id));
+  render();
+};
+document.querySelectorAll('[data-detail]').forEach(b => b.onclick = () => {
+  state.detail = b.dataset.detail;
+  state.open ? openDetail(state.open) : render();
+});
+document.querySelectorAll('[data-kind]').forEach(b => b.onclick = () => { state.kind = b.dataset.kind; render(); });
+document.querySelectorAll('th[data-sort]').forEach(th => th.onclick = () => {
+  state.dir = state.sort === th.dataset.sort ? -state.dir : 1;
+  state.sort = th.dataset.sort;
+  render();
+});
+['q', 'me', 'te', 'holder', 'status', 'research'].forEach(id => $(id).addEventListener('input', render));
+$('clear').onclick = () => { $('filters').reset(); state.kind = ''; render(); };
+render();
+</script>
+</body>
+</html>

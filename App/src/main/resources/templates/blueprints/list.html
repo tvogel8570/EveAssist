@@ -1,0 +1,72 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: page(~{::title}, ~{::main})}">
+<head><title th:text="#{blueprints.title}">Blueprints</title></head>
+<body>
+<main class="max-w-7xl mx-auto p-3 sm:p-4">
+    <div id="blueprints-page" th:attr="data-drawer-open=${drawerOpen}">
+        <div class="flex flex-wrap items-center gap-2 mb-1">
+            <h1 class="text-xl font-semibold" th:text="#{blueprints.title}">Blueprints</h1>
+            <span class="grow"></span>
+            <form method="post" th:action="@{/blueprints/refresh}">
+                <button th:replace="~{fragments/refresh :: button('refresh-blueprints', #{blueprints.refresh})}"></button>
+            </form>
+        </div>
+        <p class="text-sm opacity-70 mb-3" th:text="#{blueprints.note}">ESI owns ME, TE and runs; places are matched to inventory.</p>
+
+        <div th:replace="~{blueprints/fragments :: status}"></div>
+        <div class="alert alert-info mb-3" th:unless="${view.hasSources}">
+            <span th:text="#{blueprints.noFeatures}">Turn on blueprint reads from Characters to use this page.</span>
+            <a class="link" th:href="@{/characters}" th:text="#{blueprints.charactersLink}">Characters →</a>
+        </div>
+
+        <form id="blueprint-filters" method="get" th:action="@{/blueprints}" class="card bg-base-200 mb-3"
+              th:if="${view.hasSources}" th:attr="hx-get=@{/blueprints}" hx-target="#blueprint-results"
+              hx-push-url="true" hx-sync="this:replace" hx-indicator="#request-indicator" hx-trigger="change, submit">
+            <div class="card-body p-3 gap-2">
+                <div th:replace="~{blueprints/results :: state(false)}"></div>
+                <div class="flex flex-wrap gap-2 items-center">
+                    <input type="search" name="q" class="input input-sm grow min-w-40" autocomplete="off"
+                           th:value="${search}" th:placeholder="#{blueprints.search}" aria-label="Search blueprints">
+                    <select class="select select-sm" name="kind" aria-label="Blueprint kind">
+                        <option value="" th:selected="${filter.kind.isBlank()}" th:text="#{blueprints.allKinds}">All kinds</option>
+                        <option value="BPO" th:selected="${filter.kind == 'BPO'}">BPO</option>
+                        <option value="BPC" th:selected="${filter.kind == 'BPC'}">BPC</option>
+                    </select>
+                    <label class="flex items-center gap-1 text-sm"><span th:text="#{blueprints.meMinimum}">ME ≥</span>
+                        <input class="input input-sm w-20" type="number" name="me" min="0" max="10"
+                               th:value="${filter.minimumMe > 0 ? filter.minimumMe : ''}"></label>
+                    <label class="flex items-center gap-1 text-sm"><span th:text="#{blueprints.teMinimum}">TE ≥</span>
+                        <input class="input input-sm w-20" type="number" name="te" min="0" max="20"
+                               th:value="${filter.minimumTe > 0 ? filter.minimumTe : ''}"></label>
+                    <select class="select select-sm" name="holder" aria-label="Holder">
+                        <option value="" th:text="#{blueprints.allHolders}">All holders</option>
+                        <option th:each="holder : ${view.holders}" th:value="${holder.id}" th:selected="${filter.holder == holder.id}"
+                                th:text="${holder.name}">Holder</option>
+                    </select>
+                    <select class="select select-sm" name="status" aria-label="Status">
+                        <option value="" th:text="#{blueprints.allStatuses}">All statuses</option>
+                        <option value="not_read" th:selected="${filter.status == 'not_read'}"
+                                th:text="#{blueprints.status.notRead}">Available / not read yet</option>
+                    </select>
+                    <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="research" value="1"
+                           class="checkbox checkbox-sm" th:checked="${filter.needsResearch}">
+                        <span th:text="#{blueprints.needsResearch}">Needs research only</span></label>
+                    <a class="btn btn-ghost btn-sm" th:href="@{/blueprints}" th:text="#{blueprints.clear}">Clear</a>
+                </div>
+            </div>
+        </form>
+
+        <div id="blueprint-results" th:if="${view.hasSources}" th:attr="hx-get=@{/blueprints}" hx-include="#blueprint-filters, #blueprint-view"
+             hx-trigger="blueprints-refresh from:document" hx-swap="innerHTML">
+            <th:block th:replace="~{blueprints/results :: results}"></th:block>
+        </div>
+        <div id="blueprint-drawer-scrim" class="blueprint-drawer-scrim" data-close-blueprint-drawer></div>
+        <aside id="blueprint-drawer" class="blueprint-drawer" aria-label="Blueprint details">
+            <th:block th:if="${detail != null}">
+                <th:block th:replace="~{blueprints/detail :: drawer}"></th:block>
+            </th:block>
+        </aside>
+    </div>
+</main>
+</body>
+</html>

@@ -1,0 +1,38 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<section th:fragment="status" id="blueprint-status" class="mb-3"
+         th:attr="hx-get=${startOnLoad} ? @{/blueprints/status(start=1)} : @{/blueprints/status},hx-trigger=${startOnLoad} ? 'load' : (${running} ? 'every 2s' : null),hx-swap='outerHTML',hx-include='#blueprint-filters, #blueprint-view'">
+    <details id="blueprint-status-details" th:unless="${#lists.isEmpty(statuses)}">
+        <summary class="cursor-pointer text-sm select-none"
+                 th:classappend="${summary.state.name() == 'ATTENTION'} ? 'text-warning' : 'opacity-80'">
+            <span th:switch="${summary.state.name()}">
+                <span th:case="'RUNNING'" th:text="#{blueprints.statusSummary.running(${summary.holders})}">3 holders · reading from ESI…</span>
+                <span th:case="'ATTENTION'" th:text="#{blueprints.statusSummary.attention(${summary.holders}, ${summary.needAttention})}">3 holders · 1 needs attention</span>
+                <span th:case="'NEVER'" th:text="#{blueprints.statusSummary.never(${summary.holders})}">3 holders · not read yet</span>
+                <span th:case="*" th:text="#{blueprints.statusSummary.ok(${summary.holders}, ${utc.format(summary.lastRead)})}">3 holders · all up to date · read 20:23 UTC</span>
+            </span>
+        </summary>
+        <div class="alert alert-warning" th:each="status : ${statuses}"
+             th:if="${status.phase.name() == 'NEEDS_REAUTHORIZATION' or status.phase.name() == 'MISSING_SCOPE'}">
+            <span th:text="${status.name}">Holder</span>:
+            <span th:text="#{${'blueprints.phase.' + #strings.toLowerCase(status.phase.name())}}">Needs authorization</span>.
+            <a class="link" th:href="@{/characters}" th:text="#{blueprints.charactersLink}">Characters →</a>
+        </div>
+        <div class="overflow-x-auto" th:if="${not #lists.isEmpty(statuses)}">
+            <table class="table table-xs bg-base-200 rounded-box">
+                <thead><tr><th th:text="#{blueprints.statusHolder}">Holder</th><th th:text="#{blueprints.statusState}">State</th>
+                    <th th:text="#{blueprints.statusFetched}">Fetched</th><th class="num" th:text="#{blueprints.statusCount}">Blueprints</th></tr></thead>
+                <tbody><tr th:each="status : ${statuses}">
+                    <td th:text="${status.name}">Holder</td>
+                    <td th:text="#{${'blueprints.phase.' + #strings.toLowerCase(status.phase.name())}}">Up to date</td>
+                    <td class="text-xs" th:text="${status.fetchedAt == null ? '—' : utc.format(status.fetchedAt) + ' UTC'}">—</td>
+                    <td class="num" th:text="${status.itemCount == null ? '—' : status.itemCount}">—</td>
+                </tr></tbody>
+            </table>
+        </div>
+    </details>
+    <p class="text-sm opacity-70" th:if="${#lists.isEmpty(statuses)}" th:text="#{blueprints.noHolders}">No blueprint holders are enabled.</p>
+</section>
+</body>
+</html>

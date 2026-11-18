@@ -1,0 +1,143 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--
+  The part of the filter that no field of the form shows: the sort, the type and the tech level, as hidden fields. The
+  form sends them with whatever else is changed, so they have to be what the list shows now, and not what the page was
+  opened with. A list that is asked for by htmx brings them along (partial), the way the inventory page does.
+-->
+<div xmlns:th="http://www.thymeleaf.org" th:fragment="state(oob)" id="blueprint-state"
+     th:attr="hx-swap-oob=${oob} ? 'true' : null">
+    <input type="hidden" name="sort" th:value="${filter.sort}">
+    <input type="hidden" name="dir" th:value="${filter.direction}">
+    <input th:if="${filter.typeId != null}" type="hidden" name="type" th:value="${filter.typeId}">
+    <input th:if="${filter.tech != null}" type="hidden" name="tech" th:value="${filter.tech}">
+</div>
+
+<!-- What a request for the list alone answers to htmx: the table, and the hidden fields of the form, made new. -->
+<th:block xmlns:th="http://www.thymeleaf.org" th:fragment="partial">
+    <th:block th:replace="~{blueprints/results :: results}"></th:block>
+    <div th:replace="~{blueprints/results :: state(true)}"></div>
+</th:block>
+
+<!-- The table only, so a filter request can replace it without replacing the filter controls or selection menu. -->
+<div xmlns:th="http://www.thymeleaf.org" th:fragment="results">
+    <!-- What this table shows, sent back with the status poll (see Page.fingerprint) and with a refresh of the table. -->
+    <div id="blueprint-view" hidden>
+        <input type="hidden" name="seen" th:value="${view.fingerprint}">
+        <input type="hidden" name="limit" th:value="${filter.limit}">
+    </div>
+    <!-- One button for each tech level, with how many blueprints it would show under the other filters. -->
+    <div class="join flex-wrap mb-2" role="group" th:attr="aria-label=#{blueprints.tech.aria}"
+         th:if="${#lists.size(view.techLevels) > 1 or filter.tech != null}">
+        <a class="btn btn-sm join-item btn-primary" th:classappend="${filter.tech != null} ? ' btn-soft'"
+           th:href="@{'/blueprints?' + ${filter.techQuery(null)}}" th:attr="hx-get=@{'/blueprints?' + ${filter.techQuery(null)}}"
+           hx-target="#blueprint-results" hx-push-url="true">
+            <span th:text="#{blueprints.tech.all}">All</span>
+            <span class="opacity-70" th:text="${#numbers.formatInteger(view.techTotal, 1, 'COMMA')}">14,271</span></a>
+        <a class="btn btn-sm join-item btn-primary" th:each="level : ${view.techLevels}"
+           th:classappend="${filter.tech == null or filter.tech != level} ? ' btn-soft'"
+           th:href="@{'/blueprints?' + ${filter.techQuery(level)}}" th:attr="hx-get=@{'/blueprints?' + ${filter.techQuery(level)}}"
+           hx-target="#blueprint-results" hx-push-url="true">
+            <span th:text="#{${'blueprints.tech.' + level}}">T1</span>
+            <span class="opacity-70" th:text="${#numbers.formatInteger(view.techCounts.getOrDefault(level, 0L), 1, 'COMMA')}">10,714</span></a>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-3 text-sm mb-2">
+        <span class="opacity-80" th:if="${view.total > #lists.size(view.items)}"
+              th:text="#{blueprints.summaryOf(${#lists.size(view.items)}, ${view.total})}">Showing 100 of 14,213 blueprints</span>
+        <span class="opacity-80" th:unless="${view.total > #lists.size(view.items)}"
+              th:text="#{blueprints.summary(${view.total})}">13 blueprints</span>
+        <span class="grow"></span>
+        <span class="text-xs opacity-70" th:text="#{blueprints.jobsNotRead}">Industry job status is not read yet.</span>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-3 mb-2">
+        <div class="relative">
+            <button type="button" id="blueprint-actions" class="btn btn-sm" disabled aria-haspopup="true" aria-expanded="false"
+                    th:attr="data-disabled-label=#{blueprints.actions},data-label=#{blueprints.actionsCount}">
+                <span th:text="#{blueprints.actions}">Actions</span> <span aria-hidden="true">▾</span>
+            </button>
+            <div id="blueprint-actions-menu" class="blueprint-actions-menu" hidden>
+                <button type="button" data-blueprint-action="project" disabled>
+                    <span th:text="#{blueprints.loadProject}">Load into project…</span>
+                    <span class="block text-xs opacity-60" th:text="#{blueprints.projectLater}">Waiting for plan → project.</span>
+                </button>
+                <hr>
+                <button type="button" data-blueprint-action="inventory" th:attr="data-many-types=#{blueprints.showInventoryOneType}" th:text="#{blueprints.showInventory}">Show in Inventory</button>
+                <button type="button" data-blueprint-action="csv" th:text="#{blueprints.exportPicked}">Export picked as CSV</button>
+                <button type="button" data-blueprint-action="clear" th:text="#{blueprints.clearSelection}">Clear selection</button>
+            </div>
+        </div>
+        <span id="blueprint-picked-count" class="text-xs opacity-70" th:attr="data-none=#{blueprints.pickPrompt},data-picked=#{blueprints.pickedCount},data-hidden=#{blueprints.hiddenCount}">
+            Tick blueprints to act on them.
+        </span>
+    </div>
+
+    <div class="overflow-x-auto" th:if="${not #lists.isEmpty(view.items)}">
+        <table class="table table-sm" id="blueprint-table">
+            <thead><tr>
+                <th class="w-8 px-1"><input type="checkbox" id="blueprint-pick-all" class="checkbox checkbox-xs"
+                       th:attr="aria-label=#{blueprints.pickAll}" title="Pick every blueprint shown"></th>
+                <th><a th:href="@{'/blueprints?' + ${filter.sortQuery('type')}}" th:attr="hx-get=@{'/blueprints?' + ${filter.sortQuery('type')}}"
+                       hx-target="#blueprint-results" hx-push-url="true" th:text="#{blueprints.col.type}">Type</a></th>
+                <th><a th:href="@{'/blueprints?' + ${filter.sortQuery('kind')}}" th:attr="hx-get=@{'/blueprints?' + ${filter.sortQuery('kind')}}"
+                       hx-target="#blueprint-results" hx-push-url="true" th:text="#{blueprints.col.kind}">Kind</a></th>
+                <th><a th:href="@{'/blueprints?' + ${filter.sortQuery('tech')}}" th:attr="hx-get=@{'/blueprints?' + ${filter.sortQuery('tech')}}"
+                       hx-target="#blueprint-results" hx-push-url="true" th:text="#{blueprints.col.tech}">Tech</a></th>
+                <th><a th:href="@{'/blueprints?' + ${filter.sortQuery('status')}}" th:attr="hx-get=@{'/blueprints?' + ${filter.sortQuery('status')}}"
+                       hx-target="#blueprint-results" hx-push-url="true" th:text="#{blueprints.col.status}">Status</a></th>
+                <th class="num"><a th:href="@{'/blueprints?' + ${filter.sortQuery('me')}}" th:attr="hx-get=@{'/blueprints?' + ${filter.sortQuery('me')}}"
+                       hx-target="#blueprint-results" hx-push-url="true" th:text="#{blueprints.col.me}">ME</a></th>
+                <th class="num"><a th:href="@{'/blueprints?' + ${filter.sortQuery('te')}}" th:attr="hx-get=@{'/blueprints?' + ${filter.sortQuery('te')}}"
+                       hx-target="#blueprint-results" hx-push-url="true" th:text="#{blueprints.col.te}">TE</a></th>
+                <th class="num"><a th:href="@{'/blueprints?' + ${filter.sortQuery('runs')}}" th:attr="hx-get=@{'/blueprints?' + ${filter.sortQuery('runs')}}"
+                       hx-target="#blueprint-results" hx-push-url="true" th:text="#{blueprints.col.runs}">Runs</a></th>
+                <th><a th:href="@{'/blueprints?' + ${filter.sortQuery('holder')}}" th:attr="hx-get=@{'/blueprints?' + ${filter.sortQuery('holder')}}"
+                       hx-target="#blueprint-results" hx-push-url="true" th:text="#{blueprints.col.holder}">Holder</a></th>
+                <th><a th:href="@{'/blueprints?' + ${filter.sortQuery('place')}}" th:attr="hx-get=@{'/blueprints?' + ${filter.sortQuery('place')}}"
+                       hx-target="#blueprint-results" hx-push-url="true" th:text="#{blueprints.col.place}">Place</a></th>
+            </tr></thead>
+            <tbody>
+            <tr th:each="item : ${view.items}" th:attr="data-blueprint-row=${item.itemId},data-type=${item.typeId},data-name=${item.name}"
+                class="hover">
+                <td class="px-1"><input type="checkbox" class="checkbox checkbox-xs" data-blueprint-pick
+                           th:value="${item.itemId}" th:attr="aria-label=#{blueprints.pick(${item.name})}"></td>
+                <td>
+                    <a class="link font-medium" data-blueprint-link th:href="@{'/blueprints/' + ${item.itemId} + '?' + ${filter.query}}"
+                       th:attr="hx-get=@{'/blueprints/' + ${item.itemId} + '?' + ${filter.query}}"
+                       hx-target="#blueprint-drawer" hx-swap="innerHTML" hx-push-url="true" th:text="${item.name}">Blueprint</a>
+                    <span class="badge badge-xs badge-outline ml-1" th:if="${item.variant != null}" th:text="${item.variant}">Faction</span>
+                </td>
+                <td><span class="badge badge-sm" th:text="${item.kind}" th:classappend="${item.kind == 'BPC'} ? ' badge-secondary' : ' badge-accent'">BPO</span></td>
+                <td th:text="${item.tech == 0} ? '—' : 'T' + ${item.tech}"
+                    th:title="#{${'blueprints.tech.' + item.tech}}">T1</td>
+                <td><span class="badge badge-sm badge-ghost" th:text="#{blueprints.status.notRead}">Available / not read yet</span></td>
+                <td class="num" th:text="${item.materialEfficiency}">10</td>
+                <td class="num" th:text="${item.timeEfficiency}">20</td>
+                <td class="num" th:text="${item.runs < 0 ? '–' : #numbers.formatInteger(item.runs, 1, 'COMMA')}">–</td>
+                <td><span th:replace="~{fragments/holder :: holder(${item.holderColor}, ${item.holderName})}">Holder</span></td>
+                <td>
+                    <span th:text="${item.place}">Place</span>
+                    <span class="badge badge-sm badge-outline" th:if="${item.hangar != null}" th:text="${item.hangar}">Hangar</span>
+                    <span class="text-xs opacity-70" th:if="${item.container != null}" th:text="'› ' + ${item.container}">› Container</span>
+                    <span class="badge badge-sm badge-warning" th:unless="${item.matched}" th:text="#{blueprints.notMatched}">not matched yet</span>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+    <p id="blueprints-capped" class="text-center text-sm opacity-80 mt-3" th:if="${view.capped}"
+       th:text="#{blueprints.capped(${#lists.size(view.items)})}">Showing the first 1,000 blueprints.</p>
+    <div class="text-center mt-3" th:if="${view.more}">
+        <a id="blueprints-show-more" class="btn btn-sm btn-outline"
+           th:href="@{'/blueprints?' + ${filter.moreQuery}}" th:attr="hx-get=@{'/blueprints?' + ${filter.moreQuery}}"
+           hx-target="#blueprint-results" hx-push-url="true" th:text="#{blueprints.showMore}">Show more</a>
+    </div>
+    <div class="card bg-base-200" th:if="${#lists.isEmpty(view.items)}">
+        <div class="card-body items-center text-center"><p th:text="#{blueprints.noMatch}">No blueprints match these filters.</p></div>
+    </div>
+</div>
+</body>
+</html>

@@ -32,15 +32,17 @@ import org.springframework.stereotype.Service;
 public class BrowseService {
 
     /** The colours the bars use. They are classes in app.css, so no style is written into a page. */
-    static final int COLORS = 24;
+    static final int COLORS = HolderColors.COLORS;
 
     private final LinkedCharacters linked;
     private final BrowseQueries queries;
     private final CorporationRepository corporations;
     private final MessageSource messages;
+    private final HolderColors colors;
 
     BrowseService(LinkedCharacters linked, BrowseQueries queries, CorporationRepository corporations,
-            MessageSource messages) {
+            MessageSource messages, HolderColors colors) {
+        this.colors = colors;
         this.linked = linked;
         this.queries = queries;
         this.corporations = corporations;
@@ -56,16 +58,16 @@ public class BrowseService {
         var sorted = linked.of(viewer).stream()
                 .sorted(Comparator.comparing(LinkedCharacter::linkedAt).thenComparingLong(LinkedCharacter::eveCharacterId))
                 .toList();
+        var colour = colors.of(viewer);
         var result = new java.util.LinkedHashMap<UUID, BrowseView.CharacterRef>();
-        for (int i = 0; i < sorted.size(); i++) {
-            result.put(sorted.get(i).id(), new BrowseView.CharacterRef(sorted.get(i).id(), sorted.get(i).name(),
-                    i % COLORS, false));
+        for (var character : sorted) {
+            result.put(character.id(), new BrowseView.CharacterRef(character.id(), character.name(),
+                    colour.get(character.id()), false));
         }
         if (!sorted.isEmpty() && linked.featuresOn(viewer).contains(com.eveassist.characters.Feature.CORPORATION_ASSETS)) {
-            var own = corporations.listFor(viewer.accountId().value());
-            for (int i = 0; i < own.size(); i++) {
-                result.put(own.get(i).id(), new BrowseView.CharacterRef(own.get(i).id(), own.get(i).name(),
-                        (sorted.size() + i) % COLORS, true));
+            for (var corporation : corporations.listFor(viewer.accountId().value())) {
+                result.put(corporation.id(), new BrowseView.CharacterRef(corporation.id(), corporation.name(),
+                        colour.get(corporation.id()), true));
             }
         }
         return result;

@@ -3,6 +3,7 @@ package com.eveassist.esi.internal;
 import com.eveassist.esi.AccessTokens;
 import com.eveassist.esi.TokenGrant;
 import com.eveassist.esi.CharacterAsset;
+import com.eveassist.esi.CharacterBlueprint;
 import com.eveassist.esi.EsiClient;
 import com.eveassist.esi.StructureLookup;
 import com.eveassist.esi.EsiResult;
@@ -41,10 +42,12 @@ class HttpEsiClient implements EsiClient {
     private static final String MARKET_ORDER_GROUP = "market-order";
     /** 1,800 tokens per 15 minutes per character, from ESI's OpenAPI spec. */
     private static final String CHARACTER_ASSET_GROUP = "char-asset";
+    private static final String CHARACTER_INDUSTRY_GROUP = "char-industry";
     /** ESI's OpenAPI spec names no rate-limit group for this route, so only the error limit applies. */
     private static final String STRUCTURE_GROUP = "universe-structure";
     /** 1,800 tokens per 15 minutes per corporation, from ESI's OpenAPI spec. */
     private static final String CORPORATION_ASSET_GROUP = "corp-asset";
+    private static final String CORPORATION_INDUSTRY_GROUP = "corp-industry";
     /** The spec puts the divisions route in the wallet group (300 tokens per 15 minutes). */
     private static final String CORPORATION_DIVISIONS_GROUP = "corp-wallet";
     private static final String CHARACTER_DETAIL_GROUP = "char-detail";
@@ -116,6 +119,14 @@ class HttpEsiClient implements EsiClient {
     }
 
     @Override
+    public EsiResult<List<CharacterBlueprint>> characterBlueprints(long eveCharacterId) {
+        return paged(CHARACTER_INDUSTRY_GROUP, "/characters/%d/blueprints".formatted(eveCharacterId), true, false,
+                new ParameterizedTypeReference<List<EsiBlueprint>>() { },
+                new Auth(eveCharacterId, CHARACTER_BLUEPRINTS_SCOPE))
+                .map(blueprints -> blueprints.stream().map(HttpEsiClient::toCharacterBlueprint).toList());
+    }
+
+    @Override
     public EsiResult<Long> characterCorporationId(long eveCharacterId) {
         var answer = object(PUBLIC_DETAIL_GROUP, "/characters/%d".formatted(eveCharacterId), null, EsiCharacter.class);
         if (answer.data() != null && answer.data().corporationId() <= 0) {
@@ -155,6 +166,14 @@ class HttpEsiClient implements EsiClient {
                 new ParameterizedTypeReference<List<EsiAsset>>() { },
                 new Auth(viaEveCharacterId, CORPORATION_ASSETS_SCOPE))
                 .map(assets -> assets.stream().map(HttpEsiClient::toCharacterAsset).toList());
+    }
+
+    @Override
+    public EsiResult<List<CharacterBlueprint>> corporationBlueprints(long eveCorporationId, long viaEveCharacterId) {
+        return paged(CORPORATION_INDUSTRY_GROUP, "/corporations/%d/blueprints".formatted(eveCorporationId), true,
+                false, new ParameterizedTypeReference<List<EsiBlueprint>>() { },
+                new Auth(viaEveCharacterId, CORPORATION_BLUEPRINTS_SCOPE))
+                .map(blueprints -> blueprints.stream().map(HttpEsiClient::toCharacterBlueprint).toList());
     }
 
     @Override
@@ -518,6 +537,12 @@ class HttpEsiClient implements EsiClient {
                 asset.locationType(), asset.locationFlag(), asset.singleton(), asset.blueprintCopy());
     }
 
+    private static CharacterBlueprint toCharacterBlueprint(EsiBlueprint blueprint) {
+        return new CharacterBlueprint(blueprint.itemId(), blueprint.typeId(), blueprint.locationId(),
+                blueprint.locationFlag(), blueprint.quantity(), blueprint.materialEfficiency(),
+                blueprint.timeEfficiency(), blueprint.runs() == null ? -1 : blueprint.runs());
+    }
+
     @JsonIgnoreProperties(ignoreUnknown = true)
     private record EsiAsset(
             @JsonProperty("item_id") long itemId,
@@ -528,6 +553,18 @@ class HttpEsiClient implements EsiClient {
             @JsonProperty("location_flag") String locationFlag,
             @JsonProperty("is_singleton") boolean singleton,
             @JsonProperty("is_blueprint_copy") Boolean blueprintCopy) {
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private record EsiBlueprint(
+            @JsonProperty("item_id") long itemId,
+            @JsonProperty("type_id") int typeId,
+            @JsonProperty("location_id") long locationId,
+            @JsonProperty("location_flag") String locationFlag,
+            @JsonProperty("quantity") long quantity,
+            @JsonProperty("material_efficiency") int materialEfficiency,
+            @JsonProperty("time_efficiency") int timeEfficiency,
+            @JsonProperty("runs") Integer runs) {
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)

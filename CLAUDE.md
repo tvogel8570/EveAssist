@@ -23,15 +23,29 @@ the requirements or architecture, say "the developer decided" or similar, not "t
 | `App/` | EveAssist's application, being built: Spring Boot 4.1 / Java 25, Spring Modulith. See `documentation/architecture/`. |
 | `Infrastructure/` | Docker Compose for Postgres and Keycloak (realm export in `keycloak/`). See `Infrastructure/README.md`. |
 | `documentation/requirements/` | Requirements drafts, gathered by interview. Open questions are listed at the end of each file. |
+| `documentation/mockups/` | Static HTML mockups of pages (see Mockups below). |
 | `documentation/sde/` | SDE schema reference. |
 | `documentation/runbooks/` | Step-by-step operating procedures, such as loading a changed Keycloak realm. |
 | `documentation/ai/hand-off/` | Fallback location for handoff notes (see below). |
+
+## Mockups
+
+When the developer asks for a mockup, make it a static HTML page in `documentation/mockups/`, not a text sketch. Each
+page is self-contained (inline CSS and JS, no network), uses fake data in the app's dark theme, and opens with a
+"Mockup, fake data" bar. Put alternative designs in one page, with buttons in that bar to switch between them.
 
 ## Code and architecture decisions
 
 `documentation/architecture/` and the code must not drift apart. Code that departs from a **proposed** decision updates
 the doc in the same change, and the PR description says so. Check with the developer before departing from an **agreed**
 decision. Questions that code can answer are settled by writing the code rather than by more design in the docs.
+
+## Findings are leads, not facts
+
+Findings from a code review, a doc, a log or an assistant are leads, not facts. Reproduce each one before fixing it, and
+say in the PR description which ones were not reproduced. A fix needs a test that fails without it and uses an input
+that was observed, not assumed: put the old code back and watch the test fail. Code that guards against a case nobody
+has seen happen, such as a header a library is said to send, is a guess. Measure it, or leave it out.
 
 ## Build and test
 
@@ -81,7 +95,8 @@ In prod the same names come from real environment variables.
 
 Shared `.idea` settings are tracked and user-specific ones are ignored (see the comments in `.gitignore`).
 Keep tracked `.idea` files free of machine-specific paths and credentials, because the project is opened on several
-computers.
+computers. `.idea/deployment.xml` (the server and path mappings of IntelliJ's remote deployment) is machine-specific, so
+it is not tracked: it is ignored, and each computer keeps its own.
 
 The tracked `.idea` files do not import `App/` as a Maven project. On a computer where IntelliJ doesn't recognise it,
 open View → Tool Windows → Maven, click `+` and pick `App/pom.xml`.

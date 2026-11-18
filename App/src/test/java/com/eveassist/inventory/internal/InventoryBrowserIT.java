@@ -208,6 +208,29 @@ class InventoryBrowserIT extends IntegrationTest {
     }
 
     @Test
+    void theBackButtonRestoresTheWholePageWithoutAReloadFirst() {
+        open();
+        addFilter("Category");
+        page.locator("#filter-list label", new Page.LocatorOptions().setHasText("Material")).locator("input").check();
+        assertThat(page.locator("#summary")).containsText("2 item types");
+
+        // htmx puts the earlier step back itself, by asking the server for its address: the answer must be the page
+        page.goBack();
+
+        assertThat(page.locator("#summary")).containsText("4 item types");
+        assertThat(page.locator("#chips")).hasCount(0);
+        assertThat(page.locator("#nav-inventory")).isVisible();
+        assertThat(page.locator("#browse-form")).isVisible();
+        assertThat(page.locator("#fetch-status")).isVisible();
+
+        page.goForward();
+
+        assertThat(page.locator("#chips")).containsText("Category: Material");
+        assertThat(page.locator("#nav-inventory")).isVisible();
+        assertThat(page.locator("#browse-form")).isVisible();
+    }
+
+    @Test
     void aRowOpensToShowWhereAndClosesAgain() {
         open();
         var row = page.locator("tr[data-item='Tritanium']");
@@ -318,6 +341,47 @@ class InventoryBrowserIT extends IntegrationTest {
         // no reload: the status block asks until the fetch is done, and then the list asks again
         assertThat(page.locator("tr[data-item='Unpriced Ore']")).isVisible();
         assertThat(page.locator("#fetch-status")).not().containsText("updating");
+    }
+
+    @Test
+    void aVisitThatChangedNothingDoesNotFetchTheListAgain() throws Exception {
+        var lists = new java.util.concurrent.atomic.AtomicInteger();
+        var statuses = new java.util.concurrent.atomic.AtomicInteger();
+        page.route(address -> address.contains("/inventory"), route -> {
+            var request = route.request();
+            if (request.url().contains("/inventory/status")) {
+                statuses.incrementAndGet();
+            } else if (request.headers().containsKey("hx-request")) {
+                lists.incrementAndGet();
+            }
+            route.resume();
+        });
+
+        open();
+        // the status block has no address to ask for once the fetch is done, and its last answer could have told the
+        // list to look again: a moment more makes sure that nothing follows
+        assertThat(page.locator("#fetch-status[hx-get]")).hasCount(0,
+                new com.microsoft.playwright.assertions.LocatorAssertions.HasCountOptions().setTimeout(20_000));
+        Thread.sleep(1_500);
+
+        assertThat(statuses.get()).as("the fetch was asked for").isGreaterThanOrEqualTo(1);
+        assertThat(lists.get()).as("the list was fetched again although nothing changed").isZero();
+    }
+
+    @Test
+    void theFilterIsKeptWhenYouComeBackThroughTheMenu() {
+        page.navigate(url("/inventory?ui=1&chars=1&q=Tritanium"));
+        assertThat(page.locator("#items")).containsText("Tritanium");
+        assertThat(page.locator("#items")).not().containsText("Test Hauler");
+
+        page.locator("#nav-blueprints").click();
+        assertThat(page).hasURL(Pattern.compile(".*/blueprints.*"));
+        page.locator("#nav-inventory").click();
+
+        // the menu link has no filter, and the page comes back at the address it had, with the same list
+        assertThat(page).hasURL(Pattern.compile(".*/inventory\\?.*q=Tritanium.*"));
+        assertThat(page.locator("#items")).containsText("Tritanium");
+        assertThat(page.locator("#items")).not().containsText("Test Hauler");
     }
 
     @Test

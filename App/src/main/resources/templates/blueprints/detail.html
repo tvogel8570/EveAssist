@@ -1,0 +1,75 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="drawer" class="p-4"
+     th:attr="data-return-url=@{'/blueprints?' + ${detail.returnQuery}}">
+    <div class="flex items-start gap-3 mb-3">
+        <div class="grow">
+            <span class="text-xs uppercase opacity-60" th:text="${detail.blueprint.kind}">BPO</span>
+            <h2 class="text-lg font-semibold" th:text="${detail.blueprint.name}">Blueprint</h2>
+        </div>
+        <button type="button" class="btn btn-sm btn-ghost" data-close-blueprint-drawer
+                th:attr="aria-label=#{blueprints.close}" aria-label="Close">✕</button>
+    </div>
+    <dl class="grid grid-cols-[8rem_1fr] gap-x-3 gap-y-1 text-sm mb-4">
+        <dt class="opacity-60" th:text="#{blueprints.col.tech}">Tech</dt>
+        <dd><span th:text="#{${'blueprints.tech.' + detail.blueprint.tech}}">T1</span>
+            <span class="badge badge-xs badge-outline ml-1" th:if="${detail.blueprint.variant != null}" th:text="${detail.blueprint.variant}">Faction</span></dd>
+        <dt class="opacity-60" th:text="#{blueprints.col.status}">Status</dt><dd th:text="#{blueprints.status.notRead}">Available / not read yet</dd>
+        <dt class="opacity-60" th:text="#{blueprints.col.me}">ME</dt><dd th:text="${detail.blueprint.materialEfficiency}">10</dd>
+        <dt class="opacity-60" th:text="#{blueprints.col.te}">TE</dt><dd th:text="${detail.blueprint.timeEfficiency}">20</dd>
+        <dt class="opacity-60" th:text="#{blueprints.col.runs}">Runs</dt>
+        <dd th:text="${detail.blueprint.runs < 0 ? '—' : detail.blueprint.runs}">—</dd>
+        <dt class="opacity-60" th:text="#{blueprints.col.holder}">Holder</dt><dd><span th:replace="~{fragments/holder :: holder(${detail.blueprint.holderColor}, ${detail.blueprint.holderName})}">Holder</span></dd>
+        <dt class="opacity-60" th:text="#{blueprints.col.place}">Place</dt>
+        <dd><span th:text="${detail.blueprint.place}">Place</span>
+            <span th:if="${detail.blueprint.hangar != null}" th:text="' › ' + ${detail.blueprint.hangar}"> › Hangar</span>
+            <span th:if="${detail.blueprint.container != null}" th:text="' › ' + ${detail.blueprint.container}"> › Container</span>
+            <span class="badge badge-sm badge-warning" th:unless="${detail.blueprint.matched}" th:text="#{blueprints.notMatched}">not matched yet</span>
+        </dd>
+    </dl>
+    <div class="alert alert-info mb-3" th:text="#{blueprints.jobsNotRead}">Industry job status is not read yet.</div>
+
+    <section class="card bg-base-200 mb-3" th:if="${detail.recipe != null}">
+        <div class="card-body p-3">
+            <h3 class="font-semibold" th:text="#{blueprints.oneRun(${detail.recipe.product}, ${detail.recipe.unitsPerRun})}">One run makes product</h3>
+            <p class="text-sm" th:text="#{blueprints.buildTime(${detail.recipe.secondsAtBlueprint}, ${detail.recipe.secondsAtStandard})}">
+                Build time at this TE, compared with TE 20
+            </p>
+            <div class="overflow-x-auto">
+                <table class="table table-xs">
+                    <thead><tr><th th:text="#{blueprints.material}">Material</th>
+                        <th class="num" th:text="#{blueprints.baseQuantity}">Base</th>
+                        <th class="num" th:text="#{blueprints.atMe(${detail.blueprint.materialEfficiency})}">At this ME</th>
+                        <th class="num" th:text="#{blueprints.atStandardMe}">At ME 10</th></tr></thead>
+                    <tbody><tr th:each="material : ${detail.recipe.materials}">
+                        <td th:text="${material.name}">Tritanium</td>
+                        <td class="num" th:text="${material.baseQuantity}">1</td>
+                        <td class="num" th:text="${material.blueprintQuantity}">1</td>
+                        <td class="num" th:text="${material.standardQuantity}">1</td>
+                    </tr></tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+    <p class="text-sm opacity-70 mb-3" th:if="${detail.recipe == null}" th:text="#{blueprints.noRecipe}">No manufacturing recipe is available in this SDE.</p>
+
+    <section class="mb-3" th:if="${not #lists.isEmpty(detail.sameType)}">
+        <h3 class="font-semibold mb-1" th:text="#{blueprints.otherType}">Other blueprints of this type</h3>
+        <ul class="list-disc list-inside text-sm">
+            <li th:each="other : ${detail.sameType}">
+                <a class="link" data-blueprint-link th:href="@{'/blueprints/' + ${other.itemId} + '?' + ${detail.returnQuery}}"
+                   th:attr="hx-get=@{'/blueprints/' + ${other.itemId} + '?' + ${detail.returnQuery}}"
+                   hx-target="#blueprint-drawer" hx-swap="innerHTML" hx-push-url="true" th:text="${other.holderName} + ' · ME ' + ${other.materialEfficiency} + ' / TE ' + ${other.timeEfficiency}">
+                    Holder · ME 10 / TE 20
+                </a>
+            </li>
+        </ul>
+    </section>
+    <div class="flex flex-wrap gap-2">
+        <button type="button" class="btn btn-sm" disabled th:text="#{blueprints.loadProject}">Load into project…</button>
+        <a class="btn btn-sm btn-outline" th:href="@{'/inventory?q=' + ${detail.blueprint.name}}" th:text="#{blueprints.showInventory}">Show in Inventory</a>
+    </div>
+</div>
+</body>
+</html>
