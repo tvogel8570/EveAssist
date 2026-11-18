@@ -18,7 +18,7 @@ import org.jmolecules.ddd.annotation.Identity;
  * from a quote. A plan gives it its first products and prices and after that the project owns them (architecture/projects.md).
  *
  * <p>Every edit goes through this class, and an edit of a quoted project is refused. Renaming, archiving and costing are not edits
- * of the inputs: costing and quotes are kept apart from this class, and archiving is a status.
+ * of the inputs: costing and quotes are kept apart from this class, and renaming and archiving are statuses that the repository keeps.
  */
 @AggregateRoot
 public class Project {
@@ -27,7 +27,7 @@ public class Project {
 
     @Identity
     private final ProjectId id;
-    private String name;
+    private final String name;
     private final long version;
     private ProjectStatus status;
     private final int lastQuoteNumber;
@@ -108,11 +108,6 @@ public class Project {
 
     public boolean hasProduct(TypeId type) {
         return products.stream().anyMatch(product -> product.type().equals(type));
-    }
-
-    /** A rename is allowed in either state, since the name is not an input of the costing. */
-    public void rename(String newName) {
-        this.name = newName;
     }
 
     /** A quote has been issued from this Draft: it can no longer be edited. */

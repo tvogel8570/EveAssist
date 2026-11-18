@@ -96,7 +96,6 @@ class JdbcProjectRepositoryIT extends IntegrationTest {
         var facility = facilityOf(owner);
         var id = newProject(owner);
         var project = projects.find(owner, id).orElseThrow();
-        project.rename("Golem for a buyer");
         project.addProduct(HAULER, 3);
         project.addProduct(SECOND_SHIP, 1);
         project.buyPart(COMPONENT);
@@ -116,7 +115,7 @@ class JdbcProjectRepositoryIT extends IntegrationTest {
         assertThat(projects.save(owner, project)).contains(1L);
 
         var loaded = projects.find(owner, id).orElseThrow();
-        assertThat(loaded.name()).isEqualTo("Golem for a buyer");
+        assertThat(loaded.name()).isEqualTo("Mine");
         assertThat(loaded.version()).isEqualTo(1);
         assertThat(loaded.products()).containsExactlyInAnyOrder(new PlanProduct(HAULER, 3), new PlanProduct(SECOND_SHIP, 1));
         assertThat(loaded.boughtParts()).containsExactly(COMPONENT);
@@ -162,16 +161,14 @@ class JdbcProjectRepositoryIT extends IntegrationTest {
         var id = newProject(owner);
         var first = projects.find(owner, id).orElseThrow();
         var second = projects.find(owner, id).orElseThrow();
-        first.rename("First");
-        second.rename("Second");
+        first.addProduct(SECOND_SHIP, 1);
         second.addProduct(HAULER, 1);
 
         assertThat(projects.save(owner, first)).contains(1L);
         assertThat(projects.save(owner, second)).isEmpty();
 
         var loaded = projects.find(owner, id).orElseThrow();
-        assertThat(loaded.name()).isEqualTo("First");
-        assertThat(loaded.products()).isEmpty();
+        assertThat(loaded.products()).containsExactly(new PlanProduct(SECOND_SHIP, 1));
     }
 
     @Test
@@ -180,16 +177,34 @@ class JdbcProjectRepositoryIT extends IntegrationTest {
         var other = viewerFor(newSub());
         var id = newProject(owner);
         var project = projects.find(owner, id).orElseThrow();
-        project.rename("Stolen");
+        project.addProduct(HAULER, 1);
 
         assertThat(projects.find(other, id)).isEmpty();
         assertThat(projects.save(other, project)).isEmpty();
+        assertThat(projects.rename(other, id, "Stolen")).isFalse();
         assertThat(projects.setArchived(other, id, true)).isFalse();
         assertThat(projects.delete(other, id)).isFalse();
 
         var kept = projects.find(owner, id).orElseThrow();
         assertThat(kept.name()).isEqualTo("Mine");
+        assertThat(kept.products()).isEmpty();
         assertThat(kept.archived()).isFalse();
+    }
+
+    @Test
+    void aRenameKeepsTheVersionAndWorksOnAQuotedProject() {
+        var owner = viewerFor(newSub());
+        var id = newProject(owner);
+        var project = projects.find(owner, id).orElseThrow();
+        project.lock();
+        projects.save(owner, project);
+
+        assertThat(projects.rename(owner, id, "Golem for a buyer")).isTrue();
+
+        var renamed = projects.find(owner, id).orElseThrow();
+        assertThat(renamed.name()).isEqualTo("Golem for a buyer");
+        assertThat(renamed.version()).isEqualTo(1);
+        assertThat(renamed.status()).isEqualTo(ProjectStatus.QUOTED);
     }
 
     @Test

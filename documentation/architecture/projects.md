@@ -115,7 +115,7 @@ refused with `ProjectLockedException`.
 | Use case | What it does | Result |
 |---|---|---|
 | `ProjectEditing.start(viewer, planId)` | copies the plan's products, bought parts and prices into a new Draft, with the viewer's default settings | the project id |
-| `ProjectEditing.rename`, `archive`, `restore`, `delete` | like the plan's. Rename, archive and restore are allowed in either state. Delete removes the quotes, costings and traces | |
+| `ProjectEditing.rename`, `archive`, `restore`, `delete` | like the plan's. Rename, archive and restore are allowed in either state, and **none of them changes the version** (the name is not an input of the costing, so a rename leaves a stored costing current). Delete removes the quotes, costings and traces | |
 | `ProjectQuoting.deleteQuote(viewer, projectId, number)` | deletes one quote with its costing and trace (see the rules under Concurrency) | |
 | `ProjectEditing.addProduct`, `removeProduct`, `changeQuantity` | Draft only, with an `expectedVersion`. A product the plan did not have is fine. **Adding fetches, at once, the prices of that product and of everything it needs that the project has no price for**, and leaves every price the project already has as it is. **Removing drops the prices that no remaining product needs**, so adding it back fetches them again at once | the new version |
 | `ProjectEditing.setSettings`, `setBuilder`, `setItem`, `choosePartSource`, `setDefaultFacility` | Draft only, one edit, with an `expectedVersion`. A stale version is refused (`ProjectChangedException`), as a plan's is | the new version. Does **not** cost |
@@ -183,8 +183,12 @@ only one in this module. A quote is deleted by `deleteQuote` or with its project
   adapter, tested by `ProjectTest` and `JdbcProjectRepositoryIT`: create from a plan (the link is kept only for the viewer's own plan), the round trip of every
   input, a save replacing what was stored, a stale version refused, another account's project looking missing, a facility of another account refused, quoted
   and reopened states, archive, and delete. Removing the version check or the facility check makes exactly the tests for them fail.
+- **Built** (2026-11-18): `ProjectEditing` (start from a plan, rename, archive, restore, delete, add, change and remove products, choose a part's source, set an item,
+  set the config, replace prices) and `ProjectEntry` (add a product and refresh prices, the two that ask ESI, between two short transactions and never for a quoted
+  project), tested by `ProjectEditingIT`. Removing a product drops the prices and items nothing else needs, so a re-added product is priced again at once, and adding
+  one fetches only for items the project has no price for. Removing the fetch-only-missing rule, the pruning, or the quoted check makes the matching tests fail.
 - **Not yet written:** the repository's methods for the Draft's costing, quotes and traces (with their tests: replacing the Draft's costing, and the trace
-  purge leaving the quote as it was), the facility repository, and the use cases.
+  purge leaving the quote as it was), the facility repository, and the use cases `cost`, `issue`, `newVersionFrom`, `deleteQuote` and the queries.
 - Use case tests with a fake repository and fake ports: *issue refused on a stale costing*, *edit refused on a quoted project*, *new version from a
   quote* round trip, *add a product the plan did not have*.
 - A document test per stored version, loading or rendering a stored example (see the version rules above).

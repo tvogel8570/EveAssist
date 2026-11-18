@@ -160,7 +160,7 @@ class JdbcProjectRepository implements ProjectRepository {
         var settings = config.settings();
         var owner = viewer.accountId().value();
         var updated = jdbc.sql("""
-                UPDATE project SET name = :name, version = version + 1, status = :status,
+                UPDATE project SET version = version + 1, status = :status,
                     isk_per_hour = :perHour, isk_per_cubic_meter = :perM3, contract_fee = :fee, quote_mode = :mode,
                     margin_percent = :margin, premium_percent = :premium, quote_step = :step, price_side = :side,
                     split_strategy = :strategy, max_job_seconds = :maxJob,
@@ -170,7 +170,6 @@ class JdbcProjectRepository implements ProjectRepository {
                 WHERE public_id = :id AND owner_account_id = :owner AND version = :version
                 RETURNING id, version
                 """)
-                .param("name", project.name())
                 .param("status", lower(project.status()))
                 .param("perHour", settings.iskPerHour())
                 .param("perM3", settings.iskPerCubicMeter())
@@ -319,6 +318,15 @@ class JdbcProjectRepository implements ProjectRepository {
                     .param("keep", keep)
                     .update();
         }
+    }
+
+    @Override
+    public boolean rename(Viewer viewer, ProjectId id, String name) {
+        return jdbc.sql("UPDATE project SET name = :name WHERE public_id = :id AND owner_account_id = :owner")
+                .param("name", name)
+                .param("id", id.value())
+                .param("owner", viewer.accountId().value())
+                .update() > 0;
     }
 
     @Override

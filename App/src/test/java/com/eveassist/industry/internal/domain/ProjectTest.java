@@ -85,15 +85,6 @@ class ProjectTest {
     }
 
     @Test
-    void aQuotedProjectCanStillBeRenamed() {
-        var project = quoted();
-
-        project.rename("Renamed");
-
-        assertThat(project.name()).isEqualTo("Renamed");
-    }
-
-    @Test
     void reopeningTurnsAQuotedProjectBackIntoAnEditableDraft() {
         var project = quoted();
 

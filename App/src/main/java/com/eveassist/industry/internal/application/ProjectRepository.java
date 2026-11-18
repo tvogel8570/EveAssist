@@ -26,6 +26,12 @@ public interface ProjectRepository {
     Optional<Long> save(Viewer viewer, Project project);
 
     /**
+     * Renames a project, in either state. The name is not an input of the costing, so this is not an edit: the version stays the
+     * same and a stored costing stays current. False when the viewer has no such project.
+     */
+    boolean rename(Viewer viewer, ProjectId id, String name);
+
+    /**
      * Archives or restores a project, in either state. It is a status, not an edit: the version stays the same, so it cannot
      * conflict with someone editing the project. False when the viewer has no such project.
      */
