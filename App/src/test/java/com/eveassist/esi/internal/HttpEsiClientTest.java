@@ -220,6 +220,8 @@ class HttpEsiClientTest {
 
         assertThat(result.outcome()).isEqualTo(EsiResult.Outcome.UPDATED);
         assertThat(result.expires()).isEqualTo(Instant.parse("2026-11-08T22:00:00Z"));
+        // ESI's Last-Modified is the data's own age, and is carried out beside the expiry
+        assertThat(result.lastModified()).isEqualTo(Instant.parse("2026-11-08T21:00:00Z"));
         assertThat(result.data()).hasSize(4);
         // the digits are kept as ESI sent them, because the game's item value matches them to the ISK
         assertThat(result.data().getFirst().adjustedPrice()).isEqualTo(new java.math.BigDecimal("2.9139375060564285"));
@@ -239,7 +241,10 @@ class HttpEsiClientTest {
         client.marketPrices();
 
         clock.advance(Duration.ofMinutes(59));
-        assertThat(client.marketPrices().outcome()).isEqualTo(EsiResult.Outcome.UNCHANGED);
+        var fromTheStoredCopy = client.marketPrices();
+        assertThat(fromTheStoredCopy.outcome()).isEqualTo(EsiResult.Outcome.UNCHANGED);
+        // answered without a call, and still says when ESI's copy last changed
+        assertThat(fromTheStoredCopy.lastModified()).isEqualTo(Instant.parse("2026-11-08T21:00:00Z"));
         clock.advance(Duration.ofMinutes(2));
         esi.verify();
         esi.reset();
@@ -250,7 +255,25 @@ class HttpEsiClientTest {
 
         assertThat(again.outcome()).isEqualTo(EsiResult.Outcome.UNCHANGED);
         assertThat(again.expires()).isEqualTo(Instant.parse("2026-11-08T23:00:00Z"));
+        // this 304 sent no Last-Modified, so the stored one stands
+        assertThat(again.lastModified()).isEqualTo(Instant.parse("2026-11-08T21:00:00Z"));
         esi.verify();
+    }
+
+    @Test
+    void aNotModifiedAnswerThatSaysWhenTheDataChangedIsBelieved() {
+        esi.expect(requestTo(PRICES_URL))
+                .andRespond(page(PRICES, "\"p1\"", "Sun, 08 Nov 2026 22:00:00 GMT", "Sun, 08 Nov 2026 21:00:00 GMT"));
+        client.marketPrices();
+        clock.advance(Duration.ofMinutes(61));
+        esi.verify();
+        esi.reset();
+
+        esi.expect(requestTo(PRICES_URL))
+                .andRespond(withStatus(HttpStatus.NOT_MODIFIED).header("Expires", "Sun, 08 Nov 2026 23:00:00 GMT")
+                        .header("Last-Modified", "Sun, 08 Nov 2026 22:30:00 GMT"));
+
+        assertThat(client.marketPrices().lastModified()).isEqualTo(Instant.parse("2026-11-08T22:30:00Z"));
     }
 
     @Test

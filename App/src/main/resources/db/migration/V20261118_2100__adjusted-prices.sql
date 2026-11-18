@@ -11,8 +11,13 @@ CREATE TABLE adjusted_price (
     average_price  numeric CHECK (average_price >= 0)
 );
 
--- One row: when the prices were last known to be ESI's current copy. A refresh that finds ESI's copy unchanged only moves this.
+-- One row with two times, which mean different things (the developer asked for both on 2026-11-18, not knowing yet which a screen needs):
+--   fetched_at         when the prices were last confirmed to be ESI's current copy, by a call to ESI or by ESI's own cache time. It moves
+--                      forward every time a project is costed and nothing has changed.
+--   source_modified_at ESI's Last-Modified header for the list, as sent (null if none). Not a reliable age: on 2026-11-18 it was 20 minutes
+--                      ahead of ESI's own Date header and moved by two hours between readings. Kept so a screen may show it.
 CREATE TABLE adjusted_price_fetch (
-    id         boolean     PRIMARY KEY DEFAULT true CHECK (id),
-    fetched_at timestamptz NOT NULL
+    id                 boolean     PRIMARY KEY DEFAULT true CHECK (id),
+    fetched_at         timestamptz NOT NULL,
+    source_modified_at timestamptz
 );

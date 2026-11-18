@@ -218,13 +218,23 @@ install cost, is worked out from (see [Costing components](../requirements/costi
   them to the ISK. **An adjusted price of 0 is a real value**: about half of the rows (7,758 of 16,234 on 2026-11-18) are 0, and the game uses them as
   they are. Only a type with no row, or one whose adjusted price ESI left out, is treated as having none.
 - **Storage.** The whole answer replaces the table in one transaction (`adjusted_price`, with `adjusted_price_fetch` for when it was last known to be ESI's
-  current copy), shared by all users like the Jita orders. A refresh that finds ESI's copy unchanged only moves that time.
+  current copy), shared by all users like the Jita orders.
+- **Two ages, both kept** (the developer asked on 2026-11-18, not yet knowing which a screen needs). `confirmed_at` is when the stored prices were last
+  confirmed to be ESI's current copy, by a call to ESI or because ESI's own cache time had not run out: it moves forward each time a project is costed and
+  nothing has changed, so it says **how recently the app checked**. `source_modified_at` is ESI's `Last-Modified` header for the list **as ESI sends it**. The
+  client carries `Last-Modified` out of every cached route (from the 200, from a 304, or from its stored entry when it answers without a call), and an
+  answer that does not say keeps the one stored. They are one `AdjustedPriceAge` value.
+- **`Last-Modified` is not a reliable age (found 2026-11-18, by the opt-in live check).** I had taken it to be when the list last changed at ESI. Real ESI
+  sent `Last-Modified: 22:42:41` with `Date: 22:22:15` (this machine's clock agreed with `Date`), so it was **20 minutes in the future**, `Expires` was
+  exactly an hour after it, and earlier the same day it read 20:41:10, two hours before. It behaves as a label for ESI's cached copy and not as a clock reading.
+  It is kept because the developer wants both and a screen may use it, but **`confirmed_at` is the one that is safe to show as an age** until what ESI means
+  by `Last-Modified` for this route is understood. Open: watch it over some hours (does it step by an hour, or by two?) and ask ESI's developers if it matters.
 - **When it is fetched.** On request, when a project is costed (`ProjectEntry.cost`), and only after ESI's hour is up, so costing twice in an hour makes
   one call. A failure keeps the stored prices, and the costing says so and how old they are. A quoted project is refused before ESI is asked.
 - **A stuck copy.** If ESI says "unchanged" while nothing is stored (the table was emptied, or the client remembers an `ETag` from before), that would repeat
   for as long as ESI's copy lasts. The client is told to forget the route (`forgetMarketPrices`) and ESI is asked once more for the whole answer.
-- **Not stored per quote.** The adjusted prices change with ESI's copy, so a costing records the ones it used and how old they were (in its trace), and a
-  quote keeps them with its own.
+- **Not stored per quote.** The adjusted prices change with ESI's copy, so a costing records the ones it used and **both ages** (in its trace), and a quote
+  keeps them with its own. `ProjectCostResult.adjustedPricesAge` carries them to the page.
 
 ## Character assets
 

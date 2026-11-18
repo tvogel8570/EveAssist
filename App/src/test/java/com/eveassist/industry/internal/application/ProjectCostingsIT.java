@@ -133,7 +133,9 @@ class ProjectCostingsIT extends IntegrationTest {
         assertThat(result.costedProjectVersion()).isEqualTo(stored.version());
         assertThat(result.sdeVersion()).isEqualTo("test-sde");
         assertThat(result.pricesAsOf()).isEqualTo(AS_OF);
-        assertThat(result.adjustedPricesAsOf()).isNotNull();
+        // both ages are there: when the app last confirmed the prices, and when ESI last changed them
+        assertThat(result.adjustedPricesAge().confirmedAt()).isNotNull();
+        assertThat(result.adjustedPricesAge().esiModifiedAt()).isEqualTo(com.eveassist.TestEsi.PRICES_MODIFIED);
         // costing writes nothing
         assertThat(projects.find(owner, id).orElseThrow().version()).isEqualTo(stored.version());
     }
@@ -252,7 +254,7 @@ class ProjectCostingsIT extends IntegrationTest {
 
         assertThat(run.adjustedPricesProblem()).contains("down");
         assertThat(run.result().cost().amount(Component.INSTALL_COST)).isEqualByComparingTo("89.984");
-        assertThat(run.result().adjustedPricesAsOf()).isNotNull();
+        assertThat(run.result().adjustedPricesAge()).isNotNull();
     }
 
     @Test

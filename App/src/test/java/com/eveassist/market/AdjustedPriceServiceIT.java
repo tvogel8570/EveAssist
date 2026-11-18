@@ -24,6 +24,8 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 class AdjustedPriceServiceIT extends IntegrationTest {
 
     private static final Instant NOW = Instant.parse("2026-11-18T21:00:00Z");
+    /** ESI's Last-Modified for the list, as it sends it. Here earlier than the app's reading, though ESI has sent one ahead of it too. */
+    private static final Instant MODIFIED = Instant.parse("2026-11-18T20:41:10Z");
     private static final TypeId TRIT = new TypeId(34);
     private static final TypeId PYERITE = new TypeId(35);
     private static final TypeId ORE = new TypeId(36);
@@ -56,7 +58,11 @@ class AdjustedPriceServiceIT extends IntegrationTest {
     };
 
     private AdjustedPriceService service() {
-        return new AdjustedPriceService(prices, scripted, Clock.fixed(NOW, ZoneOffset.UTC));
+        return service(NOW);
+    }
+
+    private AdjustedPriceService service(Instant at) {
+        return new AdjustedPriceService(prices, scripted, Clock.fixed(at, ZoneOffset.UTC));
     }
 
     private static MarketPrice price(int type, String adjusted, String average) {
@@ -64,7 +70,11 @@ class AdjustedPriceServiceIT extends IntegrationTest {
     }
 
     private static EsiResult<List<MarketPrice>> updated(MarketPrice... rows) {
-        return EsiResult.updated(List.of(rows), NOW.plusSeconds(3600));
+        return updatedAt(MODIFIED, rows);
+    }
+
+    private static EsiResult<List<MarketPrice>> updatedAt(Instant modified, MarketPrice... rows) {
+        return EsiResult.updated(List.of(rows), NOW.plusSeconds(3600), modified);
     }
 
     /** The two tables hold public data shared by every test, so a test that needs them empty empties them. */
@@ -83,13 +93,13 @@ class AdjustedPriceServiceIT extends IntegrationTest {
         var refresh = service().refresh();
 
         assertThat(refresh.failed()).isFalse();
-        assertThat(refresh.asOf()).isEqualTo(NOW);
+        assertThat(refresh.age()).isEqualTo(new AdjustedPriceAge(NOW, MODIFIED));
         var stored = service().of(List.of(TRIT, PYERITE, ORE, new TypeId(999_999)));
         // the digits are kept exactly, an adjusted price of 0 is a price, and one ESI did not send is not there
         assertThat(stored.get(TRIT)).isEqualTo(new BigDecimal("2.9139375060564285"));
         assertThat(stored.get(PYERITE)).isEqualByComparingTo("0");
         assertThat(stored).doesNotContainKeys(ORE, new TypeId(999_999));
-        assertThat(service().asOf()).contains(NOW);
+        assertThat(service().age()).contains(new AdjustedPriceAge(NOW, MODIFIED));
     }
 
     @Test
@@ -113,7 +123,7 @@ class AdjustedPriceServiceIT extends IntegrationTest {
 
         assertThat(refresh.failed()).isTrue();
         assertThat(refresh.problem()).contains("503");
-        assertThat(refresh.asOf()).isEqualTo(NOW);
+        assertThat(refresh.age()).isEqualTo(new AdjustedPriceAge(NOW, MODIFIED));
         assertThat(service().of(List.of(TRIT))).containsOnlyKeys(TRIT);
     }
 
@@ -127,9 +137,30 @@ class AdjustedPriceServiceIT extends IntegrationTest {
         var refresh = service().refresh();
 
         assertThat(refresh.failed()).isFalse();
-        assertThat(refresh.asOf()).isEqualTo(NOW);
+        assertThat(refresh.age().confirmedAt()).isEqualTo(NOW);
         assertThat(service().of(List.of(TRIT))).containsOnlyKeys(TRIT);
         assertThat(forgotten).hasValue(0);
+    }
+
+    @Test
+    void theTwoAgesMeanDifferentThingsAndMoveSeparately() {
+        var later = NOW.plusSeconds(1800);
+        var muchLater = NOW.plusSeconds(3 * 3600);
+        var changedAtEsi = Instant.parse("2026-11-18T22:41:10Z");
+        answers.add(updatedAt(MODIFIED, price(34, "4", null)));
+        answers.add(EsiResult.unchanged(NOW.plusSeconds(7200), MODIFIED));
+        answers.add(EsiResult.unchanged(NOW.plusSeconds(7200)));
+        answers.add(updatedAt(changedAtEsi, price(34, "5", null)));
+
+        // taken from ESI: the app looked now, and ESI's list was last changed earlier
+        assertThat(service(NOW).refresh().age()).isEqualTo(new AdjustedPriceAge(NOW, MODIFIED));
+        // checked again and nothing changed: the app looked later, ESI's list is as old as it was
+        assertThat(service(later).refresh().age()).isEqualTo(new AdjustedPriceAge(later, MODIFIED));
+        // ESI said "unchanged" without saying when: the data's age is not forgotten
+        assertThat(service(muchLater).refresh().age()).isEqualTo(new AdjustedPriceAge(muchLater, MODIFIED));
+        // ESI's list changed: both move
+        var changed = muchLater.plusSeconds(3600);
+        assertThat(service(changed).refresh().age()).isEqualTo(new AdjustedPriceAge(changed, changedAtEsi));
     }
 
     @Test
@@ -152,9 +183,9 @@ class AdjustedPriceServiceIT extends IntegrationTest {
         var refresh = service().refresh();
 
         assertThat(refresh.failed()).isTrue();
-        assertThat(refresh.asOf()).isNull();
+        assertThat(refresh.age()).isNull();
         assertThat(prices.hasAny()).isFalse();
-        assertThat(service().asOf()).isEmpty();
+        assertThat(service().age()).isEmpty();
     }
 
     @Test

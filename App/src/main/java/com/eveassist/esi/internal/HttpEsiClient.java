@@ -408,7 +408,7 @@ class HttpEsiClient implements EsiClient {
         var key = path.substring(1);
         var stored = cached ? cache.find(key) : Optional.<EsiCache.Entry>empty();
         if (stored.isPresent() && stored.get().expires().isAfter(clock.instant())) {
-            return EsiResult.unchanged(stored.get().expires());
+            return EsiResult.unchanged(stored.get().expires(), stored.get().lastModified());
         }
         var separator = path.contains("?") ? "&" : "?";
         // A page set that changes while it is read is read again once, without asking for a 304
@@ -422,10 +422,11 @@ class HttpEsiClient implements EsiClient {
                 var expires = expiresOf(first.headers());
                 cache.save(key, new EsiCache.Entry(stored.get().etag(), stored.get().lastModified(), expires),
                         clock.instant());
-                return EsiResult.unchanged(expires);
+                var modified = first.headers().getLastModified();
+                return EsiResult.unchanged(expires, modified < 0 ? stored.get().lastModified() : Instant.ofEpochMilli(modified));
             }
             if (first.status() == 204 || (goneOn403 && first.status() == 403)) {
-                return EsiResult.updated(List.of(), expiresOf(first.headers()));
+                return EsiResult.updated(List.of(), expiresOf(first.headers()), lastModifiedOf(first.headers()));
             }
             if (first.status() != 200) {
                 return EsiResult.failed("ESI answered " + first.status() + " for " + key);
@@ -451,7 +452,7 @@ class HttpEsiClient implements EsiClient {
                     cache.save(key, new EsiCache.Entry(first.headers().getETag(),
                             lastModified < 0 ? null : Instant.ofEpochMilli(lastModified), expires), clock.instant());
                 }
-                return EsiResult.updated(rows, expires);
+                return EsiResult.updated(rows, expires, lastModified < 0 ? null : Instant.ofEpochMilli(lastModified));
             }
         }
         return EsiResult.failed("The pages of " + key + " changed while they were being read");
@@ -517,6 +518,11 @@ class HttpEsiClient implements EsiClient {
         }
         var body = response.bodyTo(type);
         return body == null ? List.of() : body;
+    }
+
+    private static Instant lastModifiedOf(HttpHeaders headers) {
+        var modified = headers.getLastModified();
+        return modified < 0 ? null : Instant.ofEpochMilli(modified);
     }
 
     private Instant expiresOf(HttpHeaders headers) {

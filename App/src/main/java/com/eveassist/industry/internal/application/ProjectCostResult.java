@@ -4,6 +4,7 @@ import com.eveassist.industry.ProjectId;
 import com.eveassist.industry.internal.domain.ProjectCost;
 import com.eveassist.industry.internal.domain.ProjectWarning;
 import com.eveassist.industry.internal.domain.SplitComparison;
+import com.eveassist.market.AdjustedPriceAge;
 import java.time.Instant;
 import java.util.List;
 
@@ -13,13 +14,13 @@ import java.util.List;
  * @param costedProjectVersion the project's edit version this was costed for
  * @param sdeVersion the SDE import the recipes came from
  * @param pricesAsOf the age of the oldest price among what is bought, or null if nothing is
- * @param adjustedPricesAsOf when the adjusted prices, which the install costs are worked out from, were last known to be ESI's current
- *         copy, or null if they never were
+ * @param adjustedPricesAge how old the adjusted prices, which the install costs are worked out from, are: when they were last confirmed
+ *         current and when ESI last changed them (see {@link AdjustedPriceAge}), or null if there are none
  * @param comparison the costing under the project's split policies next to the same project at least cost
  * @param warnings every warning, including the ones the use case adds to the costing's own (an item with no facility)
  */
 public record ProjectCostResult(
-        ProjectId project, long costedProjectVersion, String sdeVersion, Instant pricesAsOf, Instant adjustedPricesAsOf,
+        ProjectId project, long costedProjectVersion, String sdeVersion, Instant pricesAsOf, AdjustedPriceAge adjustedPricesAge,
         SplitComparison comparison, List<ProjectWarning> warnings) {
 
     public ProjectCostResult {

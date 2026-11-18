@@ -68,11 +68,20 @@ public class TestEsi implements EsiClient {
         indexPrices.clear();
         pricesDown = false;
         pricesAsked = 0;
+        pricesModified = PRICES_MODIFIED;
     }
 
     private final Map<Integer, MarketPrice> indexPrices = new ConcurrentHashMap<>();
     private volatile boolean pricesDown;
     private volatile int pricesAsked;
+    /** ESI's {@code Last-Modified} for the price list: when CCP last changed it. */
+    public static final Instant PRICES_MODIFIED = Instant.parse("2026-11-18T20:41:10Z");
+    private volatile Instant pricesModified = PRICES_MODIFIED;
+
+    /** What {@code /markets/prices} says it was last changed. */
+    public void pricesModifiedAt(Instant modified) {
+        pricesModified = modified;
+    }
 
     /** CCP's adjusted price of an item, as ESI's {@code /markets/prices} would give it. A null average is left out, as ESI does. */
     public void adjustedPrice(int type, String adjusted) {
@@ -99,7 +108,7 @@ public class TestEsi implements EsiClient {
         if (pricesDown) {
             return EsiResult.failed("test ESI is down for /markets/prices");
         }
-        return EsiResult.updated(List.copyOf(indexPrices.values()), Instant.now().plusSeconds(3600));
+        return EsiResult.updated(List.copyOf(indexPrices.values()), Instant.now().plusSeconds(3600), pricesModified);
     }
 
     public void sell(int type, String price) {

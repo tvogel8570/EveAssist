@@ -87,8 +87,14 @@ class EsiLiveIT {
         assertThat(result.data()).anySatisfy(price -> assertThat(price.adjustedPrice()).isEqualByComparingTo("0"));
         assertThat(result.data()).anySatisfy(price -> assertThat(price.averagePrice()).isNull());
         assertThat(result.expires()).isAfter(Instant.now());
-        System.out.println("market prices read: " + result.data().size() + " rows, expires " + result.expires());
+        // ESI sends Last-Modified for this route. It is not asserted to be in the past: on 2026-11-18 it was 20 minutes ahead of ESI's own
+        // Date header, so it is kept as a label and not read as an age (see AdjustedPriceAge)
+        assertThat(result.lastModified()).isNotNull();
+        System.out.println("market prices read: " + result.data().size() + " rows, last modified " + result.lastModified()
+                + ", expires " + result.expires());
 
-        assertThat(client.marketPrices().outcome()).isEqualTo(EsiResult.Outcome.UNCHANGED);
+        var again = client.marketPrices();
+        assertThat(again.outcome()).isEqualTo(EsiResult.Outcome.UNCHANGED);
+        assertThat(again.lastModified()).isEqualTo(result.lastModified());
     }
 }

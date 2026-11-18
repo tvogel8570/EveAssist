@@ -6,7 +6,6 @@ import com.eveassist.market.internal.AdjustedPriceRepository;
 import com.eveassist.sde.TypeId;
 import java.math.BigDecimal;
 import java.time.Clock;
-import java.time.Instant;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
@@ -44,17 +43,17 @@ public class AdjustedPriceService {
         var now = clock.instant();
         String problem = null;
         switch (result.outcome()) {
-            case UPDATED -> prices.replaceAll(result.data(), now);
+            case UPDATED -> prices.replaceAll(result.data(), now, result.lastModified());
             case UNCHANGED -> {
                 if (prices.hasAny()) {
-                    prices.confirm(now);
+                    prices.confirm(now, result.lastModified());
                 } else {
                     problem = "ESI says its prices have not changed, but none are stored";
                 }
             }
             case FAILED -> problem = result.problem();
         }
-        return new AdjustedPriceRefresh(prices.fetchedAt().orElse(null), problem);
+        return new AdjustedPriceRefresh(prices.age().orElse(null), problem);
     }
 
     /** The stored adjusted price of each item that has one. An item with none is left out. */
@@ -62,8 +61,8 @@ public class AdjustedPriceService {
         return prices.pricesOf(types);
     }
 
-    /** When the stored prices were last known to be ESI's current copy, or empty if they never were. */
-    public Optional<Instant> asOf() {
-        return prices.fetchedAt();
+    /** How old the stored prices are, in both senses (see {@link AdjustedPriceAge}), or empty if there are none. */
+    public Optional<AdjustedPriceAge> age() {
+        return prices.age();
     }
 }

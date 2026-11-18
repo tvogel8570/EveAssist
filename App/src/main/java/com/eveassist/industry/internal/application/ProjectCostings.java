@@ -100,7 +100,7 @@ public class ProjectCostings {
         var warnings = new ArrayList<>(comparison.chosen().warnings());
         warnings.addAll(noFacility);
         return new ProjectCostResult(id, project.version(), recipes.sdeVersion(), oldestBoughtPrice(comparison.chosen(), prices),
-                adjustedPrices.asOf().orElse(null), comparison, warnings);
+                adjustedPrices.age().orElse(null), comparison, warnings);
     }
 
     /** The builder's level in each skill the item's blueprint requires that saves time. A skill the developer did not type is level 0. */
