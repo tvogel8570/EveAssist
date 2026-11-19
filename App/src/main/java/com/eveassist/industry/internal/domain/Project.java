@@ -124,6 +124,25 @@ public class Project {
         this.status = ProjectStatus.DRAFT;
     }
 
+    /**
+     * Replaces every input with the given ones, which is how a new version is made from a quote: what the quote was issued from becomes the
+     * Draft's inputs. The project must be a Draft, so call {@link #reopen()} first. The caller has made sure the facilities exist.
+     */
+    public void replaceInputs(
+            List<PlanProduct> newProducts, Set<TypeId> newBoughtParts, Map<TypeId, ProjectItem> newItems,
+            Map<TypeId, PlanPrice> newPrices, ProjectConfig newConfig) {
+        requireDraft();
+        products.clear();
+        products.addAll(newProducts);
+        boughtParts.clear();
+        boughtParts.addAll(newBoughtParts);
+        items.clear();
+        items.putAll(newItems);
+        prices.clear();
+        prices.putAll(newPrices);
+        config = newConfig;
+    }
+
     /** Adding a product the project already has adds to its quantity. A product the plan did not have is fine. */
     public void addProduct(TypeId type, long quantity) {
         requireDraft();

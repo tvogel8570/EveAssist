@@ -77,11 +77,29 @@ class ProjectTest {
                 () -> project.keepPricesFor(Set.of()), () -> project.settings(ProjectSettings.defaults()),
                 () -> project.priceSide(PriceSide.BUY), () -> project.defaultPolicy(SplitPolicy.LEAST_COST),
                 () -> project.defaultFacility(null), () -> project.builder(ProjectBuilder.NONE), () -> project.buyer("B", "n"),
-                project::lock);
+                () -> project.replaceInputs(List.of(), Set.of(), Map.of(), Map.of(), ProjectConfig.defaults()), project::lock);
 
         for (var edit : edits) {
             assertThatThrownBy(edit::run).isInstanceOf(ProjectLockedException.class);
         }
+    }
+
+    @Test
+    void replacingTheInputsReplacesEveryOneOfThem() {
+        var project = draft();
+        project.buyPart(PART);
+        project.setItem(ProjectItem.typed(SHIP));
+        project.setPrice(ORE, PRICE);
+        var config = ProjectConfig.defaults().withPriceSide(PriceSide.BUY);
+
+        project.replaceInputs(List.of(new PlanProduct(PART, 7)), Set.of(ORE), Map.of(PART, ProjectItem.typed(PART)),
+                Map.of(PART, PRICE), config);
+
+        assertThat(project.products()).containsExactly(new PlanProduct(PART, 7));
+        assertThat(project.boughtParts()).containsExactly(ORE);
+        assertThat(project.items()).containsOnlyKeys(PART);
+        assertThat(project.prices()).containsOnlyKeys(PART);
+        assertThat(project.config()).isEqualTo(config);
     }
 
     @Test

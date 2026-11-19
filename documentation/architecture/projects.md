@@ -206,8 +206,24 @@ only one in this module. A quote is deleted by `deleteQuote` or with its project
   A **stored example of format 1** (`src/test/resources/documents/`, written by the application from two Haulers in an Azbel) is read through the repository by
   `JdbcProjectCostingRepositoryIT`, so a change that would stop old documents from being read fails a test. **Measured sizes:** the costing document is 2.1 KB and the trace 3.6 KB for
   a project of two jobs, so a project of nine jobs, such as the Golem, is expected to be about four times that. That is **not measured**.
-- **Not yet written:** the same for a quote's costing and trace (the trace purge leaving the quote as it was), the facility repository, and the use cases `issue`,
-  `newVersionFrom`, `deleteQuote` and the queries.
+- **Built** (2026-11-18): the quote use cases. `ProjectQuoting.issue` takes the version the developer saw and needs a **stored costing for that very version that can be
+  quoted**: an edit since the costing gives `CostingOutOfDateException` ("cost it again"), a blocking warning or no price gives `NotQuotableException`, a past expiry or over-long
+  text gives `InvalidQuoteException`, and a project that is not a Draft is locked. It writes the quote (with `QuoteInputsV1`, the inputs it was costed from), locks the project, and
+  **moves the Draft's costing and trace into the quote**, all in one SQL transaction that itself refuses a costing for another version. `newVersionFrom` makes a Quoted project a
+  Draft again with the quote's inputs, `deleteQuote` deletes one, and `ProjectQuoteQueries` lists and reads quotes with their frozen costing and trace. Tested by `ProjectQuotingIT`,
+  `QuoteInputsTest` and a stored example of format 1 of the inputs. The end-to-end invariant is tested: **a new version, costed again, gives the quote's delivered cost to the digit.**
+- **Mechanics decided in the code, which the note had left open (the developer is to confirm):**
+  1. **The Draft's costing moves.** At issue the Draft's costing and trace are copied into the quote and the Draft's own are deleted, so a Quoted project has no Draft costing, and after
+     a new version there is none until it is costed. One source of truth for a number a buyer was given.
+  2. **A facility is restored by its id when it still exists.** A quote keeps the values of the facilities it was costed with. A new version refers to a facility that still exists, with
+     its values as they are **now**, and reports the ones that changed (`changedFacilities`) so the developer is told before costing; a facility that is gone is left out (its items and the
+     default fall back to none) and reported (`goneFacilities`), and costing then says `NO_FACILITY`.
+  3. **Issuing does not change the Draft's own buyer and note.** The quote is issued with the buyer and note given (or the Draft's when none are), and the quote's inputs hold those. The
+     project's tables hold the Draft's, so they can differ from the latest quote on these two fields only.
+  4. **A new version applies to a Quoted project only** (`ProjectNotQuotedException` otherwise), so it can never overwrite a Draft's unsaved work.
+  5. **Deleting a quote** deletes it with its costing and trace; if it was the only quote of a Quoted project, the project is a Draft again (its version rises); numbers are never reused.
+- **Not yet written:** the queries for the project pages (overviews, the Draft's details with the costing and whether it is out of date), shareable text and CSV for a quote, the
+  facility repository, and the purge of an archived project's traces.
 - Use case tests with a fake repository and fake ports: *issue refused on a stale costing*, *edit refused on a quoted project*, *new version from a
   quote* round trip, *add a product the plan did not have*.
 - A document test per stored version, loading or rendering a stored example (see the version rules above).

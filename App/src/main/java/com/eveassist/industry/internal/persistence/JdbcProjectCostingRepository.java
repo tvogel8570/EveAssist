@@ -6,34 +6,19 @@ import com.eveassist.industry.internal.application.CostingDocumentV1;
 import com.eveassist.industry.internal.application.ProjectCostingRepository;
 import com.eveassist.industry.internal.application.StoredCosting;
 import com.eveassist.industry.internal.application.TraceDocumentV1;
-import com.eveassist.industry.internal.application.UnreadableDocumentException;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.Optional;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
-import tools.jackson.core.StreamWriteFeature;
-import tools.jackson.databind.DeserializationFeature;
-import tools.jackson.databind.json.JsonMapper;
 
 /**
- * The Draft's costing and trace as JSON in the tables. The documents are plain records, so they are written and read as they are. The
- * mapper is this class's own, and not the application's shared one, so that what is stored does not change when someone changes how the
- * application writes JSON elsewhere. Each document is read by its format version, which is a column and not part of the JSON.
- *
- * <p>Two of the mapper's settings are insurance and are not what makes the tests pass today: Jackson 3 already ignores a field it does
- * not know (so a document of the same format that gained one is still read), and Postgres {@code jsonb} already stores a number such as
- * {@code 1E+3} as {@code 1000}. They are set so that neither depends on a default staying as it is, or on the column staying
- * {@code jsonb}.
+ * The Draft's costing and trace as JSON in the tables, written and read by {@link DocumentJson}. Each document is read by its format
+ * version, which is a column and not part of the JSON.
  */
 @Repository
 class JdbcProjectCostingRepository implements ProjectCostingRepository {
-
-    private static final JsonMapper JSON = JsonMapper.builder()
-            .enable(StreamWriteFeature.WRITE_BIGDECIMAL_AS_PLAIN)
-            .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-            .build();
 
     private final JdbcClient jdbc;
 
@@ -77,7 +62,7 @@ class JdbcProjectCostingRepository implements ProjectCostingRepository {
                 .param("delivered", costing.deliveredCost())
                 .param("quotable", costing.quotable())
                 .param("format", CostingDocumentV1.FORMAT)
-                .param("document", write(costing.document()))
+                .param("document", DocumentJson.write(costing.document()))
                 .query(Long.class)
                 .optional();
         if (costingId.isEmpty()) {
@@ -91,7 +76,7 @@ class JdbcProjectCostingRepository implements ProjectCostingRepository {
                 """)
                 .param("costing", costingId.get())
                 .param("format", TraceDocumentV1.FORMAT)
-                .param("document", write(trace))
+                .param("document", DocumentJson.write(trace))
                 .update();
         return SaveOutcome.SAVED;
     }
@@ -109,7 +94,7 @@ class JdbcProjectCostingRepository implements ProjectCostingRepository {
                 .query((rs, n) -> new StoredCosting(rs.getLong("costed_project_version"), rs.getString("costed_sde_version"),
                         rs.getTimestamp("prices_as_of") == null ? null : rs.getTimestamp("prices_as_of").toInstant(),
                         rs.getTimestamp("costed_at").toInstant(), rs.getBigDecimal("delivered_cost"), rs.getBoolean("quotable"),
-                        readCosting(rs.getInt("document_format_version"), rs.getString("document"))))
+                        DocumentJson.readCosting(rs.getInt("document_format_version"), rs.getString("document"))))
                 .optional();
     }
 
@@ -122,33 +107,7 @@ class JdbcProjectCostingRepository implements ProjectCostingRepository {
                 """)
                 .param("id", id.value())
                 .param("owner", viewer.accountId().value())
-                .query((rs, n) -> readTrace(rs.getInt("document_format_version"), rs.getString("document")))
+                .query((rs, n) -> DocumentJson.readTrace(rs.getInt("document_format_version"), rs.getString("document")))
                 .optional();
-    }
-
-    private static CostingDocumentV1 readCosting(int format, String json) {
-        if (format != CostingDocumentV1.FORMAT) {
-            throw new UnreadableDocumentException("No reader for a costing document of format " + format);
-        }
-        return read(json, CostingDocumentV1.class);
-    }
-
-    private static TraceDocumentV1 readTrace(int format, String json) {
-        if (format != TraceDocumentV1.FORMAT) {
-            throw new UnreadableDocumentException("No reader for a trace document of format " + format);
-        }
-        return read(json, TraceDocumentV1.class);
-    }
-
-    private static <T> T read(String json, Class<T> type) {
-        try {
-            return JSON.readValue(json, type);
-        } catch (RuntimeException e) {
-            throw new UnreadableDocumentException("A stored " + type.getSimpleName() + " cannot be read", e);
-        }
-    }
-
-    private static String write(Object document) {
-        return JSON.writeValueAsString(document);
     }
 }

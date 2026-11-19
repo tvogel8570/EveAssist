@@ -1,0 +1,79 @@
+{
+  "items": [
+    {
+      "me": 10,
+      "te": 20,
+      "type": 1001,
+      "policy": null,
+      "skills": [
+        {
+          "level": 5,
+          "skill": 11442
+        },
+        {
+          "level": 3,
+          "skill": 11452
+        }
+      ],
+      "facility": null,
+      "blueprintSource": "typed",
+      "blueprintCostPerRun": 0.0
+    }
+  ],
+  "config": {
+    "note": "deliver by contract",
+    "builder": {
+      "industry": 5,
+      "advancedIndustry": 5,
+      "implantTimePercent": 0.0
+    },
+    "buyerName": "Buyer",
+    "priceSide": "sell",
+    "quoteMode": "margin",
+    "quoteStep": 1000.0,
+    "iskPerHour": 0.0,
+    "contractFee": 10000.0,
+    "defaultPolicy": {
+      "strategy": "least_cost",
+      "maxJobSeconds": null
+    },
+    "marginPercent": 20.0,
+    "premiumPercent": 0.0,
+    "defaultFacility": "7eb704cb-f86d-4891-8063-9b5b9581e08f",
+    "iskPerCubicMeter": 0.0
+  },
+  "prices": [
+    {
+      "buy": 4.0,
+      "asOf": "2026-11-18T12:00:00Z",
+      "sell": 5.0,
+      "type": 34
+    },
+    {
+      "buy": 8.0,
+      "asOf": "2026-11-18T12:00:00Z",
+      "sell": 10.0,
+      "type": 35
+    }
+  ],
+  "products": [
+    {
+      "type": 1001,
+      "quantity": 2
+    }
+  ],
+  "facilities": [
+    {
+      "id": "7eb704cb-f86d-4891-8063-9b5b9581e08f",
+      "taxPercent": 0.0,
+      "rigTimePercent": 0.0,
+      "rigMaterialPercent": 0.0,
+      "sccSurchargePercent": 4.0,
+      "structureCostPercent": 4.0,
+      "structureTimePercent": 20.0,
+      "systemCostIndexPercent": 2.0,
+      "structureMaterialPercent": 1.0
+    }
+  ],
+  "boughtParts": []
+}
