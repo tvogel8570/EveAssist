@@ -17,6 +17,26 @@ the work on the left (settings, facilities, jobs, delivered cost) and the **quot
 a change to a margin, a blueprint or a rate shows its effect on the price at once. On a narrow screen the quote card moves
 below the work. Layouts A (one long page) and B (tabs) were not chosen.
 
+### The first slice of the page
+
+Decided with the developer on 2026-11-19. The developer reviewed the formulas ([Costing components](costing-detail.md)) and will change
+nothing until they can compare **worked examples** with the game's own screens, so the first slice is the one that makes that comparison
+possible, and the rest of the editing follows it.
+
+- **Comparison first.** A **Projects list** with *Start from a plan*, and a **project page** that shows the stored costing job by job
+  **in the shape of the game's Industry window**: the materials, the *Job duration modifiers* hover and the cost hover (estimated item value,
+  system cost index line, structure role bonus, gross cost, SCC surcharge, total), the totals, and the quote card. Editing is kept small: a typed
+  facility form, the ME and TE of each item, and *Cost it*. The rest of the controls from layout C come in later slices.
+- **Menu.** The page has **its own "Projects" link beside Plans** in the main menu.
+- **How a job's costing is laid out** is shown as three alternatives in `documentation/mockups/project-compare.html` for the developer to
+  choose from: **A** cards that mirror the game's window and its two hovers, **B** a table with a "game shows" column where the developer types
+  what the game shows and the page marks every line that differs, and **C** a copyable text block laid out like the hovers. The mockup uses two
+  real readings: a wormhole job (typed index) and a Dodenvale job (the index from ESI, which differs from the game's by a few ISK).
+- **What each line must let the developer see** (from [Costing trace](#costing-trace)): the exact product before rounding beside the used
+  quantity, the time with its modifier lines, the index and where it came from (typed or ESI, and its age), and the estimated item value. The
+  window rounds each cost line to whole ISK and adds the rounded gross cost and taxes, so the page shows the total the way the window does, with the
+  exact total beside it.
+
 ## Lifecycle
 
 Decided with the developer on 2026-11-17, and made exact on 2026-11-18 (the lock, the products and the prices).
@@ -292,8 +312,9 @@ warnings cannot show which of those differs, and a trace that lacks the prices' 
   time, so a slow build is not shown as cheaper than a fast one just because its materials are cheaper.
 - **Job size per item.** The default is one job up to the job-length limit, then split. The developer expects this to
   change.
-- **Where the project's pages sit** in the menu, and how a project is started from the Blueprints page ("Load into
-  project" is shown but off there, see [Blueprints page](manufacturing-invention.md#blueprints-page)).
+- **How a project is started from the Blueprints page** ("Load into project" is shown but off there, see
+  [Blueprints page](manufacturing-invention.md#blueprints-page)). Where the project's pages sit in the menu is decided (a link beside Plans).
+- **Which of the three compare layouts** (A, B or C in `documentation/mockups/project-compare.html`) the page uses.
 - **The currency format** on the shareable text.
 - **A facility's structure and rig bonus table**: where it lives, and how it is kept right after patches.
 - **Wormhole index, details left open:** how old a typed index may be before the page warns (a number of days); whether the

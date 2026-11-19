@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Project costing, compared with the game: mockups</title>
+<style>
+:root{--bg:#1d232a;--panel:#232a33;--panel2:#2a323d;--line:#38424f;--text:#e6ebf2;--dim:#9aa7b8;--pri:#6d78f0;--ok:#35c28d;--warn:#e8b64a;--err:#ee6b7e;--r:8px;
+--gbg:#0c0f13;--gline:#2b323b;--gtext:#e9edf2;--gdim:#8d97a3;--gorange:#f08a1a;--ggreen:#5fd08b;--gred:#ff5a52;--gblue:#3d86d9}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,sans-serif}
+.bar{position:sticky;top:0;z-index:20;display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:8px 16px;background:#3a2f12;border-bottom:1px solid #6b5518;color:#f3d98a}
+.bar button{background:#2a2410;color:#f3d98a;border:1px solid #6b5518;border-radius:6px;padding:4px 10px;cursor:pointer}
+.bar button.on{background:#f3d98a;color:#2a2410}
+.bar .sp{flex:1}.bar .sm{font-size:12px;opacity:.85}.bar label{cursor:pointer}
+main{max-width:1280px;margin:0 auto;padding:16px}
+h1{font-size:21px;margin:0 0 2px}h2{font-size:15px;margin:0 0 8px}
+.dim{color:var(--dim)}.ok{color:var(--ok)}.warn{color:var(--warn)}.err{color:var(--err)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:14px;min-width:0}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}.sp{flex:1}
+.badge{display:inline-block;padding:1px 8px;border-radius:99px;font-size:12px;border:1px solid var(--line);color:var(--dim)}
+.badge.warn{color:var(--warn);border-color:var(--warn)}.badge.ok{color:var(--ok);border-color:var(--ok)}
+button.b{background:var(--pri);color:#fff;border:0;border-radius:6px;padding:6px 12px;cursor:pointer;font:inherit}
+button.b.ghost{background:transparent;border:1px solid var(--line);color:var(--text)}
+select,input[type=text]{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:5px 8px;font:inherit;max-width:100%}
+.two{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(260px,1fr);gap:14px;align-items:start}
+@media(max-width:960px){.two{grid-template-columns:minmax(0,1fr)}}
+.seg{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.seg button{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:6px 10px;cursor:pointer;font:inherit;text-align:left}
+.seg button.on{border-color:var(--pri);box-shadow:inset 0 0 0 1px var(--pri)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}
+.chip{background:var(--panel2);border:1px solid var(--line);border-radius:99px;padding:2px 10px;font-size:12px;color:var(--dim)}
+.chip b{color:var(--text);font-weight:600}
+.note{border-left:3px solid var(--warn);padding:6px 10px;color:var(--dim);margin:10px 0;background:rgba(232,182,74,.07)}
+.scroll{overflow-x:auto}
+/* ---------- A: mirrors the game window ---------- */
+.win{background:var(--gbg);border:1px solid var(--gline);border-radius:6px;color:var(--gtext);padding:14px;display:grid;gap:14px}
+.win .top{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(170px,1fr);gap:14px;align-items:start}
+.win .tips{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:14px;align-items:start}
+@media(max-width:700px){.win .top,.win .tips{grid-template-columns:minmax(0,1fr)}}
+.win h3{margin:0 0 8px;font-size:11px;letter-spacing:.08em;color:var(--gdim);font-weight:600;text-transform:uppercase}
+.mats{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:8px}
+.mat{text-align:center}
+.ico{width:46px;height:46px;margin:0 auto 3px;border:1px solid var(--gorange);background:#15191f;position:relative}
+.ico:after{content:"";position:absolute;inset:9px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff3,transparent 60%),var(--c)}
+.c0:after{--c:#c9a37a}.c1:after{--c:#d77a3a}.c2:after{--c:#8dbf4a}.c3:after{--c:#8da0b5}.c4:after{--c:#58b878}.c5:after{--c:#a78ab5}
+.mat .q{font-size:12px;border:1px solid var(--gorange);background:#15191f;padding:0 4px;display:inline-block;min-width:54px}
+.mat .nm{font-size:11px;color:var(--gdim);margin-top:2px}
+.mat .ex{font-size:11px;color:var(--gorange);margin-top:2px;line-height:1.25}.mat .ex span{color:var(--gdim)}
+.bp{text-align:center}
+.disc{width:130px;height:130px;margin:6px auto;border-radius:50%;border:3px solid var(--gorange);display:grid;place-items:center;background:radial-gradient(circle,#1a2330,#0c0f13)}
+.disc .tile{width:64px;height:64px;border:2px solid #5a6b7d;background:#233044;display:grid;place-items:center;font-size:11px;color:var(--gdim)}
+.bars{display:flex;justify-content:center;gap:12px;margin:8px 0}
+.bars div{width:86px;text-align:right;font-size:12px;background:#10202f;border:1px solid var(--gline);padding:1px 6px;color:var(--gblue);position:relative}
+.bars div:after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--gblue)}
+.bp .run{font-size:11px;letter-spacing:.08em;color:var(--gdim)}.bp .big{font-size:20px}
+.tip{background:#05070a;border:1px solid #3b434d;border-radius:3px;margin-bottom:12px;font-size:13px}
+.tip .t{padding:6px 10px;font-size:11px;letter-spacing:.07em;color:var(--gdim);text-transform:uppercase;background:#11161c}
+.tip .r{display:flex;justify-content:space-between;gap:10px;padding:4px 10px}.tip .r span+span{white-space:nowrap}
+.tip .r3{display:grid;grid-template-columns:1fr auto auto;gap:12px;padding:4px 10px}.tip .r3 span+span{white-space:nowrap;text-align:right}
+.tip .r.sec{background:#161b22;color:var(--gdim);font-size:11px;letter-spacing:.07em;text-transform:uppercase}
+.tip .r.in{padding-left:22px}.tip .g{color:var(--ggreen)}.tip .rd{color:var(--gred)}.tip .tot{background:#1f3b4d;font-weight:600}
+.tip .pips{letter-spacing:3px;color:#cfd6de}
+.dur{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;border-top:1px solid var(--gline);padding-top:10px;margin-top:2px}
+.dur small{display:block;font-size:10px;letter-spacing:.08em;color:var(--gdim);text-transform:uppercase}
+.dur b{font-size:18px}
+.winfoot{grid-column:1/-1;color:var(--gdim);font-size:12px;border-top:1px solid var(--gline);padding-top:8px}
+/* ---------- B: table with a game column ---------- */
+table{width:100%;border-collapse:collapse}
+th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+th{color:var(--dim);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+tr.sec td{background:var(--panel2);color:var(--dim);font-size:12px;text-transform:uppercase;letter-spacing:.05em}
+td .sub{color:var(--dim);font-size:12px}
+input.g{width:120px;text-align:right}
+tr.miss td{background:rgba(238,107,126,.09)}tr.miss .d{color:var(--err);font-weight:700}tr.hit .d{color:var(--ok)}
+.sum{margin:0 0 10px}
+/* ---------- C: copyable text ---------- */
+pre.txt{background:#0c0f13;border:1px solid var(--line);border-radius:6px;padding:12px;margin:8px 0 0;overflow-x:auto;font:12.5px/1.5 ui-monospace,Menlo,Consolas,monospace;color:#dfe6ee;white-space:pre}
+.hide{display:none}
+</style>
+</head>
+<body>
+<div class="bar">
+  <b>Mockup, fake data</b>
+  <span class="sm">numbers taken from two game readings (a wormhole job and a Dodenvale job)</span>
+  <span>Layout:</span>
+  <button data-v="A" class="on">A · Cards like the game window</button>
+  <button data-v="B">B · Table with a "game shows" column</button>
+  <button data-v="C">C · Copyable text</button>
+  <span class="sp"></span>
+  <label><input type="checkbox" id="exact"> show exact numbers</label>
+</div>
+<main>
+  <div class="card">
+    <div class="row">
+      <div><h1>Cap Booster 800 and Atron for Kestrel Dawn</h1>
+        <div class="dim">Project page · compare the costing with the game's Industry window, job by job</div></div>
+      <span class="sp"></span>
+      <span class="badge ok">Draft · v7</span>
+      <span class="badge warn" title="The project was edited after this costing">Out of date: project edited</span>
+      <button class="b">Cost it</button><button class="b ghost">Refresh prices</button>
+    </div>
+    <div class="chips" style="margin:10px 0 0">
+      <span class="chip">Costed <b>2026-11-19 14:02 UTC</b></span>
+      <span class="chip">Jita prices <b>14 min old</b></span>
+      <span class="chip">Adjusted prices confirmed <b>22 min ago</b> · ESI last-modified 12:40 UTC</span>
+      <span class="chip">SDE <b>2026-10-26</b></span>
+    </div>
+  </div>
+  <div class="two">
+    <div>
+      <div class="seg" id="jobs"></div>
+      <div class="chips" id="facts"></div>
+      <div id="indexpick" class="row" style="margin-bottom:10px"></div>
+      <div id="view"></div>
+    </div>
+    <div class="card dim" style="text-align:center;padding:30px 14px">
+      <h2 style="color:var(--text)">Quote card</h2>
+      Stays on the right, always in view, as in the project-page mockup (layout C).<br>Not part of this mockup.
+    </div>
+  </div>
+</main>
+<script>
+"use strict";
+const DATA = {"jobs": [{"title": "Cap Booster 800", "runs": 235, "perRun": 10, "units": 2350, "blueprint": "copy, ME 10 / TE 20, 1,500 runs left", "facility": {"name": "J100640 Azbel", "space": "wormhole", "rigs": "none", "tax": "0%", "scc": "4%", "structure": "Azbel: materials -1%, fee -4%, time -20%"}, "builder": "Industry V, Advanced Industry V, no implant", "me": 10, "te": 20, "materials": [{"name": "Tritanium", "base": 1502, "exact": "314496.27", "two": "314496.27", "qty": 314497, "game": "0.31M"}, {"name": "Pyerite", "base": 440, "exact": "92129.4", "two": "92129.40", "qty": 92130, "game": "92.13K"}, {"name": "Mexallon", "base": 252, "exact": "52765.02", "two": "52765.02", "qty": 52766, "game": "52.77K"}, {"name": "Nocxium", "base": 13, "exact": "2722.005", "two": "2722.01", "qty": 2723, "game": "2,723"}, {"name": "Zydrine", "base": 6, "exact": "1256.31", "two": "1256.31", "qty": 1257, "game": "1,257"}, {"name": "Megacyte", "base": 6, "exact": "1256.31", "two": "1256.31", "qty": 1257, "game": "1,257"}], "time": {"base": 900, "factors": [{"label": "Blueprint Time Efficiency", "factor": 0.8, "saved": 20.0}, {"label": "Skills and Implants", "factor": 0.68, "saved": 32.0}, {"label": "Structure Role Bonus", "factor": 0.8, "saved": 20.0}], "exact": 92044.8, "seconds": 92045}, "variants": {"typed": {"label": "typed 0.56835%, entered 6 h ago", "eiv": 10280639.49, "idx": 0.56835, "fee": 58430.014541415, "bonus": -2337.2005816566, "gross": 56092.8139597584, "scc": 411225.5796, "totalExact": 467318.3935597584, "window": {"eiv": 10280639, "fee": 58430, "bonus": -2337, "gross": 56093, "scc": 411226, "taxes": 411226, "total": 467319}}}, "default": "typed", "game": {"duration": "1D 01:34:05", "eiv": "10,280,639", "fee": "58,430", "bonus": "-2,337", "gross": "56,093", "scc": "411,226", "total": "467,319"}}, {"title": "Atron", "runs": 1, "perRun": 1, "units": 1, "blueprint": "copy, ME 10 / TE 20, 1 run left", "facility": {"name": "Dodenvale Azbel", "space": "high-sec", "rigs": "none", "tax": "0%", "scc": "4%", "structure": "Azbel: materials -1%, fee -4%, time -20%"}, "builder": "Industry V, Advanced Industry V, implant BX-804 (-4%)", "me": 10, "te": 20, "materials": [{"name": "Tritanium", "base": 32000, "exact": "28512", "two": "28512.00", "qty": 28512, "game": "28.51K"}, {"name": "Pyerite", "base": 6000, "exact": "5346", "two": "5346.00", "qty": 5346, "game": "5,346"}, {"name": "Mexallon", "base": 2500, "exact": "2227.5", "two": "2227.50", "qty": 2228, "game": "2,228"}, {"name": "Isogen", "base": 500, "exact": "445.5", "two": "445.50", "qty": 446, "game": "446"}], "time": {"base": 6000, "factors": [{"label": "Blueprint Time Efficiency", "factor": 0.8, "saved": 20.0}, {"label": "Skills and Implants", "factor": 0.6528, "saved": 34.72}, {"label": "Structure Role Bonus", "factor": 0.8, "saved": 20.0}], "exact": 2506.752, "seconds": 2507}, "variants": {"esi": {"label": "ESI 0.0201 (rounded to four decimals)", "eiv": 367707.54, "idx": 2.01, "fee": 7390.921554, "bonus": -295.63686216, "gross": 7095.28469184, "scc": 14708.3016, "totalExact": 21803.58629184, "window": {"eiv": 367708, "fee": 7391, "bonus": -296, "gross": 7095, "scc": 14708, "taxes": 14708, "total": 21803}}, "typed": {"label": "typed 2.00744%", "eiv": 367707.54, "idx": 2.00744, "fee": 7381.508240976, "bonus": -295.26032963904, "gross": 7086.24791133696, "scc": 14708.3016, "totalExact": 21794.54951133696, "window": {"eiv": 367708, "fee": 7382, "bonus": -295, "gross": 7086, "scc": 14708, "taxes": 14708, "total": 21794}}}, "default": "esi", "game": {"duration": "00:41:47", "eiv": "367,708", "fee": "7,382", "bonus": "-295", "gross": "7,086", "scc": "14,708", "total": "21,794"}}]};
+const st = {view:'A', job:0, variant:{0:DATA.jobs[0].default,1:DATA.jobs[1].default}, game:{0:{},1:{}}};
+const $ = id => document.getElementById(id);
+const fmt = n => (Math.round(n)||0).toLocaleString('en-US');
+const dec = (n,d) => n.toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
+const short = q => q>=100000 ? (q/1e6).toFixed(2)+'M' : q>=10000 ? (q/1e3).toFixed(2)+'K' : fmt(q);
+const pad = n => String(n).padStart(2,'0');
+const dur = s => {const d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),x=s%60; return (d?d+'D ':'')+pad(h)+':'+pad(m)+':'+pad(x);};
+const sgn = n => (n<0?'-':n>0?'+':'')+fmt(Math.abs(n));
+const commas = s => String(s).replace(/^(-?\d+)/,m=>m.replace(/\B(?=(\d{3})+(?!\d))/g,','));
+const steps = m => (Number(m.exact)===Number(m.two)) ? commas(m.two) : commas(m.exact)+' → '+commas(m.two);
+const runs = n => n+' run'+(n===1?'':'s');
+const J = () => DATA.jobs[st.job];
+const V = () => J().variants[st.variant[st.job]];
+const factor = j => (1-j.me/100)*0.99;
+
+function facts(j,v){
+  const f=j.facility;
+  $('facts').innerHTML=[['Blueprint',j.blueprint],['Facility',`${f.name} (${f.space})`],['Rigs',f.rigs],['Tax',f.tax],['SCC',f.scc],
+    ['Index',v.label],['Builder',j.builder]].map(([k,x])=>`<span class="chip">${k} <b>${x}</b></span>`).join('');
+}
+function indexPick(j){
+  const keys=Object.keys(j.variants);
+  $('indexpick').innerHTML = keys.length<2 ? '' : `<span class="dim">Index source for this job:</span>
+    <select id="vsel">${keys.map(k=>`<option value="${k}" ${k===st.variant[st.job]?'selected':''}>${j.variants[k].label}</option>`).join('')}</select>
+    <span class="dim">(the game's own index was 2.00744%; ESI rounds to four decimals)</span>`;
+  const sel=$('vsel'); if(sel) sel.onchange=()=>{st.variant[st.job]=sel.value;render();};
+}
+function indexNote(j,v){
+  return v.label.startsWith('ESI') ? `<div class="note">The index here comes from ESI, which rounds it to four decimals (0.0201). The game used 2.00744%, so the index line differs by a few ISK. Type the index on the facility to close the gap.</div>` : '';
+}
+
+/* ---------------- A ---------------- */
+function viewA(j,v){
+  const ex=$('exact').checked, w=v.window, T=j.time;
+  const mats=j.materials.map((m,i)=>`<div class="mat"><div class="ico c${i%6}"></div><div class="q">${short(m.qty)}</div>
+     ${ex?`<div class="ex">${fmt(m.qty)}<br><span>${steps(m)}</span></div>`:''}<div class="nm">${m.name}</div></div>`).join('');
+  const mods=T.factors.map(f=>`<div class="r"><span>${f.label}</span><span class="g">-${f.saved.toFixed(1)}%</span></div>`).join('');
+  return `<div class="win">
+   <div class="top">
+    <div><h3>Required materials</h3><div class="mats">${mats}</div></div>
+    <div class="bp"><h3>Blueprint copy</h3><div class="run">RUNS</div><div class="big">${j.runs}</div>
+     <div class="disc"><div class="tile">${j.title}</div></div>
+     <div class="bars"><div title="Material efficiency">${j.me}%</div><div title="Time efficiency">${j.te}%</div></div>
+     <div class="run">OUTCOME</div><div>${j.title} × ${fmt(j.units)}</div></div>
+   </div>
+   <div class="tips">
+    <div>
+     <div class="tip"><div class="t">Job duration modifiers</div>${mods}
+       <div class="r in"><span>Industry</span><span class="pips">■■■■■</span></div>
+       <div class="r in"><span>Advanced Industry</span><span class="pips">■■■■■</span></div></div>
+     <div class="dur"><div><small>Job duration</small><b>${dur(T.seconds)}</b></div><div style="text-align:right"><small>Total job cost</small><b>★ ${fmt(w.total)} ISK</b></div></div>
+    </div>
+    <div class="tip"><div class="r"><span>Estimated Items value (EIV)</span><span>${fmt(w.eiv)} ISK</span></div>
+       <div class="r sec"><span>Job gross cost</span></div>
+       <div class="r3"><span>System cost index</span><span>${dec(v.idx,2)}% EIV</span><span>${fmt(w.fee)} ISK</span></div>
+       <div class="r"><span class="g">Bonuses</span><span class="g">${fmt(w.bonus)} ISK</span></div>
+       <div class="r in"><span class="g">Structure Role Bonus</span><span class="g">-4.0%</span></div>
+       <div class="r"><span>Total job gross cost</span><span>${fmt(w.gross)} ISK</span></div>
+       <div class="r sec"><span>Taxes</span></div>
+       <div class="r3"><span class="rd">SCC surcharge</span><span class="rd">+4.00% EIV</span><span class="rd">+${fmt(w.scc)} ISK</span></div>
+       <div class="r"><span>Total taxes</span><span>${fmt(w.taxes)} ISK</span></div>
+       <div class="r tot"><span>Total job cost</span><span>${fmt(w.total)} ISK</span></div></div>
+   </div>
+   <div class="winfoot">Laid out like the game's Industry window and its two hovers, with the game's wording. Beside the game's shortened numbers (0.31M) the page can show the exact ones.
+     Index used ${v.idx}% (the game shows it rounded to two decimals). Exact total ${commas(dec(v.totalExact,2).replace(/,/g,''))}: the window adds the rounded gross cost and taxes.</div>
+  </div>`;
+}
+
+/* ---------------- B ---------------- */
+function parseGame(text,kind){
+  let s=(text||'').trim().replace(/,/g,'').replace(/ISK/i,'').replace('−','-').trim(); if(!s) return null;
+  if(kind==='dur'){
+    const m=s.match(/^(?:(\d+)D\s*)?(\d+):(\d+):(\d+)$/i); if(m) return {v:(+(m[1]||0))*86400+(+m[2])*3600+(+m[3])*60+(+m[4]),tol:.5};
+    const n=parseFloat(s); return isNaN(n)?null:{v:n,tol:.5};
+  }
+  if(kind==='pct'){const n=parseFloat(s); return isNaN(n)?null:{v:n,tol:.05};}
+  const m=s.match(/^(-?[\d.]+)\s*([KkMm])?$/); if(!m) return null;
+  const n=parseFloat(m[1]); if(isNaN(n)) return null;
+  if(m[2]) {const u=m[2].toLowerCase()==='m'?1e6:1e3; return {v:n*u,tol:.005*u+.5};}
+  return {v:n,tol:.5};
+}
+function rowsB(j,v){
+  const w=v.window,T=j.time,r=[],f=factor(j);
+  j.materials.forEach(m=>r.push({sec:'Materials',key:'m'+m.name,label:m.name,sub:`${fmt(m.base)} × ${runs(j.runs)} × ${f.toFixed(3)} = ${steps(m)} → rounded up`,app:m.qty,text:fmt(m.qty),kind:'q',game:m.game}));
+  r.push({sec:'Time',key:'dur',label:'Job duration',sub:`exact ${dec(T.exact,2)} s → nearest second`,app:T.seconds,text:dur(T.seconds),kind:'dur',game:j.game.duration});
+  T.factors.forEach(x=>r.push({sec:'Time',key:'f'+x.label,label:x.label,sub:'',app:-x.saved,text:'-'+x.saved.toFixed(1)+'%',kind:'pct',game:'-'+x.saved.toFixed(1)+'%'}));
+  r.push({sec:'Cost',key:'eiv',label:'Estimated Items value (EIV)',sub:'base materials at adjusted prices',app:w.eiv,text:fmt(w.eiv),kind:'q',game:j.game.eiv});
+  r.push({sec:'Cost',key:'fee',label:'System cost index line',sub:`EIV × ${v.idx}%`,app:w.fee,text:fmt(w.fee),kind:'q',game:j.game.fee});
+  r.push({sec:'Cost',key:'bonus',label:'Structure Role Bonus (-4.0%)',sub:'',app:w.bonus,text:fmt(w.bonus),kind:'q',game:j.game.bonus});
+  r.push({sec:'Cost',key:'gross',label:'Total job gross cost',sub:'',app:w.gross,text:fmt(w.gross),kind:'q',game:j.game.gross});
+  r.push({sec:'Cost',key:'scc',label:'SCC surcharge (4.00% EIV)',sub:'',app:w.scc,text:fmt(w.scc),kind:'q',game:j.game.scc});
+  r.push({sec:'Cost',key:'total',label:'Total job cost',sub:`exact ${dec(v.totalExact,2)}; the window adds the rounded gross cost and taxes`,app:w.total,text:fmt(w.total),kind:'q',game:j.game.total});
+  return r;
+}
+function viewB(j,v){
+  const rows=rowsB(j,v), g=st.game[st.job]; let sec='',html='',filled=0,hits=0;
+  rows.forEach(x=>{
+    if(x.sec!==sec){sec=x.sec;html+=`<tr class="sec"><td colspan="4">${sec}</td></tr>`;}
+    const val=g[x.key]||'', p=parseGame(val,x.kind); let cls='',d='';
+    if(p){filled++; const diff=x.app-p.v; if(Math.abs(diff)<=p.tol){hits++;cls='hit';d='✓ matches';} else {cls='miss';d=(diff>0?'+':'')+(x.kind==='pct'?diff.toFixed(1):fmt(diff));}}
+    html+=`<tr class="${cls}"><td>${x.label}<div class="sub">${x.sub}</div></td><td class="n">${x.text}</td>
+      <td class="n"><input type="text" class="g" data-k="${x.key}" value="${val.replace(/"/g,'&quot;')}" placeholder="from the game"></td><td class="n d">${d}</td></tr>`;
+  });
+  const all=`${filled} of ${rows.length} lines filled in · <b class="${filled&&hits===filled?'ok':filled?'err':'dim'}">${hits} match</b>${filled&&hits<filled?` · <b class="err">${filled-hits} differ</b>`:''}`;
+  return `<div class="card"><div class="row sum"><span>${all}</span><span class="sp"></span>
+    <button class="b ghost" id="fill">Fill with the game's numbers (example)</button><button class="b ghost" id="clear">Clear</button></div>
+    <div class="dim" style="margin-bottom:8px">Type what the game shows beside the app's number. "0.31M" and "92.13K" are read as the game's shortened form, so they match when the app's exact number rounds to them.</div>
+    <div class="scroll"><table><tr><th>Line</th><th class="n">App</th><th class="n">Game shows</th><th class="n">Difference</th></tr>${html}</table></div></div>`;
+}
+function bindB(){
+  document.querySelectorAll('input.g').forEach(i=>i.onchange=()=>{st.game[st.job][i.dataset.k]=i.value;render();});
+  const f=$('fill'); if(f) f.onclick=()=>{const g={};rowsB(J(),V()).forEach(x=>g[x.key]=x.game);st.game[st.job]=g;render();};
+  const c=$('clear'); if(c) c.onclick=()=>{st.game[st.job]={};render();};
+}
+
+/* ---------------- C ---------------- */
+function textC(j,v){
+  const w=v.window,T=j.time,f=factor(j),L=[],p=(a,b)=>a.padEnd(26)+b;
+  const n=(DATA.jobs.indexOf(j)+1);
+  L.push(`Job ${n} of ${DATA.jobs.length} - ${j.title} x ${runs(j.runs)} (${fmt(j.units)} unit${j.units===1?'':'s'})`);
+  L.push(`Blueprint: ${j.blueprint}`,`Facility:  ${j.facility.name} (${j.facility.space}), rigs ${j.facility.rigs}, tax ${j.facility.tax}, SCC ${j.facility.scc}`,`Index:     ${v.label}`,`Builder:   ${j.builder}`,'');
+  L.push('MATERIALS  (base x runs x '+f.toFixed(3)+' = exact -> two decimals, if different -> used)');
+  j.materials.forEach(m=>L.push('  '+m.name.padEnd(12)+fmt(m.base).padStart(7)+' x '+j.runs+' x '+f.toFixed(3)+' = '+steps(m).replace(' → ',' -> ')+' -> '+fmt(m.qty)));
+  L.push('','JOB DURATION MODIFIERS');
+  T.factors.forEach(x=>L.push('  '+p(x.label,'-'+x.saved.toFixed(1)+'%')));
+  L.push('  '+p('Job duration',dur(T.seconds)+'   ('+dec(T.exact,2)+' s, to the nearest second)'),'');
+  const r=(a,b)=>'  '+a.padEnd(34)+b.padStart(14)+' ISK';
+  L.push('JOB COST');
+  L.push(r('Estimated Items value (EIV)',fmt(w.eiv)),r('System cost index '+dec(v.idx,5)+'% EIV',fmt(w.fee)),r('Structure Role Bonus -4.0%',fmt(w.bonus)),
+         r('Total job gross cost',fmt(w.gross)),r('SCC surcharge +4.00% EIV',fmt(w.scc)),r('Total taxes',fmt(w.taxes)),r('Total job cost',fmt(w.total)));
+  L.push('','  (exact total '+dec(v.totalExact,2)+'; the window adds the rounded gross cost and taxes)');
+  return L.join('\n');
+}
+function viewC(j,v){
+  return `<div class="card"><div class="row"><h2 style="margin:0">Job ${st.job+1} as text</h2><span class="sp"></span>
+    <button class="b ghost" id="copy">Copy</button><span class="dim" id="copied"></span></div>
+    <div class="dim">Laid out like the game's hovers, with the exact figures beside the used ones, for pasting next to a screenshot in an issue or a chat.</div>
+    <pre class="txt" id="txt">${textC(j,v).replace(/&/g,'&amp;').replace(/</g,'&lt;')}</pre></div>`;
+}
+function bindC(){
+  const b=$('copy'); if(!b) return;
+  b.onclick=()=>{const t=$('txt').textContent;
+    const done=ok=>{$('copied').textContent=ok?'copied':'select the text and copy it'; if(!ok){const r=document.createRange();r.selectNodeContents($('txt'));const s=getSelection();s.removeAllRanges();s.addRange(r);}};
+    if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(()=>done(true),()=>done(false)); else done(false);};
+}
+
+function render(){
+  const j=J(),v=V();
+  $('jobs').innerHTML=DATA.jobs.map((x,i)=>`<button data-j="${i}" class="${i===st.job?'on':''}"><b>Job ${i+1}</b> · ${x.title} × ${x.runs} run${x.runs>1?'s':''}<br><span class="dim">${x.facility.name}, ${x.facility.space}</span></button>`).join('');
+  document.querySelectorAll('#jobs button').forEach(b=>b.onclick=()=>{st.job=+b.dataset.j;render();});
+  document.querySelectorAll('.bar [data-v]').forEach(b=>b.classList.toggle('on',b.dataset.v===st.view));
+  facts(j,v); indexPick(j);
+  $('view').innerHTML = indexNote(j,v)+(st.view==='A'?viewA(j,v):st.view==='B'?viewB(j,v):viewC(j,v));
+  if(st.view==='B') bindB(); if(st.view==='C') bindC();
+}
+document.querySelectorAll('.bar [data-v]').forEach(b=>b.onclick=()=>{st.view=b.dataset.v;render();});
+$('exact').onchange=render;
+// the address can pick a view: #A, #B2 (layout B, job 2), #B2f (and fill the game column), #A1e (and show exact numbers)
+(function(){const h=(location.hash||'').slice(1).toLowerCase(); if(!h) return;
+  if('abc'.includes(h[0])) st.view=h[0].toUpperCase();
+  if(h[1]==='2') st.job=1;
+  if(h.includes('e')) $('exact').checked=true;
+  if(h.includes('f')){const g={};rowsB(J(),V()).forEach(x=>g[x.key]=x.game);st.game[st.job]=g;}
+})();
+render();
+</script>
+</body>
+</html>
