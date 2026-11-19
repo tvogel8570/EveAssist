@@ -55,6 +55,16 @@ class ProjectRecipes {
                 .collect(Collectors.toCollection(java.util.LinkedHashSet::new));
     }
 
+    /** The parts the project shows, each with whether it is bought: items with a blueprint that are not products and not hidden below a part that is bought. */
+    List<TypeId> visibleParts(Project project) {
+        return new Costing(sde::recipeFor, type -> Optional.empty()).cost(project.products(), project.boughtParts()).lines().stream()
+                .filter(line -> line.buildable() && !project.hasProduct(line.type())).map(LineCost::type).toList();
+    }
+
+    String groupName(TypeId type) {
+        return sde.itemType(type).map(item -> item.groupName()).orElse("");
+    }
+
     Optional<Recipe> recipeFor(TypeId type) {
         return sde.recipeFor(type);
     }

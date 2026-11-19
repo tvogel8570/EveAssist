@@ -59,7 +59,12 @@ final class TwoHaulers {
 
     /** Two Haulers, priced, in a Draft with the builder above and the given facility as the default (or none). */
     ProjectId project(Viewer owner, FacilityId facility) {
-        var id = projects.create(owner, "Two Haulers", null);
+        return project(owner, facility, "Two Haulers", null);
+    }
+
+    /** The same, with a name, started from a plan (or none), which a page shows. */
+    ProjectId project(Viewer owner, FacilityId facility, String name, com.eveassist.industry.PlanId plan) {
+        var id = projects.create(owner, name, plan);
         var version = editing.addProduct(owner, new AddProjectProductCommand(id, HAULER, 2, 0), Map.of(
                 TRITANIUM, quote(TRITANIUM, "5", "4"), PILOTS_MINERAL, quote(PILOTS_MINERAL, "10", "8"))).version();
         version = editing.setItem(owner, new SetProjectItemCommand(id, new ProjectItem(HAULER, BlueprintSource.TYPED, 10, 20,

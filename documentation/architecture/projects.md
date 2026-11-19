@@ -222,8 +222,20 @@ only one in this module. A quote is deleted by `deleteQuote` or with its project
      project's tables hold the Draft's, so they can differ from the latest quote on these two fields only.
   4. **A new version applies to a Quoted project only** (`ProjectNotQuotedException` otherwise), so it can never overwrite a Draft's unsaved work.
   5. **Deleting a quote** deletes it with its costing and trace; if it was the only quote of a Quoted project, the project is a Draft again (its version rises); numbers are never reused.
-- **Not yet written:** the queries for the project pages (overviews, the Draft's details with the costing and whether it is out of date), shareable text and CSV for a quote, the
-  facility repository, and the purge of an archived project's traces.
+- **Built** (2026-11-18): the project page queries, `ProjectQueries`, read-only and never recalculating a costing. `overviews` is the list: each project with its stored cost to the
+  cent and whether that is out of date. A Draft shows **its own** costing, a Quoted project shows its **latest quote's** (frozen, never out of date), and a Draft made from a quote shows
+  none until it is costed, not the quote's as if it were its own. `details` is the whole page in one read: the project with names, its source plan and start date, its items (the built ones,
+  products first, with how each is made, and the skills its blueprint requires with the builder's level), the parts with whether each is bought, the account's facilities, the quotes, and the
+  costing. `facilities` and `searchProducts` feed the pickers. Tested by `ProjectQueriesIT`; removing the Draft/Quoted choice or the "only facilities this project uses" rule (in the list and in the
+  page) makes the matching tests fail.
+- **Why a Draft's costing may be out of date** (`CostingStaleness`): the project was **edited** after it was costed (its version moved), the **SDE** was imported again, or a **facility it uses
+  was changed** after it was costed. The facility reason needed a new column, `facility.updated_at`, which whoever changes a facility must set. The two times come from different clocks (the
+  costing's from the application, the facility's from the database), so a change within moments of a costing may be read either way. The adjusted prices being newer is not a reason: both of
+  their ages are shown beside the costing and the developer decides.
+- **A known gap, for the facility use cases:** deleting a facility sets the project's references to none **without changing the project's version**, so a costing made with that facility looks
+  current when it is not. The use case that deletes (or changes) a facility must bump the version of every project that uses it, or the project page must learn another way. Until the
+  facility use cases exist nothing deletes a facility except SQL.
+- **Not yet written:** shareable text and CSV for a quote, the facility use cases (add, change, delete) and their repository methods, and the purge of an archived project's traces.
 - Use case tests with a fake repository and fake ports: *issue refused on a stale costing*, *edit refused on a quoted project*, *new version from a
   quote* round trip, *add a product the plan did not have*.
 - A document test per stored version, loading or rendering a stored example (see the version rules above).

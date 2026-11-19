@@ -4,6 +4,7 @@ import com.eveassist.identity.Viewer;
 import com.eveassist.industry.PlanId;
 import com.eveassist.industry.ProjectId;
 import com.eveassist.industry.internal.domain.Project;
+import java.util.List;
 import java.util.Optional;
 import org.jmolecules.architecture.hexagonal.SecondaryPort;
 
@@ -24,6 +25,16 @@ public interface ProjectRepository {
      * the version had changed. Throws {@link FacilityNotFoundException} if the project refers to a facility that is not the viewer's.
      */
     Optional<Long> save(Viewer viewer, Project project);
+
+    /**
+     * The viewer's projects by name, active ones first, with the stored cost and whether it is out of date, without recalculating anything.
+     * A Draft's costing is out of date when it was made for an earlier edit of the project, with another SDE than {@code currentSdeVersion},
+     * or before a facility the project uses was last changed.
+     */
+    List<ProjectOverview> overviews(Viewer viewer, String currentSdeVersion, boolean includeArchived);
+
+    /** When the project was started and the plan it started from, which a page shows. Empty when the viewer has no such project. */
+    Optional<ProjectMeta> meta(Viewer viewer, ProjectId id);
 
     /**
      * Renames a project, in either state. The name is not an input of the costing, so this is not an edit: the version stays the

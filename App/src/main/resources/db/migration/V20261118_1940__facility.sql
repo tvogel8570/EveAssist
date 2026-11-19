@@ -14,6 +14,9 @@ CREATE TABLE facility (
     system_cost_index_percent  numeric(10, 6) NOT NULL DEFAULT 0 CHECK (system_cost_index_percent BETWEEN 0 AND 100),
     tax_percent                numeric(7, 4) NOT NULL DEFAULT 0 CHECK (tax_percent BETWEEN 0 AND 100),
     scc_surcharge_percent      numeric(7, 4) NOT NULL DEFAULT 4 CHECK (scc_surcharge_percent BETWEEN 0 AND 100),
-    created_at                 timestamptz   NOT NULL DEFAULT now()
+    created_at                 timestamptz   NOT NULL DEFAULT now(),
+    -- When a value last changed. A project's costing made before that may be out of date, which the project page says. Whoever changes a
+    -- facility sets it.
+    updated_at                 timestamptz   NOT NULL DEFAULT now()
 );
 CREATE INDEX facility_owner_ix ON facility (owner_account_id, name);

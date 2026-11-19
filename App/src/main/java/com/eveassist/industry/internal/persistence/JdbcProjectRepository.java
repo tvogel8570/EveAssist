@@ -5,6 +5,8 @@ import com.eveassist.industry.FacilityId;
 import com.eveassist.industry.PlanId;
 import com.eveassist.industry.ProjectId;
 import com.eveassist.industry.internal.application.FacilityNotFoundException;
+import com.eveassist.industry.internal.application.ProjectMeta;
+import com.eveassist.industry.internal.application.ProjectOverview;
 import com.eveassist.industry.internal.application.ProjectRepository;
 import com.eveassist.industry.internal.domain.BlueprintSource;
 import com.eveassist.industry.internal.domain.PlanPrice;
@@ -318,6 +320,57 @@ class JdbcProjectRepository implements ProjectRepository {
                     .param("keep", keep)
                     .update();
         }
+    }
+
+    @Override
+    public List<ProjectOverview> overviews(Viewer viewer, String currentSdeVersion, boolean includeArchived) {
+        // A Draft shows its own costing. A Quoted project shows its latest quote's, which is frozen. A Draft made from a quote has no costing
+        // of its own until it is costed, and does not show the quote's as if it were.
+        return jdbc.sql("""
+                SELECT p.public_id, p.name, p.status, p.archived_at IS NOT NULL AS archived,
+                    (SELECT count(*) FROM project_product pp WHERE pp.project_id = p.id) AS product_count,
+                    (SELECT count(*) FROM project_quote q WHERE q.project_id = p.id) AS quote_count,
+                    lq.number AS latest_number, lq.price AS latest_price, lq.expires_at AS latest_expires,
+                    CASE WHEN p.status = 'quoted' THEN qc.delivered_cost ELSE dc.delivered_cost END AS delivered_cost,
+                    CASE WHEN p.status = 'quoted' THEN qc.costed_at ELSE dc.costed_at END AS costed_at,
+                    (p.status = 'draft' AND dc.id IS NOT NULL AND (
+                        dc.costed_project_version <> p.version OR dc.costed_sde_version <> :sde OR EXISTS (
+                            SELECT 1 FROM facility f WHERE f.updated_at > dc.costed_at AND (f.id = p.default_facility_id OR f.id IN (
+                                SELECT i.facility_id FROM project_item i WHERE i.project_id = p.id AND i.facility_id IS NOT NULL))))
+                    ) AS out_of_date
+                FROM project p
+                LEFT JOIN project_costing dc ON dc.project_id = p.id AND dc.quote_id IS NULL
+                LEFT JOIN LATERAL (SELECT q.id, q.number, q.price, q.expires_at FROM project_quote q WHERE q.project_id = p.id
+                    ORDER BY q.number DESC LIMIT 1) lq ON true
+                LEFT JOIN project_costing qc ON qc.quote_id = lq.id
+                WHERE p.owner_account_id = :owner AND (:includeArchived OR p.archived_at IS NULL)
+                ORDER BY p.archived_at IS NOT NULL, p.name, p.public_id
+                """)
+                .param("owner", viewer.accountId().value())
+                .param("sde", currentSdeVersion)
+                .param("includeArchived", includeArchived)
+                .query((rs, n) -> new ProjectOverview(new ProjectId(rs.getObject("public_id", UUID.class)), rs.getString("name"),
+                        enumOf(ProjectStatus.class, rs.getString("status")), rs.getBoolean("archived"), rs.getLong("product_count"),
+                        rs.getInt("quote_count"), rs.getBigDecimal("delivered_cost"), instant(rs.getTimestamp("costed_at")),
+                        rs.getBoolean("out_of_date"), (Integer) rs.getObject("latest_number"), rs.getBigDecimal("latest_price"),
+                        instant(rs.getTimestamp("latest_expires"))))
+                .list();
+    }
+
+    @Override
+    public Optional<ProjectMeta> meta(Viewer viewer, ProjectId id) {
+        return jdbc.sql("""
+                SELECT p.created_at, pl.name AS plan_name FROM project p LEFT JOIN plan pl ON pl.id = p.source_plan_id
+                WHERE p.public_id = :id AND p.owner_account_id = :owner
+                """)
+                .param("id", id.value())
+                .param("owner", viewer.accountId().value())
+                .query((rs, n) -> new ProjectMeta(rs.getTimestamp("created_at").toInstant(), rs.getString("plan_name")))
+                .optional();
+    }
+
+    private static java.time.Instant instant(Timestamp time) {
+        return time == null ? null : time.toInstant();
     }
 
     @Override
