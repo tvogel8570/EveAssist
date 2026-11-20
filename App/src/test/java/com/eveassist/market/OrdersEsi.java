@@ -4,6 +4,7 @@ import com.eveassist.esi.CharacterAsset;
 import com.eveassist.esi.CharacterBlueprint;
 import com.eveassist.esi.EsiClient;
 import com.eveassist.esi.EsiResult;
+import com.eveassist.esi.MarketPrice;
 import com.eveassist.esi.PublicContract;
 import com.eveassist.esi.PublicContractItem;
 import com.eveassist.esi.StructureLookup;
@@ -12,6 +13,16 @@ import java.util.List;
 /** An ESI that answers market orders only, so a test can write it as a lambda. */
 @FunctionalInterface
 interface OrdersEsi extends EsiClient {
+
+    @Override
+    default EsiResult<List<MarketPrice>> marketPrices() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    default void forgetMarketPrices() {
+        throw new UnsupportedOperationException();
+    }
 
     @Override
     default EsiResult<List<PublicContract>> publicContracts(int regionId) {

@@ -250,7 +250,8 @@ class JobCostingTest {
     /**
      * Read in the game on 2026-11-18, in the high-sec Azbel: 10 runs of a Multispectrum Coating II copy at ME 2 and TE 4,
      * built by a character with every skill at V. The blueprint needs Industry, Nanite Engineering and Hydromagnetic Physics.
-     * The window showed 10 of each of the seven materials (one per run, which the 2% and the structure's 1% cannot go below),
+     * The window showed 10 of each of the seven materials (9.70 rounded up; this does not separate the one-per-run minimum,
+     * since rounding up gives 10 as well),
      * a duration of 03:03:49 and, on hovering it, Blueprint Time Efficiency -4.0%, Skills and Implants -38.6% and Structure
      * Role Bonus -20.0%. Adding the two Tech II skills (-10%) instead of multiplying them (0.95 x 0.95) would give 03:03:19.
      * The window's job cost of 35,407 ISK is not asserted: ESI's adjusted prices give 35,417.5, and the 0.03% between them
@@ -397,6 +398,126 @@ class JobCostingTest {
         assertThat(job.seconds()).isEqualTo(41 * 60 + 47);
         assertWithinOneIsk(job.estimatedItemValue(), "367708");
         assertWithinOneIsk(job.installCost(), "21794");
+    }
+
+    /**
+     * Read in the game on 2026-11-18, the "Maximum runs" of four blueprint originals in the high-sec Azbel: 5,295 for the Cap
+     * Booster 800 at ME 0 / TE 0 (one run takes 489.6 s), 6,618 at ME 10 / TE 20 (391.68 s), 6,894 with a BX-804 (376.0128 s)
+     * and 161 for the 10000MN Afterburner I at ME 8 / TE 14 (16,168.55 s). 30 days is 2,592,000 s. The first one separates the
+     * time of one run before rounding (5,294.1, so 5,295) from the rounded 490 s (5,289.8, so 5,290).
+     */
+    @Test
+    void theMaximumRunsOfAJobAreTheRunsThatReachThirtyDays() {
+        var azbel = facility("1", "0", "20", "0", "4", "0.56883", "0", "4");
+
+        assertThat(JobCosting.maximumRuns(900, new JobTerms(0, 0, azbel, ALL_SKILLS_V))).isEqualTo(5295);
+        assertThat(JobCosting.maximumRuns(900, new JobTerms(10, 20, azbel, ALL_SKILLS_V))).isEqualTo(6618);
+        assertThat(JobCosting.maximumRuns(900,
+                new JobTerms(10, 20, azbel, new BuilderTerms(5, 5, new BigDecimal("4"))))).isEqualTo(6894);
+        assertThat(JobCosting.maximumRuns(36000,
+                new JobTerms(8, 14, azbel, new BuilderTerms(5, 5, new BigDecimal("4"))))).isEqualTo(161);
+    }
+
+    @Test
+    void aSingleRunIsAllowedEvenWhenItTakesLongerThanThirtyDays() {
+        // 4,000,000 s at TE 20 is 3,200,000 s, more than the 2,592,000 s of 30 days. Not read in the game yet.
+        assertThat(JobCosting.maximumRuns(4_000_000, JobTerms.PLAN)).isEqualTo(1);
+    }
+
+    /**
+     * The lines of the game's cost hover for the first two readings (100 runs, ME 0 / TE 0). Wormhole: index line 24,885,
+     * role bonus -995, gross cost 23,889, SCC 174,990, total 198,879. High-sec: 87,894, -3,516, 84,378, 174,990 and
+     * 259,368. The window rounds each line and adds the rounded gross cost and taxes, so the exact lines are within 1 ISK.
+     */
+    @Test
+    void theInstallCostIsBrokenIntoTheLinesOfTheGamesHover() {
+        var wormhole = capBoosterJob(100, 0, 0, "0.56883").installBreakdown();
+        var highSec = capBoosterJob(100, 0, 0, "2.00912").installBreakdown();
+
+        assertWithinOneIsk(wormhole.estimatedItemValue(), "4374740");
+        assertWithinOneIsk(wormhole.jobFee(), "24885");
+        assertWithinOneIsk(wormhole.structureBonus(), "-995");
+        assertWithinOneIsk(wormhole.grossCost(), "23889");
+        assertWithinOneIsk(wormhole.sccSurcharge(), "174990");
+        assertThat(wormhole.facilityTax()).isEqualByComparingTo("0");
+        assertWithinOneIsk(wormhole.total(), "198879");
+        assertWithinOneIsk(highSec.jobFee(), "87894");
+        assertWithinOneIsk(highSec.structureBonus(), "-3516");
+        assertWithinOneIsk(highSec.grossCost(), "84378");
+        assertWithinOneIsk(highSec.total(), "259368");
+        assertThat(highSec.grossCost().add(highSec.totalTaxes())).isEqualByComparingTo(highSec.total());
+    }
+
+    /**
+     * What the trace keeps of a material's rounding. 235 runs of the ME 10 copy: Nocxium is 13 x 235 x 0.891 = 2,722.005,
+     * which is 2,722.01 to two decimals and 2,723 (the game showed 2,723). The 47-run reading: Mexallon is 10,553.004, which
+     * is 10,553.00 and so 10,553. The one-per-run minimum is not read in the game (the wiki's rule): 100 runs of a material
+     * with a base of 1 at ME 10 in an Azbel is 89.10, which rounds up to 90, so the minimum raises it to 100.
+     */
+    @Test
+    void aMaterialKeepsItsExactProductItsTwoDecimalFigureAndWhetherTheMinimumApplied() {
+        var half = capBoosterJob(235, 10, 20, "0.56836").materialUses().get(3);
+        var near = capBoosterJob(47, 10, 20, "0.56883").materialUses().get(2);
+        var azbel = facility("1", "0", "20", "0", "4", "2", "0", "4");
+        var minimum = JobCosting.materialUse(new TypeId(1), 1, 100, new JobTerms(10, 0, azbel, ALL_SKILLS_V));
+
+        assertThat(half.exactProduct()).isEqualByComparingTo("2722.005");
+        assertThat(half.roundedToTwoDecimals()).isEqualByComparingTo("2722.01");
+        assertThat(half.quantity()).isEqualTo(2723);
+        assertThat(half.raisedToMinimum()).isFalse();
+        assertThat(near.exactProduct()).isEqualByComparingTo("10553.004");
+        assertThat(near.roundedToTwoDecimals()).isEqualByComparingTo("10553.00");
+        assertThat(near.quantity()).isEqualTo(10553);
+        assertThat(minimum.exactProduct()).isEqualByComparingTo("89.1");
+        assertThat(minimum.quantity()).isEqualTo(100);
+        assertThat(minimum.raisedToMinimum()).isTrue();
+    }
+
+    /**
+     * The duration hover of the BX-804 reading: Blueprint Time Efficiency -20.0%, Skills and Implants -34.7%, Structure Role
+     * Bonus -20.0%, 10:26:41 (37,601 s) and "Maximum runs" 6,894 on the original.
+     */
+    @Test
+    void theTimeIsBrokenIntoTheModifiersOfTheDurationHover() {
+        var azbel = facility("1", "0", "20", "0", "4", "2.00744", "0", "4");
+        var terms = new JobTerms(10, 20, azbel, new BuilderTerms(5, 5, new BigDecimal("4")));
+
+        var time = JobCosting.cost(CAP_BOOSTER_800, 100, terms, type -> Optional.of(ADJUSTED_PRICES.get(type))).time();
+
+        assertThat(TimeBreakdown.savedPercent(time.blueprintFactor())).isEqualByComparingTo("20");
+        assertThat(TimeBreakdown.savedPercent(time.skillsAndImplantsFactor())).isCloseTo(new BigDecimal("34.72"), Offset.offset(new BigDecimal("0.01")));
+        assertThat(TimeBreakdown.savedPercent(time.structureFactor())).isEqualByComparingTo("20");
+        assertThat(time.exactSeconds()).isEqualByComparingTo("37601.28");
+        assertThat(time.seconds()).isEqualTo(37601);
+        assertThat(time.maximumRuns()).isEqualTo(6894);
+    }
+
+    /**
+     * Read in the game on 2026-11-18, in the high-sec Azbel: 1,000 runs of a Combat Scanner Probe I copy at ME 10 / TE 0, with
+     * Industry V, Advanced Industry V and a BX-804. Isogen and Nocxium have a base of 1, so 1,000 runs at 0.891 is 891.00, and
+     * both showed **1,000**: the one-per-run minimum is real (without it they would show 891). The window showed 2,673, 8,019,
+     * 12.47K, 1,000, 1,000, 1,782 and 6,237 for the seven materials, a duration of 3D 15:02:24 (313,344 s), a "Maximum runs"
+     * of 8,273 and a total job cost of 374,738 ISK. The cost is not asserted: its index (2.0021%) is worked back from the total.
+     */
+    @Test
+    void aMaterialWithABaseOfOneIsRaisedToOneForEachRun() {
+        var probe = new Recipe(new TypeId(30028), 1, 600, List.of(
+                new RecipeMaterial(new TypeId(37), 1), new RecipeMaterial(new TypeId(38), 1),
+                new RecipeMaterial(new TypeId(40), 2), new RecipeMaterial(new TypeId(34), 3),
+                new RecipeMaterial(new TypeId(16275), 7), new RecipeMaterial(new TypeId(35), 9),
+                new RecipeMaterial(new TypeId(36), 14)));
+        var azbel = facility("1", "0", "20", "0", "4", "2.002122", "0", "4");
+        var terms = new JobTerms(10, 0, azbel, new BuilderTerms(5, 5, new BigDecimal("4")));
+
+        var job = JobCosting.cost(probe, 1000, terms, type -> Optional.empty());
+
+        assertThat(job.materials()).extracting(RecipeMaterial::quantity)
+                .containsExactly(1000L, 1000L, 1782L, 2673L, 6237L, 8019L, 12474L);
+        assertThat(job.materialUses().get(0).exactProduct()).isEqualByComparingTo("891");
+        assertThat(job.materialUses().get(0).raisedToMinimum()).isTrue();
+        assertThat(job.materialUses().get(2).raisedToMinimum()).isFalse();
+        assertThat(job.seconds()).isEqualTo(3 * 86400 + 15 * 3600 + 2 * 60 + 24);
+        assertThat(job.time().maximumRuns()).isEqualTo(8273);
     }
 
     @Test

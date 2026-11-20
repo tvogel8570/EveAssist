@@ -210,6 +210,63 @@ Status: **agreed** with the developer (2026-11-08), so that a plan can be kept a
   needs a new one.
 - `prices_as_of` on `plan` is the age of the oldest price among the items that are bought.
 
+### Project costing
+
+Status: `ProjectCosting` and its inputs and outputs are **built** as domain code with tests (2026-11-18). Everything that stores or
+loads for it, below, is **proposed**. The formulas and the decisions behind them are in
+[Costing components](../requirements/costing-detail.md) and [Projects](../requirements/projects.md); a worked example is the
+[sample walkthrough](../requirements/sample-project-cost-walkthrough.md).
+
+**Where it sits.** `ProjectCosting`, `BlueprintSplitter` and `JobCosting` are pure domain classes in the `industry` module
+(`com.eveassist.industry.internal.domain`), the way plan costing is. They hold no database, no ESI client and no clock. Every
+input arrives as a value or a function, so the same inputs always give the same costing (exact decimals, no floating point).
+That determinism is what makes a stored [trace](../requirements/projects.md#costing-trace) reproducible.
+
+| Input | Comes from | State |
+|---|---|---|
+| Recipes, build times, packaged volumes | The in-memory SDE copy (see [above](#costing-in-memory)) | built (plan costing already reads them) |
+| Unit prices at the project's price basis | The project's own price rows, like [plan prices](#plan-prices): costing never reads the shared Jita orders | proposed |
+| Adjusted prices (the estimated item value) | ESI `GET /markets/prices`, public, shared by all users, stored in `adjusted_price` and refreshed when a project is costed (see [Adjusted prices](esi.md#adjusted-prices)) | built (2026-11-18) |
+| System cost index | ESI `GET /industry/systems`, public; a wormhole's is typed on the facility record because ESI has none | **not read yet** |
+| Owned blueprints (kind, ME, TE, runs left) | The blueprint tables, through the `inventory` module's API | proposed |
+| Facility terms, builder skills and implant | The project's facility records and the builder character | proposed |
+| Which required skills save time | SDE attribute 1982 (`manufactureTimePerLevel`) | not read yet; the caller gives the list |
+| Rig and structure bonuses, scaled by security | A table that can be updated after a patch without code | not built |
+
+**One costing, in one use case** (proposed). A use case in the `industry` module's application layer resolves the inputs above
+into a `ProjectDefinition`, calls `ProjectCosting.cost`, and stores the result. The class does not walk the database. It asks for
+what it needs through the functions it is given, so the use case decides how they are loaded. A job's number of runs is not known
+until the jobs above it are costed, which is why a `ProjectBuild` gives its jobs when asked for a number of runs.
+
+**What is stored** (proposed):
+
+| Stored | When | Holds |
+|---|---|---|
+| The last costing of a Draft | Each time the Draft is costed, replacing the one before | The lines, the totals, the longest job, the warnings and whether a quote can be issued, with the provenance the plan's last-costed total has (project version, SDE version, age of the oldest price, when) |
+| A quote | When *Issue quote* freezes a version | The same costing, never changed afterwards, with the buyer, the note, the date and the expiry |
+| A trace, one document per costing | With the costing above | The inputs and the lines in the shape of the game's windows (see [Costing trace](../requirements/projects.md#costing-trace)) |
+
+- **Costing is not a price lookup.** Like a plan, a project costs from its own prices, so changing the shared Jita orders never moves
+  a costing or a quote. A price changes only when the user asks, and the Draft shows the current prices beside the frozen ones.
+- **Size.** A trace is one JSON document per costing, a few kilobytes for a project of nine jobs. A Draft keeps only its latest, a
+  quote keeps its own for as long as the quote exists, and an archived project's traces go after 30 days (a per-user preference, when
+  preferences exist). Every table has `ON DELETE CASCADE` from the account, so deleting an account removes them, and a test checks it.
+- **Not stored:** the per-job detail is in the trace, not in rows of its own, and nothing about the buyer or the characters
+  beyond what the quote itself holds.
+- **Speed.** A costing walks in-memory recipes and does exact decimal arithmetic. The Golem example runs nine jobs and prices
+  22 bought items. It has **not been timed** (see below).
+- **Logs** carry the project id, a costing id and counts, and no amounts. What a person needs to settle a difference with the game
+  is in the trace and not in the log (see [Log context and correlation](logging.md)).
+
+**Recalculation is on request only** (the developer decided on 2026-11-18). Opening a project shows its last costing and does not
+recalculate it, unlike a plan, whose stored total is recalculated on opening when it is out of date. A costing is made when the
+user asks, and a Draft's prices change only when asked for. The page shows the costing's age, and when the project's version, the SDE
+version, a cost index, the builder's skills or a facility has changed since, it says the costing may be out of date and leaves the
+decision to the user. A frozen quote never changes.
+
+**Timing is to be evaluated later** (the developer decided). Neither the Golem example nor a capital-sized project has been timed,
+and nothing here depends on the answer, since a costing runs only when asked for.
+
 ### Public contracts
 
 Status: **proposed**. Public data shared by all users, so these tables have no owner and no viewer.

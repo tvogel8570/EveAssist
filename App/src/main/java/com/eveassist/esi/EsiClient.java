@@ -16,6 +16,18 @@ public interface EsiClient {
     EsiResult<List<MarketOrder>> marketOrders(int regionId, int typeId);
 
     /**
+     * CCP's adjusted and average price of every item type, from {@code GET /markets/prices}. Public, not paginated, and cached by ESI
+     * for an hour, so a call before that is answered from the client's own copy. The outcomes are those of {@link #marketOrders}.
+     */
+    EsiResult<List<MarketPrice>> marketPrices();
+
+    /**
+     * Forgets the stored {@code ETag} and expiry of {@code /markets/prices}, so that the next call asks for the whole answer. For a
+     * caller that finds ESI saying "unchanged" while it holds nothing, which would otherwise repeat for as long as ESI's copy lasts.
+     */
+    void forgetMarketPrices();
+
+    /**
      * All public contracts in a region, from {@code GET /contracts/public/{region_id}}, read through every page. The
      * outcomes are those of {@link #marketOrders}.
      */

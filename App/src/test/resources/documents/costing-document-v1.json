@@ -1,0 +1,147 @@
+{
+  "jobs": [
+    {
+      "runs": 2,
+      "product": 1001,
+      "seconds": 4664,
+      "materials": [
+        {
+          "type": 34,
+          "quantity": 179
+        },
+        {
+          "type": 1002,
+          "quantity": 4
+        }
+      ],
+      "unitsMade": 2,
+      "installCost": 71.04,
+      "blueprintCost": 0.0,
+      "blueprintKind": "typed",
+      "estimatedItemValue": 1200
+    },
+    {
+      "runs": 4,
+      "product": 1002,
+      "seconds": 5222,
+      "materials": [
+        {
+          "type": 34,
+          "quantity": 36
+        },
+        {
+          "type": 35,
+          "quantity": 18
+        }
+      ],
+      "unitsMade": 4,
+      "installCost": 18.944,
+      "blueprintCost": 0,
+      "blueprintKind": "typed",
+      "estimatedItemValue": 320
+    }
+  ],
+  "lines": [
+    {
+      "amount": 1255.0,
+      "component": "materials"
+    },
+    {
+      "amount": 89.984,
+      "component": "install_cost"
+    },
+    {
+      "amount": 0.0,
+      "component": "blueprint"
+    },
+    {
+      "amount": 0.0,
+      "component": "time_value"
+    },
+    {
+      "amount": 0.0,
+      "component": "hauling"
+    },
+    {
+      "amount": 10000.0,
+      "component": "contract_fee"
+    },
+    {
+      "amount": 0,
+      "component": "surplus_credit"
+    }
+  ],
+  "quote": {
+    "mode": "margin",
+    "price": 15000.0,
+    "profit": 3655.016,
+    "pricePerUnit": 7500.0,
+    "realizedMarginPercent": 24.366773
+  },
+  "split": {
+    "lineDeltas": [
+      {
+        "amount": 0.0,
+        "component": "materials"
+      },
+      {
+        "amount": 0.0,
+        "component": "install_cost"
+      },
+      {
+        "amount": 0.0,
+        "component": "blueprint"
+      },
+      {
+        "amount": 0.0,
+        "component": "time_value"
+      },
+      {
+        "amount": 0.0,
+        "component": "hauling"
+      },
+      {
+        "amount": 0.0,
+        "component": "contract_fee"
+      },
+      {
+        "amount": 0,
+        "component": "surplus_credit"
+      }
+    ],
+    "costPerHourSaved": null,
+    "totalSecondsDelta": 0,
+    "deliveredCostDelta": 0.0,
+    "leastCostDeliveredCost": 11344.984,
+    "longestJobSecondsSaved": 0
+  },
+  "bought": [
+    {
+      "cost": 180.0,
+      "type": 35,
+      "quantity": 18,
+      "unitPrice": 10.0
+    },
+    {
+      "cost": 1075.0,
+      "type": 34,
+      "quantity": 215,
+      "unitPrice": 5.0
+    }
+  ],
+  "quotable": true,
+  "warnings": [],
+  "comparison": null,
+  "provenance": {
+    "costedAt": "2026-11-18T23:27:22.604473972Z",
+    "pricesAsOf": "2026-11-18T12:00:00Z",
+    "sdeVersion": "test-sde",
+    "costedProjectVersion": 3,
+    "adjustedPricesConfirmedAt": "2026-11-18T23:27:22.586544Z",
+    "adjustedPricesEsiModifiedAt": "2026-11-18T20:41:10Z"
+  },
+  "costPerUnit": 5672.492,
+  "totalSeconds": 9886,
+  "deliveredCost": 11344.984,
+  "longestJobSeconds": 5222
+}
