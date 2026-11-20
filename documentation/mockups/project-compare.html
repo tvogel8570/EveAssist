@@ -230,6 +230,7 @@ function viewB(j,v){
   return `<div class="card"><div class="row sum"><span>${all}</span><span class="sp"></span>
     <button class="b ghost" id="fill">Fill with the game's numbers (example)</button><button class="b ghost" id="clear">Clear</button></div>
     <div class="dim" style="margin-bottom:8px">Type what the game shows beside the app's number. "0.31M" and "92.13K" are read as the game's shortened form, so they match when the app's exact number rounds to them.</div>
+    <div class="note">The game cannot copy the job as text (only the blueprint list below the job can be copied), so the values are typed. A possible later step is to paste a screenshot and read it in the browser (OCR), always with a confirm step. The app knows the expected numbers, so it can match a misread like 2.723 to 2,723. This screen is for checking the formulas and for troubleshooting. It is not a core screen of the finished app.</div>
     <div class="scroll"><table><tr><th>Line</th><th class="n">App</th><th class="n">Game shows</th><th class="n">Difference</th></tr>${html}</table></div></div>`;
 }
 function bindB(){

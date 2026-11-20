@@ -36,6 +36,18 @@ possible, and the rest of the editing follows it.
   quantity, the time with its modifier lines, the index and where it came from (typed or ESI, and its age), and the estimated item value. The
   window rounds each cost line to whole ISK and adds the rounded gross cost and taxes, so the page shows the total the way the window does, with the
   exact total beside it.
+- **The comparison is a diagnostic, not a core screen.** Decided with the developer on 2026-11-20. It is most useful while the formulas
+  and logic are being validated, and in normal operation it is for troubleshooting a difference from the game. The finished project page is
+  built around the work and the quote card (see [Page layout](#page-layout)). The comparison is a secondary view of a job (a link or a
+  collapsed section such as "Check against the game"), not a main tab or a permanent column, and it should not take space from the core page.
+- **Both A and B are built, later.** Decided with the developer on 2026-11-20: layout **A** (cards that mirror the game's window) and layout
+  **B** (the table with a "game shows" column) are both built, as two views of the same comparison. Building them waits until the primary
+  project screens (the Projects list, the project page and the quote card) are designed. This changes the "Comparison first" order above: the
+  comparison is no longer the first thing built, only a thing that will be built.
+- **The game values are typed.** The game cannot copy a job as text: only the list of possible blueprints below the job can be copied, and it
+  is not the data compared. So the Game column is typed, per line. Reading a pasted screenshot in the browser (OCR) is a possible later step,
+  with a confirm step, and the app's own expected number can be used to match a misread such as `2.723` to `2,723`. It is not built until typing
+  proves painful.
 
 ## Lifecycle
 
@@ -314,7 +326,7 @@ warnings cannot show which of those differs, and a trace that lacks the prices' 
   change.
 - **How a project is started from the Blueprints page** ("Load into project" is shown but off there, see
   [Blueprints page](manufacturing-invention.md#blueprints-page)). Where the project's pages sit in the menu is decided (a link beside Plans).
-- **Which of the three compare layouts** (A, B or C in `documentation/mockups/project-compare.html`) the page uses.
+- **Whether layout C** (the copyable text block in `documentation/mockups/project-compare.html`) is built too. A and B are decided.
 - **The currency format** on the shareable text.
 - **A facility's structure and rig bonus table**: where it lives, and how it is kept right after patches.
 - **Wormhole index, details left open:** how old a typed index may be before the page warns (a number of days); whether the
