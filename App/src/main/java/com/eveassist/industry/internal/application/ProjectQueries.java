@@ -76,7 +76,15 @@ public class ProjectQueries {
                 recipes.visibleParts(project).stream().map(type -> new ProjectDetails.PartLine(type.value(), recipes.name(type),
                         project.boughtParts().contains(type))).toList(),
                 items(project), viewersFacilities, projectQuotes, costing,
-                warningTypeNames(costing));
+                warningTypeNames(costing), typedPrices(project));
+    }
+
+    /** The prices the user typed, by the item's name. */
+    private List<ProjectDetails.TypedPrice> typedPrices(Project project) {
+        return project.typedPrices().stream().map(type -> {
+            var price = project.prices().get(type);
+            return new ProjectDetails.TypedPrice(type.value(), recipes.name(type), price.sell(), price.asOf());
+        }).sorted(java.util.Comparator.comparing(ProjectDetails.TypedPrice::name)).toList();
     }
 
     /** The names of the types the costing's warnings are about, which can be a material the project does not build. */

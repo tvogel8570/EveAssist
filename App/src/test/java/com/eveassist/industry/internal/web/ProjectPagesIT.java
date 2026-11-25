@@ -600,4 +600,102 @@ class ProjectPagesIT extends IntegrationTest {
 
         assertThat(versionOf(id)).isEqualTo(before);
     }
+
+    // ---- typing a price for an item the market has none for ----
+
+    /** A costed market-referenced project of one Hauler, which has no Jita price in the scenario, so it cannot be quoted. */
+    private UUID marketQuoteWithoutAHaulerPrice(String sub) throws Exception {
+        var id = quotable(sub);
+        mvc.perform(post("/projects/" + id + "/config").param("expectedVersion", String.valueOf(versionOf(id))).param("mode", "MARKET")
+                .with(signedIn(sub)).with(csrf()));
+        mvc.perform(post("/projects/" + id + "/cost").with(signedIn(sub)).with(csrf()));
+        return id;
+    }
+
+    private ResultActions typed(String sub, UUID id, String price) throws Exception {
+        return mvc.perform(post("/projects/" + id + "/prices/" + HAULER.value()).param("expectedVersion", String.valueOf(versionOf(id)))
+                .param("price", price).param("anchor", "warnings").with(signedIn(sub)).with(csrf()));
+    }
+
+    @Test
+    void aProductWithNoPriceNamesItselfAndTypingOneMakesTheMarketQuote() throws Exception {
+        var sub = newSub();
+        var id = marketQuoteWithoutAHaulerPrice(sub);
+        page(sub, id).andExpect(content().string(containsString("Test Hauler has no Jita price, so a market-referenced quote cannot be made.")))
+                .andExpect(content().string(containsString("id=\"save-price-" + HAULER.value() + "-no_market_price\"")))
+                .andExpect(content().string(containsString("id=\"cannot-issue\"")))
+                .andExpect(content().string(not(containsString("id=\"quote-price\""))))
+                .andExpect(content().string(not(containsString("id=\"typed-prices\""))));
+
+        typed(sub, id, "1,250,000").andExpect(redirectedUrl("/projects/" + id + "#warnings"));
+
+        // the price is typed, the costing is out of date, and the warning says to cost it again instead of offering the box twice
+        page(sub, id).andExpect(content().string(containsString("Typed: 1,250,000.00 ISK per unit. Press Cost it again.")))
+                .andExpect(content().string(not(containsString("id=\"save-price-" + HAULER.value()))))
+                .andExpect(content().string(containsString("id=\"typed-prices\"")))
+                .andExpect(content().string(containsString("id=\"typed-price-" + HAULER.value() + "\"")))
+                .andExpect(content().string(containsString("id=\"banner-stale\"")));
+
+        mvc.perform(post("/projects/" + id + "/cost").with(signedIn(sub)).with(csrf()));
+
+        // 1 Hauler at the typed 1,250,000, with no premium, rounded up to the quote step
+        page(sub, id).andExpect(content().string(not(containsString("has no Jita price"))))
+                .andExpect(content().string(containsString("id=\"quote-price\"")))
+                .andExpect(content().string(containsString("1,250,000 ISK")))
+                .andExpect(content().string(not(containsString("id=\"cannot-issue\""))));
+        assertThat(jdbc.sql("""
+                SELECT p.source FROM project_price p JOIN project j ON j.id = p.project_id WHERE j.public_id = :id AND p.type_id = :type
+                """).param("id", id).param("type", HAULER.value()).query(String.class).single()).isEqualTo("manual");
+    }
+
+    @Test
+    void aPriceThatIsNotANumberAsTheGameWritesItIsRefusedWithAMessageAndSavesNothing() throws Exception {
+        var sub = newSub();
+        var id = marketQuoteWithoutAHaulerPrice(sub);
+        var before = versionOf(id);
+
+        // a comma used as a decimal point (7,5) would be read as 75 if commas were just dropped
+        for (var bad : List.of("7,5", "abc", "-5", "0", "1,25,000", "", "1e6", "5.")) {
+            typed(sub, id, bad).andExpect(redirectedUrl("/projects/" + id)).andExpect(flash().attribute("error", "price"));
+        }
+
+        assertThat(versionOf(id)).isEqualTo(before);
+        page(sub, id).andExpect(content().string(not(containsString("id=\"typed-prices\""))));
+    }
+
+    @Test
+    void theMarketPriceCanBeTakenBack() throws Exception {
+        var sub = newSub();
+        var id = marketQuoteWithoutAHaulerPrice(sub);
+        typed(sub, id, "7500.50");
+        esi.sell(HAULER.value(), "9000.00");
+
+        mvc.perform(post("/projects/" + id + "/prices/" + HAULER.value() + "/market").param("expectedVersion", String.valueOf(versionOf(id)))
+                        .param("anchor", "typed-prices").with(signedIn(sub)).with(csrf()))
+                .andExpect(redirectedUrl("/projects/" + id + "#typed-prices"));
+
+        page(sub, id).andExpect(content().string(not(containsString("id=\"typed-prices\""))));
+        assertThat(jdbc.sql("""
+                SELECT p.source, p.sell FROM project_price p JOIN project j ON j.id = p.project_id WHERE j.public_id = :id AND p.type_id = :type
+                """).param("id", id).param("type", HAULER.value()).query((rs, n) -> rs.getString(1) + " " + rs.getBigDecimal(2).toPlainString())
+                .single()).isEqualTo("market 9000.00");
+    }
+
+    @Test
+    void aQuotedProjectShowsItsTypedPricesWithoutButtonsAndRefusesAPriceAndAnotherAccountsProjectIsNotFound() throws Exception {
+        var sub = newSub();
+        var id = marketQuoteWithoutAHaulerPrice(sub);
+        typed(sub, id, "9000");
+        mvc.perform(post("/projects/" + id + "/cost").with(signedIn(sub)).with(csrf()));
+        mvc.perform(post("/projects/" + id + "/quotes").param("expectedVersion", String.valueOf(versionOf(id))).with(signedIn(sub)).with(csrf()))
+                .andExpect(redirectedUrl("/projects/" + id));
+
+        page(sub, id).andExpect(content().string(containsString("id=\"typed-prices\"")))
+                .andExpect(content().string(not(containsString("id=\"use-market-"))));
+        typed(sub, id, "10").andExpect(flash().attribute("error", "locked"));
+        mvc.perform(post("/projects/" + id + "/prices/" + HAULER.value()).param("expectedVersion", "1").param("price", "5")
+                .with(signedIn(newSub())).with(csrf())).andExpect(status().isNotFound());
+        mvc.perform(post("/projects/" + id + "/prices/" + HAULER.value() + "/market").param("expectedVersion", "1")
+                .with(signedIn(newSub())).with(csrf())).andExpect(status().isNotFound());
+    }
 }

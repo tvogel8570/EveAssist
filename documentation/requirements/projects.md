@@ -96,6 +96,9 @@ project**. Until then it stays a blocking warning that says why: a bought materi
 its own warning that **names the product** (a margin quote does not use the products' prices, so it says nothing there). The way out of that one is to type a price or to switch to cost plus margin.
 A typed price is **one number** (it is itself under sell, buy and the split), to the cent, from 0.01 to 1,000,000,000,000,000 ISK; it **replaces the market price, survives every refresh and a new version made
 from a quote**, and stays until the user asks for the market price again. Typing one is an edit, so the costing is out of date. It is allowed for the items the project prices, and a quoted project refuses it.
+**On the page:** each warning that a price would settle (*unpriced material*, *unpriced surplus*, *no Jita price* for a market quote) has a box **beside it** to type the price per unit, and once typed it says so and asks for
+*Cost it again*. The box takes a number as the game writes it (7500, 7500.50, 1,250,000) and refuses a comma used as a decimal point (7,5). A **Typed prices** section (closed by default, shown when there are any)
+lists them with when they were typed and a button to **use the market price** again (none on a quoted project).
 
 ## Lifecycle
 

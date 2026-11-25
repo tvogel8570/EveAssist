@@ -21,7 +21,7 @@ public record ProjectDetails(
         ProjectId id, String name, long version, ProjectStatus status, boolean archived, int lastQuoteNumber, Instant startedAt,
         String sourcePlanName, ProjectConfig config, List<ProductLine> products, List<PartLine> parts, List<ItemLine> items,
         List<FacilityOverview> facilities, List<ProjectQuoteRepository.QuoteSummary> quotes, CostingView costing,
-        Map<Integer, String> warningTypeNames) {
+        Map<Integer, String> warningTypeNames, List<TypedPrice> typedPrices) {
 
     public ProjectDetails {
         products = List.copyOf(products);
@@ -30,6 +30,16 @@ public record ProjectDetails(
         facilities = List.copyOf(facilities);
         quotes = List.copyOf(quotes);
         warningTypeNames = Map.copyOf(warningTypeNames);
+        typedPrices = List.copyOf(typedPrices);
+    }
+
+    /** A price the user typed for an item: its name, the price of one unit, and when it was typed. */
+    public record TypedPrice(int type, String name, java.math.BigDecimal price, Instant asOf) {
+    }
+
+    /** The typed price of an item, or null when its price is the market's (or it has none). */
+    public TypedPrice typedPrice(int type) {
+        return typedPrices.stream().filter(typed -> typed.type() == type).findFirst().orElse(null);
     }
 
     public record ProductLine(int type, String name, long quantity) {
