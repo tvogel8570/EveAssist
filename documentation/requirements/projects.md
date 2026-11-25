@@ -49,6 +49,22 @@ possible, and the rest of the editing follows it.
   with a confirm step, and the app's own expected number can be used to match a misread such as `2.723` to `2,723`. It is not built until typing
   proves painful.
 
+### The primary screens
+
+Mocked up on 2026-11-25 in `documentation/mockups/projects-list.html` and `documentation/mockups/project-page-primary.html`, and
+reviewed with the developer.
+
+- **The Projects list** has a table and a card layout (both kept). Each project shows its status, whether its costing is out of date and why,
+  the quote total, the **margin** (not the profit, which is on the quote card), the buyer and the days to expiry. Filters by status, a search
+  box, and archived projects hidden unless asked for.
+- **Cost it runs by itself when a project is started** from a plan. Afterwards it is a button, and the page asks for it when the costing is out of
+  date or something was changed since.
+- **A quote can only be issued from a current costing.** Issuing is blocked while the costing is out of date or has unsaved changes.
+- **Delete quote is always available** on an issued or expired quote (see [Lifecycle](#lifecycle)). An expired quote is kept as issued, and the way
+  forward is a new version, costed with today's prices.
+- **The quote card is for the user only.** No preview of what the buyer sees. What is sent to the buyer is the copied text or the CSV.
+- **The comparison views are linked from a collapsed "Check against the game" section** of the project page, not shown by default.
+
 ## Lifecycle
 
 Decided with the developer on 2026-11-17, and made exact on 2026-11-18 (the lock, the products and the prices).
@@ -208,7 +224,7 @@ Decided with the developer on 2026-11-17: **both ways of pricing, switchable per
 
 - **Cost plus margin.** Quote = delivered cost divided by (1 − target margin %), set on the project. The Jita
   price of the product is shown beside it as a check.
-- **Market-referenced.** Quote starts from a Jita sell or buy price (or a manual price) plus a premium or discount %. The
+- **Market-referenced.** Quote starts from a Jita sell, buy or split price (or a manual price) plus a premium or discount %. The
   project shows its profit against the delivered cost.
 - The page shows the one in use as the quote and the other as a comparison.
 - A quote has a **buyer name** and a **note** (free text), a date and an expiry. It does not link to the in-game
@@ -326,6 +342,13 @@ warnings cannot show which of those differs, and a trace that lacks the prices' 
   change.
 - **How a project is started from the Blueprints page** ("Load into project" is shown but off there, see
   [Blueprints page](manufacturing-invention.md#blueprints-page)). Where the project's pages sit in the menu is decided (a link beside Plans).
+- **How Janice's Jita split is worked out: settled on 2026-11-25** from three appraisals at Jita 4-4 compared with ESI's market orders (`oEBWih`,
+  2 Vexor; `e2iCSD`, 19 rows read from a screenshot; `f0LcqZ`, 50 Vexor). The split is the plain midpoint of Janice's buy and sell totals. Each
+  total is **the best buy or best sell price at the time of Janice's data, times the quantity**, with no walking of the order book: 50 Vexor are
+  priced at 10,920,000 each although the best sell order held only 8 units. In `e2iCSD`, 6 buy and 11 sell prices equal ESI's best now, 7 more were
+  the best until orders posted after Janice's 05:30 UTC data, and the rest are orders since filled or removed. EveAssist's split follows the same
+  rule, so that it can be checked against a Janice appraisal. **A consequence to decide:** for a large quantity this understates what buying that
+  quantity would really cost, because the best order is usually small. Whether the project's material cost should walk the book is not decided here.
 - **Whether layout C** (the copyable text block in `documentation/mockups/project-compare.html`) is built too. A and B are decided.
 - **The currency format** on the shareable text.
 - **A facility's structure and rig bonus table**: where it lives, and how it is kept right after patches.

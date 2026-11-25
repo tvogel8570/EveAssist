@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Projects list mockups</title>
+<style>
+:root{--bg:#1d232a;--panel:#232a33;--panel2:#2a323d;--line:#38424f;--text:#e6ebf2;--dim:#9aa7b8;--pri:#6d78f0;--ok:#35c28d;--warn:#e8b64a;--err:#ee6b7e;--r:8px}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,sans-serif}
+.bar{position:sticky;top:0;z-index:20;display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:8px 16px;background:#3a2f12;border-bottom:1px solid #6b5518;color:#f3d98a}
+.bar button{background:#2a2410;color:#f3d98a;border:1px solid #6b5518;border-radius:6px;padding:4px 10px;cursor:pointer}
+.bar button.on{background:#f3d98a;color:#2a2410}
+.sp{flex:1}
+main{max-width:1280px;margin:0 auto;padding:16px}
+h1{font-size:22px;margin:0 0 2px} h2{font-size:15px;margin:0 0 8px}
+.sub{color:var(--dim);margin-bottom:12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px;min-width:0}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.badge{display:inline-block;padding:1px 8px;border-radius:99px;font-size:12px;border:1px solid var(--line);color:var(--dim);white-space:nowrap}
+.badge.ok{color:var(--ok);border-color:var(--ok)}.badge.warn{color:var(--warn);border-color:var(--warn)}.badge.pri{color:#aab2ff;border-color:var(--pri)}.badge.err{color:var(--err);border-color:var(--err)}
+table{width:100%;border-collapse:collapse}
+th,td{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+th{color:var(--dim);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.04em;cursor:pointer;white-space:nowrap;user-select:none}
+th.n,td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+tbody tr:hover{background:var(--panel2)}
+a.pn{color:var(--text);font-weight:600;text-decoration:none} a.pn:hover{text-decoration:underline}
+select,input{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:5px 8px;font:inherit;max-width:100%}
+label{display:block;color:var(--dim);font-size:12px;margin-bottom:2px}
+button.b{background:var(--pri);color:#fff;border:0;border-radius:6px;padding:7px 14px;cursor:pointer;font:inherit}
+button.b.ghost{background:transparent;border:1px solid var(--line);color:var(--text)}
+button.f{background:transparent;border:1px solid var(--line);color:var(--dim);border-radius:99px;padding:3px 12px;cursor:pointer;font:inherit}
+button.f.on{border-color:var(--pri);color:var(--text);background:var(--panel2)}
+.dim{color:var(--dim)} .ok{color:var(--ok)} .warn{color:var(--warn)} .err{color:var(--err)}
+.scroll{overflow-x:auto}
+.cards{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
+.cards .card{display:flex;flex-direction:column;gap:6px}
+.cards .big{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
+.cards .stale{border-left:3px solid var(--warn);padding:2px 8px;color:var(--warn);font-size:13px}
+.note{border-left:3px solid var(--warn);padding:6px 10px;color:var(--dim);margin:10px 0;background:rgba(232,182,74,.07)}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:50;padding:16px}
+.modal .card{max-width:560px;width:100%;background:var(--panel)}
+.hide{display:none}
+.toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px 16px;z-index:60}
+.empty{padding:30px;text-align:center;color:var(--dim)}
+</style>
+</head>
+<body>
+<div class="bar">
+  <b>Mockup, fake data</b>
+  <span>Layout:</span>
+  <button data-v="table" class="on">Table</button>
+  <button data-v="cards">Cards</button>
+  <span>Data:</span>
+  <button data-d="some" class="on">Some projects</button>
+  <button data-d="none">No projects yet</button>
+  <span class="sp"></span>
+  <span class="dim" style="color:#f3d98a">Project names open the project page mockup</span>
+</div>
+<main>
+  <div class="row"><div><h1>Projects</h1><div class="sub">Each project is a plan costed for one buyer: the jobs, the delivered cost and the quote.</div></div>
+  <span class="sp"></span><button class="b" id="start">Start from a plan</button></div>
+  <div class="row" style="margin-bottom:12px" id="filters"></div>
+  <div id="list"></div>
+  <div class="note">What the "Out of date" badge means: the costing was made with prices, a cost index or a blueprint that has since changed (the reason is shown beside it). Opening the project and pressing <b>Cost it</b> brings it up to date. Archived projects are hidden unless that filter is on.</div>
+</main>
+<div id="modal"></div><div id="toast"></div>
+
+<script>
+"use strict";
+// fake data: today is 2026-11-25
+const TODAY='2026-11-25';
+const P=[
+ {id:1,name:'Ishtar ×5 for Kestrel Dawn',plan:'Ishtar fleet',status:'Draft',stale:null,jobs:2,quote:null,margin:null,buyer:'Kestrel Dawn',expiry:null,updated:'2026-11-25 08:12'},
+ {id:2,name:'Vexor Navy ×10 for Perimeter Mining Co',plan:'Vexor Navy batch',status:'Costed',stale:'Prices are 3 days old',jobs:3,quote:1840000000,margin:11.8,buyer:'Perimeter Mining Co',expiry:null,updated:'2026-11-22 19:40'},
+ {id:3,name:'Cap Booster 800 ×235 runs',plan:'Cap boosters, wormhole',status:'Quoted',stale:null,jobs:1,quote:512300000,margin:14.0,buyer:'Hole Control',expiry:'2026-12-02',updated:'2026-11-24 22:05'},
+ {id:4,name:'Atron ×40 for the alliance',plan:'Atron starter ships',status:'Quoted',stale:'Cost index of Dodenvale changed',jobs:1,quote:96800000,margin:9.5,buyer:'Alliance Logistics',expiry:'2026-11-28',updated:'2026-11-23 14:30'},
+ {id:5,name:'Hurricane ×6',plan:'Hurricane fleet',status:'Expired',stale:null,jobs:4,quote:640000000,margin:12.0,buyer:'Kestrel Dawn',expiry:'2026-11-20',updated:'2026-11-13 11:02'},
+ {id:6,name:'Rifter ×100',plan:'Rifter spam',status:'Costed',stale:null,jobs:1,quote:88400000,margin:8.0,buyer:'',expiry:null,updated:'2026-11-21 09:18'},
+ {id:7,name:'Orca ×1 for Corp',plan:'Orca',status:'Archived',stale:null,jobs:5,quote:1250000000,margin:10.0,buyer:'Corp',expiry:'2026-10-15',updated:'2026-10-01 17:44'}
+];
+const S={view:'table',data:'some',filter:'Active',sort:'updated',dir:-1,q:''};
+const isk=n=>n==null?'—':Math.round(n).toLocaleString('en-US');
+const cls={Draft:'',Costed:'pri',Quoted:'ok',Expired:'err',Archived:''};
+const $=id=>document.getElementById(id);
+const FILTERS=['Active','Draft','Costed','Quoted','Expired','Archived','All'];
+function rows(){
+  let r=S.data==='none'?[]:P.slice();
+  if(S.filter==='Active') r=r.filter(p=>p.status!=='Archived');
+  else if(S.filter!=='All') r=r.filter(p=>p.status===S.filter);
+  if(S.q) r=r.filter(p=>(p.name+p.plan+p.buyer).toLowerCase().includes(S.q.toLowerCase()));
+  r.sort((a,b)=>{const x=a[S.sort],y=b[S.sort];return (x==null?-1:y==null?1:x>y?1:x<y?-1:0)*S.dir});
+  return r;
+}
+const daysLeft=p=>p.expiry?Math.round((Date.parse(p.expiry)-Date.parse(TODAY))/864e5):null;
+function expiryText(p){const d=daysLeft(p);if(d==null)return '<span class="dim">—</span>';
+  return d<0?`<span class="err">expired ${-d} d ago</span>`:`${p.expiry} <span class="${d<=3?'warn':'dim'}">(${d} d)</span>`;}
+function statusBadges(p){return `<span class="badge ${cls[p.status]}">${p.status}</span>`+(p.stale?` <span class="badge warn" title="${p.stale}">Out of date</span>`:'');}
+function tableView(r){
+  const th=(k,l,n)=>`<th data-s="${k}" class="${n?'n':''}">${l}${S.sort===k?(S.dir>0?' ▲':' ▼'):''}</th>`;
+  return `<div class="card scroll"><table><thead><tr>${th('name','Project')}${th('plan','Plan')}${th('status','Status')}${th('jobs','Jobs',1)}${th('quote','Quote, ISK',1)}${th('margin','Margin',1)}${th('buyer','Buyer')}${th('expiry','Expires')}${th('updated','Updated')}</tr></thead><tbody>`+
+  r.map(p=>`<tr><td><a class="pn" href="project-page-primary.html#${p.status==='Draft'?'draft':p.stale?'stale':p.status==='Quoted'?'quoted':p.status==='Expired'?'expired':'costed'}">${p.name}</a></td>
+   <td class="dim">${p.plan}</td><td>${statusBadges(p)}${p.stale?`<div class="warn" style="font-size:12px">${p.stale}</div>`:''}</td><td class="n">${p.jobs}</td><td class="n">${isk(p.quote)}</td>
+   <td class="n">${p.margin==null?'—':p.margin.toFixed(1)+'%'}</td><td>${p.buyer||'<span class="dim">—</span>'}</td><td>${expiryText(p)}</td><td class="dim">${p.updated}</td></tr>`).join('')+`</tbody></table></div>`;
+}
+function cardsView(r){
+  return `<div class="cards">`+r.map(p=>`<div class="card"><div class="row"><a class="pn" href="project-page-primary.html#${p.status==='Draft'?'draft':p.stale?'stale':p.status==='Quoted'?'quoted':p.status==='Expired'?'expired':'costed'}">${p.name}</a><span class="sp"></span>${statusBadges(p)}</div>
+   <div class="dim">From plan ${p.plan} · ${p.jobs} job${p.jobs>1?'s':''}</div>
+   ${p.stale?`<div class="stale">${p.stale}</div>`:''}
+   <div class="big">${p.quote==null?'<span class="dim">Not costed</span>':isk(p.quote)+' <span class="dim" style="font-size:13px;font-weight:400">ISK</span>'}</div>
+   <div class="row dim"><span>${p.margin==null?'':'Margin '+p.margin.toFixed(1)+'%'}</span><span class="sp"></span><span>${p.buyer||'no buyer yet'}</span></div>
+   <div class="row dim"><span>${p.expiry?'Expires':''} ${p.expiry?expiryText(p):''}</span><span class="sp"></span><span>updated ${p.updated}</span></div></div>`).join('')+`</div>`;
+}
+function render(){
+  const r=rows();
+  $('filters').innerHTML=FILTERS.map(f=>`<button class="f ${S.filter===f?'on':''}" data-f="${f}">${f}</button>`).join('')+`<span class="sp"></span><input id="q" placeholder="Search name, plan, buyer" value="${S.q}">`;
+  if(S.data==='none') $('list').innerHTML=`<div class="card empty"><h2>No projects yet</h2><div>A project starts from a plan. Pick one and EveAssist costs it for you.</div><div style="margin-top:12px"><button class="b" id="start2">Start from a plan</button></div></div>`;
+  else if(!r.length) $('list').innerHTML=`<div class="card empty">No project matches this filter.</div>`;
+  else $('list').innerHTML=S.view==='table'?tableView(r):cardsView(r);
+  document.querySelectorAll('.bar [data-v]').forEach(b=>b.classList.toggle('on',b.dataset.v===S.view));
+  document.querySelectorAll('.bar [data-d]').forEach(b=>b.classList.toggle('on',b.dataset.d===S.data));
+  document.querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>{S.filter=b.dataset.f;render()});
+  document.querySelectorAll('th[data-s]').forEach(h=>h.onclick=()=>{const k=h.dataset.s;S.dir=S.sort===k?-S.dir:1;S.sort=k;render()});
+  const q=$('q');q.onchange=()=>{S.q=q.value;render();$('q').focus()};
+  const s2=$('start2');if(s2)s2.onclick=startDialog;
+}
+const PLANS=[['Ishtar fleet','5 × Ishtar · 2 jobs','Last edited 2026-11-24'],['Vexor Navy batch','10 × Vexor Navy · 3 jobs','Last edited 2026-11-20'],['Cap boosters, wormhole','Cap Booster 800 · 1 job','Last edited 2026-11-18'],['Atron starter ships','40 × Atron · 1 job','Last edited 2026-11-12']];
+function startDialog(){
+  $('modal').innerHTML=`<div class="modal"><div class="card"><h2>Start from a plan</h2>
+   <div class="dim" style="margin-bottom:8px">The project copies the plan's items and quantities. Later changes to the plan do not change the project.</div>
+   <label>Plan</label><select id="plan" size="4" style="width:100%">${PLANS.map((p,i)=>`<option value="${i}" ${i===0?'selected':''}>${p[0]} — ${p[1]} (${p[2]})</option>`).join('')}</select>
+   <div class="row" style="margin-top:10px"><div><label>Builder</label><select><option>Aria Voss · Industry V, Adv. Industry V, +4%</option><option>Dax Holt · Industry IV</option></select></div>
+   <div><label>Buyer (optional, can be added later)</label><input placeholder="Buyer name"></div></div>
+   <div class="note">The new project is costed right away with the default facility for each activity. You can change the facilities and blueprints afterwards.</div>
+   <div class="row"><span class="sp"></span><button class="b ghost" id="cancel">Cancel</button><button class="b" id="create">Create and cost</button></div></div></div>`;
+  $('cancel').onclick=()=>$('modal').innerHTML='';
+  $('create').onclick=()=>{$('modal').innerHTML='';toast('Would create the project and open its page (see project-page-primary.html)')};
+}
+function toast(t){$('toast').innerHTML=`<div class="toast">${t}</div>`;setTimeout(()=>$('toast').innerHTML='',3500)}
+document.querySelectorAll('.bar [data-v]').forEach(b=>b.onclick=()=>{S.view=b.dataset.v;render()});
+document.querySelectorAll('.bar [data-d]').forEach(b=>b.onclick=()=>{S.data=b.dataset.d;render()});
+$('start').onclick=startDialog;
+render();
+</script>
+</body>
+</html>

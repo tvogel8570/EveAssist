@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Project page, primary screens</title>
+<style>
+:root{--bg:#1d232a;--panel:#232a33;--panel2:#2a323d;--line:#38424f;--text:#e6ebf2;--dim:#9aa7b8;--pri:#6d78f0;--ok:#35c28d;--warn:#e8b64a;--err:#ee6b7e;--r:8px}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,sans-serif}
+.bar{position:sticky;top:0;z-index:20;display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:8px 16px;background:#3a2f12;border-bottom:1px solid #6b5518;color:#f3d98a}
+.bar button{background:#2a2410;color:#f3d98a;border:1px solid #6b5518;border-radius:6px;padding:4px 10px;cursor:pointer}
+.bar button.on{background:#f3d98a;color:#2a2410}
+.sp{flex:1}
+main{max-width:1280px;margin:0 auto;padding:16px}
+h1{font-size:22px;margin:0 0 2px} h2{font-size:15px;margin:0 0 8px}
+.sub{color:var(--dim);margin-bottom:12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:14px;min-width:0}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.badge{display:inline-block;padding:1px 8px;border-radius:99px;font-size:12px;border:1px solid var(--line);color:var(--dim);white-space:nowrap}
+.badge.ok{color:var(--ok);border-color:var(--ok)}.badge.warn{color:var(--warn);border-color:var(--warn)}.badge.pri{color:#aab2ff;border-color:var(--pri)}.badge.err{color:var(--err);border-color:var(--err)}
+table{width:100%;border-collapse:collapse}
+th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+th{color:var(--dim);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+tr.total td{font-weight:700;border-top:2px solid var(--line);border-bottom:none}
+tr.sub td{color:var(--dim)}
+label{display:block;color:var(--dim);font-size:12px;margin-bottom:2px}
+select,input,textarea{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:5px 8px;font:inherit;max-width:100%}
+input[type=number]{width:90px;text-align:right}
+input.small{width:64px;text-align:right}
+button.b{background:var(--pri);color:#fff;border:0;border-radius:6px;padding:7px 14px;cursor:pointer;font:inherit}
+button.b.ghost{background:transparent;border:1px solid var(--line);color:var(--text)}
+button.b.danger{background:transparent;border:1px solid var(--err);color:var(--err)}
+button.b:disabled,select:disabled,input:disabled,textarea:disabled{opacity:.5;cursor:not-allowed}
+.quote{font-size:30px;font-weight:700;font-variant-numeric:tabular-nums}
+.dim{color:var(--dim)} .ok{color:var(--ok)} .warn{color:var(--warn)} .err{color:var(--err)}
+.two{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(320px,1fr);gap:14px;align-items:start}
+.two>div{min-width:0}
+.two .right{position:sticky;top:56px}
+@media(max-width:900px){.two{grid-template-columns:1fr}.two .right{position:static}}
+.banner{border:1px solid var(--warn);background:rgba(232,182,74,.09);border-radius:var(--r);padding:10px 14px;margin-bottom:14px}
+.banner.err{border-color:var(--err);background:rgba(238,107,126,.08)}
+.banner.ok{border-color:var(--ok);background:rgba(53,194,141,.08)}
+.note{border-left:3px solid var(--warn);padding:4px 10px;color:var(--dim);margin:8px 0}
+.scroll{overflow-x:auto}
+td.item{min-width:120px} td.item .dim{white-space:nowrap}
+td select{width:100%;min-width:190px}
+.stale-nums .n,.stale-nums .quote{opacity:.5}
+pre{overflow-x:auto;overflow-wrap:anywhere;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:10px;white-space:pre-wrap;margin:8px 0 0}
+details>summary{cursor:pointer;color:var(--dim)}
+details[open]>summary{margin-bottom:8px}
+.crumb{color:var(--dim);margin-bottom:6px}.crumb a{color:var(--dim)}
+.hide{display:none}
+.toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px 16px;z-index:60}
+.fgrid{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+</style>
+</head>
+<body>
+<div class="bar">
+  <b>Mockup, fake data</b>
+  <span>State:</span>
+  <button data-st="draft">Draft, not costed</button>
+  <button data-st="costed">Costed</button>
+  <button data-st="stale">Costed, out of date</button>
+  <button data-st="quoted">Quoted</button>
+  <button data-st="expired">Quote expired</button>
+  <span class="sp"></span>
+  <span id="barnote"></span>
+</div>
+<main id="app"></main>
+<div id="toast"></div>
+
+<script>
+"use strict";
+// Today in the mockup: 2026-11-25. The state buttons set status, costed, stale and the quote version.
+const STATES={
+  draft:{status:'Draft',costed:false,stale:null,version:0,expiry:'2026-12-02'},
+  costed:{status:'Costed',costed:true,stale:null,version:0,expiry:'2026-12-02'},
+  stale:{status:'Costed',costed:true,stale:'Material prices are 3 days old, and the cost index of Mercury Rising changed from 3.21% to 3.34%.',version:0,expiry:'2026-12-02'},
+  quoted:{status:'Quoted',costed:true,stale:null,version:1,expiry:'2026-12-02',issued:'2026-11-24 22:05 UTC'},
+  expired:{status:'Expired',costed:true,stale:null,version:1,expiry:'2026-11-20',issued:'2026-11-13 11:02 UTC'}
+};
+const S={st:'costed',dirty:false,mode:'margin',margin:12,premium:-5,rate:150,fee:10000,timeValue:0,buyer:'Kestrel Dawn',
+ note:'Delivery to Perimeter, contract to Kestrel Dawn Industrial.',units:5,basis:'sell',sell:52000000,buy:48400000,surplus:400000,inM3:4100,outM3:50000,
+ addFac:false,showText:false,
+ jobs:[
+  {item:'Vexor',kind:'built part',runs:5,me:10,te:20,bp:'BPO · Aria Voss',facility:'Mercury Rising',mats:11400000,install:310000,bpcost:0,seconds:3*3600+20*60},
+  {item:'Ishtar',kind:'product',runs:5,me:2,te:4,bp:'BPC, 5 runs · Aria Voss',facility:'Mercury Rising',mats:168000000,install:2900000,bpcost:6000000,seconds:14*3600}],
+ facilities:[
+  {name:'Mercury Rising',type:'Raitaru',system:'Perimeter (high 0.9)',rigs:'M Equipment ME I, M Equipment TE I',tax:'1.0%',idx:'3.21%',src:'ESI, 14 min old',bonus:'materials −1%, fee −3%, time −15%'},
+  {name:'J100640 Azbel',type:'Azbel',system:'J100640 (wormhole)',rigs:'none',tax:'0%',idx:'0.56835%',src:'typed, 6 h ago',bonus:'materials −1%, fee −4%, time −20%'}]};
+const st=()=>STATES[S.st];
+const jita=()=>S.basis==='sell'?S.sell:S.basis==='buy'?S.buy:(S.sell+S.buy)/2;
+const bname=()=>({sell:'Jita sell',buy:'Jita buy',split:'Jita split'})[S.basis];
+const locked=()=>S.st==='quoted'||S.st==='expired';
+const dis=()=>locked()?'disabled':'';
+const isk=n=>Math.round(n).toLocaleString('en-US')+' ISK';
+const num=n=>Math.round(n).toLocaleString('en-US');
+const hms=s=>Math.floor(s/3600)+'h '+String(Math.floor(s%3600/60)).padStart(2,'0')+'m';
+const $=id=>document.getElementById(id);
+function calc(){
+  const mats=S.jobs.reduce((a,j)=>a+j.mats,0),install=S.jobs.reduce((a,j)=>a+j.install,0),bp=S.jobs.reduce((a,j)=>a+j.bpcost,0);
+  const secs=S.jobs.reduce((a,j)=>a+j.seconds,0),time=secs/3600*S.timeValue,haul=(S.inM3+S.outM3)*S.rate;
+  const cost=mats+install+bp+time+haul+S.fee-S.surplus,market=jita()*S.units;
+  const quote=S.mode==='margin'?cost/(1-S.margin/100):market*(1+S.premium/100);
+  const other=S.mode==='margin'?market*(1+S.premium/100):cost/(1-S.margin/100);
+  return {mats,install,bp,secs,time,haul,cost,market,quote,other,profit:quote-cost,real:(quote-cost)/quote*100};
+}
+function badges(){
+  const s=st();const c={Draft:'warn',Costed:'pri',Quoted:'ok',Expired:'err'}[s.status];
+  return `<span class="badge ${c}">${s.status}${s.version?' · version '+s.version:''}</span>`+(s.stale?' <span class="badge warn">Out of date</span>':'')+(S.dirty?' <span class="badge warn">Changes not costed</span>':'');
+}
+function header(){
+  return `<div class="crumb"><a href="projects-list.html">Projects</a> › Ishtar ×5 for Kestrel Dawn</div>
+  <div class="row"><div><h1>Ishtar ×5 for Kestrel Dawn</h1><div class="sub">From plan <b>Ishtar fleet</b> · started 2026-11-17 · builder Aria Voss</div></div>
+  <span class="sp"></span>${badges()}<button class="b ghost" data-act="archive">Archive</button></div>`;
+}
+function banner(){
+  const s=st();
+  if(S.st==='draft') return `<div class="banner"><b>Not costed yet.</b> Check the settings, facilities and blueprints below, then press <b>Cost it</b>. <button class="b" data-act="cost" style="margin-left:8px">Cost it</button></div>`;
+  if(S.dirty) return `<div class="banner"><b>You changed something since the last costing.</b> The numbers below are the old ones until you press <b>Cost it</b>. <button class="b" data-act="cost" style="margin-left:8px">Cost it</button></div>`;
+  if(s.stale) return `<div class="banner"><b>This costing may be out of date.</b> ${s.stale} <button class="b" data-act="cost" style="margin-left:8px">Cost it again</button></div>`;
+  if(S.st==='expired') return `<div class="banner err"><b>The quote expired on ${s.expiry}.</b> It is kept as it was issued. To price this again, make a new version: it is costed with today's prices and starts as a draft.</div>`;
+  if(S.st==='quoted') return `<div class="banner ok"><b>Quote ${s.version} was issued ${s.issued}</b> and is frozen: its prices do not change, and the fields are locked. To change anything, make a new version.</div>`;
+  return '';
+}
+function settings(){
+  return `<div class="card"><h2>Settings</h2><div class="row">
+  <div><label>Builder (one for the whole project)</label><select ${dis()}><option>Aria Voss · Industry V, Adv. Industry V, +4%</option><option>Dax Holt · Industry IV</option></select></div>
+  <div><label>Price basis</label><select data-b ${dis()}><option value="sell" ${S.basis==='sell'?'selected':''}>Jita sell (from the plan)</option><option value="buy" ${S.basis==='buy'?'selected':''}>Jita buy</option><option value="split" ${S.basis==='split'?'selected':''}>Jita split (midpoint of buy and sell)</option></select></div>
+  <div><label>Hauling, ISK per m³</label><input type="number" data-k="rate" value="${S.rate}" ${dis()}></div>
+  <div><label>Contract fee, flat</label><input type="number" data-k="fee" value="${S.fee}" ${dis()}></div>
+  <div><label>Time value, ISK per hour</label><input type="number" data-k="timeValue" value="${S.timeValue}" ${dis()}></div></div>
+  <div class="note">Sales tax is 0 and there is no broker fee: every project is delivered by contract. Time value stays 0 until it is decided.</div></div>`;
+}
+function facilities(){
+  const rows=S.facilities.map(f=>`<tr><td><b>${f.name}</b><div class="dim">${f.type} · ${f.system}</div></td><td class="dim">${f.rigs}</td><td class="dim">${f.bonus}</td><td class="n">${f.tax}</td><td class="n">${f.idx}<div class="dim" style="font-size:12px">${f.src}</div></td></tr>`).join('');
+  return `<div class="card"><div class="row"><h2 style="margin:0">Facilities</h2><span class="dim">typed by hand, the cost index from ESI or typed (wormholes)</span><span class="sp"></span>
+   <button class="b ghost" data-act="addfac" ${dis()}>${S.addFac?'Close the form':'Add facility'}</button></div>
+  <div class="scroll"><table style="margin-top:8px"><tr><th>Facility</th><th>Rigs</th><th>Structure bonuses</th><th class="n">Tax</th><th class="n">Cost index</th></tr>${rows}</table></div>
+  <div class="note">Structure and rig bonuses come from the bonus table and are not typed here.</div>
+  ${S.addFac?`<div class="card" style="background:var(--panel2);margin:10px 0 0"><h2>New facility</h2><div class="fgrid">
+    <div><label>Name</label><input placeholder="e.g. Dodenvale Azbel"></div>
+    <div><label>Type</label><select><option>Azbel</option><option>Raitaru</option><option>Sotiyo</option><option>NPC station</option></select></div>
+    <div><label>System</label><input placeholder="System name"></div>
+    <div><label>Rigs</label><select><option>none</option><option>M Equipment ME I</option><option>L Ship ME II</option></select></div>
+    <div><label>Facility tax, %</label><input type="number" value="0"></div>
+    <div><label>Cost index, % (wormholes: type it)</label><input type="number" step="0.00001" placeholder="from ESI if empty"></div></div>
+    <div class="row" style="margin-top:10px"><span class="sp"></span><button class="b ghost" data-act="addfac">Cancel</button><button class="b" data-act="savefac">Save facility</button></div></div>`:''}</div>`;
+}
+function jobs(){
+  const rows=S.jobs.map((j,i)=>`<tr><td class="item"><b>${j.item}</b><div class="dim">${j.kind} · ${j.runs} runs · 1 job</div></td>
+   <td><select ${dis()}><option>${j.bp}</option><option>BPO ME 8 / TE 16 · Corp hangar</option><option>Typed ME/TE (not owned)…</option></select></td>
+   <td class="n"><label style="display:inline">ME</label> <input class="small" type="number" data-j="${i}" data-f="me" value="${j.me}" min="0" max="10" ${dis()}></td>
+   <td class="n"><label style="display:inline">TE</label> <input class="small" type="number" data-j="${i}" data-f="te" value="${j.te}" min="0" max="20" step="2" ${dis()}></td>
+   <td><select ${dis()}><option>${j.facility}</option><option>J100640 Azbel</option></select></td>
+   <td class="n">${num(j.mats)}</td><td class="n">${num(j.install)}</td><td class="n">${hms(j.seconds)}</td></tr>`).join('');
+  return `<div class="card"><h2>Jobs <span class="dim">(each job is independent; a BPO is always available)</span></h2>
+  <div class="scroll"><table><tr><th>Item</th><th>Blueprint</th><th class="n">ME</th><th class="n">TE</th><th>Facility</th><th class="n">Materials, ISK</th><th class="n">Install, ISK</th><th class="n">Time</th></tr>${rows}</table></div>
+  <div class="note">ME and TE start from the blueprint chosen. Typing different values is allowed and marks the line as typed. The numbers on the right come from the last costing.</div></div>`;
+}
+function costTable(c){
+  const L=(a,b,note='')=>`<tr><td>${a}${note?`<div class="dim">${note}</div>`:''}</td><td class="n">${b<0?'−':''}${isk(Math.abs(b))}</td></tr>`;
+  return `<div class="card ${S.dirty||st().stale?'stale-nums':''}"><h2>Delivered cost</h2><table>
+  ${L('Materials to buy',c.mats,bname()+', last refresh '+(st().stale?'3 days ago':'14 min ago'))}
+  ${L('Job install cost',c.install,'EIV × cost index, structure bonus, facility tax, SCC')}
+  ${L('Blueprint cost per run',c.bp,'invention share of the Ishtar BPC')}
+  ${L('Time value',c.time,hms(c.secs)+' × '+isk(S.timeValue)+' per hour')}
+  ${L('Hauling',c.haul,(S.inM3+S.outM3).toLocaleString('en-US')+' m³ × '+S.rate+' ISK')}
+  ${L('Contract fee',S.fee,'flat')}
+  ${L('Surplus credit',-S.surplus,'extra units left over by rounding')}
+  <tr class="total"><td>Delivered cost</td><td class="n">${isk(c.cost)}</td></tr></table></div>`;
+}
+function diagnostics(){
+  return `<details class="card"><summary>Check against the game <span class="dim">(for validating the costing and troubleshooting a difference)</span></summary>
+  <div class="dim">Compare each job line by line with the game's Industry window, or read the costing trace. These are diagnostic views, not part of normal work.</div>
+  <div class="row" style="margin-top:8px"><a href="project-compare.html#A"><button class="b ghost">Cards like the game window</button></a>
+  <a href="project-compare.html#B1"><button class="b ghost">Table with a "game shows" column</button></a></div></details>`;
+}
+function quoteCard(c){
+  const mk=S.mode==='margin',s=st(),notCosted=S.st==='draft';
+  const stale=S.dirty||s.stale;
+  const action=S.st==='quoted'?`<button class="b ghost" data-act="newver">New version from this quote</button><button class="b danger" data-act="del">Delete quote</button>`
+    :S.st==='expired'?`<button class="b" data-act="newver">New version from this quote</button><button class="b danger" data-act="del">Delete quote</button>`
+    :`<button class="b" data-act="issue" ${notCosted||stale?'disabled title="Cost it first"':''}>Issue quote</button>`;
+  return `<div class="card ${stale?'stale-nums':''}"><div class="row"><h2 style="margin:0">Quote</h2><span class="sp"></span><span class="dim">only you see this card</span></div>
+  <div class="row" style="margin-top:8px"><label style="margin:0"><input type="radio" name="mode" value="margin" ${mk?'checked':''} ${dis()}> Cost plus margin</label>
+  <label style="margin:0"><input type="radio" name="mode" value="market" ${!mk?'checked':''} ${dis()}> Market-referenced</label></div>
+  <div class="row" style="margin:10px 0">${mk?`<div><label>Margin on price, %</label><input type="number" data-k="margin" value="${S.margin}" min="0" max="90" ${dis()}></div>`:`<div><label>Against ${bname()}, %</label><input type="number" data-k="premium" value="${S.premium}" ${dis()}></div>`}
+   <div><label>Buyer</label><input data-t="buyer" value="${S.buyer}" ${dis()}></div>
+   <div><label>Expires</label><input type="date" data-t="expiry" value="${s.expiry}" ${dis()}></div></div>
+  ${notCosted?`<div class="dim">No price yet: cost the project first.</div>`:`<div class="dim">Quote to the buyer</div><div class="quote">${isk(c.quote)}</div><div class="dim">${isk(c.quote/S.units)} per unit × ${S.units}</div>
+  <table style="margin-top:10px"><tr class="sub"><td>Profit</td><td class="n ${c.profit>=0?'ok':'err'}">${isk(c.profit)} · ${c.real.toFixed(1)}% of price</td></tr>
+   <tr class="sub"><td>${mk?bname()+' '+(S.premium>=0?'+':'')+S.premium+'% would be':'Cost + '+S.margin+'% margin would be'}</td><td class="n">${isk(c.other)}</td></tr>
+   <tr class="sub"><td>${bname()}, ${S.units} × ${isk(jita())}${S.basis==='split'?` <span class="dim">(buy ${num(S.buy)}, sell ${num(S.sell)})</span>`:''}</td><td class="n">${isk(c.market)}</td></tr></table>`}
+  ${S.st==='quoted'?`<div class="note">Current prices differ from the frozen ones by +0.8%.</div>`:''}
+  <div class="row" style="margin-top:10px">${action}</div>
+  ${notCosted?'':`<div class="row" style="margin-top:8px"><button class="b ghost" data-act="copy">Copy quote text</button><button class="b ghost" data-act="csv">Download CSV</button></div>`}
+  <pre class="${S.showText&&!notCosted?'':'hide'}">${`Quote ${s.version||'(draft)'} for ${S.buyer}\n${S.units} × Ishtar, delivered by contract\nPrice per unit: ${isk(c.quote/S.units)}\nTotal: ${isk(c.quote)}\nValid until ${s.expiry}\n${S.note}`}</pre></div>`;
+}
+function toast(t){$('toast').innerHTML=`<div class="toast">${t}</div>`;setTimeout(()=>$('toast').innerHTML='',3200)}
+function render(){
+  const c=calc();
+  $('app').innerHTML=header()+banner()+`<div class="two"><div>${settings()}${facilities()}${jobs()}${costTable(c)}${diagnostics()}</div><div class="right">${quoteCard(c)}</div></div>`;
+  document.querySelectorAll('.bar [data-st]').forEach(b=>b.classList.toggle('on',b.dataset.st===S.st));
+  $('barnote').textContent={draft:'Draft: cost it first',costed:'Costed: the quote can be issued',stale:'Out of date: cost it again before issuing',quoted:'Quoted: fields are locked',expired:'Expired: make a new version'}[S.st];
+  document.querySelectorAll('[data-k]').forEach(e=>e.onchange=()=>{S[e.dataset.k]=+e.value||0;if(!['margin','premium'].includes(e.dataset.k))S.dirty=true;render()});
+  document.querySelectorAll('[data-b]').forEach(e=>e.onchange=()=>{S.basis=e.value;S.dirty=true;render()});
+  document.querySelectorAll('[data-t]').forEach(e=>e.onchange=()=>{if(e.dataset.t==='buyer')S.buyer=e.value;else st().expiry=e.value;render()});
+  document.querySelectorAll('[data-j]').forEach(e=>e.onchange=()=>{S.jobs[+e.dataset.j][e.dataset.f]=+e.value;S.dirty=true;render()});
+  document.querySelectorAll('input[name=mode]').forEach(r=>r.onchange=()=>{S.mode=r.value;render()});
+  document.querySelectorAll('[data-act]').forEach(b=>b.onclick=()=>{
+    const a=b.dataset.act;
+    if(a==='cost'){S.st='costed';STATES.costed.stale=null;S.dirty=false;toast('Costed with the prices and cost indexes of now')}
+    else if(a==='issue'){S.st='quoted';STATES.quoted.version=1;toast('Quote 1 issued and frozen')}
+    else if(a==='newver'){S.st='draft';S.dirty=false;toast('New version started as a draft, costed with today\'s prices')}
+    else if(a==='del'){if(confirm('Delete this quote? The project goes back to a costed project.')){S.st='costed';toast('Quote deleted')}}
+    else if(a==='addfac')S.addFac=!S.addFac;
+    else if(a==='savefac'){S.addFac=false;toast('Facility saved (mockup: not added to the list)')}
+    else if(a==='copy'||a==='csv')S.showText=true;
+    else if(a==='archive')toast('Would archive the project and return to the list');
+    render();
+  });
+}
+document.querySelectorAll('.bar [data-st]').forEach(b=>b.onclick=()=>{S.st=b.dataset.st;S.dirty=false;render()});
+const h=location.hash.replace('#','');if(STATES[h])S.st=h;
+render();
+</script>
+</body>
+</html>
