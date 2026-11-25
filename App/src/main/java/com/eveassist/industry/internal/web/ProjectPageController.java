@@ -18,6 +18,8 @@ import com.eveassist.industry.internal.application.ProjectNotQuotedException;
 import com.eveassist.industry.internal.application.ProjectQueries;
 import com.eveassist.industry.internal.application.ProjectQuoting;
 import com.eveassist.industry.internal.application.QuoteNotFoundException;
+import com.eveassist.industry.internal.application.ShareableQuote;
+import com.eveassist.industry.internal.application.QuoteExport;
 import com.eveassist.industry.internal.application.SetProjectConfigCommand;
 import com.eveassist.industry.internal.application.SetProjectItemCommand;
 import com.eveassist.industry.internal.domain.BlueprintSource;
@@ -27,6 +29,8 @@ import com.eveassist.industry.internal.domain.ProjectLockedException;
 import com.eveassist.sde.TypeId;
 import jakarta.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
+import java.util.LinkedHashMap;
+import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.LocalDate;
@@ -36,6 +40,10 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Pattern;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.MediaType;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ContentDisposition;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -67,15 +75,17 @@ class ProjectPageController {
     private final ProjectEditing editing;
     private final ProjectEntry entry;
     private final ProjectQuoting quoting;
+    private final QuoteExport quoteExport;
     private final ProjectStates states;
     private final Clock clock;
 
     ProjectPageController(ProjectQueries queries, ProjectEditing editing, ProjectEntry entry, ProjectQuoting quoting,
-            ProjectStates states, Clock clock) {
+            QuoteExport quoteExport, ProjectStates states, Clock clock) {
         this.queries = queries;
         this.editing = editing;
         this.entry = entry;
         this.quoting = quoting;
+        this.quoteExport = quoteExport;
         this.states = states;
         this.clock = clock;
     }
@@ -100,6 +110,10 @@ class ProjectPageController {
         model.addAttribute("openWarnings", stored != null && !stored.quotable());
         model.addAttribute("openSettings", failed);
         model.addAttribute("openItems", failed);
+        // what each issued quote says to its buyer, to copy or to download (made from the quote as it was frozen)
+        Map<Integer, ShareableQuote> exports = new LinkedHashMap<>();
+        project.quotes().forEach(quote -> exports.put(quote.number(), quoteExport.of(viewer, new ProjectId(id), quote.number())));
+        model.addAttribute("exports", exports);
         model.addAttribute("project", project);
         model.addAttribute("state", state);
         model.addAttribute("locked", locked);
@@ -182,6 +196,16 @@ class ProjectPageController {
             flash.addFlashAttribute("facilitiesChanged", true);
         }
         return back(id);
+    }
+
+    /** The quote as a CSV file, for a buyer who wants a sheet. It holds the products, the total, the buyer, the note and the expiry, and nothing of the cost. */
+    @GetMapping("/quotes/{number}/csv")
+    ResponseEntity<String> csv(Viewer viewer, @PathVariable UUID id, @PathVariable int number) {
+        var shareable = quoteExport.of(viewer, new ProjectId(id), number);
+        return ResponseEntity.ok()
+                .contentType(new MediaType("text", "csv", StandardCharsets.UTF_8))
+                .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment().filename(shareable.fileName()).build().toString())
+                .body(shareable.csv());
     }
 
     @PostMapping("/quotes/{number}/delete")

@@ -81,7 +81,9 @@ reviewed with the developer.
    with the date it was entered**, and the Facilities page shows its age ("typed 3 d ago"), as the wormhole rule asks; reading it from ESI, and the structure's rigs and system
    as chosen values, are later steps. Deleting a facility clears it from the Drafts that use it, says how many, and makes their costing out of date; a quote already issued is
    not changed. See [Projects: persistence and use cases](../architecture/projects.md).
-3. **After that:** the quote text and CSV, and the comparison views A and B.
+3. **In progress: the quote export, then the comparison views.** The **quote text and CSV** are done (2026-11-25): each issued quote in the Quotes list has a *Text and CSV to send*
+   block with the text to copy and a CSV to download (see [The quote](#the-quote)). They are offered for an **issued** quote only, which differs from the mockup: a Draft has no number, buyer or
+   expiry yet, so issue first and then copy. The **comparison views A and B** (with the "game shows" values kept in the browser per costing) are the rest of this slice.
 
 Jita split (see [Price basis](market-logistics.md#price-basis)) follows as its own change after these pages.
 
@@ -255,6 +257,13 @@ Decided with the developer on 2026-11-17: **both ways of pricing, switchable per
 - It shows the **price per unit and the total**. The margin and the profit are only for the developer's eyes.
 - **Shareable text and CSV** can be copied or downloaded, to put in a contract description or a message. It does not
   show the cost breakdown.
+  **Decided with the developer on 2026-11-25:** the text is `Quote 1 for Kestrel Dawn`, then `5 × Ishtar, delivered by contract` (several products are joined with commas),
+  `Total: 266,053,000 ISK`, `Per unit: 53,210,600 ISK` (only for a quote of **one** product, since a price per unit means nothing across several), `Valid until 2026-12-02` and the note.
+  **Money is whole ISK with thousands separators**, whatever the server's language, because a quote is rounded up to the quote step; per unit is rounded half up. The CSV is the **buyer's view
+  only** (the developer chose that over a second CSV of the costing): a row for each product, a row for the price per unit of a one-product quote and a row for the total, each saying the quote,
+  the buyer, the expiry and the note, with plain whole-number prices for a spreadsheet. A field that a spreadsheet would read as a formula (it starts with `=`, `+`, `-` or `@`) is put right
+  with a leading quote, since the buyer's name and the note are typed text. Both are made from the quote **as it was frozen**, so they never change, and the file is named after the project
+  and the quote (`quote-haulers-for-kestrel-1.csv`).
 - Buyer-supplied materials, where the buyer provides some inputs and the quote is a build fee only, are not needed for
   now (the developer did not pick them). The cost lines are built so that a material can be marked "supplied" later.
 
@@ -372,7 +381,6 @@ warnings cannot show which of those differs, and a trace that lacks the prices' 
   rule, so that it can be checked against a Janice appraisal. **A consequence to decide:** for a large quantity this understates what buying that
   quantity would really cost, because the best order is usually small. Whether the project's material cost should walk the book is not decided here.
 - **Whether layout C** (the copyable text block in `documentation/mockups/project-compare.html`) is built too. A and B are decided.
-- **The currency format** on the shareable text.
 - **A facility's structure and rig bonus table**: where it lives, and how it is kept right after patches.
 - **Wormhole index, details left open:** how old a typed index may be before the page warns (a number of days); whether the
   same field may also override an index ESI does list, for a what-if; and whether the facility page offers a small helper

@@ -422,4 +422,62 @@ class ProjectPagesIT extends IntegrationTest {
                     .andExpect(redirectedUrl("/projects/" + id));
         }
     }
+
+    // ---- the text and the CSV of an issued quote ----
+
+    /** Issues the quote of a costed, quotable project the way the quote card does. */
+    private void issued(String sub, UUID id, String buyer, String note) throws Exception {
+        mvc.perform(post("/projects/" + id + "/quotes").param("expectedVersion", String.valueOf(versionOf(id)))
+                .param("buyer", buyer).param("note", note).param("expires", LocalDate.now().plusDays(7).toString())
+                .with(signedIn(sub)).with(csrf())).andExpect(redirectedUrl("/projects/" + id));
+    }
+
+    @Test
+    void anIssuedQuoteOffersItsTextToCopyAndItsCsvAndShowsNothingOfWhatItCost() throws Exception {
+        var sub = newSub();
+        var id = quotable(sub);
+        page(sub, id).andExpect(content().string(not(containsString("id=\"quote-text-1\""))));
+
+        issued(sub, id, "Kestrel <b>Dawn</b>", "By contract");
+
+        var html = page(sub, id).andExpect(content().string(containsString("id=\"copy-quote-1\"")))
+                .andExpect(content().string(containsString("href=\"/projects/" + id + "/quotes/1/csv\"")))
+                // the buyer's name is text, so it is escaped in the box
+                .andExpect(content().string(containsString("Quote 1 for Kestrel &lt;b&gt;Dawn&lt;/b&gt;")))
+                .andExpect(content().string(not(containsString("<b>Dawn</b>"))))
+                .andReturn().getResponse().getContentAsString();
+        var box = html.substring(html.indexOf("id=\"quote-text-1\""), html.indexOf("</textarea>", html.indexOf("id=\"quote-text-1\"")));
+        assertThat(box).contains("Total: ").contains(" ISK").contains("By contract").contains("Valid until ");
+        assertThat(box).doesNotContainIgnoringCase("margin").doesNotContainIgnoringCase("profit").doesNotContainIgnoringCase("cost");
+    }
+
+    @Test
+    void theCsvIsADownloadWithTheProductsAndTheTotalAndAFormulaInTheBuyersNameIsMadeSafe() throws Exception {
+        var sub = newSub();
+        var id = quotable(sub);
+        issued(sub, id, "=HYPERLINK(\"http://example.com\")", "a, b");
+
+        var response = mvc.perform(get("/projects/" + id + "/quotes/1/csv").with(signedIn(sub)))
+                .andExpect(status().isOk()).andReturn().getResponse();
+
+        assertThat(response.getContentType()).startsWith("text/csv");
+        assertThat(response.getHeader("Content-Disposition")).startsWith("attachment; filename=\"quote-").endsWith("-1.csv\"");
+        var body = response.getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+        assertThat(body).startsWith("Quote,Buyer,Item,Quantity,Price (ISK),Valid until,Note\r\n")
+                .contains(",Total,,")
+                // a quote in front of the formula, and the comma of the note makes it a quoted field
+                .contains("\"'=HYPERLINK(\"\"http://example.com\"\")\"").contains("\"a, b\"");
+        assertThat(body).doesNotContainIgnoringCase("margin").doesNotContainIgnoringCase("profit");
+    }
+
+    @Test
+    void aCsvForAQuoteThatDoesNotExistOrBelongsToAnotherAccountIsNotFound() throws Exception {
+        var owner = newSub();
+        var id = quotable(owner);
+        issued(owner, id, "Buyer", "");
+
+        mvc.perform(get("/projects/" + id + "/quotes/2/csv").with(signedIn(owner))).andExpect(status().isNotFound());
+        mvc.perform(get("/projects/" + id + "/quotes/1/csv").with(signedIn(newSub()))).andExpect(status().isNotFound());
+        mvc.perform(get("/projects/" + UUID.randomUUID() + "/quotes/1/csv").with(signedIn(owner))).andExpect(status().isNotFound());
+    }
 }

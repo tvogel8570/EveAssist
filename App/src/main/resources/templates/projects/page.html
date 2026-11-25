@@ -306,6 +306,16 @@
                             </details>
                         </div>
                         <div class="text-xs opacity-70" th:text="#{project.quoteLine(${@utcTime.format(quote.issuedAt)}, ${quote.expiresAt == null ? '—' : @utcTime.format(quote.expiresAt)})}">issued</div>
+                        <details class="mt-1" th:with="export=${exports.get(quote.number)}">
+                            <summary class="cursor-pointer select-none text-xs opacity-70" th:text="#{project.share}">Text and CSV to send</summary>
+                            <textarea th:id="'quote-text-' + ${quote.number}" class="textarea textarea-sm mt-1 w-full font-mono text-xs" rows="7" readonly th:text="${export.text}"></textarea>
+                            <div class="mt-1 flex flex-wrap items-center gap-2">
+                                <button type="button" class="btn btn-xs btn-outline" th:id="'copy-quote-' + ${quote.number}" th:attr="data-copy-from='#quote-text-' + ${quote.number}" th:text="#{project.copyText}">Copy text</button>
+                                <span class="hidden text-xs text-success" data-copied th:text="#{project.copied}">Copied</span>
+                                <a class="btn btn-xs btn-outline" th:id="'csv-quote-' + ${quote.number}" th:href="@{/projects/{id}/quotes/{n}/csv(id=${project.id.value}, n=${quote.number})}" th:text="#{project.downloadCsv}">Download CSV</a>
+                            </div>
+                            <p class="mt-1 text-xs opacity-70" th:text="#{project.shareNote}">Neither shows what it cost.</p>
+                        </details>
                     </li>
                 </ul>
             </div>

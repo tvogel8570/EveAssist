@@ -82,6 +82,34 @@
         window.location.assign(target);
     });
 
+    // A button that says data-copy-from="#id" copies the text of that box to the clipboard and says "Copied" beside it for a moment. Where the browser will not
+    // give the clipboard to a script (a page that is not secure, a permission refused) the box is selected and the browser is asked to copy, and failing that
+    // the text is left selected for the user to copy by hand.
+    document.addEventListener('click', event => {
+        const button = event.target.closest('button[data-copy-from]');
+        const source = button ? document.querySelector(button.dataset.copyFrom) : null;
+        if (!source) {
+            return;
+        }
+        const cue = button.parentElement.querySelector('[data-copied]');
+        const copied = () => {
+            cue?.classList.remove('hidden');
+            setTimeout(() => cue?.classList.add('hidden'), 2000);
+        };
+        const byHand = () => {
+            source.focus();
+            source.select();
+            if (document.execCommand('copy')) {
+                copied();
+            }
+        };
+        if (navigator.clipboard?.writeText) {
+            navigator.clipboard.writeText(source.value).then(copied, byHand);
+        } else {
+            byHand();
+        }
+    });
+
     // The facility form's "Fill the structure's bonuses" button copies the chosen structure's materials, time and job fee bonuses (which the page
     // puts on the option as data-material, data-time and data-cost) into the form's fields. "Not said" has none, so it does nothing. The fields
     // are told they changed, so that the form says it has unsaved changes.
