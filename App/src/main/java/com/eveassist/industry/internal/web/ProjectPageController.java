@@ -95,6 +95,11 @@ class ProjectPageController {
         project.items().forEach(item -> names.put(item.type(), item.name()));
         project.products().forEach(product -> names.put(product.type(), product.name()));
 
+        // sections the user has to see open, whatever they closed before: a warning that blocks the quote, and where the last error may be
+        var failed = model.containsAttribute("error");
+        model.addAttribute("openWarnings", stored != null && !stored.quotable());
+        model.addAttribute("openSettings", failed);
+        model.addAttribute("openItems", failed);
         model.addAttribute("project", project);
         model.addAttribute("state", state);
         model.addAttribute("locked", locked);
@@ -111,16 +116,17 @@ class ProjectPageController {
     }
 
     @PostMapping("/cost")
-    String cost(Viewer viewer, @PathVariable UUID id, RedirectAttributes flash) {
+    String cost(Viewer viewer, @PathVariable UUID id, @RequestParam(required = false) String anchor, RedirectAttributes flash) {
         var run = entry.cost(viewer, new ProjectId(id));
         if (run.adjustedPricesProblem() != null) {
             flash.addFlashAttribute("pricesProblem", true);
         }
-        return back(id);
+        return back(id, anchor);
     }
 
     @PostMapping("/config")
-    String config(Viewer viewer, @PathVariable UUID id, @ModelAttribute ConfigForm form) {
+    String config(Viewer viewer, @PathVariable UUID id, @ModelAttribute ConfigForm form,
+            @RequestParam(required = false) String anchor) {
         var project = new ProjectId(id);
         var current = queries.details(viewer, project).config();
         ProjectConfig changed;
@@ -130,13 +136,14 @@ class ProjectPageController {
             throw new InvalidFormException(invalid);
         }
         editing.setConfig(viewer, new SetProjectConfigCommand(project, changed, form.expectedVersion()));
-        return back(id);
+        return back(id, anchor);
     }
 
     @PostMapping("/items/{type}")
     String item(Viewer viewer, @PathVariable UUID id, @PathVariable int type, @RequestParam long expectedVersion,
             @RequestParam int me, @RequestParam int te, @RequestParam(required = false) String facility,
-            @RequestParam(required = false) BigDecimal blueprintCostPerRun, @RequestParam Map<String, String> all) {
+            @RequestParam(required = false) BigDecimal blueprintCostPerRun, @RequestParam(required = false) String anchor,
+            @RequestParam Map<String, String> all) {
         var project = new ProjectId(id);
         var line = queries.details(viewer, project).items().stream().filter(item -> item.type() == type).findFirst()
                 .orElseThrow(ProjectNotFoundException::new);
@@ -154,17 +161,17 @@ class ProjectPageController {
             throw new InvalidFormException(invalid);
         }
         editing.setItem(viewer, new SetProjectItemCommand(project, item, expectedVersion));
-        return back(id);
+        return back(id, anchor);
     }
 
     @PostMapping("/quotes")
     String issue(Viewer viewer, @PathVariable UUID id, @RequestParam long expectedVersion,
             @RequestParam(required = false) String buyer, @RequestParam(required = false) String note,
-            @RequestParam(required = false) String expires) {
+            @RequestParam(required = false) String expires, @RequestParam(required = false) String anchor) {
         var expiresAt = expires == null || expires.isBlank() ? null
                 : LocalDate.parse(expires.strip()).plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant();
         quoting.issue(viewer, new IssueQuoteCommand(new ProjectId(id), expectedVersion, buyer, note, expiresAt));
-        return back(id);
+        return back(id, anchor);
     }
 
     @PostMapping("/quotes/{number}/new-version")
@@ -185,6 +192,14 @@ class ProjectPageController {
 
     private static String back(UUID id) {
         return "redirect:/projects/" + id;
+    }
+
+    /** An id the page has: letters, digits and dashes only, which a fragment of our own address cannot misuse. Anything else is left out. */
+    private static final Pattern ANCHOR = Pattern.compile("[A-Za-z][A-Za-z0-9-]{0,39}");
+
+    /** Back to the page, at the part of it the change was made in, so a long page does not jump to the top after a save. */
+    private static String back(UUID id, String anchor) {
+        return anchor != null && ANCHOR.matcher(anchor).matches() ? back(id) + "#" + anchor : back(id);
     }
 
     private static FacilityId facilityOf(String text) {

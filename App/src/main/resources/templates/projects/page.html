@@ -50,8 +50,14 @@
         <div class="min-w-0 space-y-4">
 
             <!--/* ---- settings ---- */-->
-            <form id="settings-form" class="group card bg-base-200 p-4 gap-3" data-track-unsaved method="post" th:action="@{/projects/{id}/config(id=${project.id.value})}">
-                <h2 class="font-semibold" th:text="#{project.settings}">Settings</h2>
+            <details id="settings" data-section="settings" class="group/section rounded-box bg-base-200 [&>:not(summary)]:mx-4 [&>:not(summary)]:mb-4" th:attr="data-keep-open=${openSettings} ? 'true' : null, open=${openSettings} ? 'open' : null">
+            <summary class="flex cursor-pointer select-none items-center gap-2 rounded-box px-4 py-3 hover:bg-base-300/40">
+                <svg class="h-4 w-4 shrink-0 opacity-70 transition-transform group-open/section:rotate-90" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M7 4l6 6-6 6V4z"/></svg>
+                <h2 class="font-semibold grow" th:text="#{project.settings}">Settings</h2>
+                <span class="badge badge-warning badge-sm hidden group-data-[dirty]/section:inline" data-section-unsaved th:text="#{project.unsavedShort}">Unsaved</span>
+            </summary>
+            <form id="settings-form" class="group flex flex-col gap-3" data-track-unsaved method="post" th:action="@{/projects/{id}/config(id=${project.id.value})}">
+                <input type="hidden" name="anchor" value="settings">
                 <input type="hidden" name="expectedVersion" th:value="${v}">
                 <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     <label class="form-control"><span class="text-xs opacity-70" th:text="#{project.industry}">Industry</span>
@@ -86,10 +92,14 @@
                     <span class="hidden group-data-[dirty]:inline text-xs text-warning" data-unsaved-note th:text="#{project.unsaved}">Unsaved changes</span>
                 </div>
             </form>
+            </details>
 
             <!--/* ---- facilities, read-only until the facility pages exist ---- */-->
-            <div id="facilities" class="card bg-base-200 p-4 gap-2">
-                <h2 class="font-semibold" th:text="#{project.facilities}">Facilities</h2>
+            <details id="facilities" data-section="facilities" class="group/section rounded-box bg-base-200 [&>:not(summary)]:mx-4 [&>:not(summary)]:mb-4">
+            <summary class="flex cursor-pointer select-none items-center gap-2 rounded-box px-4 py-3 hover:bg-base-300/40">
+                <svg class="h-4 w-4 shrink-0 opacity-70 transition-transform group-open/section:rotate-90" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M7 4l6 6-6 6V4z"/></svg>
+                <h2 class="font-semibold grow" th:text="#{project.facilities}">Facilities</h2>
+            </summary>
                 <p id="no-facilities" th:if="${#lists.isEmpty(project.facilities)}" class="text-sm opacity-70" th:text="#{project.noFacilities}">No facilities yet.</p>
                 <div class="overflow-x-auto" th:unless="${#lists.isEmpty(project.facilities)}">
                     <table class="table table-sm">
@@ -111,11 +121,15 @@
                         </tr></tbody>
                     </table>
                 </div>
-            </div>
+            </details>
 
             <!--/* ---- the items the project builds ---- */-->
-            <div id="items" class="card bg-base-200 p-4 gap-2">
-                <h2 class="font-semibold" th:text="#{project.items}">Items</h2>
+            <details id="items" data-section="items" class="group/section rounded-box bg-base-200 [&>:not(summary)]:mx-4 [&>:not(summary)]:mb-4" th:attr="data-keep-open=${openItems} ? 'true' : null, open=${openItems} ? 'open' : null">
+            <summary class="flex cursor-pointer select-none items-center gap-2 rounded-box px-4 py-3 hover:bg-base-300/40">
+                <svg class="h-4 w-4 shrink-0 opacity-70 transition-transform group-open/section:rotate-90" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M7 4l6 6-6 6V4z"/></svg>
+                <h2 class="font-semibold grow" th:text="#{project.items}">Items</h2>
+                <span class="badge badge-warning badge-sm hidden group-data-[dirty]/section:inline" data-section-unsaved th:text="#{project.unsavedShort}">Unsaved</span>
+            </summary>
                 <p class="text-xs opacity-70" th:text="#{project.itemsNote}">ME and TE are typed, as the project cannot read your blueprints yet.</p>
                 <div class="overflow-x-auto">
                     <table class="table table-sm">
@@ -145,6 +159,7 @@
                                 <td class="text-right">
                                     <form class="group" data-track-unsaved th:id="'item-form-' + ${item.type}" method="post" th:action="@{/projects/{id}/items/{type}(id=${project.id.value}, type=${item.type})}">
                                         <input type="hidden" name="expectedVersion" th:value="${v}">
+                                        <input type="hidden" name="anchor" th:value="'item-' + ${item.type}">
                                         <button class="btn btn-xs btn-outline group-data-[dirty]:btn-warning" type="submit" th:id="'save-item-' + ${item.type}" th:disabled="${locked}" th:text="#{project.save}">Save</button>
                                         <span class="hidden group-data-[dirty]:block text-xs text-warning" data-unsaved-note th:text="#{project.unsaved}">Unsaved changes</span>
                                     </form>
@@ -168,44 +183,56 @@
                         </tbody>
                     </table>
                 </div>
-            </div>
+            </details>
 
             <!--/* ---- what the costing found ---- */-->
-            <div id="warnings" class="card bg-base-200 p-4 gap-1" th:if="${doc != null and !#lists.isEmpty(doc.warnings)}">
-                <h2 class="font-semibold" th:text="#{project.warnings}">Warnings</h2>
+            <details id="warnings" data-section="warnings" class="group/section rounded-box bg-base-200 [&>:not(summary)]:mx-4 [&>:not(summary)]:mb-4" open th:if="${doc != null and !#lists.isEmpty(doc.warnings)}" th:attr="data-keep-open=${openWarnings} ? 'true' : null">
+            <summary class="flex cursor-pointer select-none items-center gap-2 rounded-box px-4 py-3 hover:bg-base-300/40">
+                <svg class="h-4 w-4 shrink-0 opacity-70 transition-transform group-open/section:rotate-90" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M7 4l6 6-6 6V4z"/></svg>
+                <h2 class="font-semibold grow" th:text="#{project.warnings}">Warnings</h2>
+                <span class="badge badge-warning badge-sm" th:text="${#lists.size(doc.warnings)}">1</span>
+                <span class="badge badge-error badge-sm" th:if="${!stored.quotable}" th:text="#{project.blocksQuote}">Blocks the quote</span>
+            </summary>
                 <ul class="list-disc ml-5 text-sm">
                     <li th:each="warning : ${doc.warnings}"
                         th:text="#{'project.warning.' + ${warning.kind}(${project.warningTypeNames.getOrDefault(warning.type, '#' + warning.type)})}">Warning</li>
                 </ul>
-            </div>
+            </details>
 
-            <div id="jobs" class="card bg-base-200 p-4 gap-2" th:if="${doc != null and !#lists.isEmpty(doc.jobs)}">
-                <h2 class="font-semibold" th:text="#{project.jobs}">Jobs</h2>
+            <details id="jobs" data-section="jobs" class="group/section rounded-box bg-base-200 [&>:not(summary)]:mx-4 [&>:not(summary)]:mb-4" th:if="${doc != null and !#lists.isEmpty(doc.jobs)}">
+            <summary class="flex cursor-pointer select-none items-center gap-2 rounded-box px-4 py-3 hover:bg-base-300/40">
+                <svg class="h-4 w-4 shrink-0 opacity-70 transition-transform group-open/section:rotate-90" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M7 4l6 6-6 6V4z"/></svg>
+                <h2 class="font-semibold grow" th:text="#{project.jobs}">Jobs</h2>
+            </summary>
                 <div class="overflow-x-auto">
-                    <table class="table table-sm">
+                    <table class="table table-sm" data-sortable>
                         <thead><tr>
-                            <th th:text="#{project.item}">Item</th>
-                            <th class="num" th:text="#{project.runs}">Runs</th>
-                            <th class="num" th:text="#{project.unitsMade}">Units</th>
-                            <th class="num" th:text="#{project.time}">Time</th>
-                            <th class="num" th:text="#{project.installCost}">Install cost</th>
+                            <th data-sort="text" aria-sort="none"><button type="button" class="cursor-pointer select-none hover:underline"><span th:text="#{project.item}">Item</span> <span class="inline-block w-3" data-sort-mark aria-hidden="true"></span></button></th>
+                            <th class="num" data-sort="num" aria-sort="none"><button type="button" class="cursor-pointer select-none hover:underline"><span data-sort-mark class="inline-block w-3" aria-hidden="true"></span> <span th:text="#{project.runs}">Runs</span></button></th>
+                            <th class="num" data-sort="num" aria-sort="none"><button type="button" class="cursor-pointer select-none hover:underline"><span data-sort-mark class="inline-block w-3" aria-hidden="true"></span> <span th:text="#{project.unitsMade}">Units</span></button></th>
+                            <th class="num" data-sort="num" aria-sort="none"><button type="button" class="cursor-pointer select-none hover:underline"><span data-sort-mark class="inline-block w-3" aria-hidden="true"></span> <span th:text="#{project.time}">Time</span></button></th>
+                            <th class="num" data-sort="num" aria-sort="none"><button type="button" class="cursor-pointer select-none hover:underline"><span data-sort-mark class="inline-block w-3" aria-hidden="true"></span> <span th:text="#{project.installCost}">Install cost</span></button></th>
                         </tr></thead>
                         <tbody><tr th:each="job : ${doc.jobs}">
                             <td th:text="${names.getOrDefault(job.product, '#' + job.product)}">Item</td>
-                            <td class="num" th:text="${job.runs}">1</td>
-                            <td class="num" th:text="${job.unitsMade}">1</td>
-                            <td class="num" th:text="${@durations.format(job.seconds)}">1h</td>
-                            <td class="num" th:text="${#numbers.formatDecimal(job.installCost, 1, 'COMMA', 0, 'POINT')}">1</td>
+                            <td class="num" th:attr="data-value=${job.runs}" th:text="${job.runs}">1</td>
+                            <td class="num" th:attr="data-value=${job.unitsMade}" th:text="${job.unitsMade}">1</td>
+                            <td class="num" th:attr="data-value=${job.seconds}" th:text="${@durations.format(job.seconds)}">1h</td>
+                            <td class="num" th:attr="data-value=${job.installCost}" th:text="${#numbers.formatDecimal(job.installCost, 1, 'COMMA', 0, 'POINT')}">1</td>
                         </tr></tbody>
                     </table>
                 </div>
-            </div>
+            </details>
 
-            <div id="delivered-cost" class="card bg-base-200 p-4 gap-2" th:if="${doc != null}" th:classappend="${!#lists.isEmpty(reasons)} ? 'opacity-60'">
-                <div class="flex items-center gap-2">
-                    <h2 class="font-semibold grow" th:text="#{project.deliveredCost}">Delivered cost</h2>
+            <details id="delivered-cost" data-section="delivered-cost" class="group/section rounded-box bg-base-200 [&>:not(summary)]:mx-4 [&>:not(summary)]:mb-4" th:if="${doc != null}" th:classappend="${!#lists.isEmpty(reasons)} ? 'opacity-60'">
+            <summary class="flex cursor-pointer select-none items-center gap-2 rounded-box px-4 py-3 hover:bg-base-300/40">
+                <svg class="h-4 w-4 shrink-0 opacity-70 transition-transform group-open/section:rotate-90" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M7 4l6 6-6 6V4z"/></svg>
+                <h2 class="font-semibold grow" th:text="#{project.deliveredCost}">Delivered cost</h2>
+            </summary>
+                <div class="flex justify-end" th:if="${!locked}">
                     <!--/* always there on a draft: a costing is only made on request, and prices and the cost index move */-->
-                    <form th:if="${!locked}" method="post" th:action="@{/projects/{id}/cost(id=${project.id.value})}">
+                    <form method="post" th:action="@{/projects/{id}/cost(id=${project.id.value})}">
+                        <input type="hidden" name="anchor" value="delivered-cost">
                         <button id="recost" class="btn btn-xs btn-outline" type="submit" th:text="#{project.costAgain}">Cost it again</button>
                     </form>
                 </div>
@@ -222,7 +249,7 @@
                     </tbody>
                 </table>
                 <p class="text-xs opacity-70" th:text="#{project.costedAt(${@utcTime.format(stored.costedAt)}, ${@utcTime.format(stored.pricesAsOf)})}">Costed</p>
-            </div>
+            </details>
         </div>
 
         <!--/* ---- the quote card: only the user sees it ---- */-->
@@ -235,6 +262,7 @@
 
                 <form id="quote-settings" class="group grid gap-2 grid-cols-2" data-track-unsaved method="post" th:action="@{/projects/{id}/config(id=${project.id.value})}">
                     <input type="hidden" name="expectedVersion" th:value="${v}">
+                    <input type="hidden" name="anchor" value="quote-card">
                     <label class="col-span-2 flex items-center gap-2 text-sm"><input type="radio" class="radio radio-sm" name="mode" value="MARGIN" th:checked="${set.mode.name() == 'MARGIN'}" th:disabled="${locked}"> <span th:text="#{project.modeMargin}">Cost plus margin</span></label>
                     <label class="col-span-2 flex items-center gap-2 text-sm"><input type="radio" class="radio radio-sm" name="mode" value="MARKET" th:checked="${set.mode.name() == 'MARKET'}" th:disabled="${locked}"> <span th:text="#{project.modeMarket}">Market-referenced</span></label>
                     <label class="form-control"><span class="text-xs opacity-70" th:text="#{project.margin}">Margin on price, %</span>
@@ -267,6 +295,7 @@
                 <!--/* the quote can be issued from a current costing only, and the backend says so too */-->
                 <form id="issue-form" th:if="${!locked}" class="grid gap-2" method="post" th:action="@{/projects/{id}/quotes(id=${project.id.value})}">
                     <input type="hidden" name="expectedVersion" th:value="${v}">
+                    <input type="hidden" name="anchor" value="quote-card">
                     <label class="form-control"><span class="text-xs opacity-70" th:text="#{project.buyer}">Buyer</span>
                         <input class="input input-sm w-full" name="buyer" maxlength="100" autocomplete="off" th:value="${cfg.buyerName}"></label>
                     <label class="form-control"><span class="text-xs opacity-70" th:text="#{project.note}">Note</span>

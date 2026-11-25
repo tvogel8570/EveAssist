@@ -1,5 +1,6 @@
 package com.eveassist.industry.internal.web;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -23,6 +24,7 @@ import com.eveassist.industry.internal.application.ProjectQuoting;
 import com.eveassist.market.AdjustedPriceService;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -305,5 +307,116 @@ class ProjectPagesIT extends IntegrationTest {
                         .with(signedIn(sub)).with(csrf()))
                 .andExpect(redirectedUrl("/projects/" + id));
         page(sub, id).andExpect(content().string(containsString("id=\"banner-quoted\"")));
+    }
+
+    // ---- sections and anchors ----
+
+    private static org.hamcrest.Matcher<String> tagOf(String id, String attribute) {
+        // the tag is one line, and its class list holds a ">" (an arbitrary variant), so the tag is read to the end of the line
+        return org.hamcrest.Matchers.matchesPattern("(?s).*<details id=\"" + id + "\"[^\\n]*" + attribute + "[^\\n]*\\n.*");
+    }
+
+    @Test
+    void everyLeftHandSectionCanBeClosedAndTheRightHandCardCannot() throws Exception {
+        var sub = newSub();
+        var id = quotable(sub);
+
+        var result = page(sub, id);
+        for (var section : List.of("settings", "facilities", "items", "jobs", "delivered-cost")) {
+            result.andExpect(content().string(tagOf(section, "data-section=\"" + section + "\"")));
+        }
+        // the quote card is the part that stays in view, so it is not a section
+        result.andExpect(content().string(not(containsString("data-section=\"quote-card\""))));
+    }
+
+    /** The attribute the page sends an open section with, bare (the warnings) or as open="open" (a section opened after a refused change). */
+    private static final String OPEN = "\\sopen(?:[\\s=>])";
+
+    @Test
+    void sectionsStartClosedExceptTheOneWithWarnings() throws Exception {
+        var sub = newSub();
+        var id = started(sub);
+
+        var result = page(sub, id).andExpect(content().string(tagOf("warnings", OPEN)));
+        for (var section : List.of("settings", "facilities", "items", "jobs", "delivered-cost")) {
+            result.andExpect(content().string(not(tagOf(section, OPEN))));
+        }
+    }
+
+    @Test
+    void aNoticeThatBlocksNothingStillOpensTheWarningsSectionByDefault() throws Exception {
+        var sub = newSub();
+        esi.reset();
+        esi.adjustedPrice(TRITANIUM.value(), "4");
+        esi.adjustedPrice(COMPONENT.value(), "100");
+        adjusted.refresh();
+        var id = quotable(sub);
+
+        page(sub, id).andExpect(content().string(tagOf("warnings", OPEN)))
+                .andExpect(content().string(not(tagOf("warnings", "data-keep-open"))));
+    }
+
+    @Test
+    void everySectionHeaderHasAnIndicatorThatTurnsWhenItIsOpen() throws Exception {
+        var sub = newSub();
+        // a project with warnings, so that all six sections are there
+        var id = started(sub);
+
+        var html = page(sub, id).andReturn().getResponse().getContentAsString();
+        // one chevron for each of the six sections: the header is a flex box, which leaves the browser's own triangle out
+        assertThat(html.split("group-open/section:rotate-90", -1).length - 1).isEqualTo(6);
+    }
+
+    @Test
+    void aWarningThatBlocksTheQuoteMakesItsSectionOpenWhateverTheUserKept() throws Exception {
+        var sub = newSub();
+        var id = started(sub);
+
+        // no facility is chosen, so the costing warns and cannot be quoted
+        page(sub, id).andExpect(content().string(tagOf("warnings", "data-keep-open")))
+                .andExpect(content().string(containsString("Blocks the quote")));
+    }
+
+    @Test
+    void aNoticeThatBlocksNothingLeavesItsSectionToTheUser() throws Exception {
+        var sub = newSub();
+        esi.reset();
+        esi.adjustedPrice(TRITANIUM.value(), "4");
+        esi.adjustedPrice(COMPONENT.value(), "100");
+        adjusted.refresh();
+        var id = quotable(sub);
+
+        page(sub, id).andExpect(content().string(containsString("id=\"warnings\"")))
+                .andExpect(content().string(not(tagOf("warnings", "data-keep-open"))))
+                .andExpect(content().string(not(containsString("Blocks the quote"))));
+    }
+
+    @Test
+    void aSaveReturnsToThePartOfThePageItWasMadeIn() throws Exception {
+        var sub = newSub();
+        var id = quotable(sub);
+        var version = String.valueOf(versionOf(id));
+
+        mvc.perform(post("/projects/" + id + "/config").param("expectedVersion", version).param("contractFee", "20000")
+                        .param("anchor", "settings").with(signedIn(sub)).with(csrf()))
+                .andExpect(redirectedUrl("/projects/" + id + "#settings"));
+        mvc.perform(post("/projects/" + id + "/items/" + HAULER.value()).param("expectedVersion", String.valueOf(versionOf(id)))
+                        .param("me", "9").param("te", "18").param("anchor", "item-" + HAULER.value()).with(signedIn(sub)).with(csrf()))
+                .andExpect(redirectedUrl("/projects/" + id + "#item-" + HAULER.value()));
+        mvc.perform(post("/projects/" + id + "/cost").param("anchor", "delivered-cost").with(signedIn(sub)).with(csrf()))
+                .andExpect(redirectedUrl("/projects/" + id + "#delivered-cost"));
+        mvc.perform(post("/projects/" + id + "/cost").with(signedIn(sub)).with(csrf()))
+                .andExpect(redirectedUrl("/projects/" + id));
+    }
+
+    @Test
+    void anAnchorThatIsNotAnIdTheWayThePageWritesThemIsLeftOut() throws Exception {
+        var sub = newSub();
+        var id = quotable(sub);
+
+        for (var anchor : List.of("a b", "x?y=1", "//example.com", "1abc", "a#b", "a".repeat(41))) {
+            mvc.perform(post("/projects/" + id + "/cost").param("anchor", anchor).with(signedIn(sub)).with(csrf()))
+                    .andExpect(redirectedUrl("/projects/" + id));
+        }
     }
 }

@@ -76,6 +76,12 @@ class ProjectUnsavedBrowserIT extends IntegrationTest {
         return "http://localhost:" + port + path;
     }
 
+    private void open(String section) {
+        if (!(Boolean) page.locator("#" + section).evaluate("details => details.open")) {
+            page.click("#" + section + " > summary");
+        }
+    }
+
     private boolean noteShown(String form) {
         return page.locator(form + " [data-unsaved-note]").first().isVisible();
     }
@@ -86,6 +92,7 @@ class ProjectUnsavedBrowserIT extends IntegrationTest {
 
     @Test
     void aFormSaysItHasUnsavedChangesAsSoonAsAFieldInItIsEdited() {
+        open("settings");
         assertThat(noteShown("#settings-form")).isFalse();
         var calm = saveBorder("#save-settings");
 
@@ -99,6 +106,7 @@ class ProjectUnsavedBrowserIT extends IntegrationTest {
 
     @Test
     void aDropdownCountsAsAnEditToo() {
+        open("settings");
         page.locator("#settings-form select[name=priceSide]").selectOption("BUY");
 
         assertThat(noteShown("#settings-form")).isTrue();
@@ -106,6 +114,8 @@ class ProjectUnsavedBrowserIT extends IntegrationTest {
 
     @Test
     void anItemRowIsMarkedByItsOwnFieldsWhichSitOutsideItsFormTags() {
+        open("items");
+        open("settings");
         assertThat(noteShown("#item-form-1001")).isFalse();
 
         page.fill("tr#item-1001 input[name=me]", "8");
