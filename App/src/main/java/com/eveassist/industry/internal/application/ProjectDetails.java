@@ -8,6 +8,7 @@ import com.eveassist.industry.internal.domain.SplitPolicy;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Everything a project page shows, in one read: the project with names, the items it builds and how each is made, the facilities it can
@@ -19,7 +20,8 @@ import java.util.List;
 public record ProjectDetails(
         ProjectId id, String name, long version, ProjectStatus status, boolean archived, int lastQuoteNumber, Instant startedAt,
         String sourcePlanName, ProjectConfig config, List<ProductLine> products, List<PartLine> parts, List<ItemLine> items,
-        List<FacilityOverview> facilities, List<ProjectQuoteRepository.QuoteSummary> quotes, CostingView costing) {
+        List<FacilityOverview> facilities, List<ProjectQuoteRepository.QuoteSummary> quotes, CostingView costing,
+        Map<Integer, String> warningTypeNames) {
 
     public ProjectDetails {
         products = List.copyOf(products);
@@ -27,6 +29,7 @@ public record ProjectDetails(
         items = List.copyOf(items);
         facilities = List.copyOf(facilities);
         quotes = List.copyOf(quotes);
+        warningTypeNames = Map.copyOf(warningTypeNames);
     }
 
     public record ProductLine(int type, String name, long quantity) {

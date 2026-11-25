@@ -260,8 +260,10 @@ input is a value, as with `JobCosting`):
 - **Job sizes are an input.** The caller gives the runs of each job per built item, one job per item by default. A planner
   that splits an item across BPCs with too few runs comes later as its own piece.
 - **Surplus is credited at the project's price basis**, the same unit price the item would have been bought at.
-- **Incomplete cost blocks the quote.** The Draft shows the cost with a warning listing every unpriced material and every
-  missing adjusted price. *Issue quote* is refused until every line is priced, so a frozen quote never hides a gap.
+- **Incomplete cost blocks the quote.** The Draft shows the cost with a warning listing every unpriced material. *Issue quote* is refused
+  until every line is priced, so a frozen quote never hides a gap. **A missing adjusted price is not such a gap** (decided with the developer on
+  2026-11-25, from reading G16): the game counts a material ESI gives no adjusted price as 0 in the estimated item value, as this costing does, so
+  it is a notice that names the material and says it only affects the job install cost. It does not block a quote.
 - **Rounding.** The delivered cost and the profit use exact amounts. The quote is rounded **up** to a step, a setting that
   defaults to 1,000 ISK, so the profit shown is slightly above the margin asked for.
 - Not in this slice: persistence and the page, reading ESI, material on hand, the structure and rig table, invention and

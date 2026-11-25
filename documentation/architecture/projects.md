@@ -135,7 +135,7 @@ costing does not change:
 |---|---|---|
 | Recipes, packaged volumes, a blueprint's time-saving skills | `sde` module | recipes exist. **Volumes and time skills are new SDE reads** (attribute 1982, `industryActivitySkills`) and belong to this step, because a project cannot be costed without them |
 | Unit prices | the project's `project_price` | built |
-| Adjusted prices | `AdjustedPriceService` in the `market` module, over the shared `adjusted_price` table ([Adjusted prices](esi.md#adjusted-prices)) | built (step 2). `ProjectEntry.cost` refreshes them first, and a job whose material has no adjusted price warns `MISSING_ADJUSTED_PRICE` and blocks a quote |
+| Adjusted prices | `AdjustedPriceService` in the `market` module, over the shared `adjusted_price` table ([Adjusted prices](esi.md#adjusted-prices)) | built (step 2). `ProjectEntry.cost` refreshes them first, and a material with no adjusted price gives a `MISSING_ADJUSTED_PRICE` notice that names the material and does not block a quote (the game counts it as 0, reading G16, decided 2026-11-25) |
 | Cost index, facility terms | the `facility` row | typed |
 | Builder | the project's columns and `project_item_skill` | typed |
 | Owned blueprints | none yet | typed ME and TE per item (`ProjectBuild.Typed`, cut at the 30-day limit and at a time bound, with the item's or the project's split policy); the splitter's `FromBlueprints` waits for step 5 |

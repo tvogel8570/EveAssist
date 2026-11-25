@@ -286,4 +286,24 @@ class ProjectPagesIT extends IntegrationTest {
         mvc.perform(post("/projects/" + id + "/cost").with(signedIn(sub)).with(csrf()))
                 .andExpect(flash().attribute("error", "nothingToCost"));
     }
+
+    /** Reading G16: the game counts a material ESI gives no adjusted price as 0, so the cost is right and the quote is not blocked. */
+    @Test
+    void aMaterialWithNoAdjustedPriceIsNamedInANoticeAndTheQuoteCanStillBeIssued() throws Exception {
+        var sub = newSub();
+        esi.reset();
+        esi.adjustedPrice(TRITANIUM.value(), "4");
+        esi.adjustedPrice(COMPONENT.value(), "100");
+        adjusted.refresh();
+        var id = quotable(sub);
+
+        page(sub, id).andExpect(content().string(containsString("id=\"warnings\"")))
+                .andExpect(content().string(containsString("No adjusted price for Pilot&#39;s Mineral. This only affects the job install cost.")))
+                .andExpect(content().string(not(containsString("id=\"cannot-issue\""))))
+                .andExpect(content().string(not(containsString("id=\"banner-stale\""))));
+        mvc.perform(post("/projects/" + id + "/quotes").param("expectedVersion", String.valueOf(versionOf(id)))
+                        .with(signedIn(sub)).with(csrf()))
+                .andExpect(redirectedUrl("/projects/" + id));
+        page(sub, id).andExpect(content().string(containsString("id=\"banner-quoted\"")));
+    }
 }

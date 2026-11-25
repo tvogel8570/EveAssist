@@ -175,7 +175,7 @@
                 <h2 class="font-semibold" th:text="#{project.warnings}">Warnings</h2>
                 <ul class="list-disc ml-5 text-sm">
                     <li th:each="warning : ${doc.warnings}"
-                        th:text="#{'project.warning.' + ${warning.kind}(${names.getOrDefault(warning.type, '#' + warning.type)})}">Warning</li>
+                        th:text="#{'project.warning.' + ${warning.kind}(${project.warningTypeNames.getOrDefault(warning.type, '#' + warning.type)})}">Warning</li>
                 </ul>
             </div>
 
