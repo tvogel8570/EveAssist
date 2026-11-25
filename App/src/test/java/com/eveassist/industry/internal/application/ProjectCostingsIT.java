@@ -181,15 +181,19 @@ class ProjectCostingsIT extends IntegrationTest {
     }
 
     @Test
-    void anItemWithNoAdjustedPriceWarnsAndBlocksTheQuote() {
+    void aMaterialWithNoAdjustedPriceIsNamedAndDoesNotBlockTheQuote() {
         var owner = viewerFor(newSub());
         var id = twoHaulers(owner, azbel(owner, "2"));
         esiHasAdjustedPrices(false);
 
         var result = costings.cost(owner, id);
 
-        assertThat(result.warnings()).contains(new ProjectWarning(Kind.MISSING_ADJUSTED_PRICE, COMPONENT));
-        assertThat(result.quotable()).isFalse();
+        // read in the game on 2026-11-25 (G16): a material ESI gives no adjusted price adds nothing to the estimated item value, so
+        // the install cost is right and the warning is a notice. It names the material, not the item it is a material of.
+        assertThat(result.warnings()).contains(new ProjectWarning(Kind.MISSING_ADJUSTED_PRICE, PILOTS_MINERAL));
+        assertThat(result.warnings()).noneMatch(warning -> warning.kind() == Kind.MISSING_ADJUSTED_PRICE
+                && warning.type().equals(COMPONENT));
+        assertThat(result.quotable()).isTrue();
     }
 
     @Test

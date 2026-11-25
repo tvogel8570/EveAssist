@@ -17,7 +17,10 @@ public record ProjectWarning(Kind kind, TypeId type) {
         UNPRICED_MATERIAL,
         /** A built item's surplus has no price, so the credit is too low and the cost too high. */
         UNPRICED_SURPLUS,
-        /** A job's material has no adjusted price, so its estimated item value and install cost are too low. */
+        /**
+         * A job's material has no adjusted price in ESI, and the type is the material. A notice: the game counts it as 0 in the estimated item
+         * value as this costing does, so the install cost is right (reading G16, 2026-11-25) and it only tells the user why the material adds nothing.
+         */
         MISSING_ADJUSTED_PRICE,
         /** An item has no volume while hauling is charged, so the hauling is too low. */
         MISSING_VOLUME,
@@ -31,7 +34,7 @@ public record ProjectWarning(Kind kind, TypeId type) {
         TIME_BOUND_NOT_MET;
 
         public boolean blocksQuote() {
-            return this != USES_ORIGINAL && this != TIME_BOUND_NOT_MET;
+            return this != USES_ORIGINAL && this != TIME_BOUND_NOT_MET && this != MISSING_ADJUSTED_PRICE;
         }
     }
 }

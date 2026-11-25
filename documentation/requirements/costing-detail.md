@@ -163,7 +163,7 @@ EIV = Σ over the blueprint's materials ( base quantity × R × adjusted price )
   CCP 2014 and Wiki say the same. CCP 2014 calls it "base cost"; the wiki and the game's window call it "Estimated Items value (EIV)" (**Game**).
 - **Adjusted price** is CCP's index, not the market price: `GET /markets/prices`, field `adjusted_price` (ESI). **Game:** ESI's prices
   gave **4,374,740.21** where the window showed 4,374,740 (G1); 537,646.30 against 537,646 (G8); 27,903,159.24 for G10.
-- A material with no adjusted price is counted and left out, so the EIV and the install cost are then too low (the code reports it). **The app reads `/markets/prices`** since 2026-11-18 ([ESI, adjusted prices](../architecture/esi.md#adjusted-prices)). Of its 16,234 rows, 7,758 have an adjusted price of **0**, which is a value (the game uses it), not a gap; 2,059 have no `average_price`, and only `type_id` is required.
+- A material with no adjusted price adds **nothing** to the EIV, which is what the game does (**Game**, G16: the Legion's Superconducting Radar Amplifier is not in ESI's list, and the window's EIV equals the sum without it). So the install cost is right, and the code reports the gap as a **notice** that names the material, decided with the developer on 2026-11-25. **The app reads `/markets/prices`** since 2026-11-18 ([ESI, adjusted prices](../architecture/esi.md#adjusted-prices)). Of its 16,234 rows, 7,758 have an adjusted price of **0**, which is a value (the game uses it), not a gap; 2,059 have no `average_price`, and only `type_id` is required.
 - For a built part used as a material, the game takes the part's adjusted price as an item (*unverified*).
 - Copying and invention use another base (2% of EIV, Wiki and CCP 2014). Not built.
 
@@ -422,6 +422,21 @@ Zydrine 6, Megacyte 6) unless stated. Money is ISK.
 | G11 | wormhole | ME 10 / TE 20, 235 | output ×2,350; Nocxium **2,723**, Zydrine 1,257, Megacyte 1,257; **1D 01:34:05** (92,045 s); EIV 10,280,639; index line 58,430, bonus −2,337, gross 56,093; SCC 411,226; total **467,319** | an exact half (2,722.005) rounds up; the wormhole index is 0.56835% (index line); the total is again the sum of the rounded gross and taxes (exact 467,318.3) |
 | G12 | high-sec | Atron Blueprint copy (a standard T1 frigate) ME 10 / TE 20, 1, BX-804 | 28.51K / 5,346 / 2,228 / 446; **00:41:47** (2,507 s); EIV 367,708; index line 7,382, bonus −295 (−4.0%), gross 7,086; SCC 14,708; total **21,794** | a ship is costed like a module; the BX-804 is still fitted; products on a half unit (2,227.5, 445.5) round up; index about 2.0074% |
 | G13 | high-sec | Combat Scanner Probe I copy ME 10 / TE 0, 1,000, BX-804 | 2,673 / 8,019 / 12.47K / 1,000 / 1,000 / 1,782 / 6,237; **3D 15:02:24** (313,344 s); "Maximum runs" **8,273**; total **374,738** | Isogen and Nocxium (base 1) show **1,000**, not 891: the one-per-run minimum; the index worked back from the total is 2.0021% (not an independent check) |
+| G14 | high-sec | Arazu Blueprint copy (a Tech II ship, 240,000 s, 3 runs left) ME 4 / TE 4, 1, Gallente Starship Engineering **I** | 55 / 471 / 1,711 / 3,564 / 29 / 357 / 286 / 143 / 72 / 1 / 18 (3,750 × 0.96 × 0.99 = 3,564); **1D 07:26:05** (113,165 s); total **7,214,500** | the blueprint's time skills (attribute 1982) multiply at 1% a level; a Tech II ship is costed like any other job |
+| G15 | high-sec | the same, Gallente Starship Engineering **II** | the same materials; **1D 07:07:02** (112,022 s); total **7,214,500** | one more level is a factor of 0.98 / 0.99: 113,165 s gives 112,022 s **to the second**; a time skill changes the time and not the cost |
+| G16 | high-sec | Legion Blueprint copy (a Tech III cruiser, 8 runs left) ME 0 / TE 0, 1 | EIV **238,739,718**; index line 5,143,942 (shown as 2.15% of EIV); bonus −205,758 (−4.0%); gross 4,938,184; SCC 9,549,589 (4.00%); total **14,487,773**; **1D 17:20:38** | **a material with no adjusted price counts as 0 in the EIV**: Superconducting Radar Amplifier (12 a run) is not in ESI's `/markets/prices` (while Janice has its Jita prices, sell 1,998,000 and buy 102,500), and the window's EIV equals the sum without it (238,739,718.37 by this code) |
+
+**G14 and G15 were read on 2026-11-25**, by the developer, at the Dodenvale Azbel with no rigs (the other readings are of 2026-11-18). Their builder is
+not the "all at V" one above, and the other skills were not noted. Industry V, Advanced Industry V and no implant leave a factor of 0.912 for the
+blueprint's other two time skills, and the only levels that give it are IV and V (either way round); a BX-804 does not fit. So the test
+(`JobCostingTest.oneMoreLevelOfATimeSkillShortensTheTimeAndLeavesTheCostAlone`) takes one of those pairs, which is **inferred, not observed**.
+What it proves does not depend on it: the factor is solved from G14 and predicts G15 to the second. The cost is not asserted to the ISK. The window's
+7,214,500 against 7,218,658 from ESI's adjusted prices and Dodenvale's index of 2.16% (read the same day) is 0.06% apart, and ESI's index has four
+decimals (±0.005% of the index is about ±5,700 ISK on this job's item value of about 118.9 million).
+
+**G16 was read on 2026-11-25** at the Dodenvale Azbel, no rigs. It settles what the game does with a material that ESI gives no adjusted price: it adds nothing to the estimated item value, the same as an adjusted
+price of 0 (see [3.3](#33-estimated-item-value-eiv)). The EIV matches this code's to the ISK. The index line differs because the typed index was ESI's 2.16% (four decimals) and the window's is
+5,143,942 / 238,739,718 = 2.1546%: that is about 12,300 ISK of install cost, and the code's 14,500,096 against the window's 14,487,773 is 12,323 apart.
 
 Notes on reading the window:
 
@@ -508,8 +523,8 @@ The developer decided its first slice on 2026-11-18; the decisions are in [Proje
 - an incomplete cost is shown with a warning, and *Issue quote* is refused until every line is priced (`ProjectCost.quotable()`);
 - the cost and the profit are exact, and the quote is rounded up to a step (a setting, 1,000 ISK by default).
 
-The warnings, each of which blocks a quote: an unpriced item that is bought, an unpriced surplus, a job material with no adjusted price (so the install cost is too low), an item with no volume while a hauling rate is set, and jobs that make
-fewer units than the project needs. A **notice**, which does not block a quote, says that a job uses a blueprint original, and another that a time bound could not be met. **Not a warning in `ProjectCosting`:** a wormhole facility with no typed cost index. That is a facility record without an index and has to be refused where the record is made, since the class gets the
+The warnings, each of which blocks a quote: an unpriced item that is bought, an unpriced surplus, an item with no volume while a hauling rate is set, and jobs that make
+fewer units than the project needs. A **notice**, which does not block a quote, says that a job uses a blueprint original, another that a time bound could not be met, and another that a job material has no adjusted price (it is counted as 0, as the game does, and the notice names the material). **Not a warning in `ProjectCosting`:** a wormhole facility with no typed cost index. That is a facility record without an index and has to be refused where the record is made, since the class gets the
 index as a number.
 
 Choices made in the code that the developer did not pick, to be confirmed:

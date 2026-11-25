@@ -89,8 +89,11 @@ public final class ProjectCosting {
                     for (RecipeMaterial material : job.materials()) {
                         demand.merge(material.material(), material.quantity(), Long::sum);
                     }
-                    if (job.unpricedMaterials() > 0) {
-                        warnings.add(new ProjectWarning(Kind.MISSING_ADJUSTED_PRICE, type));
+                    // the notice names the material that has no adjusted price, and the set keeps it once however many jobs use it
+                    for (RecipeMaterial material : job.materials()) {
+                        if (adjustedPrices.apply(material.material()).isEmpty()) {
+                            warnings.add(new ProjectWarning(Kind.MISSING_ADJUSTED_PRICE, material.material()));
+                        }
                     }
                     if (build.timeBound().isPresent() && job.seconds() > build.timeBound().getAsLong()) {
                         warnings.add(new ProjectWarning(Kind.TIME_BOUND_NOT_MET, type));

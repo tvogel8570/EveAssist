@@ -19,6 +19,166 @@
         }
     });
 
+    // A table that says data-sortable sorts its rows when a header that says data-sort ("text" or "num") is clicked: ascending, then descending,
+    // then back to the order the page gave. One column at a time: sorting another column clears the first. A cell of a "num" column says its
+    // number in data-value, because what it shows is formatted (1h 10m, 14,500,096). The state is in aria-sort, which is what a screen reader reads.
+    const SORT_MARKS = {ascending: '\u25B2', descending: '\u25BC', none: ''};
+    const NEXT_SORT = {none: 'ascending', ascending: 'descending', descending: 'none'};
+
+    function sortRows(table, header, direction) {
+        const body = table.tBodies[0];
+        const rows = Array.from(body.rows);
+        rows.forEach((row, index) => {
+            if (!('original' in row.dataset)) {
+                row.dataset.original = String(index);
+            }
+        });
+        const column = header.cellIndex;
+        const numeric = header.dataset.sort === 'num';
+        const valueOf = row => {
+            const cell = row.cells[column];
+            const text = cell.dataset.value ?? cell.textContent.trim();
+            return numeric ? Number(text) : text;
+        };
+        const original = (a, b) => Number(a.dataset.original) - Number(b.dataset.original);
+        const order = direction === 'none' ? original : (a, b) => {
+            const x = valueOf(a);
+            const y = valueOf(b);
+            const compared = numeric ? x - y : x.localeCompare(y, undefined, {numeric: true, sensitivity: 'base'});
+            return (direction === 'descending' ? -compared : compared) || original(a, b);
+        };
+        rows.sort(order).forEach(row => body.appendChild(row));
+    }
+
+    document.addEventListener('click', event => {
+        const button = event.target.closest('table[data-sortable] th[data-sort] button');
+        if (!button) {
+            return;
+        }
+        const header = button.closest('th');
+        const table = header.closest('table');
+        const next = NEXT_SORT[header.getAttribute('aria-sort') || 'none'];
+        table.querySelectorAll('th[data-sort]').forEach(other => {
+            other.setAttribute('aria-sort', 'none');
+            other.querySelector('[data-sort-mark]').textContent = SORT_MARKS.none;
+        });
+        header.setAttribute('aria-sort', next);
+        header.querySelector('[data-sort-mark]').textContent = SORT_MARKS[next];
+        sortRows(table, header, next);
+    });
+
+    // A dropdown entry that says data-goto leads to another page, and is not a value: choosing it opens the page, and the dropdown goes back to the
+    // value it had, so that coming back with the browser's back button does not find the entry chosen (and a Save sending it as a value).
+    document.addEventListener('change', event => {
+        const select = event.target;
+        const entry = select instanceof HTMLSelectElement ? select.selectedOptions[0] : null;
+        if (!entry || !entry.dataset.goto) {
+            return;
+        }
+        const target = entry.dataset.goto;
+        select.selectedIndex = Math.max(0, Array.from(select.options).findIndex(option => option.defaultSelected));
+        // nothing after this hears the change: the form is not edited by it, so it must not say it has unsaved changes
+        event.stopImmediatePropagation();
+        window.location.assign(target);
+    });
+
+    // A button that says data-copy-from="#id" copies the text of that box to the clipboard and says "Copied" beside it for a moment. Where the browser will not
+    // give the clipboard to a script (a page that is not secure, a permission refused) the box is selected and the browser is asked to copy, and failing that
+    // the text is left selected for the user to copy by hand.
+    document.addEventListener('click', event => {
+        const button = event.target.closest('button[data-copy-from]');
+        const source = button ? document.querySelector(button.dataset.copyFrom) : null;
+        if (!source) {
+            return;
+        }
+        const cue = button.parentElement.querySelector('[data-copied]');
+        const copied = () => {
+            cue?.classList.remove('hidden');
+            setTimeout(() => cue?.classList.add('hidden'), 2000);
+        };
+        const byHand = () => {
+            source.focus();
+            source.select();
+            if (document.execCommand('copy')) {
+                copied();
+            }
+        };
+        if (navigator.clipboard?.writeText) {
+            navigator.clipboard.writeText(source.value).then(copied, byHand);
+        } else {
+            byHand();
+        }
+    });
+
+    // The facility form's "Fill the structure's bonuses" button copies the chosen structure's materials, time and job fee bonuses (which the page
+    // puts on the option as data-material, data-time and data-cost) into the form's fields. "Not said" has none, so it does nothing. The fields
+    // are told they changed, so that the form says it has unsaved changes.
+    document.addEventListener('click', event => {
+        const button = event.target.closest('button[data-fill-structure]');
+        if (!button) {
+            return;
+        }
+        const form = button.closest('form');
+        const option = form.querySelector('select[name=structureType]')?.selectedOptions[0];
+        if (!option || option.dataset.time === undefined) {
+            return;
+        }
+        [['structureMaterialPercent', 'material'], ['structureTimePercent', 'time'], ['structureCostPercent', 'cost']].forEach(([field, key]) => {
+            const input = form.elements[field];
+            input.value = option.dataset[key];
+            input.dispatchEvent(new Event('input', {bubbles: true}));
+        });
+    });
+
+    // A <details data-section="name"> is a section of a page that the user can open and close. Whether it is open is kept in this browser (local
+    // storage, one key per section, the same for every project), because every save reloads the page. A section that says data-keep-open has
+    // something the user must see (a warning that blocks the quote, the last error), so it opens whatever was kept and what the user does
+    // with it is not kept. Private windows and blocked storage throw, so the page then works without remembering.
+    const sectionKey = name => `eveassist.section.${name}`;
+
+    function keptState(name) {
+        try {
+            return localStorage.getItem(sectionKey(name));
+        } catch (ignored) {
+            return null;
+        }
+    }
+
+    // The page sends a section closed unless it has something in it (the warnings), so what the user opened is kept as "open", and what the
+    // user closed of a section that came open (the warnings) is kept as "closed". With nothing kept the page's own state stands.
+    document.querySelectorAll('details[data-section]:not([data-keep-open])').forEach(section => {
+        const kept = keptState(section.dataset.section);
+        if (kept === 'open' || kept === 'closed') {
+            section.open = kept === 'open';
+        }
+    });
+
+    // toggle does not bubble, so it is heard while it travels down
+    document.addEventListener('toggle', event => {
+        const section = event.target;
+        if (section instanceof HTMLDetailsElement && section.dataset.section && !section.hasAttribute('data-keep-open')) {
+            try {
+                localStorage.setItem(sectionKey(section.dataset.section), section.open ? 'open' : 'closed');
+            } catch (ignored) {
+                // nothing to do: the section is just not remembered
+            }
+        }
+    }, true);
+
+    // A form that says data-track-unsaved marks itself (data-dirty) as soon as one of its fields is edited, and the page's styles show
+    // it: its Save button turns to a warning and its "unsaved changes" note appears. A field outside the form's own tags that names it
+    // with the form attribute counts too, because event.target.form is the form it belongs to. Nothing is saved for the user.
+    function markUnsaved(event) {
+        const form = event.target.form;
+        if (form && form.hasAttribute('data-track-unsaved')) {
+            form.setAttribute('data-dirty', '');
+            // a section that is closed afterwards still shows it, in its header
+            form.closest('details[data-section]')?.setAttribute('data-dirty', '');
+        }
+    }
+
+    ['input', 'change'].forEach(name => document.addEventListener(name, markUnsaved));
+
     // A plan without an account (/try) lives in this browser only. Its state is a short text in the page's #try-state box,
     // which every answer from the server swaps. It is kept in local storage after each swap. When the page opens with a
     // plan kept, the box gets it before htmx starts (this script runs after the page is read and before htmx processes

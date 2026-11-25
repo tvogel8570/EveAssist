@@ -21,6 +21,8 @@ Status: draft, interview in progress.
   price (listed as sell orders).
 - The user can instead cost materials at the Jita buy price (bought through buy orders) and value products at the Jita
   buy price (sold right away).
+- **Jita split** is a third basis (added 2026-11-25, as the appraisal site Janice offers it): the midpoint of the Jita buy and the Jita
+  sell price, used for materials and products alike. It is a fair-price reference when neither side of the spread is a good estimate.
 - The price basis is a user-wide default, and each plan can override it.
 - The user can enter a manual price for an item, for example a contract price, which overrides the market. Manual prices
   stay until the user changes them. Each one shows its age, with a warning once it is older than a set number of days.

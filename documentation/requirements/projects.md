@@ -17,6 +17,80 @@ the work on the left (settings, facilities, jobs, delivered cost) and the **quot
 a change to a margin, a blueprint or a rate shows its effect on the price at once. On a narrow screen the quote card moves
 below the work. Layouts A (one long page) and B (tabs) were not chosen.
 
+### The first slice of the page
+
+Decided with the developer on 2026-11-19. The developer reviewed the formulas ([Costing components](costing-detail.md)) and will change
+nothing until they can compare **worked examples** with the game's own screens, so the first slice is the one that makes that comparison
+possible, and the rest of the editing follows it.
+
+- **Comparison first.** A **Projects list** with *Start from a plan*, and a **project page** that shows the stored costing job by job
+  **in the shape of the game's Industry window**: the materials, the *Job duration modifiers* hover and the cost hover (estimated item value,
+  system cost index line, structure role bonus, gross cost, SCC surcharge, total), the totals, and the quote card. Editing is kept small: a typed
+  facility form, the ME and TE of each item, and *Cost it*. The rest of the controls from layout C come in later slices.
+- **Menu.** The page has **its own "Projects" link beside Plans** in the main menu.
+- **How a job's costing is laid out** is shown as three alternatives in `documentation/mockups/project-compare.html` for the developer to
+  choose from: **A** cards that mirror the game's window and its two hovers, **B** a table with a "game shows" column where the developer types
+  what the game shows and the page marks every line that differs, and **C** a copyable text block laid out like the hovers. The mockup uses two
+  real readings: a wormhole job (typed index) and a Dodenvale job (the index from ESI, which differs from the game's by a few ISK).
+- **What each line must let the developer see** (from [Costing trace](#costing-trace)): the exact product before rounding beside the used
+  quantity, the time with its modifier lines, the index and where it came from (typed or ESI, and its age), and the estimated item value. The
+  window rounds each cost line to whole ISK and adds the rounded gross cost and taxes, so the page shows the total the way the window does, with the
+  exact total beside it.
+- **The comparison is a diagnostic, not a core screen.** Decided with the developer on 2026-11-20. It is most useful while the formulas
+  and logic are being validated, and in normal operation it is for troubleshooting a difference from the game. The finished project page is
+  built around the work and the quote card (see [Page layout](#page-layout)). The comparison is a secondary view of a job (a link or a
+  collapsed section such as "Check against the game"), not a main tab or a permanent column, and it should not take space from the core page.
+- **Both A and B are built, later.** Decided with the developer on 2026-11-20: layout **A** (cards that mirror the game's window) and layout
+  **B** (the table with a "game shows" column) are both built, as two views of the same comparison. Building them waits until the primary
+  project screens (the Projects list, the project page and the quote card) are designed. This changes the "Comparison first" order above: the
+  comparison is no longer the first thing built, only a thing that will be built.
+- **The game values are typed.** The game cannot copy a job as text: only the list of possible blueprints below the job can be copied, and it
+  is not the data compared. So the Game column is typed, per line. Reading a pasted screenshot in the browser (OCR) is a possible later step,
+  with a confirm step, and the app's own expected number can be used to match a misread such as `2.723` to `2,723`. It is not built until typing
+  proves painful.
+
+### The primary screens
+
+Mocked up on 2026-11-25 in `documentation/mockups/projects-list.html` and `documentation/mockups/project-page-primary.html`, and
+reviewed with the developer.
+
+- **The Projects list** has a table and a card layout (both kept). Each project shows its status, whether its costing is out of date and why,
+  the quote total, the **margin** (not the profit, which is on the quote card), the buyer and the days to expiry. Filters by status, a search
+  box, and archived projects hidden unless asked for.
+- **Cost it runs by itself when a project is started** from a plan. Afterwards it is a button, and the page asks for it when the costing is out of
+  date or something was changed since.
+- **A quote can only be issued from a current costing.** Issuing is blocked while the costing is out of date or has unsaved changes.
+- **Delete quote is always available** on an issued or expired quote (see [Lifecycle](#lifecycle)). An expired quote is kept as issued, and the way
+  forward is a new version, costed with today's prices.
+- **The quote card is for the user only.** No preview of what the buyer sees. What is sent to the buyer is the copied text or the CSV.
+- **The comparison views are linked from a collapsed "Check against the game" section** of the project page, not shown by default.
+
+**Built in three slices** (agreed with the developer on 2026-11-25), on branch `projects-ui`:
+
+1. **Done: the list and the project page.** `/projects` (table and cards, the state filter, archived on request, *Start from a plan* which costs at
+   once) and `/projects/{id}`: settings and builder, the facilities the account has, the items with typed ME, TE, facility, blueprint cost and
+   time skills, the warnings, the jobs, the delivered cost and the quote card (issue, new version, delete). **Differences from the mockup:**
+   the reasons a costing is out of date are the three the backend knows (the project was edited, the game data changed, a facility changed),
+   not the example "prices are 3 days old"; an issued quote can have a new version made from any quote in the list; the list has no search
+   box yet; and the margin is a saved setting, so changing it needs Cost it again before a quote can be issued (decided on 2026-11-25).
+2. **Done: the facility forms** (2026-11-25). Decided with the developer: a **Facilities page** (`/facilities`, a menu link) lists, adds, changes and deletes facilities.
+   Adding a facility is rare, so a **project's page has no Facilities section**: its **Default facility** dropdown ends with *Add a new facility…*, which opens the
+   Facilities page for that project, and a facility added there returns the user to the project's Settings, where it can be chosen (the same page, opened from the menu,
+   stays on itself). Facilities are **typed**: the eight percents, plus a **structure type** (Raitaru, Azbel, Sotiyo or an NPC station) whose *Fill the structure's bonuses*
+   button proposes the structure's materials, time and job fee bonuses (which the user can type over; Fortizars are not offered, so they are typed). The **cost index is typed
+   with the date it was entered**, and the Facilities page shows its age ("typed 3 d ago"), as the wormhole rule asks; reading it from ESI, and the structure's rigs and system
+   as chosen values, are later steps. Deleting a facility clears it from the Drafts that use it, says how many, and makes their costing out of date; a quote already issued is
+   not changed. See [Projects: persistence and use cases](../architecture/projects.md).
+3. **Done: the quote export and the comparison views** (2026-11-25). The **quote text and CSV**: each issued quote in the Quotes list has a *Text and CSV to send* block with the text to
+   copy and a CSV to download (see [The quote](#the-quote)). They are offered for an **issued** quote only, which differs from the mockup: a Draft has no number, buyer or expiry yet,
+   so issue first and then copy. The **comparison views** (`/projects/{id}/compare`, linked as *Check against the game* from the Delivered cost section and from each quote): the
+   costing laid out like the game's Industry window job by job, made from the stored trace. **A** is cards like the window and its two hovers; **B** is a table with the app's number, an
+   input for what the game shows and the difference, which reads the game's shortened form (0.31M, 92.13K), a clock duration (1D 01:34:05) and a percent, and marks every line as matching
+   or differing. What is typed is **kept in the browser for that costing** (a new costing starts empty), the layout that shows is kept too, and the Draft's costing is marked when the project
+   was changed after it. A diagnostic, not a core page (decided 2026-11-20): it is not a main tab. Layout C (a copyable text block of the hovers) is not built.
+
+Jita split (see [Price basis](market-logistics.md#price-basis)) follows as its own change after these pages.
+
 ## Lifecycle
 
 Decided with the developer on 2026-11-17, and made exact on 2026-11-18 (the lock, the products and the prices).
@@ -176,7 +250,7 @@ Decided with the developer on 2026-11-17: **both ways of pricing, switchable per
 
 - **Cost plus margin.** Quote = delivered cost divided by (1 − target margin %), set on the project. The Jita
   price of the product is shown beside it as a check.
-- **Market-referenced.** Quote starts from a Jita sell or buy price (or a manual price) plus a premium or discount %. The
+- **Market-referenced.** Quote starts from a Jita sell, buy or split price (or a manual price) plus a premium or discount %. The
   project shows its profit against the delivered cost.
 - The page shows the one in use as the quote and the other as a comparison.
 - A quote has a **buyer name** and a **note** (free text), a date and an expiry. It does not link to the in-game
@@ -187,6 +261,16 @@ Decided with the developer on 2026-11-17: **both ways of pricing, switchable per
 - It shows the **price per unit and the total**. The margin and the profit are only for the developer's eyes.
 - **Shareable text and CSV** can be copied or downloaded, to put in a contract description or a message. It does not
   show the cost breakdown.
+  **Decided with the developer on 2026-11-25** (the layout of the developer's own sheet): a header (the quote, the buyer, the expiry and the note), then **a line for each product with its quantity,
+  its price per unit and its extension**, then the total. The text is `Quote 1 for bogus`, `Valid until 2026-12-02`, the note, `Delivered by contract`, a blank line, then
+  `Vexor: 1 × 2 = 2`, `Legion: 2 × 3 = 6` and `Total: 8 ISK` (**ISK only on the grand total**, not on each price and extension, as the developer asked). The CSV is the same as a sheet: `Quote,Buyer,Valid until,Note`, a row of those, an empty row,
+  `Item,Quantity,Price (ISK),Extension (ISK)`, a row for each product, and a `Total` row with the total under Extension. Prices are plain whole numbers for a spreadsheet, and the expiry is an ISO date.
+  **Money is whole ISK with thousands separators**, whatever the server's language. **The line prices share the quote's total by market value:** each product's share is its Jita price at the
+  project's price basis (from the prices frozen in the quote) times its quantity, and a unit price is whole ISK. The app has no cost for a single product, because parts are shared, so the split
+  cannot follow cost. If any product has no Jita price every unit is priced alike, and the page says so. The leftover of the rounding, a few ISK, goes into the **extension of the biggest line**, so the lines add up to the
+  total exactly, and that row may not equal its quantity times its price to the ISK (the developer chose this over a "Rounding" line). The text and the CSV show nothing of the cost, the margin or the profit.
+  A field that a spreadsheet would read as a formula (it starts with `=`, `+`, `-` or `@`) is put right with a leading quote, since the buyer's name and the note are typed text. Both are made from the quote **as
+  it was frozen**, so they never change, and the file is named after the project and the quote (`quote-haulers-for-kestrel-1.csv`).
 - Buyer-supplied materials, where the buyer provides some inputs and the quote is a build fee only, are not needed for
   now (the developer did not pick them). The cost lines are built so that a material can be marked "supplied" later.
 
@@ -198,8 +282,10 @@ input is a value, as with `JobCosting`):
 - **Job sizes are an input.** The caller gives the runs of each job per built item, one job per item by default. A planner
   that splits an item across BPCs with too few runs comes later as its own piece.
 - **Surplus is credited at the project's price basis**, the same unit price the item would have been bought at.
-- **Incomplete cost blocks the quote.** The Draft shows the cost with a warning listing every unpriced material and every
-  missing adjusted price. *Issue quote* is refused until every line is priced, so a frozen quote never hides a gap.
+- **Incomplete cost blocks the quote.** The Draft shows the cost with a warning listing every unpriced material. *Issue quote* is refused
+  until every line is priced, so a frozen quote never hides a gap. **A missing adjusted price is not such a gap** (decided with the developer on
+  2026-11-25, from reading G16): the game counts a material ESI gives no adjusted price as 0 in the estimated item value, as this costing does, so
+  it is a notice that names the material and says it only affects the job install cost. It does not block a quote.
 - **Rounding.** The delivered cost and the profit use exact amounts. The quote is rounded **up** to a step, a setting that
   defaults to 1,000 ISK, so the profit shown is slightly above the margin asked for.
 - Not in this slice: persistence and the page, reading ESI, material on hand, the structure and rig table, invention and
@@ -292,9 +378,16 @@ warnings cannot show which of those differs, and a trace that lacks the prices' 
   time, so a slow build is not shown as cheaper than a fast one just because its materials are cheaper.
 - **Job size per item.** The default is one job up to the job-length limit, then split. The developer expects this to
   change.
-- **Where the project's pages sit** in the menu, and how a project is started from the Blueprints page ("Load into
-  project" is shown but off there, see [Blueprints page](manufacturing-invention.md#blueprints-page)).
-- **The currency format** on the shareable text.
+- **How a project is started from the Blueprints page** ("Load into project" is shown but off there, see
+  [Blueprints page](manufacturing-invention.md#blueprints-page)). Where the project's pages sit in the menu is decided (a link beside Plans).
+- **How Janice's Jita split is worked out: settled on 2026-11-25** from three appraisals at Jita 4-4 compared with ESI's market orders (`oEBWih`,
+  2 Vexor; `e2iCSD`, 19 rows read from a screenshot; `f0LcqZ`, 50 Vexor). The split is the plain midpoint of Janice's buy and sell totals. Each
+  total is **the best buy or best sell price at the time of Janice's data, times the quantity**, with no walking of the order book: 50 Vexor are
+  priced at 10,920,000 each although the best sell order held only 8 units. In `e2iCSD`, 6 buy and 11 sell prices equal ESI's best now, 7 more were
+  the best until orders posted after Janice's 05:30 UTC data, and the rest are orders since filled or removed. EveAssist's split follows the same
+  rule, so that it can be checked against a Janice appraisal. **A consequence to decide:** for a large quantity this understates what buying that
+  quantity would really cost, because the best order is usually small. Whether the project's material cost should walk the book is not decided here.
+- **Whether layout C** (the copyable text block in `documentation/mockups/project-compare.html`) is built too. A and B are decided.
 - **A facility's structure and rig bonus table**: where it lives, and how it is kept right after patches.
 - **Wormhole index, details left open:** how old a typed index may be before the page warns (a number of days); whether the
   same field may also override an index ESI does list, for a what-if; and whether the facility page offers a small helper

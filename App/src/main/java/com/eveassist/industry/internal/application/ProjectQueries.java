@@ -6,7 +6,10 @@ import com.eveassist.industry.internal.domain.Project;
 import com.eveassist.industry.internal.domain.ProjectItem;
 import com.eveassist.sde.ItemType;
 import com.eveassist.sde.SdeService;
+import com.eveassist.sde.TypeId;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.List;
 import java.util.Optional;
 import org.jmolecules.architecture.hexagonal.PrimaryPort;
@@ -65,13 +68,26 @@ public class ProjectQueries {
         var meta = projects.meta(viewer, id).orElseThrow(ProjectNotFoundException::new);
         var viewersFacilities = facilities.list(viewer);
         var projectQuotes = quotes.list(viewer, id);
+        var costing = costing(viewer, project, viewersFacilities, projectQuotes);
         return new ProjectDetails(id, project.name(), project.version(), project.status(), project.archived(),
                 project.lastQuoteNumber(), meta.createdAt(), meta.sourcePlanName(), project.config(),
                 project.products().stream().map(product -> new ProjectDetails.ProductLine(product.type().value(),
                         recipes.name(product.type()), product.quantity())).toList(),
                 recipes.visibleParts(project).stream().map(type -> new ProjectDetails.PartLine(type.value(), recipes.name(type),
                         project.boughtParts().contains(type))).toList(),
-                items(project), viewersFacilities, projectQuotes, costing(viewer, project, viewersFacilities, projectQuotes));
+                items(project), viewersFacilities, projectQuotes, costing,
+                warningTypeNames(costing));
+    }
+
+    /** The names of the types the costing's warnings are about, which can be a material the project does not build. */
+    private Map<Integer, String> warningTypeNames(CostingView costing) {
+        Map<Integer, String> names = new HashMap<>();
+        if (costing != null) {
+            for (var warning : costing.costing().document().warnings()) {
+                names.computeIfAbsent(warning.type(), type -> recipes.name(new TypeId(type)));
+            }
+        }
+        return names;
     }
 
     /** Every item the project builds, the products first. An item with nothing chosen for it is shown as it will be costed. */

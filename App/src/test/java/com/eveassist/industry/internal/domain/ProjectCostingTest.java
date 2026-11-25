@@ -233,10 +233,26 @@ class ProjectCostingTest {
 
         var cost = costing().cost(project(List.of(new PlanProduct(PART, 10)), Set.of(), planBuilds(), noCharges()));
 
+        // the notice about the adjusted price names the material, ORE, and not the item it is a material of
         assertThat(cost.warnings()).contains(new ProjectWarning(Kind.UNPRICED_MATERIAL, ORE),
-                new ProjectWarning(Kind.MISSING_ADJUSTED_PRICE, PART));
+                new ProjectWarning(Kind.MISSING_ADJUSTED_PRICE, ORE));
         assertThat(cost.bought().getFirst().cost()).isNull();
         assertThat(cost.quotable()).isFalse();
+    }
+
+    /**
+     * Reading G16 (2026-11-25, the Legion): a material with no adjusted price adds nothing to the game's estimated item value, which is what this
+     * costing does, so the install cost is right and the quote is not blocked. The notice is raised once for the material, however many jobs use it.
+     */
+    @Test
+    void aMaterialWithNoAdjustedPriceIsANoticeAndDoesNotBlockTheQuote() {
+        adjusted.remove(ORE);
+
+        var cost = costing().cost(project(List.of(new PlanProduct(PART, 10)), Set.of(), planBuilds(), noCharges()));
+
+        assertThat(cost.warnings()).filteredOn(warning -> warning.kind() == Kind.MISSING_ADJUSTED_PRICE)
+                .containsExactly(new ProjectWarning(Kind.MISSING_ADJUSTED_PRICE, ORE));
+        assertThat(cost.quotable()).isTrue();
     }
 
     @Test

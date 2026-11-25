@@ -1,0 +1,154 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: page(~{::title}, ~{::main})}">
+<head><title th:text="#{compare.title}">Check against the game</title></head>
+<body>
+<!--/*
+    One costing laid out like the game's Industry window (documentation/mockups/project-compare.html, layouts A and B). The server writes both layouts from the stored
+    trace, and compare.js only reads what is typed in layout B. data-view says which layout shows, and every typed value is kept in this browser under data-key.
+*/-->
+<main id="compare" class="group/compare max-w-6xl mx-auto p-4" data-view="a" th:attr="data-project=${view.project.value}, data-key=${view.key}">
+    <p class="text-sm opacity-70 mb-1"><a class="link" th:href="@{/projects}" th:text="#{projects.title}">Projects</a> ›
+        <a class="link" th:href="@{/projects/{id}(id=${view.project.value})}" th:text="${view.projectName}">Project</a> ›</p>
+    <h1 class="text-xl font-semibold" th:text="#{compare.title}">Check against the game</h1>
+    <p class="text-sm opacity-70 mb-3" th:text="#{compare.intro}">Compare this costing with the game's Industry window.</p>
+
+    <div id="not-costed" th:if="${view.costedAt == null}" class="alert alert-warning my-3">
+        <span th:text="#{compare.notCosted}">Not costed yet.</span>
+        <a class="btn btn-sm btn-outline" th:href="@{/projects/{id}(id=${view.project.value})}" th:text="#{compare.backToProject}">Back to the project</a>
+    </div>
+
+    <th:block th:if="${view.costedAt != null}">
+        <p id="source" class="text-sm mb-2">
+            <span th:if="${view.source.name() == 'DRAFT'}" th:text="#{compare.source.draft(${@utcTime.format(view.costedAt)})}">Draft costing</span>
+            <span th:if="${view.source.name() == 'QUOTE'}" th:text="#{compare.source.quote(${view.quoteNumber}, ${@utcTime.format(view.costedAt)})}">Quote 1</span>
+            · <a class="link" th:href="@{/projects/{id}(id=${view.project.value})}" th:text="#{compare.backToProject}">Back to the project</a>
+        </p>
+        <div id="out-of-date" th:if="${view.outOfDate}" class="alert alert-warning my-3"><span th:text="#{compare.outOfDate}">May be out of date.</span></div>
+
+        <div class="flex flex-wrap items-center gap-2 my-3" role="group" th:aria-label="#{compare.layout}">
+            <button type="button" id="view-a" class="btn btn-sm btn-outline group-data-[view=a]/compare:btn-active" data-view-switch="a" th:text="#{compare.viewA}">A</button>
+            <button type="button" id="view-b" class="btn btn-sm btn-outline group-data-[view=b]/compare:btn-active" data-view-switch="b" th:text="#{compare.viewB}">B</button>
+            <span class="grow"></span>
+            <button type="button" id="clear-all" class="btn btn-sm btn-ghost group-data-[view=a]/compare:hidden" data-clear-all th:text="#{compare.clearAll}">Clear all</button>
+        </div>
+        <p class="text-xs opacity-70 mb-3 group-data-[view=a]/compare:hidden" th:text="#{compare.hint}">Type what the game shows.</p>
+
+        <div class="space-y-3">
+            <details th:each="job : ${view.jobs}" th:id="'job-' + ${job.index}" th:open="${job.index == 0}"
+                     class="group/section rounded-box bg-base-200 [&>:not(summary)]:mx-4 [&>:not(summary)]:mb-4">
+                <summary class="flex cursor-pointer select-none flex-wrap items-center gap-2 rounded-box px-4 py-3 hover:bg-base-300/40">
+                    <svg class="h-4 w-4 shrink-0 opacity-70 transition-transform group-open/section:rotate-90" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M7 4l6 6-6 6V4z"/></svg>
+                    <h2 class="font-semibold" th:text="#{compare.job(${job.product}, ${#numbers.formatInteger(job.unitsMade, 1, 'COMMA')})}">Job</h2>
+                    <span class="text-xs opacity-70" th:text="#{compare.runs(${job.runs})} + ' · ME ' + ${job.me} + ' · TE ' + ${job.te}">1 runs</span>
+                    <span class="grow"></span>
+                    <span class="text-xs opacity-70" th:text="${@durations.clock(job.time.seconds)} + ' · ' + ${#numbers.formatInteger(job.cost.total, 1, 'COMMA')} + ' ISK'">time and cost</span>
+                </summary>
+
+                <!--/* ---- A: laid out like the game's window and its two hovers ---- */-->
+                <div class="view-a group-data-[view=b]/compare:hidden">
+                    <div class="grid gap-3 lg:grid-cols-2">
+                        <div class="rounded-box bg-base-100 p-3">
+                            <h3 class="text-sm font-semibold mb-2" th:text="#{compare.materials}">Required materials</h3>
+                            <div class="flex flex-wrap gap-2">
+                                <div class="w-28 rounded border border-base-300 p-2 text-center" th:each="material : ${job.materials}">
+                                    <div class="text-lg font-semibold num" th:text="${material.shortened}">0.31M</div>
+                                    <div class="text-xs opacity-70 num" th:text="${#numbers.formatInteger(material.quantity, 1, 'COMMA')}">314,497</div>
+                                    <div class="text-xs" th:text="${material.name}">Tritanium</div>
+                                </div>
+                            </div>
+                            <p class="mt-2 text-xs opacity-70" th:text="#{compare.materialsNote}">The list shortens a quantity, the hover has the exact one.</p>
+                        </div>
+                        <div class="rounded-box bg-base-100 p-3">
+                            <h3 class="text-sm font-semibold mb-2" th:text="#{compare.blueprint}">Blueprint copy</h3>
+                            <p class="text-sm"><span th:text="#{compare.runsLabel}">Runs</span> <b th:text="${job.runs}">1</b>
+                                · <span th:text="#{compare.me}">Material efficiency</span> <b th:text="${job.me} + '%'">10%</b>
+                                · <span th:text="#{compare.te}">Time efficiency</span> <b th:text="${job.te} + '%'">20%</b></p>
+                            <p class="text-sm"><span th:text="#{compare.outcome}">Outcome</span> <b th:text="${job.product} + ' × ' + ${#numbers.formatInteger(job.unitsMade, 1, 'COMMA')}">Item × 1</b></p>
+                        </div>
+                        <div class="rounded-box bg-base-100 p-3">
+                            <h3 class="text-sm font-semibold mb-2" th:text="#{compare.durationModifiers}">Job duration modifiers</h3>
+                            <div class="flex justify-between text-sm" th:each="line : ${job.time.lines}">
+                                <span th:text="#{'compare.time.' + ${line.kind}}">Line</span>
+                                <span class="num text-success" th:text="'-' + ${line.saved} + '%'">-20.0%</span>
+                            </div>
+                            <div class="mt-2 flex justify-between border-t border-base-300 pt-2 text-sm">
+                                <span th:text="#{compare.duration}">Job duration</span>
+                                <b class="num" th:text="${@durations.clock(job.time.seconds)}">1D 01:34:05</b>
+                            </div>
+                            <p class="mt-1 text-xs opacity-70" th:text="#{compare.durationNote(${job.time.exactSeconds.setScale(2, T(java.math.RoundingMode).HALF_UP)})}">exact seconds</p>
+                        </div>
+                        <div class="rounded-box bg-base-100 p-3 text-sm">
+                            <div class="flex justify-between"><span th:text="#{compare.eiv}">Estimated Items value (EIV)</span><span class="num" th:text="${#numbers.formatInteger(job.cost.eiv, 1, 'COMMA')} + ' ISK'">1 ISK</span></div>
+                            <div class="mt-1 font-semibold opacity-80" th:text="#{compare.gross}">Job gross cost</div>
+                            <div class="flex justify-between"><span><span th:text="#{compare.index}">System cost index</span> <span class="opacity-70" th:text="${job.cost.indexPercent.setScale(2, T(java.math.RoundingMode).HALF_UP)} + '% EIV'">2.00% EIV</span></span><span class="num" th:text="${#numbers.formatInteger(job.cost.indexLine, 1, 'COMMA')} + ' ISK'">1 ISK</span></div>
+                            <div class="flex justify-between text-success"><span><span th:text="#{compare.bonuses}">Bonuses</span> <span class="opacity-70" th:text="'(' + #{compare.roleBonus} + ' -' + ${job.cost.structureBonusPercent.setScale(1, T(java.math.RoundingMode).HALF_UP)} + '%)'">(Structure Role Bonus -4.0%)</span></span><span class="num" th:text="${#numbers.formatInteger(job.cost.bonus, 1, 'COMMA')} + ' ISK'">-1 ISK</span></div>
+                            <div class="flex justify-between"><span th:text="#{compare.totalGross}">Total job gross cost</span><span class="num" th:text="${#numbers.formatInteger(job.cost.gross, 1, 'COMMA')} + ' ISK'">1 ISK</span></div>
+                            <div class="mt-1 font-semibold opacity-80" th:text="#{compare.taxes}">Taxes</div>
+                            <div class="flex justify-between" th:if="${job.cost.facilityTax != 0}"><span th:text="#{compare.facilityTax}">Facility tax</span><span class="num" th:text="'+' + ${#numbers.formatInteger(job.cost.facilityTax, 1, 'COMMA')} + ' ISK'">+1 ISK</span></div>
+                            <div class="flex justify-between text-error"><span><span th:text="#{compare.scc}">SCC surcharge</span> <span class="opacity-70" th:text="'+' + ${job.cost.sccPercent.setScale(2, T(java.math.RoundingMode).HALF_UP)} + '% EIV'">+4.00% EIV</span></span><span class="num" th:text="'+' + ${#numbers.formatInteger(job.cost.scc, 1, 'COMMA')} + ' ISK'">+1 ISK</span></div>
+                            <div class="flex justify-between"><span th:text="#{compare.totalTaxes}">Total taxes</span><span class="num" th:text="${#numbers.formatInteger(job.cost.taxes, 1, 'COMMA')} + ' ISK'">1 ISK</span></div>
+                            <div class="mt-1 flex justify-between border-t border-base-300 pt-1 font-semibold"><span th:text="#{compare.totalJobCost}">Total job cost</span><span class="num" th:text="${#numbers.formatInteger(job.cost.total, 1, 'COMMA')} + ' ISK'">1 ISK</span></div>
+                            <p class="mt-1 text-xs opacity-70" th:text="#{compare.windowNote(${job.cost.exactTotal.setScale(2, T(java.math.RoundingMode).HALF_UP)})}">The window adds rounded lines.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!--/* ---- B: the app's number, what the game shows, and the difference ---- */-->
+                <div class="view-b group-data-[view=a]/compare:hidden">
+                    <div class="mb-2 flex flex-wrap items-center gap-3">
+                        <span class="text-sm" data-summary th:attr="data-job=${job.index}"></span>
+                        <span class="grow"></span>
+                        <button type="button" class="btn btn-xs btn-ghost" th:attr="data-clear-job=${job.index}" th:text="#{compare.clear}">Clear</button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="table table-sm">
+                            <thead><tr>
+                                <th th:text="#{compare.col.line}">Line</th><th class="num" th:text="#{compare.col.app}">App</th>
+                                <th class="num" th:text="#{compare.col.game}">Game shows</th><th class="num" th:text="#{compare.col.diff}">Difference</th>
+                            </tr></thead>
+                            <tbody>
+                            <tr class="bg-base-300/40"><td colspan="4" class="text-xs font-semibold uppercase opacity-70" th:text="#{compare.section.materials}">Materials</td></tr>
+                            <tr th:each="material, i : ${job.materials}" class="group/row" data-row data-kind="q" th:attr="data-job=${job.index}, data-key='j' + ${job.index} + '-m' + ${i.index}, data-app=${material.quantity}">
+                                <td><span th:text="${material.name}">Tritanium</span><span class="block text-xs opacity-70" th:text="${material.steps}">steps</span></td>
+                                <td class="num" th:text="${#numbers.formatInteger(material.quantity, 1, 'COMMA')}">1</td>
+                                <td class="num"><input type="text" class="input input-xs w-32 text-right group-data-[state=differ]/row:input-error group-data-[state=match]/row:input-success" autocomplete="off" data-game th:attr="aria-label=${material.name}" th:placeholder="#{compare.placeholder}"></td>
+                                <td class="num group-data-[state=match]/row:text-success group-data-[state=differ]/row:text-error" data-diff></td>
+                            </tr>
+                            <tr class="bg-base-300/40"><td colspan="4" class="text-xs font-semibold uppercase opacity-70" th:text="#{compare.section.time}">Time</td></tr>
+                            <tr class="group/row" data-row data-kind="dur" th:attr="data-job=${job.index}, data-key='j' + ${job.index} + '-dur', data-app=${job.time.seconds}">
+                                <td><span th:text="#{compare.duration}">Job duration</span><span class="block text-xs opacity-70" th:text="#{compare.durationNote(${job.time.exactSeconds.setScale(2, T(java.math.RoundingMode).HALF_UP)})}">exact</span></td>
+                                <td class="num" th:text="${@durations.clock(job.time.seconds)}">1D 01:34:05</td>
+                                <td class="num"><input type="text" class="input input-xs w-32 text-right group-data-[state=differ]/row:input-error group-data-[state=match]/row:input-success" autocomplete="off" data-game th:attr="aria-label=#{compare.duration}" placeholder="1D 01:34:05"></td>
+                                <td class="num group-data-[state=match]/row:text-success group-data-[state=differ]/row:text-error" data-diff></td>
+                            </tr>
+                            <tr th:each="line : ${job.time.lines}" class="group/row" data-row data-kind="pct" th:attr="data-job=${job.index}, data-key='j' + ${job.index} + '-t-' + ${line.kind}, data-app='-' + ${line.saved}">
+                                <td th:text="#{'compare.time.' + ${line.kind}}">Line</td>
+                                <td class="num" th:text="'-' + ${line.saved} + '%'">-20.0%</td>
+                                <td class="num"><input type="text" class="input input-xs w-32 text-right group-data-[state=differ]/row:input-error group-data-[state=match]/row:input-success" autocomplete="off" data-game th:attr="aria-label=#{'compare.time.' + ${line.kind}}" placeholder="-20.0%"></td>
+                                <td class="num group-data-[state=match]/row:text-success group-data-[state=differ]/row:text-error" data-diff></td>
+                            </tr>
+                            <tr class="bg-base-300/40"><td colspan="4" class="text-xs font-semibold uppercase opacity-70" th:text="#{compare.section.cost}">Cost</td></tr>
+                            <th:block th:each="line : ${ {'eiv', 'indexLine', 'bonus', 'gross', 'facilityTax', 'scc', 'total'} }">
+                                <tr th:with="amount=${line == 'eiv' ? job.cost.eiv : line == 'indexLine' ? job.cost.indexLine : line == 'bonus' ? job.cost.bonus : line == 'gross' ? job.cost.gross : line == 'facilityTax' ? job.cost.facilityTax : line == 'scc' ? job.cost.scc : job.cost.total}"
+                                    th:if="${line != 'facilityTax' or job.cost.facilityTax != 0}" class="group/row" data-row data-kind="q"
+                                    th:attr="data-job=${job.index}, data-key='j' + ${job.index} + '-c-' + ${line}, data-app=${amount}">
+                                    <td><span th:text="#{'compare.cost.' + ${line}}">Line</span>
+                                        <span class="block text-xs opacity-70" th:if="${line == 'total'}" th:text="#{compare.totalNote(${job.cost.exactTotal.setScale(2, T(java.math.RoundingMode).HALF_UP)})}">exact</span>
+                                        <span class="block text-xs opacity-70" th:if="${line == 'indexLine'}" th:text="'EIV × ' + ${job.cost.indexPercent.stripTrailingZeros().toPlainString()} + '%'">EIV × 2%</span></td>
+                                    <td class="num" th:text="${#numbers.formatInteger(amount, 1, 'COMMA')}">1</td>
+                                    <td class="num"><input type="text" class="input input-xs w-32 text-right group-data-[state=differ]/row:input-error group-data-[state=match]/row:input-success" autocomplete="off" data-game th:attr="aria-label=#{'compare.cost.' + ${line}}" th:placeholder="#{compare.placeholder}"></td>
+                                    <td class="num group-data-[state=match]/row:text-success group-data-[state=differ]/row:text-error" data-diff></td>
+                                </tr>
+                            </th:block>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </details>
+        </div>
+    </th:block>
+
+    <script defer th:src="@{/js/compare.js}"></script>
+</main>
+</body>
+</html>
