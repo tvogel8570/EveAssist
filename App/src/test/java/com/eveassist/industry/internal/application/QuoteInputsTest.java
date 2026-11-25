@@ -81,6 +81,33 @@ class QuoteInputsTest {
     }
 
     @Test
+    void thePricesTheUserTypedAreSaidSoInTheSnapshotAndComeBackTyped() {
+        var project = project();
+        project.typePrice(ORE, new BigDecimal("4.25"), AS_OF);
+
+        var snapshot = QuoteInputs.snapshot(project, both());
+        var restored = QuoteInputs.restore(snapshot, both());
+
+        assertThat(snapshot.prices()).filteredOn(price -> price.type() == ORE.value()).singleElement().extracting(QuoteInputsV1.Price::typed).isEqualTo(true);
+        assertThat(snapshot.prices()).filteredOn(price -> price.type() == PART.value()).singleElement().extracting(QuoteInputsV1.Price::typed).isEqualTo(false);
+        assertThat(restored.typedPrices()).containsExactly(ORE);
+        // a typed price is one number on both sides
+        assertThat(restored.prices().get(ORE).sell()).isEqualByComparingTo("4.25");
+        assertThat(restored.prices().get(ORE).buy()).isEqualByComparingTo("4.25");
+    }
+
+    @Test
+    void aSnapshotMadeBeforeTypedPricesExistedHasNoTypedPrices() {
+        var snapshot = QuoteInputs.snapshot(project(), both());
+        // a price as an old document has it: without the flag, which reads as false
+        var old = new QuoteInputsV1(snapshot.products(), snapshot.boughtParts(), snapshot.items(), snapshot.config(),
+                snapshot.prices().stream().map(price -> new QuoteInputsV1.Price(price.type(), price.sell(), price.buy(), price.asOf())).toList(),
+                snapshot.facilities());
+
+        assertThat(QuoteInputs.restore(old, both()).typedPrices()).isEmpty();
+    }
+
+    @Test
     void theSnapshotHoldsTheFacilitiesValuesAsWellAsTheirIds() {
         var snapshot = QuoteInputs.snapshot(project(), both());
 

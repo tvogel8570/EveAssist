@@ -149,6 +149,13 @@ public class Project {
     public void replaceInputs(
             List<PlanProduct> newProducts, Set<TypeId> newBoughtParts, Map<TypeId, ProjectItem> newItems,
             Map<TypeId, PlanPrice> newPrices, ProjectConfig newConfig) {
+        replaceInputs(newProducts, newBoughtParts, newItems, newPrices, Set.of(), newConfig);
+    }
+
+    /** The same, with the items whose price the user typed, which stay typed. */
+    public void replaceInputs(
+            List<PlanProduct> newProducts, Set<TypeId> newBoughtParts, Map<TypeId, ProjectItem> newItems,
+            Map<TypeId, PlanPrice> newPrices, Set<TypeId> newTypedPrices, ProjectConfig newConfig) {
         requireDraft();
         products.clear();
         products.addAll(newProducts);
@@ -158,6 +165,8 @@ public class Project {
         items.putAll(newItems);
         prices.clear();
         prices.putAll(newPrices);
+        typedPrices.clear();
+        newTypedPrices.stream().filter(newPrices::containsKey).forEach(typedPrices::add);
         config = newConfig;
     }
 

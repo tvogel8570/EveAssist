@@ -200,4 +200,58 @@ class TypedPricesIT extends IntegrationTest {
                 .isInstanceOf(ProjectNotFoundException.class);
         assertThat(projects.find(owner, id).orElseThrow().typedPrices()).isEmpty();
     }
+
+    @Test
+    void aTypedPriceSurvivesANewVersionFromAQuoteAndTheNextRefresh() {
+        var owner = viewerFor(newSub());
+        var id = project(owner);
+        type(owner, id, TRITANIUM, "7.5");
+        entry.cost(owner, id);
+        quoting.issue(owner, new IssueQuoteCommand(id, versionOf(owner, id), "Buyer", null, Instant.now().plus(Duration.ofDays(7))));
+
+        // the quote's frozen inputs say which price was typed
+        var frozen = jdbc.sql("""
+                SELECT jsonb_path_query_array(q.inputs, '$.prices[*] ? (@.typed == true).type')::text
+                FROM project_quote q JOIN project p ON p.id = q.project_id WHERE p.public_id = :id AND q.number = 1
+                """).param("id", id.value()).query(String.class).single();
+        assertThat(frozen).isEqualTo("[" + TRITANIUM.value() + "]");
+
+        quoting.newVersionFrom(owner, new NewVersionCommand(id, 1, versionOf(owner, id)));
+
+        var reopened = projects.find(owner, id).orElseThrow();
+        assertThat(reopened.typedPrices()).containsExactly(TRITANIUM);
+        assertThat(reopened.prices().get(TRITANIUM).sell()).isEqualByComparingTo("7.5");
+        assertThat(row(id, TRITANIUM).get("source")).isEqualTo("manual");
+        editing.replacePrices(owner, id, versionOf(owner, id), Map.of(
+                TRITANIUM, new JitaQuote(TRITANIUM, new BigDecimal("6"), new BigDecimal("5"), Instant.now()),
+                PILOTS_MINERAL, new JitaQuote(PILOTS_MINERAL, new BigDecimal("11"), new BigDecimal("9"), Instant.now())));
+        assertThat((BigDecimal) row(id, TRITANIUM).get("sell")).isEqualByComparingTo("7.50");
+        assertThat(row(id, PILOTS_MINERAL).get("source")).isEqualTo("market");
+    }
+
+    @Test
+    void aTypedPriceForAProductMakesAMarketReferencedQuoteWhereThereWasNoneAndTheWarningNamesTheProduct() {
+        var owner = viewerFor(newSub());
+        var id = project(owner);
+        var project = projects.find(owner, id).orElseThrow();
+        var settings = project.config().settings();
+        editing.setConfig(owner, new SetProjectConfigCommand(id, project.config().withSettings(new com.eveassist.industry.internal.domain.ProjectSettings(
+                settings.iskPerHour(), settings.iskPerCubicMeter(), settings.contractFee(),
+                com.eveassist.industry.internal.domain.ProjectSettings.QuoteMode.MARKET, settings.marginPercent(), BigDecimal.ZERO, settings.quoteStep())),
+                project.version()));
+
+        // the scenario has no Jita price for the Hauler itself, so there is no market quote, and it is said which product has none
+        var blocked = costings.cost(owner, id);
+        assertThat(blocked.warnings()).contains(new ProjectWarning(Kind.NO_MARKET_PRICE, HAULER));
+        assertThat(blocked.cost().quote()).isNull();
+        assertThat(blocked.quotable()).isFalse();
+
+        type(owner, id, HAULER, "9000");
+
+        var result = costings.cost(owner, id);
+        assertThat(result.warnings()).noneMatch(warning -> warning.kind() == Kind.NO_MARKET_PRICE);
+        // 2 Haulers at the typed 9,000
+        assertThat(result.cost().quote().price()).isEqualByComparingTo("18000");
+        assertThat(result.quotable()).isTrue();
+    }
 }

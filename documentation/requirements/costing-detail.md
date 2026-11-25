@@ -523,7 +523,7 @@ The developer decided its first slice on 2026-11-18; the decisions are in [Proje
 - an incomplete cost is shown with a warning, and *Issue quote* is refused until every line is priced (`ProjectCost.quotable()`);
 - the cost and the profit are exact, and the quote is rounded up to a step (a setting, 1,000 ISK by default).
 
-The warnings, each of which blocks a quote: an unpriced item that is bought, an unpriced surplus, an item with no volume while a hauling rate is set, and jobs that make
+The warnings, each of which blocks a quote: an unpriced item that is bought, an unpriced surplus, an item with no volume while a hauling rate is set, a product with no price at the basis in a **market-referenced** quote (which names the product), and jobs that make
 fewer units than the project needs. A **notice**, which does not block a quote, says that a job uses a blueprint original, another that a time bound could not be met, and another that a job material has no adjusted price (it is counted as 0, as the game does, and the notice names the material). **Not a warning in `ProjectCosting`:** a wormhole facility with no typed cost index. That is a facility record without an index and has to be refused where the record is made, since the class gets the
 index as a number.
 

@@ -91,6 +91,12 @@ reviewed with the developer.
 
 **Jita split** (see [Price basis](market-logistics.md#price-basis)) was built afterwards: the project's price basis dropdown offers it as a third choice beside Jita sell and Jita buy.
 
+**Typed prices** (decided with the developer on 2026-11-25). An item with no Jita price, or too little of one (the Jita split needs both sides), is priced by **a price the user types for the
+project**. Until then it stays a blocking warning that says why: a bought material or a surplus item is *unpriced*, and in a **market-referenced** quote a product with no price at the basis raises
+its own warning that **names the product** (a margin quote does not use the products' prices, so it says nothing there). The way out of that one is to type a price or to switch to cost plus margin.
+A typed price is **one number** (it is itself under sell, buy and the split), to the cent, from 0.01 to 1,000,000,000,000,000 ISK; it **replaces the market price, survives every refresh and a new version made
+from a quote**, and stays until the user asks for the market price again. Typing one is an edit, so the costing is out of date. It is allowed for the items the project prices, and a quoted project refuses it.
+
 ## Lifecycle
 
 Decided with the developer on 2026-11-17, and made exact on 2026-11-18 (the lock, the products and the prices).

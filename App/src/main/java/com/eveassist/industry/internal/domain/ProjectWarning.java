@@ -22,6 +22,12 @@ public record ProjectWarning(Kind kind, TypeId type) {
          * value as this costing does, so the install cost is right (reading G16, 2026-11-25) and it only tells the user why the material adds nothing.
          */
         MISSING_ADJUSTED_PRICE,
+        /**
+         * A product has no price at the project's basis, in a market-referenced quote, which is the products' Jita prices, so there is no quote. A margin quote does
+         * not use them, so it is not raised there. The type is the product, and the way out is a price the user types for it (decided with the developer on
+         * 2026-11-25), or the margin quote. It blocks the quote, like any other gap.
+         */
+        NO_MARKET_PRICE,
         /** An item has no volume while hauling is charged, so the hauling is too low. */
         MISSING_VOLUME,
         /** The jobs' runs make fewer units than the project needs. */
