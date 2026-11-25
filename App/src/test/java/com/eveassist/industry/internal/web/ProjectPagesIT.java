@@ -133,7 +133,9 @@ class ProjectPagesIT extends IntegrationTest {
                 // no facility was chosen, so the costing warns and the quote cannot be issued
                 .andExpect(content().string(containsString("id=\"warnings\"")))
                 .andExpect(content().string(containsString("id=\"cannot-issue\"")))
-                .andExpect(content().string(containsString("id=\"no-facilities\"")));
+                .andExpect(content().string(containsString("id=\"no-facilities\"")))
+                // a costing that is current can still be made again, because prices and indices move
+                .andExpect(content().string(containsString("id=\"recost\"")));
     }
 
     @Test
@@ -218,6 +220,7 @@ class ProjectPagesIT extends IntegrationTest {
                         .param("expires", LocalDate.now().plusDays(7).toString()).with(signedIn(sub)).with(csrf()))
                 .andExpect(redirectedUrl("/projects/" + id));
         page(sub, id).andExpect(content().string(containsString("id=\"banner-quoted\"")))
+                .andExpect(content().string(not(containsString("id=\"recost\""))))
                 .andExpect(content().string(containsString("id=\"quote-1\"")))
                 .andExpect(content().string(containsString("Kestrel &lt;b&gt;Dawn&lt;/b&gt;")))
                 .andExpect(content().string(not(containsString("<b>Dawn</b>"))))

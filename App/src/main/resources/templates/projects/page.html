@@ -50,7 +50,7 @@
         <div class="min-w-0 space-y-4">
 
             <!--/* ---- settings ---- */-->
-            <form id="settings-form" class="card bg-base-200 p-4 gap-3" method="post" th:action="@{/projects/{id}/config(id=${project.id.value})}">
+            <form id="settings-form" class="group card bg-base-200 p-4 gap-3" data-track-unsaved method="post" th:action="@{/projects/{id}/config(id=${project.id.value})}">
                 <h2 class="font-semibold" th:text="#{project.settings}">Settings</h2>
                 <input type="hidden" name="expectedVersion" th:value="${v}">
                 <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -81,7 +81,10 @@
                         <input class="input input-sm w-full" type="number" step="any" min="0" name="quoteStep" th:value="${set.quoteStep.stripTrailingZeros().toPlainString()}" th:disabled="${locked}"></label>
                 </div>
                 <p class="text-xs opacity-70" th:text="#{project.settingsNote}">Sales tax is 0 and there is no broker fee: every project is delivered by contract.</p>
-                <div><button id="save-settings" class="btn btn-sm btn-outline" type="submit" th:disabled="${locked}" th:text="#{project.save}">Save</button></div>
+                <div class="flex flex-wrap items-center gap-3">
+                    <button id="save-settings" class="btn btn-sm btn-outline group-data-[dirty]:btn-warning" type="submit" th:disabled="${locked}" th:text="#{project.save}">Save</button>
+                    <span class="hidden group-data-[dirty]:inline text-xs text-warning" data-unsaved-note th:text="#{project.unsaved}">Unsaved changes</span>
+                </div>
             </form>
 
             <!--/* ---- facilities, read-only until the facility pages exist ---- */-->
@@ -140,9 +143,10 @@
                                 <td class="num"><input class="input input-xs w-28 text-right" type="number" step="any" min="0" name="blueprintCostPerRun"
                                         th:value="${item.blueprintCostPerRun.stripTrailingZeros().toPlainString()}" th:form="'item-form-' + ${item.type}" th:disabled="${locked}"></td>
                                 <td class="text-right">
-                                    <form th:id="'item-form-' + ${item.type}" method="post" th:action="@{/projects/{id}/items/{type}(id=${project.id.value}, type=${item.type})}">
+                                    <form class="group" data-track-unsaved th:id="'item-form-' + ${item.type}" method="post" th:action="@{/projects/{id}/items/{type}(id=${project.id.value}, type=${item.type})}">
                                         <input type="hidden" name="expectedVersion" th:value="${v}">
-                                        <button class="btn btn-xs btn-outline" type="submit" th:id="'save-item-' + ${item.type}" th:disabled="${locked}" th:text="#{project.save}">Save</button>
+                                        <button class="btn btn-xs btn-outline group-data-[dirty]:btn-warning" type="submit" th:id="'save-item-' + ${item.type}" th:disabled="${locked}" th:text="#{project.save}">Save</button>
+                                        <span class="hidden group-data-[dirty]:block text-xs text-warning" data-unsaved-note th:text="#{project.unsaved}">Unsaved changes</span>
                                     </form>
                                 </td>
                             </tr>
@@ -198,7 +202,13 @@
             </div>
 
             <div id="delivered-cost" class="card bg-base-200 p-4 gap-2" th:if="${doc != null}" th:classappend="${!#lists.isEmpty(reasons)} ? 'opacity-60'">
-                <h2 class="font-semibold" th:text="#{project.deliveredCost}">Delivered cost</h2>
+                <div class="flex items-center gap-2">
+                    <h2 class="font-semibold grow" th:text="#{project.deliveredCost}">Delivered cost</h2>
+                    <!--/* always there on a draft: a costing is only made on request, and prices and the cost index move */-->
+                    <form th:if="${!locked}" method="post" th:action="@{/projects/{id}/cost(id=${project.id.value})}">
+                        <button id="recost" class="btn btn-xs btn-outline" type="submit" th:text="#{project.costAgain}">Cost it again</button>
+                    </form>
+                </div>
                 <table class="table table-sm">
                     <tbody>
                     <tr th:each="line : ${doc.lines}">
@@ -223,7 +233,7 @@
                     <span class="text-xs opacity-70" th:text="#{project.onlyYou}">only you see this card</span>
                 </div>
 
-                <form id="quote-settings" class="grid gap-2 grid-cols-2" method="post" th:action="@{/projects/{id}/config(id=${project.id.value})}">
+                <form id="quote-settings" class="group grid gap-2 grid-cols-2" data-track-unsaved method="post" th:action="@{/projects/{id}/config(id=${project.id.value})}">
                     <input type="hidden" name="expectedVersion" th:value="${v}">
                     <label class="col-span-2 flex items-center gap-2 text-sm"><input type="radio" class="radio radio-sm" name="mode" value="MARGIN" th:checked="${set.mode.name() == 'MARGIN'}" th:disabled="${locked}"> <span th:text="#{project.modeMargin}">Cost plus margin</span></label>
                     <label class="col-span-2 flex items-center gap-2 text-sm"><input type="radio" class="radio radio-sm" name="mode" value="MARKET" th:checked="${set.mode.name() == 'MARKET'}" th:disabled="${locked}"> <span th:text="#{project.modeMarket}">Market-referenced</span></label>
@@ -231,7 +241,10 @@
                         <input class="input input-sm w-full" type="number" step="any" min="0" max="99.99" name="marginPercent" th:value="${set.marginPercent.stripTrailingZeros().toPlainString()}" th:disabled="${locked}"></label>
                     <label class="form-control"><span class="text-xs opacity-70" th:text="#{project.premium(#{'project.basis.' + ${cfg.priceSide.name().toLowerCase()}})}">Against Jita, %</span>
                         <input class="input input-sm w-full" type="number" step="any" name="premiumPercent" th:value="${set.premiumPercent.stripTrailingZeros().toPlainString()}" th:disabled="${locked}"></label>
-                    <div class="col-span-2"><button id="save-quote-settings" class="btn btn-xs btn-outline" type="submit" th:disabled="${locked}" th:text="#{project.save}">Save</button></div>
+                    <div class="col-span-2 flex flex-wrap items-center gap-2">
+                        <button id="save-quote-settings" class="btn btn-xs btn-outline group-data-[dirty]:btn-warning" type="submit" th:disabled="${locked}" th:text="#{project.save}">Save</button>
+                        <span class="hidden group-data-[dirty]:inline text-xs text-warning" data-unsaved-note th:text="#{project.unsaved}">Unsaved changes</span>
+                    </div>
                 </form>
 
                 <div th:if="${doc == null}" id="no-price" class="text-sm opacity-70" th:text="#{project.noPrice}">No price yet: cost the project first.</div>

@@ -19,6 +19,18 @@
         }
     });
 
+    // A form that says data-track-unsaved marks itself (data-dirty) as soon as one of its fields is edited, and the page's styles show
+    // it: its Save button turns to a warning and its "unsaved changes" note appears. A field outside the form's own tags that names it
+    // with the form attribute counts too, because event.target.form is the form it belongs to. Nothing is saved for the user.
+    function markUnsaved(event) {
+        const form = event.target.form;
+        if (form && form.hasAttribute('data-track-unsaved')) {
+            form.setAttribute('data-dirty', '');
+        }
+    }
+
+    ['input', 'change'].forEach(name => document.addEventListener(name, markUnsaved));
+
     // A plan without an account (/try) lives in this browser only. Its state is a short text in the page's #try-state box,
     // which every answer from the server swaps. It is kept in local storage after each swap. When the page opens with a
     // plan kept, the box gets it before htmx starts (this script runs after the page is read and before htmx processes
