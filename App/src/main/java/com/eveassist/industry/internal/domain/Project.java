@@ -3,6 +3,8 @@ package com.eveassist.industry.internal.domain;
 import com.eveassist.industry.FacilityId;
 import com.eveassist.industry.ProjectId;
 import com.eveassist.sde.TypeId;
+import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -37,11 +39,20 @@ public class Project {
     private final Set<TypeId> boughtParts;
     private final Map<TypeId, ProjectItem> items;
     private final Map<TypeId, PlanPrice> prices;
+    /** The items whose price the user typed. Their price is the same on both sides, and a refresh of the market prices leaves it as it is. */
+    private final Set<TypeId> typedPrices;
 
     public Project(
             ProjectId id, String name, long version, ProjectStatus status, int lastQuoteNumber, boolean archived,
             ProjectConfig config, List<PlanProduct> products, Set<TypeId> boughtParts, Map<TypeId, ProjectItem> items,
             Map<TypeId, PlanPrice> prices) {
+        this(id, name, version, status, lastQuoteNumber, archived, config, products, boughtParts, items, prices, Set.of());
+    }
+
+    public Project(
+            ProjectId id, String name, long version, ProjectStatus status, int lastQuoteNumber, boolean archived,
+            ProjectConfig config, List<PlanProduct> products, Set<TypeId> boughtParts, Map<TypeId, ProjectItem> items,
+            Map<TypeId, PlanPrice> prices, Set<TypeId> typedPrices) {
         this.id = id;
         this.name = name;
         this.version = version;
@@ -53,6 +64,8 @@ public class Project {
         this.boughtParts = new HashSet<>(boughtParts);
         this.items = new HashMap<>(items);
         this.prices = new HashMap<>(prices);
+        this.typedPrices = new HashSet<>(typedPrices);
+        this.typedPrices.retainAll(prices.keySet());
     }
 
     public ProjectId id() {
@@ -104,6 +117,11 @@ public class Project {
 
     public Map<TypeId, PlanPrice> prices() {
         return Map.copyOf(prices);
+    }
+
+    /** The items whose price was typed by the user and not taken from the market. */
+    public Set<TypeId> typedPrices() {
+        return Set.copyOf(typedPrices);
     }
 
     public boolean hasProduct(TypeId type) {
@@ -195,6 +213,38 @@ public class Project {
         prices.put(type, price);
     }
 
+    /**
+     * Takes a market price for an item, unless the user typed one for it, which stays until they ask for the market price again. This is how a refresh of
+     * the prices changes the project's prices.
+     */
+    public void setMarketPrice(TypeId type, PlanPrice price) {
+        requireDraft();
+        if (!typedPrices.contains(type)) {
+            prices.put(type, price);
+        }
+    }
+
+    /**
+     * Takes a price the user typed for an item: one number, the same on both sides, so it is itself under any price basis (a Jita split of two equal prices is
+     * that price). It replaces the market price, and stays through refreshes until {@link #useMarketPrice}.
+     */
+    public void typePrice(TypeId type, BigDecimal price, Instant asOf) {
+        requireDraft();
+        prices.put(type, new PlanPrice(price, price, asOf));
+        typedPrices.add(type);
+    }
+
+    /** Gives up the typed price of an item, and takes the market price in its place, or none when there is none to take. */
+    public void useMarketPrice(TypeId type, PlanPrice market) {
+        requireDraft();
+        typedPrices.remove(type);
+        if (market == null) {
+            prices.remove(type);
+        } else {
+            prices.put(type, market);
+        }
+    }
+
     /** Takes a price only for an item the project has none for, so that the prices it already has stay as they were. */
     public void addPriceIfMissing(TypeId type, PlanPrice price) {
         requireDraft();
@@ -205,6 +255,7 @@ public class Project {
     public void keepPricesFor(Set<TypeId> needed) {
         requireDraft();
         prices.keySet().retainAll(needed);
+        typedPrices.retainAll(needed);
     }
 
     public void settings(ProjectSettings settings) {

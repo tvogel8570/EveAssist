@@ -62,6 +62,16 @@ public class ProjectEntry {
         return editing.addProduct(viewer, command, fetched.quotes());
     }
 
+    /**
+     * Gives up the price the user typed for an item and takes the market's in its place, which is fetched here (ESI is asked, as for any new price). An item the market
+     * has no price for ends up with none, which the costing then says.
+     */
+    public ProjectChanged useMarketPrice(Viewer viewer, UseMarketPriceCommand command) {
+        loadDraft(viewer, command.project());
+        var fetched = market.currentPrices(java.util.Set.of(command.type()));
+        return editing.useMarketPrice(viewer, command, java.util.Optional.ofNullable(fetched.quotes().get(command.type())));
+    }
+
     /** Fetches current prices for everything the project could need. Items ESI cannot answer for keep their old price. */
     public ProjectPriceRefresh refreshPrices(Viewer viewer, ProjectId id) {
         var project = loadDraft(viewer, id);

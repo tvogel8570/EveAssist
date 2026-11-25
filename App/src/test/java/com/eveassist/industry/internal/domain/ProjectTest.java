@@ -187,4 +187,88 @@ class ProjectTest {
         assertThatThrownBy(() -> new ProjectItem(SHIP, BlueprintSource.TYPED, 10, 20, BigDecimal.ZERO, null, null,
                 Map.of(ORE, 6))).isInstanceOf(IllegalArgumentException.class);
     }
+
+    // ---- a price the user typed ----
+
+    private static final Instant TYPED_AT = Instant.parse("2026-11-26T09:00:00Z");
+    private static final PlanPrice MARKET = new PlanPrice(new BigDecimal("6"), new BigDecimal("5"), Instant.parse("2026-11-26T08:00:00Z"));
+
+    @Test
+    void aTypedPriceIsOneNumberOnBothSidesSoItIsItselfUnderEveryPriceBasis() {
+        var project = draft();
+
+        project.typePrice(ORE, new BigDecimal("7.25"), TYPED_AT);
+
+        var price = project.prices().get(ORE);
+        assertThat(price.sell()).isEqualByComparingTo("7.25");
+        assertThat(price.buy()).isEqualByComparingTo("7.25");
+        assertThat(price.asOf()).isEqualTo(TYPED_AT);
+        assertThat(project.typedPrices()).containsExactly(ORE);
+        for (var side : PriceSide.values()) {
+            assertThat(side.unitPrice(price.sell(), price.buy()).orElseThrow()).as(side.name()).isEqualByComparingTo("7.25");
+        }
+    }
+
+    @Test
+    void aTypedPriceReplacesTheMarketsAndAMarketRefreshLeavesItAlone() {
+        var project = draft();
+        project.setPrice(ORE, PRICE);
+        project.setPrice(PART, PRICE);
+
+        project.typePrice(ORE, new BigDecimal("7.25"), TYPED_AT);
+        project.setMarketPrice(ORE, MARKET);
+        project.setMarketPrice(PART, MARKET);
+
+        // the item with a typed price keeps it, and the other takes the market's
+        assertThat(project.prices().get(ORE).sell()).isEqualByComparingTo("7.25");
+        assertThat(project.prices().get(PART)).isEqualTo(MARKET);
+        assertThat(project.typedPrices()).containsExactly(ORE);
+    }
+
+    @Test
+    void givingUpATypedPriceTakesTheMarketsOrNoneWhenThereIsNone() {
+        var project = draft();
+        project.typePrice(ORE, new BigDecimal("7.25"), TYPED_AT);
+        project.typePrice(PART, new BigDecimal("9"), TYPED_AT);
+
+        project.useMarketPrice(ORE, MARKET);
+        project.useMarketPrice(PART, null);
+
+        assertThat(project.prices().get(ORE)).isEqualTo(MARKET);
+        assertThat(project.prices()).doesNotContainKey(PART);
+        assertThat(project.typedPrices()).isEmpty();
+        // and a market price may come again
+        project.setMarketPrice(ORE, PRICE);
+        assertThat(project.prices().get(ORE)).isEqualTo(PRICE);
+    }
+
+    @Test
+    void aTypedPriceOfAnItemNothingNeedsAnyMoreIsDroppedWithTheRest() {
+        var project = draft();
+        project.typePrice(ORE, new BigDecimal("7.25"), TYPED_AT);
+        project.typePrice(PART, new BigDecimal("9"), TYPED_AT);
+
+        project.keepPricesFor(Set.of(PART));
+
+        assertThat(project.prices()).containsOnlyKeys(PART);
+        assertThat(project.typedPrices()).containsExactly(PART);
+    }
+
+    @Test
+    void aProjectIsBuiltWithTheItemsThatHaveATypedPriceAndNeverMoreThanItHasPricesFor() {
+        var project = new Project(new ProjectId(UUID.randomUUID()), "P", 0, ProjectStatus.DRAFT, 0, false, ProjectConfig.defaults(),
+                List.of(new PlanProduct(SHIP, 2)), Set.of(), Map.of(), Map.of(ORE, MARKET), Set.of(ORE, PART));
+
+        // PART is said to be typed but has no price, so it is not
+        assertThat(project.typedPrices()).containsExactly(ORE);
+    }
+
+    @Test
+    void aQuotedProjectRefusesToTypeOrGiveUpAPrice() {
+        var project = quoted();
+
+        assertThatThrownBy(() -> project.typePrice(ORE, BigDecimal.ONE, TYPED_AT)).isInstanceOf(ProjectLockedException.class);
+        assertThatThrownBy(() -> project.useMarketPrice(ORE, MARKET)).isInstanceOf(ProjectLockedException.class);
+        assertThatThrownBy(() -> project.setMarketPrice(ORE, MARKET)).isInstanceOf(ProjectLockedException.class);
+    }
 }
