@@ -1,0 +1,70 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--/*
+    The form that adds a facility (facility is null) or changes one, on the Facilities page and in a project's Facilities section. The numbers
+    are whole percents, typed from the game's Industry window. project is the id of the project page the form is on, or null, so that the user
+    comes back to it. prefix keeps the ids of two forms on one page apart.
+*/-->
+<form th:fragment="facilityForm(facility, action, project, prefix)" th:id="${prefix} + '-form'" class="group flex flex-col gap-3" data-track-unsaved
+      method="post" th:action="${action}">
+    <input type="hidden" name="project" th:value="${project}" th:if="${project != null}">
+    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <label class="form-control sm:col-span-2"><span class="text-xs opacity-70" th:text="#{facilities.name}">Name</span>
+            <input class="input input-sm w-full" name="name" required maxlength="100" autocomplete="off" pattern=".*\S.*"
+                   th:value="${facility != null} ? ${facility.name} : ''"></label>
+        <label class="form-control"><span class="text-xs opacity-70" th:text="#{facilities.structure}">Structure</span>
+            <select class="select select-sm w-full" name="structureType">
+                <option value="" th:text="#{facilities.structureNone}">Not said</option>
+                <option th:each="type : ${structureTypes}" th:value="${type.key()}" th:text="#{'facility.type.' + ${type.key()}}"
+                        th:attr="data-material=${type.materialPercent().stripTrailingZeros().toPlainString()},data-time=${type.timePercent().stripTrailingZeros().toPlainString()},data-cost=${type.costPercent().stripTrailingZeros().toPlainString()}"
+                        th:selected="${facility != null and facility.structureType == type}">Azbel</option>
+            </select></label>
+    </div>
+    <div class="flex flex-wrap items-center gap-2">
+        <button type="button" class="btn btn-xs btn-outline" data-fill-structure th:text="#{facilities.fill}">Fill the structure's bonuses</button>
+        <span class="text-xs opacity-70" th:text="#{facilities.fillHelp}">Proposes the bonuses of the structure.</span>
+    </div>
+    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <label class="form-control"><span class="text-xs opacity-70" th:text="#{facilities.structureMaterial}">Structure materials, %</span>
+            <input class="input input-sm w-full" type="number" step="any" min="0" max="100" name="structureMaterialPercent"
+                   th:value="${facility != null} ? ${facility.terms.structureMaterialPercent.stripTrailingZeros().toPlainString()} : '0'"></label>
+        <label class="form-control"><span class="text-xs opacity-70" th:text="#{facilities.structureTime}">Structure time, %</span>
+            <input class="input input-sm w-full" type="number" step="any" min="0" max="100" name="structureTimePercent"
+                   th:value="${facility != null} ? ${facility.terms.structureTimePercent.stripTrailingZeros().toPlainString()} : '0'"></label>
+        <label class="form-control"><span class="text-xs opacity-70" th:text="#{facilities.structureCost}">Structure job fee, %</span>
+            <input class="input input-sm w-full" type="number" step="any" min="0" max="100" name="structureCostPercent"
+                   th:value="${facility != null} ? ${facility.terms.structureCostPercent.stripTrailingZeros().toPlainString()} : '0'"></label>
+        <label class="form-control"><span class="text-xs opacity-70" th:text="#{facilities.tax}">Facility tax, %</span>
+            <input class="input input-sm w-full" type="number" step="any" min="0" max="100" name="taxPercent"
+                   th:value="${facility != null} ? ${facility.terms.taxPercent.stripTrailingZeros().toPlainString()} : '0'"></label>
+        <label class="form-control"><span class="text-xs opacity-70" th:text="#{facilities.rigMaterial}">Rig materials, %</span>
+            <input class="input input-sm w-full" type="number" step="any" min="0" max="100" name="rigMaterialPercent"
+                   th:value="${facility != null} ? ${facility.terms.rigMaterialPercent.stripTrailingZeros().toPlainString()} : '0'"></label>
+        <label class="form-control"><span class="text-xs opacity-70" th:text="#{facilities.rigTime}">Rig time, %</span>
+            <input class="input input-sm w-full" type="number" step="any" min="0" max="100" name="rigTimePercent"
+                   th:value="${facility != null} ? ${facility.terms.rigTimePercent.stripTrailingZeros().toPlainString()} : '0'"></label>
+        <label class="form-control"><span class="text-xs opacity-70" th:text="#{facilities.index}">System cost index, %</span>
+            <input class="input input-sm w-full" type="number" step="any" min="0" max="100" name="systemCostIndexPercent" required
+                   th:value="${facility != null} ? ${facility.terms.systemCostIndexPercent.stripTrailingZeros().toPlainString()} : ''"></label>
+        <label class="form-control"><span class="text-xs opacity-70" th:text="#{facilities.scc}">SCC surcharge, %</span>
+            <input class="input input-sm w-full" type="number" step="any" min="0" max="100" name="sccSurchargePercent"
+                   th:value="${facility != null} ? ${facility.terms.sccSurchargePercent.stripTrailingZeros().toPlainString()} : '4'"></label>
+    </div>
+    <p class="text-xs opacity-70" th:text="#{facilities.indexHelp}">The index is typed.</p>
+    <div class="flex flex-wrap items-center gap-3">
+        <button class="btn btn-sm btn-outline group-data-[dirty]:btn-warning" type="submit"
+                th:text="${facility != null} ? #{facilities.save} : #{facilities.create}">Save</button>
+        <span class="hidden group-data-[dirty]:inline text-xs text-warning" data-unsaved-note th:text="#{project.unsaved}">Unsaved changes</span>
+    </div>
+</form>
+
+<!--/* When the cost index was last typed, as the days it is old: the index is typed and does not follow the game. */-->
+<th:block th:fragment="indexAge(facility)">
+    <span th:if="${@ages.days(facility.indexEnteredAt) == 0}" th:text="#{facilities.indexTypedToday}">typed today</span>
+    <span th:if="${@ages.days(facility.indexEnteredAt) != 0}" th:text="#{facilities.indexTyped(${@ages.days(facility.indexEnteredAt)})}">typed 3 d ago</span>
+</th:block>
+
+</body>
+</html>

@@ -67,6 +67,26 @@
         sortRows(table, header, next);
     });
 
+    // The facility form's "Fill the structure's bonuses" button copies the chosen structure's materials, time and job fee bonuses (which the page
+    // puts on the option as data-material, data-time and data-cost) into the form's fields. "Not said" has none, so it does nothing. The fields
+    // are told they changed, so that the form says it has unsaved changes.
+    document.addEventListener('click', event => {
+        const button = event.target.closest('button[data-fill-structure]');
+        if (!button) {
+            return;
+        }
+        const form = button.closest('form');
+        const option = form.querySelector('select[name=structureType]')?.selectedOptions[0];
+        if (!option || option.dataset.time === undefined) {
+            return;
+        }
+        [['structureMaterialPercent', 'material'], ['structureTimePercent', 'time'], ['structureCostPercent', 'cost']].forEach(([field, key]) => {
+            const input = form.elements[field];
+            input.value = option.dataset[key];
+            input.dispatchEvent(new Event('input', {bubbles: true}));
+        });
+    });
+
     // A <details data-section="name"> is a section of a page that the user can open and close. Whether it is open is kept in this browser (local
     // storage, one key per section, the same for every project), because every save reloads the page. A section that says data-keep-open has
     // something the user must see (a warning that blocks the quote, the last error), so it opens whatever was kept and what the user does

@@ -73,8 +73,12 @@ reviewed with the developer.
    the reasons a costing is out of date are the three the backend knows (the project was edited, the game data changed, a facility changed),
    not the example "prices are 3 days old"; an issued quote can have a new version made from any quote in the list; the list has no search
    box yet; and the margin is a saved setting, so changing it needs Cost it again before a quote can be issued (decided on 2026-11-25).
-2. **Next: facilities.** Adding, changing and deleting a facility, with its use cases (the version bump on delete is a known gap in
-   [Projects: persistence and use cases](../architecture/projects.md)).
+2. **Done: the facility forms** (2026-11-25). Decided with the developer: a **Facilities page** (`/facilities`, a menu link) lists, adds, changes and deletes facilities,
+   and a project's Facilities section links to it and has an inline *Add facility* (the same form, which brings the user back to the project). Facilities are **typed**: the
+   eight percents, plus a **structure type** (Raitaru, Azbel, Sotiyo or an NPC station) whose *Fill the structure's bonuses* button proposes the structure's materials, time and job fee
+   bonuses (which the user can type over; Fortizars are not offered, so they are typed). The **cost index is typed with the date it was entered**, and the page shows its age
+   ("typed 3 d ago"), as the wormhole rule asks; reading it from ESI, and the structure's rigs and system as chosen values, are later steps. Deleting a facility clears it from the
+   Drafts that use it, says how many, and makes their costing out of date; a quote already issued is not changed. See [Projects: persistence and use cases](../architecture/projects.md).
 3. **After that:** the quote text and CSV, and the comparison views A and B.
 
 Jita split (see [Price basis](market-logistics.md#price-basis)) follows as its own change after these pages.
