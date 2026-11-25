@@ -177,6 +177,7 @@ only one in this module. A quote is deleted by `deleteQuote` or with its project
   `V20261118_1942__project-quotes-and-costings` (quote, costing and trace); `V20261118_1943__freeze-project-quotes` (the trigger); and, for the adjusted prices
   that are not the project's own, `V20261118_2100__adjusted-prices`.
   Slice 2 of the projects UI adds `V20261125_1850__facility-structure-type-and-index-entry-time` (the structure type and `index_entered_at`).
+  The Jita split adds `V20261125_2303__project-price-side-split` (the `price_side` check of the `project` table now allows `split`). `PriceSide.unitPrice` holds the rule that picks a unit price from a Jita sell and buy price for a basis, and both the costing (`ProjectCostings`) and a quote's export (`QuoteExport`) use it.
   New builders start with Industry and Advanced Industry at 0 and no implant, and a new item at ME 10 and TE 20, as a plan assumes.
 - **Built:** `ProjectSchemaIT` shows what the tables enforce before any repository uses them: the cascade from an account, the plan's deletion leaving the
   project, a deleted facility falling back to the default, the frozen quote (it fails with the trigger migration taken out), one Draft costing, a costing

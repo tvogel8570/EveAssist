@@ -70,6 +70,7 @@
                         <select class="select select-sm w-full" name="priceSide" th:disabled="${locked}">
                             <option value="SELL" th:selected="${cfg.priceSide.name() == 'SELL'}" th:text="#{project.basis.sell}">Jita sell</option>
                             <option value="BUY" th:selected="${cfg.priceSide.name() == 'BUY'}" th:text="#{project.basis.buy}">Jita buy</option>
+                            <option value="SPLIT" th:selected="${cfg.priceSide.name() == 'SPLIT'}" th:title="#{project.basis.splitHint}" th:text="#{project.basis.split}">Jita split</option>
                         </select></label>
                     <label class="form-control"><span class="text-xs opacity-70" th:text="#{project.defaultFacility}">Default facility</span>
                         <select id="default-facility" class="select select-sm w-full" name="defaultFacility" th:disabled="${locked}">

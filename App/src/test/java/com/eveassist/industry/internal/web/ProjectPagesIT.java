@@ -567,4 +567,37 @@ class ProjectPagesIT extends IntegrationTest {
                 .andExpect(content().string(containsString("Second &lt;b&gt;Ship&lt;/b&gt;")))
                 .andExpect(content().string(not(containsString("<b>Ship</b>"))));
     }
+
+    // ---- the Jita split as a price basis ----
+
+    @Test
+    void theJitaSplitIsAChoiceOfThePriceBasisAndIsSavedAndNamedInTheQuoteCard() throws Exception {
+        var sub = newSub();
+        var id = quotable(sub);
+        page(sub, id).andExpect(content().string(containsString("<option value=\"SPLIT\"")))
+                .andExpect(content().string(containsString("Jita split")))
+                .andExpect(content().string(containsString("The midpoint of the best buy and the best sell price")))
+                .andExpect(content().string(containsString("Against Jita sell, %")));
+
+        mvc.perform(post("/projects/" + id + "/config").param("expectedVersion", String.valueOf(versionOf(id))).param("priceSide", "SPLIT")
+                .with(signedIn(sub)).with(csrf())).andExpect(redirectedUrl("/projects/" + id));
+
+        page(sub, id).andExpect(content().string(org.hamcrest.Matchers.matchesPattern("(?s).*<option value=\"SPLIT\"[^>]*selected=\"selected\".*")))
+                .andExpect(content().string(containsString("Against Jita split, %")))
+                // a changed basis is a change of an input, so the costing is out of date until it is costed again
+                .andExpect(content().string(containsString("id=\"banner-stale\"")));
+        assertThat(jdbc.sql("SELECT price_side FROM project WHERE public_id = :id").param("id", id).query(String.class).single()).isEqualTo("split");
+    }
+
+    @Test
+    void aPriceBasisThatIsNotOneOfTheThreeIsRefusedAndSavesNothing() throws Exception {
+        var sub = newSub();
+        var id = quotable(sub);
+        var before = versionOf(id);
+
+        mvc.perform(post("/projects/" + id + "/config").param("expectedVersion", String.valueOf(before)).param("priceSide", "MIDDLE")
+                .with(signedIn(sub)).with(csrf())).andExpect(flash().attribute("error", "invalid"));
+
+        assertThat(versionOf(id)).isEqualTo(before);
+    }
 }

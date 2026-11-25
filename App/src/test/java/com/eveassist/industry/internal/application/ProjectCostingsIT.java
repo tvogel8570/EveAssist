@@ -181,6 +181,41 @@ class ProjectCostingsIT extends IntegrationTest {
     }
 
     @Test
+    void theJitaSplitCostsTheBoughtMaterialsAtTheMidpointOfBuyAndSell() {
+        var owner = viewerFor(newSub());
+        var id = twoHaulers(owner, azbel(owner, "2"));
+        var project = projects.find(owner, id).orElseThrow();
+        editing.setConfig(owner, new SetProjectConfigCommand(id, project.config().withPriceSide(PriceSide.SPLIT), project.version()));
+
+        var cost = costings.cost(owner, id).cost();
+
+        // the scenario's prices are 5 sell and 4 buy for Tritanium and 10 and 8 for the Pilot's Mineral, so the same demand costs 1,255 at sell and
+        // 1,004 at buy, and at the split, which is 4.5 and 9, half way between them
+        assertThat(cost.amount(Component.MATERIALS)).isEqualByComparingTo("1129.5");
+    }
+
+    @Test
+    void anItemWithOnlyOneSideOfItsJitaPriceIsUnpricedUnderTheSplitAndPricedUnderTheOtherBases() {
+        var owner = viewerFor(newSub());
+        var id = twoHaulers(owner, azbel(owner, "2"));
+        var project = projects.find(owner, id).orElseThrow();
+        // a Pilot's Mineral nobody buys: it has a sell price and no buy price
+        editing.replacePrices(owner, id, project.version(), java.util.Map.of(PILOTS_MINERAL,
+                new com.eveassist.market.JitaQuote(PILOTS_MINERAL, new BigDecimal("10"), null, java.time.Instant.now())));
+        var version = projects.find(owner, id).orElseThrow().version();
+
+        editing.setConfig(owner, new SetProjectConfigCommand(id, projects.find(owner, id).orElseThrow().config().withPriceSide(PriceSide.SELL), version));
+        assertThat(costings.cost(owner, id).warnings()).noneMatch(warning -> warning.kind() == Kind.UNPRICED_MATERIAL);
+
+        version = projects.find(owner, id).orElseThrow().version();
+        editing.setConfig(owner, new SetProjectConfigCommand(id, projects.find(owner, id).orElseThrow().config().withPriceSide(PriceSide.SPLIT), version));
+        var result = costings.cost(owner, id);
+
+        assertThat(result.warnings()).contains(new ProjectWarning(Kind.UNPRICED_MATERIAL, PILOTS_MINERAL));
+        assertThat(result.quotable()).isFalse();
+    }
+
+    @Test
     void aMaterialWithNoAdjustedPriceIsNamedAndDoesNotBlockTheQuote() {
         var owner = viewerFor(newSub());
         var id = twoHaulers(owner, azbel(owner, "2"));

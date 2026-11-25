@@ -89,7 +89,7 @@ reviewed with the developer.
    or differing. What is typed is **kept in the browser for that costing** (a new costing starts empty), the layout that shows is kept too, and the Draft's costing is marked when the project
    was changed after it. A diagnostic, not a core page (decided 2026-11-20): it is not a main tab. Layout C (a copyable text block of the hovers) is not built.
 
-Jita split (see [Price basis](market-logistics.md#price-basis)) follows as its own change after these pages.
+**Jita split** (see [Price basis](market-logistics.md#price-basis)) was built afterwards: the project's price basis dropdown offers it as a third choice beside Jita sell and Jita buy.
 
 ## Lifecycle
 

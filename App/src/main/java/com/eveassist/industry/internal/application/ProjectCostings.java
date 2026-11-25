@@ -164,7 +164,7 @@ public class ProjectCostings {
         if (price == null) {
             return Optional.empty();
         }
-        return Optional.ofNullable(side == PriceSide.SELL ? price.sell() : price.buy());
+        return side.unitPrice(price.sell(), price.buy());
     }
 
     /** The oldest price among the items that are bought, which is when the costing's prices were last taken. */
