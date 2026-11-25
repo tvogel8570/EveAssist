@@ -520,6 +520,67 @@ class JobCostingTest {
         assertThat(job.time().maximumRuns()).isEqualTo(8273);
     }
 
+    /** The Arazu Blueprint's recipe for one run (SDE: 240,000 s base; the materials by quantity), and ESI's adjusted prices of 2026-11-25. */
+    private static final Recipe ARAZU = new Recipe(new TypeId(11969), 1, 240000, List.of(
+            new RecipeMaterial(new TypeId(11545), 3750), new RecipeMaterial(new TypeId(11541), 1800),
+            new RecipeMaterial(new TypeId(11535), 495), new RecipeMaterial(new TypeId(11553), 375),
+            new RecipeMaterial(new TypeId(11556), 300), new RecipeMaterial(new TypeId(11399), 150),
+            new RecipeMaterial(new TypeId(3828), 75), new RecipeMaterial(new TypeId(11531), 57),
+            new RecipeMaterial(new TypeId(11547), 30), new RecipeMaterial(new TypeId(11478), 18),
+            new RecipeMaterial(new TypeId(633), 1)));
+
+    private static final Map<TypeId, BigDecimal> ARAZU_ADJUSTED_PRICES = Map.ofEntries(
+            Map.entry(new TypeId(11545), new BigDecimal("6187.130719450528")),
+            Map.entry(new TypeId(11541), new BigDecimal("27965.70680839089")),
+            Map.entry(new TypeId(11535), new BigDecimal("15302.755240980714")),
+            Map.entry(new TypeId(11553), new BigDecimal("38547.84912378239")),
+            Map.entry(new TypeId(11556), new BigDecimal("19682.61190524632")),
+            Map.entry(new TypeId(11399), new BigDecimal("17808.620986141777")),
+            Map.entry(new TypeId(3828), new BigDecimal("4802.70930665909")),
+            Map.entry(new TypeId(11531), new BigDecimal("18951.597383166667")),
+            Map.entry(new TypeId(11547), new BigDecimal("26564.556630033298")),
+            Map.entry(new TypeId(11478), new BigDecimal("529.1831737821911")),
+            Map.entry(new TypeId(633), new BigDecimal("12459731.21509921")));
+
+    /**
+     * An Arazu job as read in the game, with Gallente Starship Engineering at the given level. The builder's other skills were not
+     * noted. With Industry and Advanced Industry at V and no implant, the first reading needs the blueprint's other two time skills
+     * (Advanced Medium Ship Construction and Electronic Engineering) to give 0.912 together. Of every pair of levels from 1 to 5, with
+     * no implant or a BX-801, BX-802 or BX-804, only IV and V fit, either way round (0.96 x 0.95), so one is inferred here and neither
+     * was observed. A BX-804 does not fit: the two skills would then have to give 0.95, which needs one of them at 0.
+     */
+    private static JobCost arazuJob(int gallenteStarshipEngineering) {
+        var azbel = facility("1", "0", "20", "0", "4", "2.16", "0", "4");
+        var builder = new BuilderTerms(5, 5, List.of(new ProductSkill(4, BigDecimal.ONE), new ProductSkill(5, BigDecimal.ONE),
+                new ProductSkill(gallenteStarshipEngineering, BigDecimal.ONE)), BigDecimal.ZERO);
+        return JobCosting.cost(ARAZU, 1, new JobTerms(4, 4, azbel, builder), type -> Optional.of(ARAZU_ADJUSTED_PRICES.get(type)));
+    }
+
+    /**
+     * Read in the game on 2026-11-25, in the high-sec Azbel at Dodenvale: 1 run of an Arazu Blueprint copy (3 runs left) at ME 4
+     * and TE 4, with Gallente Starship Engineering at I and then at II, and nothing else changed. The window showed the same
+     * materials both times (55, 471, 1,711, 3,564, 29, 357, 286, 143, 72, 1 and 18) and the same total job cost of 7,214,500 ISK,
+     * and durations of 1D 07:26:05 (113,165 s) and 1D 07:07:02 (112,022 s).
+     * <p>
+     * The skills multiply at 1% a level, so one level more is a factor of 0.98 / 0.99, and 113,165 s times that is 112,022 s to the
+     * second. A time skill changes the time and not the cost. The cost here is worked out from ESI's adjusted prices and Dodenvale's
+     * index of 2.16%, both read the same day after the game, so it is not the window's to the ISK: it is 7,218,658, which is 0.06%
+     * more, and ESI's index has only four decimals (a rounding of 0.005% of the index is 5,700 ISK here).
+     */
+    @Test
+    void oneMoreLevelOfATimeSkillShortensTheTimeAndLeavesTheCostAlone() {
+        var one = arazuJob(1);
+        var two = arazuJob(2);
+
+        assertThat(one.materials()).extracting(RecipeMaterial::quantity)
+                .containsExactly(3564L, 1711L, 471L, 357L, 286L, 143L, 72L, 55L, 29L, 18L, 1L);
+        assertThat(two.materials()).isEqualTo(one.materials());
+        assertThat(one.seconds()).isEqualTo(24 * 3600 + 7 * 3600 + 26 * 60 + 5);
+        assertThat(two.seconds()).isEqualTo(24 * 3600 + 7 * 3600 + 7 * 60 + 2);
+        assertThat(two.installCost()).isEqualByComparingTo(one.installCost());
+        assertThat(one.installCost()).isCloseTo(new BigDecimal("7214500"), Offset.offset(new BigDecimal("7214.5")));
+    }
+
     @Test
     void impossibleLevelsAndPercentagesAreRefused() {
         assertThatThrownBy(() -> new JobTerms(11, 0, FacilityTerms.NONE, BuilderTerms.NONE))

@@ -422,6 +422,16 @@ Zydrine 6, Megacyte 6) unless stated. Money is ISK.
 | G11 | wormhole | ME 10 / TE 20, 235 | output ×2,350; Nocxium **2,723**, Zydrine 1,257, Megacyte 1,257; **1D 01:34:05** (92,045 s); EIV 10,280,639; index line 58,430, bonus −2,337, gross 56,093; SCC 411,226; total **467,319** | an exact half (2,722.005) rounds up; the wormhole index is 0.56835% (index line); the total is again the sum of the rounded gross and taxes (exact 467,318.3) |
 | G12 | high-sec | Atron Blueprint copy (a standard T1 frigate) ME 10 / TE 20, 1, BX-804 | 28.51K / 5,346 / 2,228 / 446; **00:41:47** (2,507 s); EIV 367,708; index line 7,382, bonus −295 (−4.0%), gross 7,086; SCC 14,708; total **21,794** | a ship is costed like a module; the BX-804 is still fitted; products on a half unit (2,227.5, 445.5) round up; index about 2.0074% |
 | G13 | high-sec | Combat Scanner Probe I copy ME 10 / TE 0, 1,000, BX-804 | 2,673 / 8,019 / 12.47K / 1,000 / 1,000 / 1,782 / 6,237; **3D 15:02:24** (313,344 s); "Maximum runs" **8,273**; total **374,738** | Isogen and Nocxium (base 1) show **1,000**, not 891: the one-per-run minimum; the index worked back from the total is 2.0021% (not an independent check) |
+| G14 | high-sec | Arazu Blueprint copy (a Tech II ship, 240,000 s, 3 runs left) ME 4 / TE 4, 1, Gallente Starship Engineering **I** | 55 / 471 / 1,711 / 3,564 / 29 / 357 / 286 / 143 / 72 / 1 / 18 (3,750 × 0.96 × 0.99 = 3,564); **1D 07:26:05** (113,165 s); total **7,214,500** | the blueprint's time skills (attribute 1982) multiply at 1% a level; a Tech II ship is costed like any other job |
+| G15 | high-sec | the same, Gallente Starship Engineering **II** | the same materials; **1D 07:07:02** (112,022 s); total **7,214,500** | one more level is a factor of 0.98 / 0.99: 113,165 s gives 112,022 s **to the second**; a time skill changes the time and not the cost |
+
+**G14 and G15 were read on 2026-11-25**, by the developer, at the Dodenvale Azbel with no rigs (the other readings are of 2026-11-18). Their builder is
+not the "all at V" one above, and the other skills were not noted. Industry V, Advanced Industry V and no implant leave a factor of 0.912 for the
+blueprint's other two time skills, and the only levels that give it are IV and V (either way round); a BX-804 does not fit. So the test
+(`JobCostingTest.oneMoreLevelOfATimeSkillShortensTheTimeAndLeavesTheCostAlone`) takes one of those pairs, which is **inferred, not observed**.
+What it proves does not depend on it: the factor is solved from G14 and predicts G15 to the second. The cost is not asserted to the ISK. The window's
+7,214,500 against 7,218,658 from ESI's adjusted prices and Dodenvale's index of 2.16% (read the same day) is 0.06% apart, and ESI's index has four
+decimals (±0.005% of the index is about ±5,700 ISK on this job's item value of about 118.9 million).
 
 Notes on reading the window:
 
