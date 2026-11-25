@@ -222,6 +222,7 @@
                     </tbody>
                 </table>
                 <p class="text-xs opacity-70" th:text="#{project.costedAt(${@utcTime.format(stored.costedAt)}, ${@utcTime.format(stored.pricesAsOf)})}">Costed</p>
+                <p class="text-sm"><a id="compare-link" class="link" th:href="@{/projects/{id}/compare(id=${project.id.value})}" th:text="#{compare.link}">Check against the game</a></p>
             </details>
         </div>
 
@@ -312,6 +313,7 @@
                             <div class="mt-1 flex flex-wrap items-center gap-2">
                                 <button type="button" class="btn btn-xs btn-outline" th:id="'copy-quote-' + ${quote.number}" th:attr="data-copy-from='#quote-text-' + ${quote.number}" th:text="#{project.copyText}">Copy text</button>
                                 <span class="hidden text-xs text-success" data-copied th:text="#{project.copied}">Copied</span>
+                                <a class="btn btn-xs btn-ghost" th:id="'compare-quote-' + ${quote.number}" th:href="@{/projects/{id}/compare(id=${project.id.value}, quote=${quote.number})}" th:text="#{compare.link}">Check against the game</a>
                                 <a class="btn btn-xs btn-outline" th:id="'csv-quote-' + ${quote.number}" th:href="@{/projects/{id}/quotes/{n}/csv(id=${project.id.value}, n=${quote.number})}" th:text="#{project.downloadCsv}">Download CSV</a>
                             </div>
                             <p class="mt-1 text-xs opacity-70" th:text="#{project.shareNote}">Neither shows what it cost.</p>

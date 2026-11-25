@@ -10,6 +10,7 @@ import com.eveassist.industry.internal.application.NewVersionCommand;
 import com.eveassist.industry.internal.application.NotQuotableException;
 import com.eveassist.industry.internal.application.NothingToCostException;
 import com.eveassist.industry.internal.application.ProjectChangedException;
+import com.eveassist.industry.internal.application.ProjectComparison;
 import com.eveassist.industry.internal.application.ProjectDetails;
 import com.eveassist.industry.internal.application.ProjectEditing;
 import com.eveassist.industry.internal.application.ProjectEntry;
@@ -76,16 +77,18 @@ class ProjectPageController {
     private final ProjectEntry entry;
     private final ProjectQuoting quoting;
     private final QuoteExport quoteExport;
+    private final ProjectComparison comparison;
     private final ProjectStates states;
     private final Clock clock;
 
     ProjectPageController(ProjectQueries queries, ProjectEditing editing, ProjectEntry entry, ProjectQuoting quoting,
-            QuoteExport quoteExport, ProjectStates states, Clock clock) {
+            QuoteExport quoteExport, ProjectComparison comparison, ProjectStates states, Clock clock) {
         this.queries = queries;
         this.editing = editing;
         this.entry = entry;
         this.quoting = quoting;
         this.quoteExport = quoteExport;
+        this.comparison = comparison;
         this.states = states;
         this.clock = clock;
     }
@@ -127,6 +130,13 @@ class ProjectPageController {
         model.addAttribute("units", project.products().stream().mapToLong(ProjectDetails.ProductLine::quantity).sum());
         model.addAttribute("defaultExpiry", clock.instant().plus(Duration.ofDays(7)).atZone(ZoneOffset.UTC).toLocalDate());
         return "projects/page";
+    }
+
+    /** The costing laid out like the game's Industry window, to compare with it: the Draft's latest, or a quote's with {@code quote}. A diagnostic, not a core page. */
+    @GetMapping("/compare")
+    String compare(Viewer viewer, @PathVariable UUID id, @RequestParam(required = false) Integer quote, Model model) {
+        model.addAttribute("view", comparison.of(viewer, new ProjectId(id), quote));
+        return "projects/compare";
     }
 
     @PostMapping("/cost")

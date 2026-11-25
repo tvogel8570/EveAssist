@@ -81,9 +81,13 @@ reviewed with the developer.
    with the date it was entered**, and the Facilities page shows its age ("typed 3 d ago"), as the wormhole rule asks; reading it from ESI, and the structure's rigs and system
    as chosen values, are later steps. Deleting a facility clears it from the Drafts that use it, says how many, and makes their costing out of date; a quote already issued is
    not changed. See [Projects: persistence and use cases](../architecture/projects.md).
-3. **In progress: the quote export, then the comparison views.** The **quote text and CSV** are done (2026-11-25): each issued quote in the Quotes list has a *Text and CSV to send*
-   block with the text to copy and a CSV to download (see [The quote](#the-quote)). They are offered for an **issued** quote only, which differs from the mockup: a Draft has no number, buyer or
-   expiry yet, so issue first and then copy. The **comparison views A and B** (with the "game shows" values kept in the browser per costing) are the rest of this slice.
+3. **Done: the quote export and the comparison views** (2026-11-25). The **quote text and CSV**: each issued quote in the Quotes list has a *Text and CSV to send* block with the text to
+   copy and a CSV to download (see [The quote](#the-quote)). They are offered for an **issued** quote only, which differs from the mockup: a Draft has no number, buyer or expiry yet,
+   so issue first and then copy. The **comparison views** (`/projects/{id}/compare`, linked as *Check against the game* from the Delivered cost section and from each quote): the
+   costing laid out like the game's Industry window job by job, made from the stored trace. **A** is cards like the window and its two hovers; **B** is a table with the app's number, an
+   input for what the game shows and the difference, which reads the game's shortened form (0.31M, 92.13K), a clock duration (1D 01:34:05) and a percent, and marks every line as matching
+   or differing. What is typed is **kept in the browser for that costing** (a new costing starts empty), the layout that shows is kept too, and the Draft's costing is marked when the project
+   was changed after it. A diagnostic, not a core page (decided 2026-11-20): it is not a main tab. Layout C (a copyable text block of the hovers) is not built.
 
 Jita split (see [Price basis](market-logistics.md#price-basis)) follows as its own change after these pages.
 

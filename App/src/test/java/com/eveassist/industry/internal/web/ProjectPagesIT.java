@@ -480,4 +480,88 @@ class ProjectPagesIT extends IntegrationTest {
         mvc.perform(get("/projects/" + id + "/quotes/1/csv").with(signedIn(newSub()))).andExpect(status().isNotFound());
         mvc.perform(get("/projects/" + UUID.randomUUID() + "/quotes/1/csv").with(signedIn(owner))).andExpect(status().isNotFound());
     }
+
+    // ---- checking a costing against the game's window ----
+
+    @Test
+    void theComparePageLaysTheCostingOutLikeTheGamesWindowInBothLayouts() throws Exception {
+        var sub = newSub();
+        var id = quotable(sub);
+
+        rendered(mvc.perform(get("/projects/" + id + "/compare").with(signedIn(sub)))).andExpect(status().isOk())
+                .andExpect(content().string(containsString("id=\"source\"")))
+                .andExpect(content().string(containsString("Draft costing made")))
+                .andExpect(content().string(not(containsString("id=\"out-of-date\""))))
+                // layout A: the window and its two hovers, with the names of what the job uses
+                .andExpect(content().string(containsString("Required materials")))
+                .andExpect(content().string(containsString("Tritanium")))
+                .andExpect(content().string(containsString("Job duration modifiers")))
+                .andExpect(content().string(containsString("Estimated Items value (EIV)")))
+                .andExpect(content().string(containsString("Total job cost")))
+                // layout B: a row for each line with an input for what the game shows
+                .andExpect(content().string(containsString("data-game")))
+                .andExpect(content().string(containsString("data-kind=\"dur\"")))
+                .andExpect(content().string(containsString("id=\"view-a\"")))
+                .andExpect(content().string(containsString("id=\"view-b\"")))
+                .andExpect(content().string(containsString("/js/compare.js")));
+    }
+
+    @Test
+    void theComparePageSaysWhenTheProjectWasChangedAfterTheCostingAndWhenThereIsNoCosting() throws Exception {
+        var sub = newSub();
+        var id = quotable(sub);
+        mvc.perform(post("/projects/" + id + "/config").param("expectedVersion", String.valueOf(versionOf(id)))
+                .param("marginPercent", "25").with(signedIn(sub)).with(csrf()));
+
+        rendered(mvc.perform(get("/projects/" + id + "/compare").with(signedIn(sub))))
+                .andExpect(content().string(containsString("id=\"out-of-date\"")));
+
+        var empty = planEditing.create(viewerFor(sub), new CreatePlanCommand("Empty"));
+        var location = mvc.perform(post("/projects").param("plan", empty.value().toString()).with(signedIn(sub)).with(csrf()))
+                .andReturn().getResponse().getRedirectedUrl();
+        rendered(mvc.perform(get(location + "/compare").with(signedIn(sub)))).andExpect(content().string(containsString("id=\"not-costed\"")))
+                .andExpect(content().string(not(containsString("data-game"))));
+    }
+
+    @Test
+    void anIssuedQuoteCanBeComparedAndItsCostingIsTheFrozenOne() throws Exception {
+        var sub = newSub();
+        var id = quotable(sub);
+        issued(sub, id, "Buyer", "");
+
+        // a quoted project shows its latest quote by itself, and any quote can be asked for
+        rendered(mvc.perform(get("/projects/" + id + "/compare").with(signedIn(sub)))).andExpect(content().string(containsString("Quote 1, frozen")))
+                .andExpect(content().string(not(containsString("id=\"out-of-date\""))));
+        rendered(mvc.perform(get("/projects/" + id + "/compare").param("quote", "1").with(signedIn(sub))))
+                .andExpect(content().string(containsString("Quote 1, frozen")));
+        mvc.perform(get("/projects/" + id + "/compare").param("quote", "2").with(signedIn(sub))).andExpect(status().isNotFound());
+        // the project page leads to it, from the costing and from the quote
+        page(sub, id).andExpect(content().string(containsString("id=\"compare-quote-1\"")))
+                .andExpect(content().string(containsString("href=\"/projects/" + id + "/compare?quote=1\"")));
+    }
+
+    @Test
+    void theProjectPageLeadsToTheComparisonAndAnotherAccountsProjectIsNotFound() throws Exception {
+        var owner = newSub();
+        var id = quotable(owner);
+
+        page(owner, id).andExpect(content().string(containsString("id=\"compare-link\"")))
+                .andExpect(content().string(containsString("href=\"/projects/" + id + "/compare\"")));
+        mvc.perform(get("/projects/" + id + "/compare").with(signedIn(newSub()))).andExpect(status().isNotFound());
+        mvc.perform(get("/projects/" + UUID.randomUUID() + "/compare").with(signedIn(owner))).andExpect(status().isNotFound());
+    }
+
+    @Test
+    void theNamesOfTheItemsAreEscapedOnTheComparePage() throws Exception {
+        var sub = newSub();
+        var viewer = viewerFor(sub);
+        var plan = planEditing.create(viewer, new CreatePlanCommand("Escaping"));
+        planEntry.addProduct(viewer, new AddProductCommand(plan, SECOND_SHIP, 1));
+        var location = mvc.perform(post("/projects").param("plan", plan.value().toString()).with(signedIn(sub)).with(csrf()))
+                .andReturn().getResponse().getRedirectedUrl();
+
+        rendered(mvc.perform(get(location + "/compare").with(signedIn(sub))))
+                .andExpect(content().string(containsString("Second &lt;b&gt;Ship&lt;/b&gt;")))
+                .andExpect(content().string(not(containsString("<b>Ship</b>"))));
+    }
 }
