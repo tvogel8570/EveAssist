@@ -84,6 +84,20 @@ public class ProjectEntry {
         return new ProjectCostRun(costings.costAndStore(viewer, id), refresh.problem());
     }
 
+    /**
+     * Starts a project from a plan and costs it at once, so the page opens with numbers (decided with the developer on 2026-11-25).
+     * A plan with nothing to build leaves the project uncosted, and the project exists either way.
+     */
+    public ProjectChanged startAndCost(Viewer viewer, StartProjectCommand command) {
+        var started = editing.start(viewer, command);
+        try {
+            cost(viewer, started.project());
+        } catch (NothingToCostException nothing) {
+            // an empty plan: the page says "not costed yet", and the developer adds products first
+        }
+        return started;
+    }
+
     private Project loadDraft(Viewer viewer, ProjectId id) {
         var project = reading.execute(status -> projects.find(viewer, id)).orElseThrow(ProjectNotFoundException::new);
         if (!project.draft()) {

@@ -1,0 +1,54 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--/* The state of a project, and "Out of date" beside it when its costing no longer matches what it is made from. */-->
+<th:block th:fragment="stateBadges(project)">
+    <span th:with="s=${@projectStates.of(project)}">
+        <span class="badge badge-sm" th:classappend="${s == 'draft'} ? 'badge-warning' : (${s == 'costed'} ? 'badge-info' : (${s == 'quoted'} ? 'badge-success' : 'badge-error'))"
+              th:text="#{'projects.state.' + ${s}}">Draft</span>
+    </span>
+    <span th:if="${project.outOfDate}" class="badge badge-warning badge-outline badge-sm" th:text="#{projects.outOfDate}">Out of date</span>
+</th:block>
+
+<!--/* When the latest quote runs out, in days, and in red once it has. */-->
+<th:block th:fragment="expiry(project)">
+    <th:block th:if="${project.latestQuoteExpiresAt != null}" th:with="days=${@projectStates.daysLeft(project.latestQuoteExpiresAt)}">
+        <span th:text="${@utcTime.format(project.latestQuoteExpiresAt)}">date</span>
+        <span th:if="${days >= 0}" class="opacity-70" th:text="'(' + ${days} + ' d)'">(3 d)</span>
+        <span th:if="${days < 0}" class="text-error" th:text="#{projects.expired}">expired</span>
+    </th:block>
+    <span class="opacity-60" th:unless="${project.latestQuoteExpiresAt != null}">—</span>
+</th:block>
+
+<th:block th:fragment="projectActions(id, name, archived, from, view, showArchived)">
+    <form class="inline" method="post" th:if="${!archived}" th:action="@{/projects/{id}/archive(id=${id})}">
+        <input type="hidden" name="view" th:value="${view}">
+        <input type="hidden" name="archived" value="1" th:if="${showArchived}">
+        <button type="submit" class="btn btn-ghost btn-xs" th:id="${from == 'project'} ? 'archive-project' : 'archive-' + ${id}"
+                th:text="#{projects.archive}">Archive</button>
+    </form>
+    <form class="inline" method="post" th:if="${archived}" th:action="@{/projects/{id}/restore(id=${id})}">
+        <input type="hidden" name="from" th:value="${from}">
+        <input type="hidden" name="view" th:value="${view}">
+        <input type="hidden" name="archived" value="1" th:if="${showArchived}">
+        <button type="submit" class="btn btn-ghost btn-xs" th:id="${from == 'project'} ? 'restore-project' : 'restore-' + ${id}"
+                th:text="#{projects.restore}">Restore</button>
+    </form>
+    <details class="dropdown dropdown-end inline-block" data-autoclose>
+        <summary class="btn btn-ghost btn-xs text-error" th:id="${from == 'project'} ? 'delete-project' : 'delete-' + ${id}"
+                 th:text="#{projects.delete}">Delete</summary>
+        <form class="dropdown-content card bg-base-300 shadow z-30 w-72 p-3 gap-2 text-left whitespace-normal" method="post"
+              th:action="@{/projects/{id}/delete(id=${id})}">
+            <input type="hidden" name="view" th:value="${view}">
+            <input type="hidden" name="archived" value="1" th:if="${showArchived}">
+            <p class="text-sm" th:text="#{projects.deleteConfirm(${name})}">Delete this project permanently?</p>
+            <button type="submit" class="btn btn-error btn-sm"
+                    th:id="${from == 'project'} ? 'delete-project-confirm' : 'delete-confirm-' + ${id}"
+                    th:text="#{projects.deleteYes}">Delete project</button>
+        </form>
+    </details>
+</th:block>
+
+</body>
+</html>

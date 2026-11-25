@@ -65,6 +65,20 @@ reviewed with the developer.
 - **The quote card is for the user only.** No preview of what the buyer sees. What is sent to the buyer is the copied text or the CSV.
 - **The comparison views are linked from a collapsed "Check against the game" section** of the project page, not shown by default.
 
+**Built in three slices** (agreed with the developer on 2026-11-25), on branch `projects-ui`:
+
+1. **Done: the list and the project page.** `/projects` (table and cards, the state filter, archived on request, *Start from a plan* which costs at
+   once) and `/projects/{id}`: settings and builder, the facilities the account has, the items with typed ME, TE, facility, blueprint cost and
+   time skills, the warnings, the jobs, the delivered cost and the quote card (issue, new version, delete). **Differences from the mockup:**
+   the reasons a costing is out of date are the three the backend knows (the project was edited, the game data changed, a facility changed),
+   not the example "prices are 3 days old"; an issued quote can have a new version made from any quote in the list; the list has no search
+   box yet; and the margin is a saved setting, so changing it needs Cost it again before a quote can be issued (decided on 2026-11-25).
+2. **Next: facilities.** Adding, changing and deleting a facility, with its use cases (the version bump on delete is a known gap in
+   [Projects: persistence and use cases](../architecture/projects.md)).
+3. **After that:** the quote text and CSV, and the comparison views A and B.
+
+Jita split (see [Price basis](market-logistics.md#price-basis)) follows as its own change after these pages.
+
 ## Lifecycle
 
 Decided with the developer on 2026-11-17, and made exact on 2026-11-18 (the lock, the products and the prices).

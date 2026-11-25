@@ -1,0 +1,122 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: page(~{::title}, ~{::main})}">
+<head><title th:text="#{projects.title}">Projects</title></head>
+<body>
+<main class="max-w-6xl mx-auto p-4">
+    <div class="flex flex-wrap items-start gap-3 mb-1">
+        <div class="grow">
+            <h1 class="text-xl font-semibold" th:text="#{projects.title}">Projects</h1>
+            <p class="text-sm opacity-70" th:text="#{projects.intro}">A project is a plan costed for one buyer.</p>
+        </div>
+        <details id="start-project-menu" class="dropdown dropdown-end" data-autoclose>
+            <summary id="start-project" class="btn btn-primary btn-sm" th:text="#{projects.start}">Start from a plan</summary>
+            <form class="dropdown-content card bg-base-300 shadow z-30 w-80 p-3 gap-2" method="post" th:action="@{/projects}">
+                <p class="text-sm opacity-80" th:text="#{projects.startHelp}">The project copies the plan.</p>
+                <p id="no-plans-to-start" th:if="${#lists.isEmpty(plans)}" class="text-sm text-warning" th:text="#{projects.noPlans}">You have no plans.</p>
+                <th:block th:unless="${#lists.isEmpty(plans)}">
+                    <label class="text-xs opacity-70" for="start-plan" th:text="#{projects.plan}">Plan</label>
+                    <select id="start-plan" name="plan" class="select select-sm w-full" required>
+                        <option th:each="plan : ${plans}" th:value="${plan.id.value}"
+                                th:text="${plan.name} + ' (' + ${plan.productCount} + ')'">Plan</option>
+                    </select>
+                    <label class="text-xs opacity-70" for="start-name" th:text="#{projects.startName}">Name</label>
+                    <input id="start-name" name="name" class="input input-sm w-full" maxlength="100" autocomplete="off"
+                           th:placeholder="#{projects.startNameHint}" th:aria-label="#{projects.startName}">
+                    <button id="start-project-confirm" class="btn btn-primary btn-sm" type="submit" th:text="#{projects.startConfirm}">Create and cost</button>
+                </th:block>
+            </form>
+        </details>
+    </div>
+
+    <form id="project-filter" class="flex flex-wrap items-center gap-2 my-3" method="get" th:action="@{/projects}">
+        <input type="hidden" name="view" th:value="${view}">
+        <a th:each="s : ${states}" th:id="'filter-' + ${s}"
+           th:classappend="${state == s} ? 'btn-primary' : 'btn-ghost'" class="btn btn-xs"
+           th:href="@{/projects(view=${view}, state=${state == s} ? null : ${s}, archived=${showArchived} ? 1 : null)}"
+           th:text="#{'projects.state.' + ${s}}">State</a>
+        <label class="flex items-center gap-2 text-sm cursor-pointer w-fit ml-2">
+            <input id="show-archived" type="checkbox" name="archived" value="1" class="toggle toggle-sm toggle-primary"
+                   th:checked="${showArchived}" onchange="this.form.submit()">
+            <span th:text="#{projects.showArchived}">Show archived projects</span>
+        </label>
+        <input type="hidden" name="state" th:value="${state}" th:if="${state != null}">
+        <span class="grow"></span>
+        <div class="join" role="group" th:aria-label="#{projects.layout}">
+            <a id="view-table" class="btn btn-xs join-item" th:classappend="${view == 'table'} ? 'btn-active'"
+               th:href="@{/projects(state=${state}, archived=${showArchived} ? 1 : null)}" th:text="#{projects.viewTable}">Table</a>
+            <a id="view-cards" class="btn btn-xs join-item" th:classappend="${view == 'cards'} ? 'btn-active'"
+               th:href="@{/projects(view='cards', state=${state}, archived=${showArchived} ? 1 : null)}" th:text="#{projects.viewCards}">Cards</a>
+        </div>
+    </form>
+
+    <div id="project-list">
+        <div id="no-projects" th:if="${!anyProject}" class="card bg-base-200 p-6 text-center">
+            <h2 class="font-semibold" th:text="#{projects.noneTitle}">No projects yet</h2>
+            <p class="opacity-70" th:text="#{projects.none}">A project starts from a plan.</p>
+        </div>
+        <p id="no-match" th:if="${anyProject and #lists.isEmpty(projects)}" class="opacity-70" th:text="#{projects.noMatch}">No project matches.</p>
+
+        <div class="overflow-x-auto" th:if="${view == 'table' and !#lists.isEmpty(projects)}">
+            <table class="table">
+                <thead>
+                <tr>
+                    <th th:text="#{projects.name}">Project</th>
+                    <th th:text="#{projects.state}">Status</th>
+                    <th class="num" th:text="#{projects.products}">Products</th>
+                    <th class="num" th:text="#{projects.deliveredCost}">Delivered cost</th>
+                    <th class="num" th:text="#{projects.quote}">Quote</th>
+                    <th th:text="#{projects.expires}">Expires</th>
+                    <th th:text="#{projects.costed}">Costed</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="project : ${projects}" th:id="'project-row-' + ${project.id.value}" th:classappend="${project.archived} ? 'opacity-60'">
+                    <td>
+                        <a class="link" th:href="@{/projects/{id}(id=${project.id.value})}" th:text="${project.name}">Name</a>
+                        <span th:if="${project.archived}" class="badge badge-ghost badge-sm ml-1" th:text="#{projects.archived}">Archived</span>
+                    </td>
+                    <td th:insert="~{projects/fragments :: stateBadges(${project})}"></td>
+                    <td class="num" th:text="${project.productCount}">1</td>
+                    <td class="num">
+                        <span th:if="${project.deliveredCost != null}" th:text="${#numbers.formatDecimal(project.deliveredCost, 1, 'COMMA', 0, 'POINT')}">1</span>
+                        <span class="opacity-60" th:unless="${project.deliveredCost != null}">—</span>
+                    </td>
+                    <td class="num">
+                        <span th:if="${project.latestQuotePrice != null}" th:text="${#numbers.formatDecimal(project.latestQuotePrice, 1, 'COMMA', 0, 'POINT')}">1</span>
+                        <span class="opacity-60" th:unless="${project.latestQuotePrice != null}">—</span>
+                    </td>
+                    <td th:insert="~{projects/fragments :: expiry(${project})}"></td>
+                    <td>
+                        <span th:if="${project.costedAt != null}" th:text="${@utcTime.format(project.costedAt)} + ' UTC'">time</span>
+                    </td>
+                    <td class="whitespace-nowrap text-right">
+                        <th:block th:replace="~{projects/fragments :: projectActions(${project.id.value}, ${project.name}, ${project.archived}, 'list', ${view}, ${showArchived})}"></th:block>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" th:if="${view == 'cards' and !#lists.isEmpty(projects)}">
+            <div class="card bg-base-200 p-4 gap-1" th:each="project : ${projects}" th:id="'project-card-' + ${project.id.value}"
+                 th:classappend="${project.archived} ? 'opacity-60'">
+                <div class="flex items-start gap-2">
+                    <a class="link font-semibold grow" th:href="@{/projects/{id}(id=${project.id.value})}" th:text="${project.name}">Name</a>
+                    <span th:insert="~{projects/fragments :: stateBadges(${project})}"></span>
+                </div>
+                <p class="text-sm opacity-70"><span th:text="${project.productCount}">1</span> <span th:text="#{projects.productsLower}">products</span></p>
+                <p class="text-xl font-semibold num" th:if="${project.latestQuotePrice != null}"
+                   th:text="${#numbers.formatDecimal(project.latestQuotePrice, 1, 'COMMA', 0, 'POINT')} + ' ISK'">1 ISK</p>
+                <p class="text-xl font-semibold num" th:if="${project.latestQuotePrice == null and project.deliveredCost != null}"
+                   th:text="${#numbers.formatDecimal(project.deliveredCost, 1, 'COMMA', 0, 'POINT')} + ' ISK'">1 ISK</p>
+                <p class="text-xl opacity-60" th:if="${project.latestQuotePrice == null and project.deliveredCost == null}" th:text="#{projects.notCosted}">Not costed</p>
+                <p class="text-xs opacity-70" th:if="${project.latestQuotePrice == null and project.deliveredCost != null}" th:text="#{projects.deliveredCostNote}">Delivered cost</p>
+                <p class="text-sm" th:insert="~{projects/fragments :: expiry(${project})}"></p>
+                <div class="text-right"><th:block th:replace="~{projects/fragments :: projectActions(${project.id.value}, ${project.name}, ${project.archived}, 'list', ${view}, ${showArchived})}"></th:block></div>
+            </div>
+        </div>
+    </div>
+</main>
+</body>
+</html>
