@@ -67,7 +67,7 @@ Every table is account-owned through `project`, which references the account wit
 | `project_item` | one row per built item: `me`, `te`, `blueprint_cost_per_run`, `blueprint_kind` (`typed` now, `owned` in step 5), `facility_id` (null means the project's default), split strategy and time bound if they differ from the project's | the Draft's blueprint choices. Typed ME and TE are the first form |
 | `project_item_skill` | `project_id`, `item_type_id`, `skill_type_id`, `level` | the builder's level in each time-saving skill the item's blueprint requires. The percent per level is read from the SDE, not stored |
 | `project_price` | like `plan_price`: `type_id`, `source` (`market` or `manual`), `sell`, `buy`, `as_of` | copied from the plan at start, then **the project's own**, refreshed only when the user asks. Costing never reads the shared Jita orders |
-| `facility` | account-owned: name, the eight terms of `FacilityTerms` (structure and rig material, time and cost percents, cost index, tax, SCC), and later the structure type, rigs and system | typed percents first. An item points at one, or the project's default. Deleting a facility sets `facility_id` to null |
+| `facility` | account-owned: name, the eight terms of `FacilityTerms` (structure and rig material, time and cost percents, cost index, tax, SCC), the **structure type** (`raitaru`, `azbel`, `sotiyo`, `npc_station` or null, which only proposes the structure's bonuses in the form) and **`index_entered_at`** (when the cost index was last typed, since it is typed and its age is shown), and later rigs and system | typed percents. An item points at one, or the project's default. Deleting a facility sets `facility_id` to null, and the use case adds one to the version of every Draft that used it |
 | `project_costing` | the Draft's latest costing (`quote_id` null) and each quote's (`quote_id` set, and the project must be the quote's, by a composite foreign key): provenance (`costed_project_version`, `costed_sde_version`, `prices_as_of`, `costed_at`), `delivered_cost`, `quotable`, `document_format_version`, and one `jsonb` **display document** of the costing | one row with no quote per project (a partial unique index), replaced on each costing. A quote's row is never changed, and **the database refuses an update** of it |
 | `project_trace` | `costing_id`, `document_format_version`, `jsonb` **display document** of the trace | **its own table**, with `ON DELETE CASCADE` from the costing, so that the 30-day purge of an archived project's traces **deletes rows and never modifies a frozen quote** |
 | `project_quote` | `project_id`, `number`, `issued_at`, `expires_at`, `buyer_name`, `note`, the price and its mode, and the **inputs snapshot** (`jsonb`, with `inputs_format_version`) | frozen, and **the database refuses an update**. Quote numbers are 1, 2, 3 per project. Its costing points back at it (`project_costing.quote_id`), so deleting a quote deletes its costing and trace |
@@ -176,6 +176,7 @@ only one in this module. A quote is deleted by `deleteQuote` or with its project
   `V20261118_1940__facility`; `V20261118_1941__projects` (the project and its product, bought part, item, item skill and price tables);
   `V20261118_1942__project-quotes-and-costings` (quote, costing and trace); `V20261118_1943__freeze-project-quotes` (the trigger); and, for the adjusted prices
   that are not the project's own, `V20261118_2100__adjusted-prices`.
+  Slice 2 of the projects UI adds `V20261125_1850__facility-structure-type-and-index-entry-time` (the structure type and `index_entered_at`).
   New builders start with Industry and Advanced Industry at 0 and no implant, and a new item at ME 10 and TE 20, as a plan assumes.
 - **Built:** `ProjectSchemaIT` shows what the tables enforce before any repository uses them: the cascade from an account, the plan's deletion leaving the
   project, a deleted facility falling back to the default, the frozen quote (it fails with the trigger migration taken out), one Draft costing, a costing
@@ -232,10 +233,15 @@ only one in this module. A quote is deleted by `deleteQuote` or with its project
   was changed** after it was costed. The facility reason needed a new column, `facility.updated_at`, which whoever changes a facility must set. The two times come from different clocks (the
   costing's from the application, the facility's from the database), so a change within moments of a costing may be read either way. The adjusted prices being newer is not a reason: both of
   their ages are shown beside the costing and the developer decides.
-- **A known gap, for the facility use cases:** deleting a facility sets the project's references to none **without changing the project's version**, so a costing made with that facility looks
-  current when it is not. The use case that deletes (or changes) a facility must bump the version of every project that uses it, or the project page must learn another way. Until the
-  facility use cases exist nothing deletes a facility except SQL.
-- **Not yet written:** shareable text and CSV for a quote, the facility use cases (add, change, delete) and their repository methods, and the purge of an archived project's traces.
+- **The facility use cases** (built 2026-11-25, slice 2): `FacilityEditing` (`add`, `change`, `delete`) and `FacilityQueries` (`list` with the number of Draft projects that use each,
+  and `find`), over `FacilityRepository`. **The known gap is closed:** `delete` adds one to the `version` of every **Draft** project that uses the facility (as the default or for an
+  item) *before* it deletes, because the foreign keys clear the references and nothing would be left to find the projects by, so a costing made with the facility reads as
+  `PROJECT_EDITED`. A quoted project is not touched: its quote holds the facility's values. `change` sets `updated_at` only when a value changed, so saving a form with nothing changed
+  makes no costing out of date (`FACILITY_CHANGED` still comes from `updated_at`), and sets `index_entered_at` only when the cost index changed. **The last write wins**: a
+  facility has no version of its own, as it is edited by its one owner. `StructureType` holds the structures' own bonuses that the form proposes (Raitaru 1/15/3, Azbel 1/20/4, Sotiyo 1/30/5,
+  an NPC station none, as materials, time and job fee percents, from SDE attributes 2600 to 2602 and the game's windows); they change with patches, so that enum is the one place to change them.
+  Tested by `FacilityEditingIT` (each rule fails when its SQL is broken).
+- **Not yet written:** shareable text and CSV for a quote, and the purge of an archived project's traces.
 - Use case tests with a fake repository and fake ports: *issue refused on a stale costing*, *edit refused on a quoted project*, *new version from a
   quote* round trip, *add a product the plan did not have*.
 - A document test per stored version, loading or rendering a stored example (see the version rules above).
