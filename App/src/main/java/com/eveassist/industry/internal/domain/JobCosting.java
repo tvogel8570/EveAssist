@@ -29,9 +29,11 @@ public final class JobCosting {
         if (runs < 1) {
             throw new IllegalArgumentException("A job has at least one run, was " + runs);
         }
-        List<RecipeMaterial> used = recipe.materials().stream()
-                .map(material -> new RecipeMaterial(material.material(),
-                        materialQuantity(material.quantity(), runs, terms)))
+        List<MaterialUse> uses = recipe.materials().stream()
+                .map(material -> materialUse(material.material(), material.quantity(), runs, terms))
+                .toList();
+        List<RecipeMaterial> used = uses.stream()
+                .map(use -> new RecipeMaterial(use.material(), use.quantity()))
                 .toList();
         var value = BigDecimal.ZERO;
         int unpriced = 0;
@@ -44,8 +46,10 @@ public final class JobCosting {
                 unpriced++;
             }
         }
+        var install = installCostLines(value, terms.facility());
         return new JobCost(recipe.product(), runs, Math.multiplyExact(runs, recipe.unitsPerRun()), used,
-                seconds(recipe.secondsPerRun(), runs, terms), value, installCost(value, terms.facility()), unpriced);
+                seconds(recipe.secondsPerRun(), runs, terms), value, install.total(), unpriced, uses,
+                timeBreakdown(recipe.secondsPerRun(), runs, terms), install);
     }
 
     /**
@@ -55,11 +59,17 @@ public final class JobCosting {
      * 2026-11-18, see the requirements). Rounding the exact product up would give one more in such a case.
      */
     public static long materialQuantity(long baseQuantity, long runs, JobTerms terms) {
+        return materialUse(null, baseQuantity, runs, terms).quantity();
+    }
+
+    /** The same, with the steps that led to it: the exact product, the two-decimal figure and whether the minimum applied. */
+    public static MaterialUse materialUse(TypeId material, long baseQuantity, long runs, JobTerms terms) {
         var factor = reduction(terms.me()).multiply(reduction(terms.facility().structureMaterialPercent()))
                 .multiply(reduction(terms.facility().rigMaterialPercent()));
-        long reduced = BigDecimal.valueOf(baseQuantity).multiply(BigDecimal.valueOf(runs)).multiply(factor)
-                .setScale(2, RoundingMode.HALF_UP).setScale(0, RoundingMode.CEILING).longValueExact();
-        return Math.max(runs, reduced);
+        var exact = BigDecimal.valueOf(baseQuantity).multiply(BigDecimal.valueOf(runs)).multiply(factor);
+        var twoDecimals = exact.setScale(2, RoundingMode.HALF_UP);
+        long reduced = twoDecimals.setScale(0, RoundingMode.CEILING).longValueExact();
+        return new MaterialUse(material, baseQuantity, exact, twoDecimals, Math.max(runs, reduced), reduced < runs);
     }
 
     /**
@@ -67,11 +77,56 @@ public final class JobCosting {
      * that is 9,926.03 s long shows 02:45:26 (read in the game on 2026-11-18, see the requirements).
      */
     public static long seconds(long secondsPerRun, long runs, JobTerms terms) {
+        return unroundedSeconds(secondsPerRun, terms).multiply(BigDecimal.valueOf(runs))
+                .setScale(0, RoundingMode.HALF_UP).longValueExact();
+    }
+
+    /** The longest a job may be, 30 days. Inferred from four readings of the window's "Maximum runs" (see the requirements). */
+    public static final long MAXIMUM_JOB_SECONDS = 30L * 24 * 3600;
+
+    /**
+     * The most runs one job may have: the smallest number of runs whose time reaches {@link #MAXIMUM_JOB_SECONDS}, worked
+     * from the time of one run before it is rounded (489.6 s gave 5,295 in the game, not 5,294). It is never below one, so a
+     * single run is allowed even when it takes longer than 30 days. Read for originals only; that it holds for copies, and
+     * that one run is always allowed, are the developer's recollection and still to be confirmed in the game.
+     */
+    public static long maximumRuns(long secondsPerRun, JobTerms terms) {
+        var perRun = unroundedSeconds(secondsPerRun, terms);
+        return Math.max(1, BigDecimal.valueOf(MAXIMUM_JOB_SECONDS).divide(perRun, 0, RoundingMode.CEILING).longValueExact());
+    }
+
+    /**
+     * The most runs a job may have and still take no longer than the given seconds, at least one. When one run is already
+     * longer, the answer is one and the job is still too long: the caller says so.
+     */
+    public static long maximumRunsWithin(long secondsPerRun, JobTerms terms, long maxSeconds) {
+        long runs = Math.max(1, BigDecimal.valueOf(maxSeconds).divide(unroundedSeconds(secondsPerRun, terms), 0, RoundingMode.FLOOR)
+                .longValueExact());
+        // seconds() rounds to the nearest, so the estimate can be one run off either way
+        while (runs > 1 && seconds(secondsPerRun, runs, terms) > maxSeconds) {
+            runs--;
+        }
+        while (seconds(secondsPerRun, runs + 1, terms) <= maxSeconds) {
+            runs++;
+        }
+        return runs;
+    }
+
+    /** The time in the shape of the game's duration hover, with the factors that make it. */
+    public static TimeBreakdown timeBreakdown(long secondsPerRun, long runs, JobTerms terms) {
+        var facility = terms.facility();
+        var exact = unroundedSeconds(secondsPerRun, terms).multiply(BigDecimal.valueOf(runs));
+        return new TimeBreakdown(secondsPerRun, runs, reduction(terms.te()), terms.builder().timeFactor(),
+                reduction(facility.structureTimePercent()), reduction(facility.rigTimePercent()), exact,
+                seconds(secondsPerRun, runs, terms), maximumRuns(secondsPerRun, terms));
+    }
+
+    /** The time of one run with every bonus applied, not yet rounded. */
+    private static BigDecimal unroundedSeconds(long secondsPerRun, JobTerms terms) {
         var facility = terms.facility();
         var factor = reduction(terms.te()).multiply(terms.builder().timeFactor())
                 .multiply(reduction(facility.structureTimePercent())).multiply(reduction(facility.rigTimePercent()));
-        return BigDecimal.valueOf(secondsPerRun).multiply(BigDecimal.valueOf(runs)).multiply(factor)
-                .setScale(0, RoundingMode.HALF_UP).longValueExact();
+        return BigDecimal.valueOf(secondsPerRun).multiply(factor);
     }
 
     /**
@@ -79,11 +134,17 @@ public final class JobCosting {
      * and the SCC surcharge are taken from the whole estimated item value, and the bonus does not touch them.
      */
     public static BigDecimal installCost(BigDecimal estimatedItemValue, FacilityTerms facility) {
-        var fee = estimatedItemValue.multiply(facility.systemCostIndexPercent()).movePointLeft(2)
-                .multiply(reduction(facility.structureCostPercent()));
-        var taxes = estimatedItemValue.multiply(facility.taxPercent().add(facility.sccSurchargePercent()))
-                .movePointLeft(2);
-        return fee.add(taxes);
+        return installCostLines(estimatedItemValue, facility).total();
+    }
+
+    /** The install cost in the lines of the game's cost hover. */
+    public static InstallCostBreakdown installCostLines(BigDecimal estimatedItemValue, FacilityTerms facility) {
+        var jobFee = estimatedItemValue.multiply(facility.systemCostIndexPercent()).movePointLeft(2);
+        var gross = jobFee.multiply(reduction(facility.structureCostPercent()));
+        var tax = estimatedItemValue.multiply(facility.taxPercent()).movePointLeft(2);
+        var scc = estimatedItemValue.multiply(facility.sccSurchargePercent()).movePointLeft(2);
+        return new InstallCostBreakdown(estimatedItemValue, facility.systemCostIndexPercent(), jobFee,
+                gross.subtract(jobFee), gross, tax, scc, gross.add(tax).add(scc));
     }
 
     /** The share left after a reduction of that many percent. */

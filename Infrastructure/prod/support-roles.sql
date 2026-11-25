@@ -48,10 +48,13 @@ SET ROLE eveassist_owner;
 GRANT CONNECT ON DATABASE eveassist TO support_ro, support_rw;
 GRANT USAGE ON SCHEMA public TO support_ro;
 
--- Readable. Not here, on purpose: character_token, spring_session, spring_session_attributes.
+-- Readable. Not here, on purpose: character_token, spring_session, spring_session_attributes, and the project tables (facility, project and
+-- the tables of its items, prices, quotes, costings and traces) until the privacy statement says support may read them.
 GRANT SELECT ON TABLE
     account,
     account_feature,
+    adjusted_price,
+    adjusted_price_fetch,
     character,
     character_asset,
     character_blueprint,

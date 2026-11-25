@@ -8,6 +8,7 @@ import com.eveassist.esi.EsiClient;
 import com.eveassist.esi.StructureLookup;
 import com.eveassist.esi.EsiResult;
 import com.eveassist.esi.MarketOrder;
+import com.eveassist.esi.MarketPrice;
 import com.eveassist.esi.PublicContract;
 import com.eveassist.esi.PublicContractItem;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -40,6 +41,7 @@ class HttpEsiClient implements EsiClient {
 
     private static final Logger log = LoggerFactory.getLogger(HttpEsiClient.class);
     private static final String MARKET_ORDER_GROUP = "market-order";
+    private static final String MARKET_PRICE_GROUP = "market-price";
     /** 1,800 tokens per 15 minutes per character, from ESI's OpenAPI spec. */
     private static final String CHARACTER_ASSET_GROUP = "char-asset";
     private static final String CHARACTER_INDUSTRY_GROUP = "char-industry";
@@ -94,6 +96,19 @@ class HttpEsiClient implements EsiClient {
         return paged(MARKET_ORDER_GROUP, "/markets/%d/orders?type_id=%d".formatted(regionId, typeId), true, false,
                 new ParameterizedTypeReference<List<EsiOrder>>() { })
                 .map(orders -> orders.stream().map(HttpEsiClient::toMarketOrder).toList());
+    }
+
+    @Override
+    public EsiResult<List<MarketPrice>> marketPrices() {
+        // not paginated, so no page parameter is sent (ESI ignores one today, but the spec does not define it for this route)
+        return paged(MARKET_PRICE_GROUP, "/markets/prices", true, false, false,
+                new ParameterizedTypeReference<List<EsiMarketPrice>>() { }, null)
+                .map(prices -> prices.stream().map(HttpEsiClient::toMarketPrice).toList());
+    }
+
+    @Override
+    public void forgetMarketPrices() {
+        cache.forgetPrefix("markets/prices");
     }
 
     @Override
@@ -384,16 +399,22 @@ class HttpEsiClient implements EsiClient {
 
     private <E> EsiResult<List<E>> paged(String group, String path, boolean cached, boolean goneOn403,
                                          ParameterizedTypeReference<List<E>> type, Auth auth) {
+        return paged(group, path, cached, goneOn403, true, type, auth);
+    }
+
+    /** With {@code paginated} false the route has no pages, and its one answer is read as it is. */
+    private <E> EsiResult<List<E>> paged(String group, String path, boolean cached, boolean goneOn403, boolean paginated,
+                                         ParameterizedTypeReference<List<E>> type, Auth auth) {
         var key = path.substring(1);
         var stored = cached ? cache.find(key) : Optional.<EsiCache.Entry>empty();
         if (stored.isPresent() && stored.get().expires().isAfter(clock.instant())) {
-            return EsiResult.unchanged(stored.get().expires());
+            return EsiResult.unchanged(stored.get().expires(), stored.get().lastModified());
         }
         var separator = path.contains("?") ? "&" : "?";
         // A page set that changes while it is read is read again once, without asking for a 304
         for (int attempt = 0; attempt < 2; attempt++) {
             var etag = attempt == 0 ? stored.map(EsiCache.Entry::etag).orElse(null) : null;
-            var first = get(group, path + separator + "page=1", etag, type, auth);
+            var first = get(group, paginated ? path + separator + "page=1" : path, etag, type, auth);
             if (first.problem() != null) {
                 return EsiResult.failed(first.problem());
             }
@@ -401,10 +422,11 @@ class HttpEsiClient implements EsiClient {
                 var expires = expiresOf(first.headers());
                 cache.save(key, new EsiCache.Entry(stored.get().etag(), stored.get().lastModified(), expires),
                         clock.instant());
-                return EsiResult.unchanged(expires);
+                var modified = first.headers().getLastModified();
+                return EsiResult.unchanged(expires, modified < 0 ? stored.get().lastModified() : Instant.ofEpochMilli(modified));
             }
             if (first.status() == 204 || (goneOn403 && first.status() == 403)) {
-                return EsiResult.updated(List.of(), expiresOf(first.headers()));
+                return EsiResult.updated(List.of(), expiresOf(first.headers()), lastModifiedOf(first.headers()));
             }
             if (first.status() != 200) {
                 return EsiResult.failed("ESI answered " + first.status() + " for " + key);
@@ -430,7 +452,7 @@ class HttpEsiClient implements EsiClient {
                     cache.save(key, new EsiCache.Entry(first.headers().getETag(),
                             lastModified < 0 ? null : Instant.ofEpochMilli(lastModified), expires), clock.instant());
                 }
-                return EsiResult.updated(rows, expires);
+                return EsiResult.updated(rows, expires, lastModified < 0 ? null : Instant.ofEpochMilli(lastModified));
             }
         }
         return EsiResult.failed("The pages of " + key + " changed while they were being read");
@@ -498,6 +520,11 @@ class HttpEsiClient implements EsiClient {
         return body == null ? List.of() : body;
     }
 
+    private static Instant lastModifiedOf(HttpHeaders headers) {
+        var modified = headers.getLastModified();
+        return modified < 0 ? null : Instant.ofEpochMilli(modified);
+    }
+
     private Instant expiresOf(HttpHeaders headers) {
         var expires = headers.getExpires();
         if (expires > 0) {
@@ -525,6 +552,10 @@ class HttpEsiClient implements EsiClient {
         var version = HttpEsiClient.class.getPackage().getImplementationVersion();
         var contact = properties.contactEmail().isBlank() ? "" : properties.contactEmail() + "; ";
         return "EveAssist/%s (%s+https://github.com/tvogel8570/EveAssist)".formatted(version == null ? "dev" : version, contact);
+    }
+
+    private static MarketPrice toMarketPrice(EsiMarketPrice price) {
+        return new MarketPrice(price.typeId(), price.adjustedPrice(), price.averagePrice());
     }
 
     private static MarketOrder toMarketOrder(EsiOrder order) {
@@ -574,6 +605,11 @@ class HttpEsiClient implements EsiClient {
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
+    private record EsiMarketPrice(
+            @JsonProperty("type_id") int typeId, @JsonProperty("adjusted_price") java.math.BigDecimal adjustedPrice,
+            @JsonProperty("average_price") java.math.BigDecimal averagePrice) {
+    }
+
     private record EsiName(@JsonProperty("item_id") long itemId, @JsonProperty("name") String name) {
     }
 
