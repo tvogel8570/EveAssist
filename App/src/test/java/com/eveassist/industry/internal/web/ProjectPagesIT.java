@@ -447,7 +447,9 @@ class ProjectPagesIT extends IntegrationTest {
                 .andExpect(content().string(not(containsString("<b>Dawn</b>"))))
                 .andReturn().getResponse().getContentAsString();
         var box = html.substring(html.indexOf("id=\"quote-text-1\""), html.indexOf("</textarea>", html.indexOf("id=\"quote-text-1\"")));
-        assertThat(box).contains("Total: ").contains(" ISK").contains("By contract").contains("Valid until ");
+        assertThat(box).contains("Total: ").contains(" ISK").contains("By contract").contains("Valid until ").contains(" \u00d7 ").contains(" = ");
+        // the project has no Jita price for the Hauler, so the lines are priced alike, and the page says so
+        assertThat(html).contains("priced alike");
         assertThat(box).doesNotContainIgnoringCase("margin").doesNotContainIgnoringCase("profit").doesNotContainIgnoringCase("cost");
     }
 
@@ -463,8 +465,9 @@ class ProjectPagesIT extends IntegrationTest {
         assertThat(response.getContentType()).startsWith("text/csv");
         assertThat(response.getHeader("Content-Disposition")).startsWith("attachment; filename=\"quote-").endsWith("-1.csv\"");
         var body = response.getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
-        assertThat(body).startsWith("Quote,Buyer,Item,Quantity,Price (ISK),Valid until,Note\r\n")
-                .contains(",Total,,")
+        assertThat(body).startsWith("Quote,Buyer,Valid until,Note\r\n")
+                .contains("Item,Quantity,Price (ISK),Extension (ISK)\r\n")
+                .contains("\r\nTotal,,,")
                 // a quote in front of the formula, and the comma of the note makes it a quoted field
                 .contains("\"'=HYPERLINK(\"\"http://example.com\"\")\"").contains("\"a, b\"");
         assertThat(body).doesNotContainIgnoringCase("margin").doesNotContainIgnoringCase("profit");

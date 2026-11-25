@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Locale;
 import org.junit.jupiter.api.Test;
 
-/** The text and the CSV a buyer gets. They are worked out by hand from the format the developer chose on 2026-11-25. */
+/** The text and the CSV a buyer gets, in the layout of the developer's sheet of 2026-11-25. They are worked out by hand. */
 class QuoteTextTest {
 
     /** The page stores "valid until 2026-12-02" as the start of the next day. */
@@ -16,49 +16,81 @@ class QuoteTextTest {
 
     private static QuoteFacts ishtars() {
         return new QuoteFacts(1, "Kestrel Dawn", "Delivery to Perimeter.", EXPIRES, new BigDecimal("266053000.00"),
-                List.of(new QuoteFacts.Item("Ishtar", 5)));
+                List.of(new QuoteFacts.Line("Ishtar", 5, 53_210_600, 266_053_000)), false);
+    }
+
+    private static QuoteFacts sheet() {
+        return new QuoteFacts(1, "bogus", "notes here", EXPIRES, new BigDecimal("8"),
+                List.of(new QuoteFacts.Line("Vexor", 1, 2, 2), new QuoteFacts.Line("Legion", 2, 3, 6)), false);
     }
 
     @Test
-    void theTextIsTheOneTheDeveloperApprovedInThePreview() {
+    void theTextHasAHeaderThenALineForEachProductWithItsPriceAndExtensionThenTheTotal() {
+        assertThat(QuoteText.text(sheet())).isEqualTo("""
+                Quote 1 for bogus
+                Valid until 2026-12-02
+                notes here
+                Delivered by contract
+
+                Vexor: 1 × 2 = 2
+                Legion: 2 × 3 = 6
+                Total: 8 ISK""");
         assertThat(QuoteText.text(ishtars())).isEqualTo("""
                 Quote 1 for Kestrel Dawn
-                5 × Ishtar, delivered by contract
-                Total: 266,053,000 ISK
-                Per unit: 53,210,600 ISK
                 Valid until 2026-12-02
-                Delivery to Perimeter.""");
+                Delivery to Perimeter.
+                Delivered by contract
+
+                Ishtar: 5 × 53,210,600 = 266,053,000
+                Total: 266,053,000 ISK""");
     }
 
     @Test
     void aQuoteWithNoBuyerNoExpiryAndNoNoteLeavesThoseLinesOut() {
-        var quote = new QuoteFacts(3, null, null, null, new BigDecimal("1500000"), List.of(new QuoteFacts.Item("Vexor", 1)));
+        var quote = new QuoteFacts(3, null, null, null, new BigDecimal("1500000"), List.of(new QuoteFacts.Line("Vexor", 1, 1_500_000, 1_500_000)),
+                false);
 
         assertThat(QuoteText.text(quote)).isEqualTo("""
                 Quote 3
-                1 × Vexor, delivered by contract
-                Total: 1,500,000 ISK
-                Per unit: 1,500,000 ISK""");
+                Delivered by contract
+
+                Vexor: 1 × 1,500,000 = 1,500,000
+                Total: 1,500,000 ISK""");
     }
 
     @Test
-    void severalProductsAreListedAndHaveNoPriceForOneUnit() {
-        var quote = new QuoteFacts(2, "Buyer", null, null, new BigDecimal("900000"),
-                List.of(new QuoteFacts.Item("Ishtar", 5), new QuoteFacts.Item("Vexor", 2)));
-
-        assertThat(QuoteText.text(quote)).isEqualTo("""
-                Quote 2 for Buyer
-                5 × Ishtar, 2 × Vexor, delivered by contract
-                Total: 900,000 ISK""");
+    void theCsvIsTheDevelopersSheet() {
+        assertThat(QuoteText.csv(sheet())).isEqualTo(String.join("\r\n",
+                "Quote,Buyer,Valid until,Note",
+                "1,bogus,2026-12-02,notes here",
+                "",
+                "Item,Quantity,Price (ISK),Extension (ISK)",
+                "Vexor,1,2,2",
+                "Legion,2,3,6",
+                "Total,,,8", ""));
     }
 
     @Test
-    void thePricePerUnitIsRoundedHalfUpToTheWholeIsk() {
-        var third = new QuoteFacts(1, null, null, null, new BigDecimal("100000"), List.of(new QuoteFacts.Item("A", 3)));
-        var half = new QuoteFacts(1, null, null, null, new BigDecimal("100001"), List.of(new QuoteFacts.Item("A", 2)));
+    void aCsvWithNoBuyerNoExpiryAndNoNoteHasThoseCellsEmpty() {
+        var quote = new QuoteFacts(3, null, null, null, new BigDecimal("1500000"), List.of(new QuoteFacts.Line("Vexor", 1, 1_500_000, 1_500_000)),
+                false);
 
-        assertThat(QuoteText.text(third)).contains("Per unit: 33,333 ISK");
-        assertThat(QuoteText.text(half)).contains("Per unit: 50,001 ISK");
+        assertThat(QuoteText.csv(quote)).isEqualTo(String.join("\r\n",
+                "Quote,Buyer,Valid until,Note",
+                "3,,,",
+                "",
+                "Item,Quantity,Price (ISK),Extension (ISK)",
+                "Vexor,1,1500000,1500000",
+                "Total,,,1500000", ""));
+    }
+
+    @Test
+    void theExtensionOfTheBiggestLineMayCarryTheLeftoverAndTheTotalStillAddsUp() {
+        var quote = new QuoteFacts(2, "Buyer", null, null, new BigDecimal("16000001"),
+                List.of(new QuoteFacts.Line("Vexor", 1, 4_000_000, 4_000_000), new QuoteFacts.Line("Legion", 2, 6_000_000, 12_000_001)), false);
+
+        assertThat(QuoteText.text(quote)).contains("Legion: 2 × 6,000,000 = 12,000,001").endsWith("Total: 16,000,001 ISK");
+        assertThat(QuoteText.csv(quote)).contains("Legion,2,6000000,12000001\r\n").endsWith("Total,,,16000001\r\n");
     }
 
     @Test
@@ -67,31 +99,10 @@ class QuoteTextTest {
         try {
             Locale.setDefault(Locale.GERMANY);
             assertThat(QuoteText.money(new BigDecimal("1234567.5"))).isEqualTo("1,234,568");
-            assertThat(QuoteText.text(ishtars())).contains("Total: 266,053,000 ISK");
+            assertThat(QuoteText.text(ishtars())).contains("Total: 266,053,000 ISK").contains("5 × 53,210,600 = 266,053,000");
         } finally {
             Locale.setDefault(before);
         }
-    }
-
-    @Test
-    void theCsvHasARowForEachProductForThePricePerUnitAndForTheTotal() {
-        assertThat(QuoteText.csv(ishtars())).isEqualTo(String.join("\r\n",
-                "Quote,Buyer,Item,Quantity,Price (ISK),Valid until,Note",
-                "1,Kestrel Dawn,Ishtar,5,,2026-12-02,Delivery to Perimeter.",
-                "1,Kestrel Dawn,Per unit,,53210600,2026-12-02,Delivery to Perimeter.",
-                "1,Kestrel Dawn,Total,,266053000,2026-12-02,Delivery to Perimeter.", ""));
-    }
-
-    @Test
-    void aCsvOfSeveralProductsHasNoRowForThePricePerUnit() {
-        var quote = new QuoteFacts(2, "Buyer", null, null, new BigDecimal("900000"),
-                List.of(new QuoteFacts.Item("Ishtar", 5), new QuoteFacts.Item("Vexor", 2)));
-
-        assertThat(QuoteText.csv(quote)).isEqualTo(String.join("\r\n",
-                "Quote,Buyer,Item,Quantity,Price (ISK),Valid until,Note",
-                "2,Buyer,Ishtar,5,,,",
-                "2,Buyer,Vexor,2,,,",
-                "2,Buyer,Total,,900000,,", ""));
     }
 
     @Test
@@ -104,7 +115,7 @@ class QuoteTextTest {
     }
 
     @Test
-    void aFieldThatAspreadsheetWouldReadAsAFormulaIsPutRightWithAQuote() {
+    void aFieldThatASpreadsheetWouldReadAsAFormulaIsPutRightWithAQuote() {
         // the buyer's name and the note are text somebody typed
         assertThat(QuoteText.csvField("=1+1")).isEqualTo("'=1+1");
         assertThat(QuoteText.csvField("+1")).isEqualTo("'+1");
@@ -115,8 +126,8 @@ class QuoteTextTest {
         // a field with an equals sign inside it is not a formula
         assertThat(QuoteText.csvField("a=b")).isEqualTo("a=b");
 
-        var quote = new QuoteFacts(1, "=cmd", "@note", null, new BigDecimal("1000"), List.of(new QuoteFacts.Item("+Item", 1)));
-        assertThat(QuoteText.csv(quote)).contains("1,'=cmd,'+Item,1,,,'@note");
+        var quote = new QuoteFacts(1, "=cmd", "@note", null, new BigDecimal("1000"), List.of(new QuoteFacts.Line("+Item", 1, 1000, 1000)), false);
+        assertThat(QuoteText.csv(quote)).contains("1,'=cmd,,'@note").contains("'+Item,1,1000,1000");
     }
 
     @Test

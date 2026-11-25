@@ -317,6 +317,7 @@
                                 <a class="btn btn-xs btn-outline" th:id="'csv-quote-' + ${quote.number}" th:href="@{/projects/{id}/quotes/{n}/csv(id=${project.id.value}, n=${quote.number})}" th:text="#{project.downloadCsv}">Download CSV</a>
                             </div>
                             <p class="mt-1 text-xs opacity-70" th:text="#{project.shareNote}">Neither shows what it cost.</p>
+                            <p class="mt-1 text-xs text-warning" th:if="${export.evenly}" th:text="#{project.shareEvenly}">The lines are priced alike.</p>
                         </details>
                     </li>
                 </ul>

@@ -22,55 +22,46 @@ final class QuoteText {
     private QuoteText() {
     }
 
-    /** The text for a contract description or a message. */
+    /**
+     * The text for a contract description or a message: who it is for and until when, the note, then a line for each product with its price per unit and its
+     * extension, and the total. It is the layout of the CSV (decided with the developer on 2026-11-25). ISK is written once, on the grand total, and not on
+     * each price and extension.
+     */
     static String text(QuoteFacts quote) {
         var lines = new ArrayList<String>();
         lines.add("Quote " + quote.number() + (quote.buyer() == null ? "" : " for " + quote.buyer()));
-        lines.add(quote.items().stream().map(item -> item.quantity() + " × " + item.name()).collect(Collectors.joining(", "))
-                + ", delivered by contract");
-        lines.add("Total: " + money(quote.price()) + " ISK");
-        perUnit(quote).ifPresent(price -> lines.add("Per unit: " + money(price) + " ISK"));
         if (quote.expiresAt() != null) {
             lines.add("Valid until " + validUntil(quote));
         }
         if (quote.note() != null) {
             lines.add(quote.note());
         }
+        lines.add("Delivered by contract");
+        lines.add("");
+        for (var line : quote.lines()) {
+            lines.add(line.name() + ": " + line.quantity() + " \u00d7 " + money(line.unitPrice()) + " = " + money(line.extension()));
+        }
+        lines.add("Total: " + money(quote.price()) + " ISK");
         return String.join("\n", lines);
     }
 
     /**
-     * The same as a CSV (RFC 4180, with CRLF line ends): a row for each product, a row for the price per unit of a one-product quote, and a row for the
-     * total, each saying the quote, the buyer, the expiry and the note so that a row can be read alone. Prices are plain whole numbers for a spreadsheet.
+     * The same as a CSV (RFC 4180, with CRLF line ends), laid out as a sheet: the quote, the buyer, the expiry and the note in a row under their headers, an empty
+     * row, then the products under Item, Quantity, Price (ISK) and Extension (ISK), and a Total row with the total under Extension. Prices are plain whole
+     * numbers, for a spreadsheet to add up, and the expiry is an ISO date, which a spreadsheet reads as a date of its own locale.
      */
     static String csv(QuoteFacts quote) {
         var rows = new ArrayList<List<String>>();
-        rows.add(List.of("Quote", "Buyer", "Item", "Quantity", "Price (ISK)", "Valid until", "Note"));
-        var common = List.of(String.valueOf(quote.number()), nullToEmpty(quote.buyer()));
-        var tail = List.of(quote.expiresAt() == null ? "" : validUntil(quote), nullToEmpty(quote.note()));
-        for (var item : quote.items()) {
-            rows.add(row(common, item.name(), String.valueOf(item.quantity()), "", tail));
+        rows.add(List.of("Quote", "Buyer", "Valid until", "Note"));
+        rows.add(List.of(String.valueOf(quote.number()), nullToEmpty(quote.buyer()), quote.expiresAt() == null ? "" : validUntil(quote),
+                nullToEmpty(quote.note())));
+        rows.add(List.of());
+        rows.add(List.of("Item", "Quantity", "Price (ISK)", "Extension (ISK)"));
+        for (var line : quote.lines()) {
+            rows.add(List.of(line.name(), String.valueOf(line.quantity()), String.valueOf(line.unitPrice()), String.valueOf(line.extension())));
         }
-        perUnit(quote).ifPresent(price -> rows.add(row(common, "Per unit", "", plain(price), tail)));
-        rows.add(row(common, "Total", "", plain(quote.price()), tail));
+        rows.add(List.of("Total", "", "", plain(quote.price())));
         return rows.stream().map(QuoteText::csvLine).collect(Collectors.joining(CSV_LINE_END, "", CSV_LINE_END));
-    }
-
-    private static List<String> row(List<String> common, String item, String quantity, String price, List<String> tail) {
-        var row = new ArrayList<String>(common);
-        row.add(item);
-        row.add(quantity);
-        row.add(price);
-        row.addAll(tail);
-        return row;
-    }
-
-    /** The price of one unit, for a quote of one product only, to the whole ISK. */
-    private static java.util.Optional<BigDecimal> perUnit(QuoteFacts quote) {
-        if (quote.items().size() != 1 || quote.items().getFirst().quantity() < 1) {
-            return java.util.Optional.empty();
-        }
-        return java.util.Optional.of(quote.price().divide(BigDecimal.valueOf(quote.items().getFirst().quantity()), 0, RoundingMode.HALF_UP));
     }
 
     /**
@@ -78,6 +69,11 @@ final class QuoteText {
      */
     private static String validUntil(QuoteFacts quote) {
         return quote.expiresAt().minusSeconds(1).atZone(ZoneOffset.UTC).toLocalDate().toString();
+    }
+
+    /** Whole ISK of a number, with its commas. */
+    static String money(long amount) {
+        return money(BigDecimal.valueOf(amount));
     }
 
     /** Whole ISK with a comma between thousands, whatever the language of the server. */

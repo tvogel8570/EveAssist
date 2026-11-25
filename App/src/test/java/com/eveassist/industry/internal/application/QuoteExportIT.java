@@ -78,17 +78,41 @@ class QuoteExportIT extends IntegrationTest {
 
         assertThat(shareable.text()).isEqualTo("""
                 Quote 1 for Kestrel Dawn
-                2 × Test Hauler, delivered by contract
-                Total: 15,000 ISK
-                Per unit: 7,500 ISK
                 Valid until %s
-                Deliver by contract""".formatted(day));
-        assertThat(shareable.csv()).contains("1,Kestrel Dawn,Test Hauler,2,,%s,Deliver by contract\r\n".formatted(day))
-                .contains("1,Kestrel Dawn,Total,,15000,%s,Deliver by contract\r\n".formatted(day));
+                Deliver by contract
+                Delivered by contract
+
+                Test Hauler: 2 \u00d7 7,500 = 15,000
+                Total: 15,000 ISK""".formatted(day));
+        assertThat(shareable.csv()).isEqualTo(String.join("\r\n",
+                "Quote,Buyer,Valid until,Note",
+                "1,Kestrel Dawn,%s,Deliver by contract".formatted(day),
+                "",
+                "Item,Quantity,Price (ISK),Extension (ISK)",
+                "Test Hauler,2,7500,15000",
+                "Total,,,15000", ""));
+        // the scenario has no Jita price for the Hauler itself, so there is no market value to share the total by, and the lines are priced alike
+        assertThat(shareable.evenly()).isTrue();
         assertThat(shareable.fileName()).isEqualTo("quote-two-haulers-1.csv");
         // never a word of what it cost
         assertThat(shareable.text() + shareable.csv()).doesNotContainIgnoringCase("cost").doesNotContainIgnoringCase("margin")
                 .doesNotContainIgnoringCase("profit");
+    }
+
+    @Test
+    void aProductWithAJitaPriceIsPricedByItsMarketValueAndNotAlike() {
+        var owner = viewerFor(newSub());
+        var id = haulers.project(owner, haulers.azbel(owner, "2"), "Two Haulers", null);
+        var version = projects.find(owner, id).orElseThrow().version();
+        editing.replacePrices(owner, id, version, java.util.Map.of(HAULER, new com.eveassist.market.JitaQuote(HAULER,
+                new java.math.BigDecimal("8000"), new java.math.BigDecimal("7000"), Instant.now())));
+        entry.cost(owner, id);
+        quoting.issue(owner, new IssueQuoteCommand(id, projects.find(owner, id).orElseThrow().version(), "Buyer", null, null));
+
+        var shareable = export.of(owner, id, 1);
+
+        assertThat(shareable.evenly()).isFalse();
+        assertThat(shareable.text()).contains("Test Hauler: 2 \u00d7 7,500 = 15,000");
     }
 
     @Test
@@ -100,9 +124,10 @@ class QuoteExportIT extends IntegrationTest {
 
         assertThat(shareable.text()).isEqualTo("""
                 Quote 1
-                2 × Test Hauler, delivered by contract
-                Total: 15,000 ISK
-                Per unit: 7,500 ISK""");
+                Delivered by contract
+
+                Test Hauler: 2 \u00d7 7,500 = 15,000
+                Total: 15,000 ISK""");
     }
 
     @Test

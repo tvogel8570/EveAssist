@@ -108,8 +108,8 @@ class ProjectShareBrowserIT extends IntegrationTest {
         page.click("#copy-quote-1");
 
         var clipboard = (String) page.evaluate("navigator.clipboard.readText()");
-        assertThat(clipboard).startsWith("Quote 1 for Kestrel Dawn\n").contains("Test Hauler, delivered by contract").contains(" ISK")
-                .endsWith("Delivery to Perimeter.");
+        assertThat(clipboard).startsWith("Quote 1 for Kestrel Dawn\n").contains("Delivery to Perimeter.\nDelivered by contract\n\nTest Hauler: 1 \u00d7 ")
+                .contains(" = ").contains("\nTotal: ").endsWith(" ISK");
         assertThat(clipboard).isEqualTo(page.inputValue("#quote-text-1"));
         assertThat(page.locator("#quote-1 [data-copied]").isVisible()).isTrue();
     }
@@ -120,7 +120,7 @@ class ProjectShareBrowserIT extends IntegrationTest {
 
         assertThat(download.suggestedFilename()).isEqualTo("quote-haulers-for-kestrel-1.csv");
         var body = Files.readString(download.path());
-        assertThat(body).startsWith("Quote,Buyer,Item,Quantity,Price (ISK),Valid until,Note\r\n")
-                .contains("1,Kestrel Dawn,Test Hauler,1,,").contains(",Total,,").contains("Delivery to Perimeter.");
+        assertThat(body).startsWith("Quote,Buyer,Valid until,Note\r\n1,Kestrel Dawn,").contains(",Delivery to Perimeter.\r\n\r\nItem,Quantity,Price (ISK),Extension (ISK)\r\n")
+                .contains("Test Hauler,1,").contains("\r\nTotal,,,");
     }
 }

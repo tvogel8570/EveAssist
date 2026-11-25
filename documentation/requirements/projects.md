@@ -261,13 +261,16 @@ Decided with the developer on 2026-11-17: **both ways of pricing, switchable per
 - It shows the **price per unit and the total**. The margin and the profit are only for the developer's eyes.
 - **Shareable text and CSV** can be copied or downloaded, to put in a contract description or a message. It does not
   show the cost breakdown.
-  **Decided with the developer on 2026-11-25:** the text is `Quote 1 for Kestrel Dawn`, then `5 × Ishtar, delivered by contract` (several products are joined with commas),
-  `Total: 266,053,000 ISK`, `Per unit: 53,210,600 ISK` (only for a quote of **one** product, since a price per unit means nothing across several), `Valid until 2026-12-02` and the note.
-  **Money is whole ISK with thousands separators**, whatever the server's language, because a quote is rounded up to the quote step; per unit is rounded half up. The CSV is the **buyer's view
-  only** (the developer chose that over a second CSV of the costing): a row for each product, a row for the price per unit of a one-product quote and a row for the total, each saying the quote,
-  the buyer, the expiry and the note, with plain whole-number prices for a spreadsheet. A field that a spreadsheet would read as a formula (it starts with `=`, `+`, `-` or `@`) is put right
-  with a leading quote, since the buyer's name and the note are typed text. Both are made from the quote **as it was frozen**, so they never change, and the file is named after the project
-  and the quote (`quote-haulers-for-kestrel-1.csv`).
+  **Decided with the developer on 2026-11-25** (the layout of the developer's own sheet): a header (the quote, the buyer, the expiry and the note), then **a line for each product with its quantity,
+  its price per unit and its extension**, then the total. The text is `Quote 1 for bogus`, `Valid until 2026-12-02`, the note, `Delivered by contract`, a blank line, then
+  `Vexor: 1 × 2 = 2`, `Legion: 2 × 3 = 6` and `Total: 8 ISK` (**ISK only on the grand total**, not on each price and extension, as the developer asked). The CSV is the same as a sheet: `Quote,Buyer,Valid until,Note`, a row of those, an empty row,
+  `Item,Quantity,Price (ISK),Extension (ISK)`, a row for each product, and a `Total` row with the total under Extension. Prices are plain whole numbers for a spreadsheet, and the expiry is an ISO date.
+  **Money is whole ISK with thousands separators**, whatever the server's language. **The line prices share the quote's total by market value:** each product's share is its Jita price at the
+  project's price basis (from the prices frozen in the quote) times its quantity, and a unit price is whole ISK. The app has no cost for a single product, because parts are shared, so the split
+  cannot follow cost. If any product has no Jita price every unit is priced alike, and the page says so. The leftover of the rounding, a few ISK, goes into the **extension of the biggest line**, so the lines add up to the
+  total exactly, and that row may not equal its quantity times its price to the ISK (the developer chose this over a "Rounding" line). The text and the CSV show nothing of the cost, the margin or the profit.
+  A field that a spreadsheet would read as a formula (it starts with `=`, `+`, `-` or `@`) is put right with a leading quote, since the buyer's name and the note are typed text. Both are made from the quote **as
+  it was frozen**, so they never change, and the file is named after the project and the quote (`quote-haulers-for-kestrel-1.csv`).
 - Buyer-supplied materials, where the buyer provides some inputs and the quote is a build fee only, are not needed for
   now (the developer did not pick them). The cost lines are built so that a material can be marked "supplied" later.
 

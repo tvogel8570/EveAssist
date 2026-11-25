@@ -29,9 +29,16 @@ public class QuoteExport {
         var found = projects.find(viewer, project).orElseThrow(ProjectNotFoundException::new);
         var summary = quotes.find(viewer, project, number).orElseThrow(QuoteNotFoundException::new);
         var inputs = quotes.findInputs(viewer, project, number).orElseThrow(QuoteNotFoundException::new);
-        var items = inputs.products().stream()
-                .map(product -> new QuoteFacts.Item(recipes.name(new com.eveassist.sde.TypeId(product.type())), product.quantity())).toList();
-        var facts = new QuoteFacts(summary.number(), summary.buyerName(), summary.note(), summary.expiresAt(), summary.price(), items);
-        return new ShareableQuote(QuoteText.text(facts), QuoteText.csv(facts), QuoteText.fileName(found.name(), number));
+        // the price of each product at the project's price basis, from the prices frozen in the quote
+        var buy = "buy".equalsIgnoreCase(inputs.config().priceSide());
+        var products = inputs.products().stream().map(product -> {
+            var price = inputs.prices().stream().filter(frozen -> frozen.type() == product.type()).findFirst()
+                    .map(frozen -> buy ? frozen.buy() : frozen.sell()).orElse(null);
+            return new LinePrices.Product(recipes.name(new com.eveassist.sde.TypeId(product.type())), product.quantity(), price);
+        }).toList();
+        var priced = LinePrices.of(summary.price(), products);
+        var facts = new QuoteFacts(summary.number(), summary.buyerName(), summary.note(), summary.expiresAt(), summary.price(), priced.lines(),
+                priced.evenly());
+        return new ShareableQuote(QuoteText.text(facts), QuoteText.csv(facts), QuoteText.fileName(found.name(), number), facts.evenly());
     }
 }
