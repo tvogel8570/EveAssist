@@ -135,7 +135,10 @@ class ProjectPagesIT extends IntegrationTest {
                 // no facility was chosen, so the costing warns and the quote cannot be issued
                 .andExpect(content().string(containsString("id=\"warnings\"")))
                 .andExpect(content().string(containsString("id=\"cannot-issue\"")))
-                .andExpect(content().string(containsString("id=\"no-facilities\"")))
+                // no facility yet: the way to make one is the last entry of the Default facility dropdown, which leads to the Facilities page
+                .andExpect(content().string(containsString("value=\"__new\"")))
+                .andExpect(content().string(containsString("data-goto=\"/facilities?project=" + id + "\"")))
+                .andExpect(content().string(not(containsString("data-section=\"facilities\""))))
                 // a costing that is current can still be made again, because prices and indices move
                 .andExpect(content().string(containsString("id=\"recost\"")));
     }
@@ -322,7 +325,7 @@ class ProjectPagesIT extends IntegrationTest {
         var id = quotable(sub);
 
         var result = page(sub, id);
-        for (var section : List.of("settings", "facilities", "items", "jobs", "delivered-cost")) {
+        for (var section : List.of("settings", "items", "jobs", "delivered-cost")) {
             result.andExpect(content().string(tagOf(section, "data-section=\"" + section + "\"")));
         }
         // the quote card is the part that stays in view, so it is not a section
@@ -338,7 +341,7 @@ class ProjectPagesIT extends IntegrationTest {
         var id = started(sub);
 
         var result = page(sub, id).andExpect(content().string(tagOf("warnings", OPEN)));
-        for (var section : List.of("settings", "facilities", "items", "jobs", "delivered-cost")) {
+        for (var section : List.of("settings", "items", "jobs", "delivered-cost")) {
             result.andExpect(content().string(not(tagOf(section, OPEN))));
         }
     }
@@ -359,12 +362,12 @@ class ProjectPagesIT extends IntegrationTest {
     @Test
     void everySectionHeaderHasAnIndicatorThatTurnsWhenItIsOpen() throws Exception {
         var sub = newSub();
-        // a project with warnings, so that all six sections are there
+        // a project with warnings, so that all five sections are there
         var id = started(sub);
 
         var html = page(sub, id).andReturn().getResponse().getContentAsString();
-        // one chevron for each of the six sections: the header is a flex box, which leaves the browser's own triangle out
-        assertThat(html.split("group-open/section:rotate-90", -1).length - 1).isEqualTo(6);
+        // one chevron for each of the five sections: the header is a flex box, which leaves the browser's own triangle out
+        assertThat(html.split("group-open/section:rotate-90", -1).length - 1).isEqualTo(5);
     }
 
     @Test

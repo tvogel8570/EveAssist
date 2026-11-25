@@ -67,6 +67,21 @@
         sortRows(table, header, next);
     });
 
+    // A dropdown entry that says data-goto leads to another page, and is not a value: choosing it opens the page, and the dropdown goes back to the
+    // value it had, so that coming back with the browser's back button does not find the entry chosen (and a Save sending it as a value).
+    document.addEventListener('change', event => {
+        const select = event.target;
+        const entry = select instanceof HTMLSelectElement ? select.selectedOptions[0] : null;
+        if (!entry || !entry.dataset.goto) {
+            return;
+        }
+        const target = entry.dataset.goto;
+        select.selectedIndex = Math.max(0, Array.from(select.options).findIndex(option => option.defaultSelected));
+        // nothing after this hears the change: the form is not edited by it, so it must not say it has unsaved changes
+        event.stopImmediatePropagation();
+        window.location.assign(target);
+    });
+
     // The facility form's "Fill the structure's bonuses" button copies the chosen structure's materials, time and job fee bonuses (which the page
     // puts on the option as data-material, data-time and data-cost) into the form's fields. "Not said" has none, so it does nothing. The fields
     // are told they changed, so that the form says it has unsaved changes.

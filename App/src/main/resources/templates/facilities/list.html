@@ -5,6 +5,7 @@
 <main class="max-w-6xl mx-auto p-4">
     <h1 class="text-xl font-semibold" th:text="#{facilities.title}">Facilities</h1>
     <p class="text-sm opacity-70 mb-3" th:text="#{facilities.intro}">A facility is a structure you build in.</p>
+    <p id="back-to-project" th:if="${project != null}" class="mb-3"><a class="link" th:href="@{/projects/{id}(id=${project})}" th:text="#{facilities.backToProject}">Back to the project</a></p>
 
     <div id="error" th:if="${facilityError != null}" class="alert alert-error my-3" role="alert"><span th:text="#{'facility.error.' + ${facilityError}}">Error</span></div>
     <div id="deleted" th:if="${deletedDrafts != null}" class="alert alert-info my-3"><span th:text="#{facilities.deleted(${deletedDrafts})}">Deleted</span></div>
@@ -14,7 +15,7 @@
             <svg class="h-4 w-4 shrink-0 opacity-70 transition-transform group-open/section:rotate-90" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M7 4l6 6-6 6V4z"/></svg>
             <h2 class="font-semibold grow" th:text="#{facilities.add}">Add facility</h2>
         </summary>
-        <th:block th:replace="~{facilities/fragments :: facilityForm(null, @{/facilities}, null, 'add')}"></th:block>
+        <th:block th:replace="~{facilities/fragments :: facilityForm(null, @{/facilities}, ${project}, 'add')}"></th:block>
     </details>
 
     <p id="no-facilities" th:if="${#lists.isEmpty(facilities)}" class="opacity-70" th:text="#{facilities.none}">You have no facilities yet.</p>
@@ -33,12 +34,13 @@
                 </span>
                 <span class="badge badge-info badge-sm" th:if="${listing.draftProjects > 0}" th:text="#{facilities.usedBy(${listing.draftProjects})}">Used by 1</span>
             </summary>
-            <th:block th:replace="~{facilities/fragments :: facilityForm(${facility}, @{/facilities/{id}(id=${facility.id.value})}, null, 'edit-' + ${facility.id.value})}"></th:block>
+            <th:block th:replace="~{facilities/fragments :: facilityForm(${facility}, @{/facilities/{id}(id=${facility.id.value})}, ${project}, 'edit-' + ${facility.id.value})}"></th:block>
             <div class="text-right">
                 <details class="dropdown dropdown-end inline-block" data-autoclose>
                     <summary class="btn btn-ghost btn-xs text-error" th:id="'delete-' + ${facility.id.value}" th:text="#{facilities.delete}">Delete</summary>
                     <form class="dropdown-content card bg-base-300 shadow z-30 w-72 p-3 gap-2 text-left whitespace-normal" method="post"
                           th:action="@{/facilities/{id}/delete(id=${facility.id.value})}">
+                        <input type="hidden" name="project" th:value="${project}" th:if="${project != null}">
                         <p class="text-sm" th:text="#{facilities.deleteConfirm(${facility.name}, ${listing.draftProjects})}">Delete this facility?</p>
                         <button type="submit" class="btn btn-error btn-sm" th:id="'delete-confirm-' + ${facility.id.value}" th:text="#{facilities.deleteYes}">Delete facility</button>
                     </form>

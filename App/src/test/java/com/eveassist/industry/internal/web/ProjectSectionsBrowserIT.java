@@ -108,7 +108,7 @@ class ProjectSectionsBrowserIT extends IntegrationTest {
 
     @Test
     void sectionsStartClosedExceptTheOneWithWarnings() {
-        for (var section : List.of("settings", "facilities", "items", "jobs", "delivered-cost")) {
+        for (var section : List.of("settings", "items", "jobs", "delivered-cost")) {
             assertThat(isOpen(section)).as(section).isFalse();
         }
         // no facility is chosen, so the costing warns, and the warnings are the one section that has something in it

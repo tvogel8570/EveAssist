@@ -113,8 +113,7 @@ class FacilityBrowserIT extends IntegrationTest {
         assertThat(page.inputValue("#facility-list select[name=structureType]")).isEqualTo("azbel");
     }
 
-    @Test
-    void aFacilityAddedOnAProjectsPageComesBackToItsFacilitiesSection() {
+    private void startProject() {
         page.navigate(url("/plans"));
         page.fill("#new-plan-name", "Plan");
         page.click("#new-plan");
@@ -126,15 +125,66 @@ class FacilityBrowserIT extends IntegrationTest {
         page.click("#start-project");
         page.click("#start-project-confirm");
         page.waitForURL("**/projects/*");
+    }
 
-        page.click("#facilities > summary");
-        page.click("#add-facility > summary");
-        addFacility("#add-facility", "Quick Azbel", "azbel", "2.16");
-        page.waitForURL("**#facilities");
+    @Test
+    void theDefaultFacilityDropdownLeadsToTheFacilitiesPageAndAFacilityAddedThereReturnsToTheProject() {
+        startProject();
+        var project = page.url();
+        page.click("#settings > summary");
 
-        // the section was opened by the user, so it is still open, with the new facility in it and in the default facility's dropdown
-        assertThat(page.locator("#facilities table").textContent()).contains("Quick Azbel").contains("typed today");
+        page.selectOption("#default-facility", "__new");
+        page.waitForURL("**/facilities?project=*");
+        assertThat(page.locator("#back-to-project").isVisible()).isTrue();
+
+        addFacility("#add-form", "Quick Azbel", "azbel", "2.16");
+        page.waitForURL("**#settings");
+
+        // back on the project, at its Settings (which the user had opened, so it is open), and the new facility can be chosen
+        assertThat(page.url()).isEqualTo(project + "#settings");
         assertThat(page.locator("#default-facility option", new Page.LocatorOptions().setHasText("Quick Azbel")).count()).isEqualTo(1);
+        page.selectOption("#default-facility", new com.microsoft.playwright.options.SelectOption().setLabel("Quick Azbel"));
+        page.click("#save-settings");
+        page.waitForLoadState();
+        assertThat(page.locator("#default-facility option:checked").textContent()).contains("Quick Azbel");
+    }
+
+    @Test
+    void theEntryThatLeadsAwayIsNotAValueSoTheFormIsNotMarkedUnsavedAndTheDropdownGoesBack() {
+        startProject();
+        page.click("#settings > summary");
+        // the state is read in the same script call that makes the choice, before the page it leads to starts to open
+        @SuppressWarnings("unchecked")
+        var state = (java.util.Map<String, Object>) page.evaluate("""
+                () => {
+                    const select = document.querySelector('#default-facility');
+                    select.value = '__new';
+                    select.dispatchEvent(new Event('change', {bubbles: true}));
+                    return {
+                        value: select.value,
+                        formDirty: document.querySelector('#settings-form').hasAttribute('data-dirty'),
+                        sectionDirty: document.querySelector('#settings').hasAttribute('data-dirty')
+                    };
+                }
+                """);
+
+        assertThat(state.get("value")).isEqualTo("");
+        assertThat(state.get("formDirty")).isEqualTo(false);
+        assertThat(state.get("sectionDirty")).isEqualTo(false);
+    }
+
+    @Test
+    void comingBackWithTheBrowsersBackButtonFindsTheDropdownAsItWas() {
+        startProject();
+        var project = page.url();
+        page.click("#settings > summary");
+
+        page.selectOption("#default-facility", "__new");
+        page.waitForURL("**/facilities?project=*");
+        page.goBack();
+        page.waitForURL(project);
+
+        assertThat(page.inputValue("#default-facility")).isEmpty();
     }
 
     @Test

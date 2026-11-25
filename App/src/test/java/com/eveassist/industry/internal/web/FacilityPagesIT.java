@@ -124,17 +124,42 @@ class FacilityPagesIT extends IntegrationTest {
     }
 
     @Test
-    void aFormOnAProjectsPageBringsTheUserBackToThatProject() throws Exception {
+    void aFacilityAddedForAProjectReturnsToThatProjectsSettings() throws Exception {
         var sub = newSub();
         var project = UUID.randomUUID();
 
         mvc.perform(form(sub, post("/facilities"), "name", "Quick", "systemCostIndexPercent", "2", "project", project.toString()))
-                .andExpect(redirectedUrl("/projects/" + project + "#facilities"));
+                .andExpect(redirectedUrl("/projects/" + project + "#settings"));
         // anything that is not a project id is ignored, so the redirect cannot be pointed anywhere else
         for (var notAnId : new String[] {"//example.com", "x y", "../admin", "1"}) {
             mvc.perform(form(sub, post("/facilities"), "name", "Other " + notAnId.length(), "systemCostIndexPercent", "2", "project", notAnId))
                     .andExpect(redirectedUrl("/facilities"));
         }
+    }
+
+    @Test
+    void theFacilitiesPageOffersAWayBackToTheProjectItWasOpenedFromAndKeepsItThroughEveryForm() throws Exception {
+        var sub = newSub();
+        var facility = added(sub, "Mine", "2");
+        var project = UUID.randomUUID();
+
+        rendered(mvc.perform(get("/facilities").param("project", project.toString()).with(signedIn(sub))))
+                .andExpect(content().string(containsString("id=\"back-to-project\"")))
+                .andExpect(content().string(containsString("href=\"/projects/" + project + "\"")))
+                // the add form, the facility's own form and its delete all carry the project
+                .andExpect(content().string(org.hamcrest.Matchers.matchesPattern(
+                        "(?s).*name=\"project\" value=\"" + project + "\".*name=\"project\" value=\"" + project + "\".*name=\"project\" value=\""
+                                + project + "\".*")));
+        // opened from the menu there is no project, and a value that is not an id is ignored
+        rendered(mvc.perform(get("/facilities").with(signedIn(sub)))).andExpect(content().string(not(containsString("id=\"back-to-project\""))));
+        rendered(mvc.perform(get("/facilities").param("project", "//example.com").with(signedIn(sub))))
+                .andExpect(content().string(not(containsString("id=\"back-to-project\""))));
+
+        // changing or deleting stays on the page and keeps the project
+        mvc.perform(form(sub, post("/facilities/" + facility), "name", "Mine", "systemCostIndexPercent", "3", "project", project.toString()))
+                .andExpect(redirectedUrl("/facilities?project=" + project));
+        mvc.perform(form(sub, post("/facilities/" + facility + "/delete"), "project", project.toString()))
+                .andExpect(redirectedUrl("/facilities?project=" + project));
     }
 
     @Test
@@ -207,27 +232,28 @@ class FacilityPagesIT extends IntegrationTest {
     }
 
     @Test
-    void aRefusedValueOnAProjectsPageComesBackToItAndOpensItsFacilitiesSection() throws Exception {
+    void aRefusedValueComesBackToTheFacilitiesPageAndKeepsTheProject() throws Exception {
         var sub = newSub();
-        var id = added(sub, "Mine", "2");
-        var project = projectUsing(sub, id);
+        var project = UUID.randomUUID();
 
         mvc.perform(form(sub, post("/facilities"), "name", "  ", "systemCostIndexPercent", "2", "project", project.toString()))
-                .andExpect(redirectedUrl("/projects/" + project + "#facilities"))
+                .andExpect(redirectedUrl("/facilities?project=" + project))
                 .andExpect(flash().attribute("facilityError", "name"));
     }
 
     @Test
-    void theProjectPageNamesTheStructureShowsHowOldTheIndexIsAndOffersTheForm() throws Exception {
+    void theProjectPageHasNoFacilitiesSectionAndLeadsToTheFacilitiesPageFromItsDropdown() throws Exception {
         var sub = newSub();
         var id = added(sub, "Dodenvale Azbel", "2.16");
         var project = projectUsing(sub, id);
 
         rendered(mvc.perform(get("/projects/" + project).with(signedIn(sub))))
+                .andExpect(content().string(not(containsString("data-section=\"facilities\""))))
                 .andExpect(content().string(containsString("Dodenvale Azbel")))
-                .andExpect(content().string(containsString("typed today")))
-                .andExpect(content().string(containsString("id=\"manage-facilities\"")))
-                .andExpect(content().string(containsString("id=\"add-facility\"")))
-                .andExpect(content().string(containsString("name=\"project\" value=\"" + project + "\"")));
+                .andExpect(content().string(containsString("value=\"__new\"")))
+                .andExpect(content().string(containsString("data-goto=\"/facilities?project=" + project + "\"")))
+                // the dropdown reads: None, the facilities, and last the entry that leads to the Facilities page
+                .andExpect(content().string(org.hamcrest.Matchers.matchesPattern(
+                        "(?s).*<select id=\"default-facility\".*?value=\"\".*?Dodenvale Azbel.*?value=\"__new\".*?</select>.*")));
     }
 }

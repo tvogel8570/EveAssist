@@ -100,9 +100,6 @@ class ProjectPageController {
         model.addAttribute("openWarnings", stored != null && !stored.quotable());
         model.addAttribute("openSettings", failed);
         model.addAttribute("openItems", failed);
-        // a facility form on this page that was refused comes back here, and its section opens so the message has something to point at
-        model.addAttribute("openFacilities", model.containsAttribute("facilityError"));
-        model.addAttribute("structureTypes", java.util.List.of(com.eveassist.industry.internal.domain.StructureType.values()));
         model.addAttribute("project", project);
         model.addAttribute("state", state);
         model.addAttribute("locked", locked);

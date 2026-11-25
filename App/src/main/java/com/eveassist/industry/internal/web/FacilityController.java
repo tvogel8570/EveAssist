@@ -26,8 +26,8 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 /**
- * The account's facilities: the page that lists them, and adding, changing and deleting one. The same forms are on a project's page (its
- * Facilities section), which sends {@code project} so that the user comes back to it. A facility belongs to the account and not to a project.
+ * The account's facilities: the page that lists them, and adding, changing and deleting one. The Default facility dropdown of a project leads
+ * here with {@code project}, and a facility added then returns the user to that project. A facility belongs to the account and not to a project.
  */
 @Controller
 @RequestMapping("/facilities")
@@ -42,40 +42,49 @@ class FacilityController {
         this.editing = editing;
     }
 
+    /** {@code project} is the project the user came from (the Default facility dropdown), to offer a way back and to return to after adding one. */
     @GetMapping
-    String list(Viewer viewer, Model model) {
+    String list(Viewer viewer, @RequestParam(required = false) String project, Model model) {
+        model.addAttribute("project", projectId(project));
         model.addAttribute("facilities", queries.list(viewer));
         model.addAttribute("structureTypes", List.of(StructureType.values()));
         return "facilities/list";
     }
 
+    /** A facility added for a project returns to that project's Settings, where it can be chosen. Added from the menu, it stays on this page. */
     @PostMapping
     String add(Viewer viewer, @ModelAttribute FacilityForm form, @RequestParam(required = false) String project) {
         editing.add(viewer, form.values());
-        return back(project);
+        var id = projectId(project);
+        return id == null ? "redirect:/facilities" : "redirect:/projects/" + id + "#settings";
     }
 
     @PostMapping("/{id}")
     String change(Viewer viewer, @PathVariable UUID id, @ModelAttribute FacilityForm form, @RequestParam(required = false) String project) {
         editing.change(viewer, new FacilityId(id), form.values());
-        return back(project);
+        return staying(project);
     }
 
     @PostMapping("/{id}/delete")
     String delete(Viewer viewer, @PathVariable UUID id, @RequestParam(required = false) String project, RedirectAttributes flash) {
         var deleted = editing.delete(viewer, new FacilityId(id));
         flash.addFlashAttribute("deletedDrafts", deleted.draftProjectsChanged());
-        return back(project);
+        return staying(project);
     }
 
-    /** The facilities page, or the project the form was on (its Facilities section) when it says which. Anything but a project id is ignored. */
-    private static String back(String project) {
+    /** The project id the user came from, or null for nothing or for anything that is not one, so the address cannot be pointed anywhere else. */
+    private static UUID projectId(String project) {
         try {
-            return project == null || project.isBlank() ? "redirect:/facilities"
-                    : "redirect:/projects/" + UUID.fromString(project.strip()) + "#facilities";
+            return project == null || project.isBlank() ? null : UUID.fromString(project.strip());
         } catch (IllegalArgumentException notAnId) {
-            return "redirect:/facilities";
+            return null;
         }
+    }
+
+    /** This page again, still remembering the project the user came from. */
+    private static String staying(String project) {
+        var id = projectId(project);
+        return id == null ? "redirect:/facilities" : "redirect:/facilities?project=" + id;
     }
 
     @ExceptionHandler(FacilityNotFoundException.class)
@@ -89,6 +98,6 @@ class FacilityController {
             org.springframework.validation.BindException.class})
     String refused(Exception problem, HttpServletRequest request, RedirectAttributes flash) {
         flash.addFlashAttribute("facilityError", problem instanceof InvalidFacilityNameException ? "name" : "invalid");
-        return back(request.getParameter("project"));
+        return staying(request.getParameter("project"));
     }
 }
