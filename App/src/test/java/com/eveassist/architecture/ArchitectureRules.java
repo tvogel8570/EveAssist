@@ -14,6 +14,8 @@ import com.tngtech.archunit.lang.ArchCondition;
 import com.tngtech.archunit.lang.ArchRule;
 import com.tngtech.archunit.lang.ConditionEvents;
 import com.tngtech.archunit.lang.SimpleConditionEvent;
+import java.util.Map;
+import java.util.Set;
 import org.springframework.stereotype.Component;
 
 /**
@@ -113,6 +115,50 @@ final class ArchitectureRules {
                 .should().dependOnClassesThat().haveSimpleNameEndingWith("Repository")
                 .orShould().dependOnClassesThat().resideInAnyPackage("java.sql..", "javax.sql..", "org.springframework.jdbc..")
                 .allowEmptyShould(true);
+    }
+
+    /**
+     * Which feature folders of {@code industry.internal} may use which, besides their own. Sub-folders, such as {@code project.quote}, belong to their
+     * feature and are not limited among themselves. Nothing lists {@code tryplan}, so nothing may use it. A class outside these folders is refused, so
+     * that a new feature is added here on purpose.
+     */
+    private static final Map<String, Set<String>> FEATURE_MAY_USE = Map.of(
+            "shared", Set.of(),
+            "costing", Set.of("shared"),
+            "facility", Set.of("costing", "shared"),
+            "plan", Set.of("costing", "shared"),
+            "tryplan", Set.of("costing", "plan", "shared"),
+            "project", Set.of("costing", "facility", "plan", "shared"));
+
+    ArchRule industryFeaturesUseOnlyWhatTheyMay() {
+        return classes().that().resideInAPackage(base + ".industry.internal..")
+                .should(useOnlyTheFeaturesTheirsMay(base + ".industry.internal."))
+                .allowEmptyShould(true);
+    }
+
+    private static ArchCondition<JavaClass> useOnlyTheFeaturesTheirsMay(String internal) {
+        return new ArchCondition<>("use only the features that their own feature may use") {
+            @Override
+            public void check(JavaClass from, ConditionEvents events) {
+                var feature = featureOf(from, internal);
+                if (!FEATURE_MAY_USE.containsKey(feature)) {
+                    events.add(violated(from, from.getName() + " is in no feature folder that the table of ArchitectureRules lists"));
+                    return;
+                }
+                from.getDirectDependenciesFromSelf().forEach(dependency -> {
+                    var used = featureOf(dependency.getTargetClass().getBaseComponentType(), internal);
+                    if (used != null && !used.equals(feature) && !FEATURE_MAY_USE.get(feature).contains(used)) {
+                        events.add(violated(from, "feature " + feature + " may not use feature " + used + ": " + dependency.getDescription()));
+                    }
+                });
+            }
+        };
+    }
+
+    /** The first package under {@code internal}, or null for a class that is not under it. */
+    private static String featureOf(JavaClass c, String internal) {
+        var name = c.getPackageName() + ".";
+        return name.startsWith(internal) ? name.substring(internal.length(), name.indexOf('.', internal.length())) : null;
     }
 
     ArchRule queriesAndWritesDoNotStartFetches() {

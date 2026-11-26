@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 /** A rule that cannot fail proves nothing, so each one is run against code that breaks it and code that does not. */
 class ArchitectureRulesFixtureTest {
@@ -68,6 +69,26 @@ class ArchitectureRulesFixtureTest {
     @MethodSource("rules")
     void ruleAcceptsCleanCode(Function<ArchitectureRules, ArchRule> rule, String offender) {
         assertThatCode(() -> rule.apply(ON_CLEAN).check(CLEAN)).doesNotThrowAnyException();
+    }
+
+    private static final String FEATURES = "archfixture.features.";
+
+    @ParameterizedTest(name = "{0}")
+    @ValueSource(strings = {"SharedUsingCosting", "CostingUsingPlan", "FacilityUsingPlan", "PlanUsingProject", "AttemptUsingFacility",
+            "ProjectUsingTryPlan", "QuoteUsingTryPlan", "InUnlistedFolder", "InNoFeature"})
+    void featureRuleCatchesItsFixture(String offender) {
+        var rule = new ArchitectureRules(FEATURES + "broken").industryFeaturesUseOnlyWhatTheyMay();
+
+        assertThatThrownBy(() -> rule.check(new ClassFileImporter().importPackages(FEATURES + "broken")))
+                .isInstanceOf(AssertionError.class)
+                .hasMessageContaining(offender);
+    }
+
+    @Test
+    void featureRuleAcceptsEverythingItsTableAllows() {
+        var rule = new ArchitectureRules(FEATURES + "clean").industryFeaturesUseOnlyWhatTheyMay();
+
+        assertThatCode(() -> rule.check(new ClassFileImporter().importPackages(FEATURES + "clean"))).doesNotThrowAnyException();
     }
 
     @Test

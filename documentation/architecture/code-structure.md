@@ -65,9 +65,25 @@ industry/internal/
 
 Where this document says `internal/application`, `internal/web` and so on, it means that layer's package, directly under `internal` in a module that is not divided
 and under the feature in one that is. The architecture rules find a layer in both places. Each adapter package (`web`, `persistence`) carries its own jMolecules
-`package-info.java`. Modulith guards the outside of `industry` only: **no rule yet limits which feature may use another's classes.** On 2026-11-26 `shared` used no
-feature, `costing` only itself, `facility` and `plan` only `costing` and `shared` (`facility` not even `shared`), nothing used `tryplan`, and `project` and its
-sub-features used each other both ways.
+`package-info.java`. Modulith guards the outside of `industry` only.
+
+**Which feature may use which** (the developer decided on 2026-11-26) is checked by the build, from a table in `ArchitectureRules`:
+
+| Feature | May use, besides itself |
+|---|---|
+| `shared` | nothing |
+| `costing` | `shared` |
+| `facility` | `costing`, `shared` |
+| `plan` | `costing`, `shared` |
+| `tryplan` | `costing`, `plan`, `shared` |
+| `project`, with its sub-features | `costing`, `facility`, `plan`, `shared` |
+
+- Nothing may use `tryplan`, so it can change for visitors without reaching signed-in features, and the anonymous pages cannot start calling into projects or facilities.
+- A class in `industry/internal` outside these folders fails the build, so a new feature is added to the table on purpose.
+- The sub-features of `project` use each other in both directions and are **not** limited among themselves.
+- A failure means choosing: put the class where both may use it, or change the table. Changing it is a design decision, not a fix. `shared` and `costing` are for what
+  features really share, not a place to move a class so that a build passes.
+- The rule sees compiled references. A Javadoc link, or a constant the compiler copies into its user, leaves none.
 
 - The module's base package is its public API: services, the plain objects they take and return, and its events.
 - The plain objects and events are Java records: immutable snapshots with no business logic (see [Records](#records)).

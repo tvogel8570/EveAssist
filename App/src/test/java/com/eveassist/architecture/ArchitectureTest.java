@@ -67,6 +67,11 @@ class ArchitectureTest {
     }
 
     @Test
+    void industryFeaturesUseOnlyWhatTheyMay() {
+        RULES.industryFeaturesUseOnlyWhatTheyMay().check(PRODUCTION);
+    }
+
+    @Test
     void everyRepositoryMethodTakesTheViewerFirst() {
         RULES.everyRepositoryMethodTakesTheViewerFirst().check(PRODUCTION);
     }
