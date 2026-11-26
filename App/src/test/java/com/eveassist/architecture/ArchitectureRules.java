@@ -122,7 +122,7 @@ final class ArchitectureRules {
      * feature and are not limited among themselves. Nothing lists {@code tryplan}, so nothing may use it. A class outside these folders is refused, so
      * that a new feature is added here on purpose.
      */
-    private static final Map<String, Set<String>> FEATURE_MAY_USE = Map.of(
+    private static final Map<String, Set<String>> INDUSTRY_FEATURE_MAY_USE = Map.of(
             "shared", Set.of(),
             "costing", Set.of("shared"),
             "facility", Set.of("costing", "shared"),
@@ -131,23 +131,44 @@ final class ArchitectureRules {
             "project", Set.of("costing", "facility", "plan", "shared"));
 
     ArchRule industryFeaturesUseOnlyWhatTheyMay() {
-        return classes().that().resideInAPackage(base + ".industry.internal..")
-                .should(useOnlyTheFeaturesTheirsMay(base + ".industry.internal."))
+        return featuresUseOnlyWhatTheyMay(base + ".industry.internal.", INDUSTRY_FEATURE_MAY_USE);
+    }
+
+    /**
+     * Which feature folders of {@code characters.internal} may use which, besides their own. Only {@code linking} may use {@code tokens}, which holds
+     * the stored tokens and their encryption. An entry such as {@code linking.CharacterRepository} allows that one class, with its nested types, and
+     * nothing else of the folder: it is how {@code tokens} and {@code membership} reach back into {@code linking}.
+     */
+    private static final Map<String, Set<String>> CHARACTERS_FEATURE_MAY_USE = Map.of(
+            "sso", Set.of(),
+            "tokens", Set.of("sso", "linking.CharacterRepository"),
+            "membership", Set.of("linking.CharacterDetails"),
+            "linking", Set.of("membership", "sso", "tokens"));
+
+    ArchRule charactersFeaturesUseOnlyWhatTheyMay() {
+        return featuresUseOnlyWhatTheyMay(base + ".characters.internal.", CHARACTERS_FEATURE_MAY_USE);
+    }
+
+    private static ArchRule featuresUseOnlyWhatTheyMay(String internal, Map<String, Set<String>> mayUse) {
+        return classes().that().resideInAPackage(internal.substring(0, internal.length() - 1) + "..")
+                .should(useOnlyTheFeaturesTheirsMay(internal, mayUse))
                 .allowEmptyShould(true);
     }
 
-    private static ArchCondition<JavaClass> useOnlyTheFeaturesTheirsMay(String internal) {
-        return new ArchCondition<>("use only the features that their own feature may use") {
+    private static ArchCondition<JavaClass> useOnlyTheFeaturesTheirsMay(String internal, Map<String, Set<String>> mayUse) {
+        return new ArchCondition<>("use only what their own feature may use") {
             @Override
             public void check(JavaClass from, ConditionEvents events) {
                 var feature = featureOf(from, internal);
-                if (!FEATURE_MAY_USE.containsKey(feature)) {
+                if (!mayUse.containsKey(feature)) {
                     events.add(violated(from, from.getName() + " is in no feature folder that the table of ArchitectureRules lists"));
                     return;
                 }
                 from.getDirectDependenciesFromSelf().forEach(dependency -> {
-                    var used = featureOf(dependency.getTargetClass().getBaseComponentType(), internal);
-                    if (used != null && !used.equals(feature) && !FEATURE_MAY_USE.get(feature).contains(used)) {
+                    var target = dependency.getTargetClass().getBaseComponentType();
+                    var used = featureOf(target, internal);
+                    if (used != null && !used.equals(feature) && !mayUse.get(feature).contains(used)
+                            && !mayUse.get(feature).contains(used + "." + topLevelNameOf(target))) {
                         events.add(violated(from, "feature " + feature + " may not use feature " + used + ": " + dependency.getDescription()));
                     }
                 });
@@ -155,10 +176,20 @@ final class ArchitectureRules {
         };
     }
 
-    /** The first package under {@code internal}, or null for a class that is not under it. */
+    /** The simple name of the class, or of the class it is nested in. */
+    private static String topLevelNameOf(JavaClass c) {
+        var name = c.getName().substring(c.getPackageName().length() + 1);
+        return name.contains("$") ? name.substring(0, name.indexOf('$')) : name;
+    }
+
+    /** The first package under {@code internal}, an empty string for a class directly in it, or null for a class that is not under it. */
     private static String featureOf(JavaClass c, String internal) {
         var name = c.getPackageName() + ".";
-        return name.startsWith(internal) ? name.substring(internal.length(), name.indexOf('.', internal.length())) : null;
+        if (!name.startsWith(internal)) {
+            return null;
+        }
+        var end = name.indexOf('.', internal.length());
+        return end < 0 ? "" : name.substring(internal.length(), end);
     }
 
     ArchRule queriesAndWritesDoNotStartFetches() {

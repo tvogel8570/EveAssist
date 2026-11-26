@@ -85,6 +85,18 @@ and under the feature in one that is. The architecture rules find a layer in bot
   features really share, not a place to move a class so that a build passes.
 - The rule sees compiled references. A Javadoc link, or a constant the compiler copies into its user, leaves none.
 
+**`characters` is divided by feature too** (the developer decided on 2026-11-26), without layer packages, since it is not a layered module:
+
+| Folder in `characters/internal` | Holds | May use, besides itself |
+|---|---|---|
+| `linking` | adding, listing and removing characters, their pages and stored rows | `membership`, `sso`, `tokens` |
+| `tokens` | the stored refresh tokens, their encryption and keys, revocation | `sso`, and `linking`'s `CharacterRepository` only |
+| `membership` | learning each character's corporation | `linking`'s `CharacterDetails` only |
+| `sso` | talking to EVE's sign-in | nothing |
+
+Only `linking` may use `tokens`. Splitting the module made classes public that were package-private, the token cipher and the key providers among them: Modulith still hides
+them from other modules, and this table, checked like `industry`'s, keeps them from the rest of `characters`. A class outside these folders fails the build.
+
 - The module's base package is its public API: services, the plain objects they take and return, and its events.
 - The plain objects and events are Java records: immutable snapshots with no business logic (see [Records](#records)).
   The service maps its domain model or rows to them at the module boundary, so other modules never hold a domain

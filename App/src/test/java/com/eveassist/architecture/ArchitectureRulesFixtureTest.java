@@ -84,6 +84,24 @@ class ArchitectureRulesFixtureTest {
                 .hasMessageContaining(offender);
     }
 
+    @ParameterizedTest(name = "{0}")
+    @ValueSource(strings = {"SsoUsingLinking", "MembershipUsingTokens", "TokensUsingAnotherLinkingClass", "TokensUsingMembership",
+            "MembershipUsingAnotherLinkingClass", "InUnlistedCharactersFolder", "FlatCharactersClass"})
+    void charactersFeatureRuleCatchesItsFixture(String offender) {
+        var rule = new ArchitectureRules(FEATURES + "broken").charactersFeaturesUseOnlyWhatTheyMay();
+
+        assertThatThrownBy(() -> rule.check(new ClassFileImporter().importPackages(FEATURES + "broken")))
+                .isInstanceOf(AssertionError.class)
+                .hasMessageContaining(offender);
+    }
+
+    @Test
+    void charactersFeatureRuleAcceptsEverythingItsTableAllows() {
+        var rule = new ArchitectureRules(FEATURES + "clean").charactersFeaturesUseOnlyWhatTheyMay();
+
+        assertThatCode(() -> rule.check(new ClassFileImporter().importPackages(FEATURES + "clean"))).doesNotThrowAnyException();
+    }
+
     @Test
     void featureRuleAcceptsEverythingItsTableAllows() {
         var rule = new ArchitectureRules(FEATURES + "clean").industryFeaturesUseOnlyWhatTheyMay();
