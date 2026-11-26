@@ -139,8 +139,9 @@ class ProjectPagesIT extends IntegrationTest {
                 .andExpect(content().string(containsString("value=\"__new\"")))
                 .andExpect(content().string(containsString("data-goto=\"/facilities?project=" + id + "\"")))
                 .andExpect(content().string(not(containsString("data-section=\"facilities\""))))
-                // a costing that is current can still be made again, because prices and indices move
-                .andExpect(content().string(containsString("id=\"recost\"")));
+                // a costing that is current can still be made again, because prices and indices move: from the header, and nowhere else
+                .andExpect(content().string(containsString("id=\"cost-it-current\"")))
+                .andExpect(content().string(not(containsString("id=\"recost\""))));
     }
 
     @Test
@@ -225,7 +226,7 @@ class ProjectPagesIT extends IntegrationTest {
                         .param("expires", LocalDate.now().plusDays(7).toString()).with(signedIn(sub)).with(csrf()))
                 .andExpect(redirectedUrl("/projects/" + id));
         page(sub, id).andExpect(content().string(containsString("id=\"banner-quoted\"")))
-                .andExpect(content().string(not(containsString("id=\"recost\""))))
+                .andExpect(content().string(not(containsString("id=\"cost-it"))))
                 .andExpect(content().string(containsString("id=\"quote-1\"")))
                 .andExpect(content().string(containsString("Kestrel &lt;b&gt;Dawn&lt;/b&gt;")))
                 .andExpect(content().string(not(containsString("<b>Dawn</b>"))))

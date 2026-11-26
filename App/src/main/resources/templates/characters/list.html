@@ -4,7 +4,7 @@
 <body>
 <main class="max-w-6xl mx-auto p-4">
     <div class="flex items-center gap-3 mb-3">
-        <h1 class="text-xl font-semibold" th:text="#{characters.title}">Characters</h1>
+        <h1 class="area-title text-xl font-semibold" th:text="#{characters.title}">Characters</h1>
         <span class="grow"></span>
         <a id="link-character" class="btn btn-primary btn-sm" th:if="${anyFeatureOn}" th:href="@{/characters/link}"
            th:text="#{characters.link}">+ Link a character</a>

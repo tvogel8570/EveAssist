@@ -91,6 +91,8 @@ reviewed with the developer.
 
 **Jita split** (see [Price basis](market-logistics.md#price-basis)) was built afterwards: the project's price basis dropdown offers it as a third choice beside Jita sell and Jita buy.
 
+**The header** of a project stays in view and holds the state, the figures and the action ([UI conventions](../architecture/ui-conventions.md#where-the-user-is), decided 2026-11-26).
+
 **Products section** (decided with the developer on 2026-11-26, from [the mockup](../mockups/sections-and-products.html)): between Settings and Items, open unless the user closed it. A table of the **products**
 with their units, a search that adds one (one unit, fetching the prices it brings in) and a removal that asks first; below it a table of the **parts that can be built**, with the products that use each, the units
 the shown costing's jobs take (dimmed when that costing is out of date, a dash when there is none) and **Build or Buy**, which applies to the part everywhere in the project. **A change is saved as it is made**, with no Save

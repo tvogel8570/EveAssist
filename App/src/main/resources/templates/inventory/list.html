@@ -4,7 +4,7 @@
 <body>
 <main class="max-w-7xl mx-auto p-3 sm:p-4">
     <div class="flex flex-wrap items-center gap-2 mb-3">
-        <h1 class="text-xl font-semibold" th:text="#{inventory.title}">Inventory</h1>
+        <h1 class="area-title text-xl font-semibold" th:text="#{inventory.title}">Inventory</h1>
         <span class="grow"></span>
         <form method="post" th:action="@{/inventory/refresh}">
             <button th:replace="~{fragments/refresh :: button('refresh-assets', #{inventory.refresh})}"></button>

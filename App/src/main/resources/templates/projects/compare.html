@@ -9,7 +9,7 @@
 <main id="compare" class="group/compare max-w-6xl mx-auto p-4" data-view="a" th:attr="data-project=${view.project.value}, data-key=${view.key}">
     <p class="text-sm opacity-70 mb-1"><a class="link" th:href="@{/projects}" th:text="#{projects.title}">Projects</a> ›
         <a class="link" th:href="@{/projects/{id}(id=${view.project.value})}" th:text="${view.projectName}">Project</a> ›</p>
-    <h1 class="text-xl font-semibold" th:text="#{compare.title}">Check against the game</h1>
+    <div class="area-title"><span class="area-kind" th:text="#{kind.project}">Project</span><br><h1 class="text-xl font-semibold" th:text="#{compare.title}">Check against the game</h1></div>
     <p class="text-sm opacity-70 mb-3" th:text="#{compare.intro}">Compare this costing with the game's Industry window.</p>
 
     <div id="not-costed" th:if="${view.costedAt == null}" class="alert alert-warning my-3">

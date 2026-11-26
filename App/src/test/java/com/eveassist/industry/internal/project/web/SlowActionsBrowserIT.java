@@ -110,8 +110,7 @@ class SlowActionsBrowserIT extends IntegrationTest {
     @Test
     void everyWayToCostAndTakingTheMarketPriceAgainWaitVisibly() {
         startAProject();
-        page.click("#delivered-cost > summary");
-        waitsVisibly("#recost");
+        waitsVisibly("#cost-it-current");
 
         // a price to give up: the part is bought, which the test data has no market price for, and one is typed
         page.waitForNavigation(() -> page.click("#buy-1002"));

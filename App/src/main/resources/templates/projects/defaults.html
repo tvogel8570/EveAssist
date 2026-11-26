@@ -4,7 +4,7 @@
 <body>
 <main class="max-w-6xl mx-auto p-4" th:with="cfg=${view.config}, set=${view.config.settings}">
     <p class="mb-1 text-sm"><a class="link" th:href="@{/projects}" th:text="#{projects.title}">Projects</a></p>
-    <h1 class="text-xl font-semibold" th:text="#{defaults.title}">Project defaults</h1>
+    <div class="area-title"><span class="area-kind" th:text="#{kind.project}">Project</span><br><h1 class="text-xl font-semibold" th:text="#{defaults.title}">Project defaults</h1></div>
     <p class="text-sm opacity-70 mb-3" th:text="#{defaults.intro}">A new project starts from these.</p>
 
     <div id="defaults-saved" class="alert alert-success mb-3" th:if="${saved != null}" th:text="#{'defaults.done.' + ${saved}}">Saved</div>

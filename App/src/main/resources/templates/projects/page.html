@@ -2,49 +2,73 @@
 <html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: page(~{::title}, ~{::main})}">
 <head><title th:text="${project.name}">Project</title></head>
 <body>
-<main class="w-full p-4" th:with="v=${project.version}, cfg=${project.config}, set=${project.config.settings}">
+<main class="w-full p-4" data-keep-place th:with="v=${project.version}, cfg=${project.config}, set=${project.config.settings}">
 
     <p class="text-sm opacity-70 mb-1"><a class="link" th:href="@{/projects}" th:text="#{projects.title}">Projects</a> ›</p>
-    <div class="flex flex-wrap items-start gap-3 mb-1">
-        <div class="grow">
-            <h1 class="text-xl font-semibold">
-                <span id="project-name" th:text="${project.name}">Project</span>
-                <span id="archived-badge" th:if="${project.archived}" class="badge badge-ghost badge-sm align-middle ml-1" th:text="#{projects.archived}">Archived</span>
-            </h1>
-            <p class="text-sm opacity-70">
-                <span th:if="${project.sourcePlanName != null}" th:text="#{project.fromPlan(${project.sourcePlanName})}">From plan</span>
-                <span th:text="#{project.started(${@utcTime.format(project.startedAt)})}">started</span>
-            </p>
+    <!--/*
+        What the user needs wherever they are on the page: what this is, its state and figures, why the costing may be out of date, the action
+        that moves it on, and what went wrong with the last change. It stays in view (but not on a narrow screen, where it would take too much),
+        and has the same lines in every state, so that a save does not push the page about.
+    */-->
+    <header id="project-header" class="z-30 -mx-4 mb-3 border-b border-base-300 bg-base-100 px-4 py-2 sm:sticky sm:top-0"
+            th:with="stale=${state == 'costed' and !#lists.isEmpty(reasons)}">
+        <div class="flex flex-wrap items-center gap-3">
+            <div class="area-title grow">
+                <span class="area-kind" th:text="#{kind.project}">Project</span>
+                <h1 class="text-xl font-semibold">
+                    <span id="project-name" th:text="${project.name}">Project</span>
+                    <span id="archived-badge" th:if="${project.archived}" class="badge badge-ghost badge-sm align-middle ml-1" th:text="#{projects.archived}">Archived</span>
+                </h1>
+                <p class="text-xs opacity-70">
+                    <span th:if="${project.sourcePlanName != null}" th:text="#{project.fromPlan(${project.sourcePlanName})}">From plan</span>
+                    <span th:text="#{project.started(${@utcTime.format(project.startedAt)})}">started</span>
+                </p>
+            </div>
+            <!--/* dimmed when the costing they come from is out of date, as the numbers further down are */-->
+            <div id="header-figures" class="hidden gap-5 text-right sm:flex" th:if="${doc != null}" th:classappend="${!#lists.isEmpty(reasons)} ? 'opacity-50'">
+                <div id="header-cost">
+                    <p class="text-xs opacity-70" th:text="#{project.deliveredCost}">Delivered cost</p>
+                    <p class="num text-lg font-bold" th:text="${#numbers.formatDecimal(doc.deliveredCost, 1, 'COMMA', 0, 'POINT')} + ' ISK'">1 ISK</p>
+                </div>
+                <div id="header-quote" th:if="${doc.quote != null}">
+                    <p class="text-xs opacity-70" th:text="#{project.quote}">Quote</p>
+                    <p class="num text-lg font-bold" th:text="${#numbers.formatDecimal(doc.quote.price, 1, 'COMMA', 0, 'POINT')} + ' ISK'">1 ISK</p>
+                </div>
+            </div>
+            <span id="state-badge" class="badge" th:classappend="${state == 'draft'} ? 'badge-warning' : (${state == 'costed'} ? 'badge-info' : (${state == 'quoted'} ? 'badge-success' : 'badge-error'))"
+                  th:text="#{'projects.state.' + ${state}}">Draft</span>
+            <span id="out-of-date-badge" th:if="${!#lists.isEmpty(reasons)}" class="badge badge-warning badge-outline" th:text="#{projects.outOfDate}">Out of date</span>
+            <th:block th:replace="~{projects/fragments :: projectActions(${project.id.value}, ${project.name}, ${project.archived}, 'project', 'table', false)}"></th:block>
+            <form method="post" data-busy th:if="${!locked}" th:action="@{/projects/{id}/cost(id=${project.id.value})}">
+                <button class="btn btn-sm" type="submit" th:id="${state == 'draft' or stale} ? 'cost-it' : 'cost-it-current'"
+                        th:classappend="${state == 'draft' or stale} ? 'btn-primary' : 'btn-outline'"
+                        th:text="${state == 'draft'} ? #{project.costIt} : #{project.costAgain}">Cost it</button>
+            </form>
+            <form method="post" th:if="${locked and latestQuote != null}"
+                  th:action="@{/projects/{id}/quotes/{n}/new-version(id=${project.id.value}, n=${latestQuote.number})}">
+                <input type="hidden" name="expectedVersion" th:value="${v}">
+                <button id="new-version-header" class="btn btn-sm btn-primary" type="submit" th:text="#{project.newVersion}">New version</button>
+            </form>
         </div>
-        <span id="state-badge" class="badge" th:classappend="${state == 'draft'} ? 'badge-warning' : (${state == 'costed'} ? 'badge-info' : (${state == 'quoted'} ? 'badge-success' : 'badge-error'))"
-              th:text="#{'projects.state.' + ${state}}">Draft</span>
-        <span id="out-of-date-badge" th:if="${!#lists.isEmpty(reasons)}" class="badge badge-warning badge-outline" th:text="#{projects.outOfDate}">Out of date</span>
-        <th:block th:replace="~{projects/fragments :: projectActions(${project.id.value}, ${project.name}, ${project.archived}, 'project', 'table', false)}"></th:block>
-    </div>
 
-    <!--/* what went wrong with the last change, and what happened that needs saying */-->
-    <div id="error" th:if="${error != null}" class="alert alert-error my-3" role="alert"><span th:text="#{'project.error.' + ${error}}">Error</span></div>
-    <div id="prices-problem" th:if="${pricesProblem != null}" class="alert alert-warning my-3"><span th:text="#{project.pricesProblem}">Prices</span></div>
-    <div id="facilities-changed" th:if="${facilitiesChanged != null}" class="alert alert-info my-3"><span th:text="#{project.facilitiesChanged}">Facilities</span></div>
-
-    <!--/* one banner for the state the costing is in, with the button that moves it on */-->
-    <div id="banner-uncosted" th:if="${state == 'draft'}" class="alert alert-warning my-3">
-        <span th:text="#{project.banner.uncosted}">Not costed yet.</span>
-        <form method="post" data-busy th:action="@{/projects/{id}/cost(id=${project.id.value})}"><button id="cost-it" class="btn btn-primary btn-sm" type="submit" th:text="#{project.costIt}">Cost it</button></form>
-    </div>
-    <div id="banner-stale" th:if="${state == 'costed' and !#lists.isEmpty(reasons)}" class="alert alert-warning my-3">
-        <div class="grow">
-            <p th:text="#{project.banner.stale}">This costing may be out of date.</p>
-            <ul class="text-sm list-disc ml-5"><li th:each="reason : ${reasons}" th:text="#{'project.stale.' + ${reason.name()}}">Reason</li></ul>
+        <!--/* one line for the state the costing is in */-->
+        <p id="banner-uncosted" class="text-sm text-warning" th:if="${state == 'draft'}" th:text="#{project.banner.uncosted}">Not costed yet.</p>
+        <div id="banner-stale" class="flex flex-wrap gap-x-2 text-sm text-warning" th:if="${stale}">
+            <span th:text="#{project.banner.stale}">This costing may be out of date.</span>
+            <span th:each="reason : ${reasons}" th:text="#{'project.stale.' + ${reason.name()}}">Reason</span>
         </div>
-        <form method="post" data-busy th:action="@{/projects/{id}/cost(id=${project.id.value})}"><button id="cost-it" class="btn btn-primary btn-sm" type="submit" th:text="#{project.costAgain}">Cost it again</button></form>
-    </div>
-    <div id="banner-quoted" th:if="${state == 'quoted'}" class="alert alert-success my-3">
-        <span th:text="#{project.banner.quoted(${latestQuote.number}, ${@utcTime.format(latestQuote.issuedAt)})}">Quoted</span>
-    </div>
-    <div id="banner-expired" th:if="${state == 'expired'}" class="alert alert-error my-3">
-        <span th:text="#{project.banner.expired(${@utcTime.format(latestQuote.expiresAt)})}">Expired</span>
-    </div>
+        <p id="costed-line" class="text-sm opacity-70" th:if="${state == 'costed' and !stale}"
+           th:text="#{project.costedAt(${@utcTime.format(stored.costedAt)}, ${@utcTime.format(stored.pricesAsOf)})}">Costed</p>
+        <p id="banner-quoted" class="text-sm text-success" th:if="${state == 'quoted'}"
+           th:text="#{project.banner.quoted(${latestQuote.number}, ${@utcTime.format(latestQuote.issuedAt)})}">Quoted</p>
+        <p id="banner-expired" class="text-sm text-error" th:if="${state == 'expired'}"
+           th:text="#{project.banner.expired(${@utcTime.format(latestQuote.expiresAt)})}">Expired</p>
+
+        <!--/* what went wrong with the last change, and what happened that needs saying */-->
+        <div id="error" th:if="${error != null}" class="alert alert-error mt-2 py-2" role="alert"><span th:text="#{'project.error.' + ${error}}">Error</span></div>
+        <div id="prices-problem" th:if="${pricesProblem != null}" class="alert alert-warning mt-2 py-2"><span th:text="#{project.pricesProblem}">Prices</span></div>
+        <div id="facilities-changed" th:if="${facilitiesChanged != null}" class="alert alert-info mt-2 py-2"><span th:text="#{project.facilitiesChanged}">Facilities</span></div>
+    </header>
 
     <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_24rem] items-start">
         <div class="min-w-0 space-y-4">
@@ -259,13 +283,6 @@
                 <span th:replace="~{fragments/chevron :: chevron}"></span>
                 <h2 class="font-semibold grow" th:text="#{project.deliveredCost}">Delivered cost</h2>
             </summary>
-                <div class="flex justify-end" th:if="${!locked}">
-                    <!--/* always there on a draft: a costing is only made on request, and prices and the cost index move */-->
-                    <form method="post" data-busy th:action="@{/projects/{id}/cost(id=${project.id.value})}">
-                        <input type="hidden" name="anchor" value="delivered-cost">
-                        <button id="recost" class="btn btn-xs btn-outline" type="submit" th:text="#{project.costAgain}">Cost it again</button>
-                    </form>
-                </div>
                 <table class="table table-sm">
                     <tbody>
                     <tr th:each="line : ${doc.lines}">
@@ -284,7 +301,7 @@
         </div>
 
         <!--/* ---- the quote card: only the user sees it ---- */-->
-        <div class="min-w-0 space-y-4 lg:sticky lg:top-4">
+        <div class="min-w-0 space-y-4 lg:sticky lg:top-[calc(var(--header-height,0px)+1rem)]">
             <div id="quote-card" class="card bg-base-200 p-4 gap-3">
                 <div class="flex items-center gap-2">
                     <h2 class="font-semibold grow" th:text="#{project.quote}">Quote</h2>

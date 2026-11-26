@@ -5,7 +5,7 @@
 <main class="max-w-7xl mx-auto p-3 sm:p-4">
     <div id="blueprints-page" th:attr="data-drawer-open=${drawerOpen}">
         <div class="flex flex-wrap items-center gap-2 mb-1">
-            <h1 class="text-xl font-semibold" th:text="#{blueprints.title}">Blueprints</h1>
+            <h1 class="area-title text-xl font-semibold" th:text="#{blueprints.title}">Blueprints</h1>
             <span class="grow"></span>
             <form method="post" th:action="@{/blueprints/refresh}">
                 <button th:replace="~{fragments/refresh :: button('refresh-blueprints', #{blueprints.refresh})}"></button>

@@ -74,6 +74,47 @@ html.busy * {
   cursor: wait !important;
 }
 
+/* Where the user is: the menu entry of the page's area, and the page's title, in the area's colour. Plans and projects look alike, so they differ
+   by this and by the word above the title. */
+body[data-area="plans"] { --area: var(--color-info); }
+body[data-area="projects"] { --area: var(--color-accent); }
+body[data-area="facilities"], body[data-area="blueprint-copies"] { --area: #a78bfa; }
+body[data-area="inventory"], body[data-area="blueprints"] { --area: var(--color-success); }
+body[data-area="characters"] { --area: #f472b6; }
+
+.navbar a[aria-current="page"] {
+  color: var(--area);
+  font-weight: 700;
+  background: color-mix(in oklab, var(--area) 18%, transparent);
+  border-width: 0 0 3px;
+  border-style: solid;
+  border-color: var(--area);
+  border-radius: .375rem .375rem 0 0;
+}
+
+/* A part of a project's page that an address names (#settings) is not left under the header that stays in view. */
+[data-keep-place] [id] {
+  scroll-margin-top: calc(var(--header-height, 0px) + .5rem);
+}
+
+.area-title {
+  border-left: 4px solid var(--area, transparent);
+  padding-left: .75rem;
+}
+
+.area-kind {
+  display: inline-block;
+  margin-bottom: .125rem;
+  padding: 0 .45rem;
+  border: 1px solid var(--area);
+  border-radius: .25rem;
+  color: var(--area);
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
 /* The triangle of everything that opens and closes (fragments/chevron.html): in a circle, in the accent colour. */
 .chevron {
   display: inline-flex;

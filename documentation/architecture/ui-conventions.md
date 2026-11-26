@@ -76,3 +76,14 @@ Decided with the developer on 2026-11-26.
 An action that can wait on ESI says so: a form with `data-busy` gets a **wait cursor**, its choices **disabled** (those of its `data-busy-group`) and a spinner on the chosen one, and a second submit is dropped. It is
 used for **adding a product** (plan, try-a-plan, project), **costing** a project (also *Create and cost*), **taking the market price again** and **refreshing the contracts**.
 
+## Where the user is
+
+Decided with the developer on 2026-11-26, from [the mockup](../mockups/navigation-and-project-header.html).
+
+- **The menu** marks the page's area: the entry's text and underline in the **area's colour**, with a tint (`PageArea` tells the layout the area from the address; the colours are in `app.css`). Plans are blue,
+  projects the accent colour, facilities and blueprint copies violet, inventory and blueprints green, characters pink. Colour is never the only sign: the entry is also bold, underlined and marked as the current page.
+- **The title** has a stripe in that colour, and the pages of a plan or a project say **Plan** or **Project** above it, because the two look alike.
+- **A project's header stays in view** (not on a narrow screen): name, delivered cost and quote (dimmed when out of date), state, *Archive* and *Delete*, the action that moves it on (*Cost it*, *Cost it again* or *New version*),
+  one line for the costing's state, and what went wrong with the last change. It replaces the banners that appeared and went.
+- **A save keeps the place** on a project's page (`data-keep-place`), instead of going to the top of the page or of the saved section.
+

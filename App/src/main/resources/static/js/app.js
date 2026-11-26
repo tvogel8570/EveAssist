@@ -182,6 +182,60 @@
         }
     });
 
+    // The height of a project's header, which stays in view, so that what else stays in view (the quote card) and what an address leads to are
+    // kept below it.
+    const header = document.getElementById('project-header');
+    if (header) {
+        const tellHeight = () => document.documentElement.style.setProperty('--header-height',
+            getComputedStyle(header).position === 'sticky' ? `${header.offsetHeight}px` : '0px');
+        new ResizeObserver(tellHeight).observe(header);
+        tellHeight();
+    }
+
+    // Inside data-keep-place a save comes back to the same place on the page. As a form is sent, the first section still in view is noted with
+    // where it is in the window; when the same address is drawn again, the page is scrolled so that the section is there again, even if
+    // something above it appeared or went. It is kept for this tab only, and briefly. The browser first goes to the address's own #part, so
+    // this waits until the page has loaded.
+    const PLACE_KEY = 'eveassist.place';
+
+    window.addEventListener('submit', event => {
+        const area = event.target.closest('[data-keep-place]');
+        // a refused or repeated submit goes nowhere (heard last, on the window, so that this is already decided)
+        if (!area || event.defaultPrevented) {
+            return;
+        }
+        const covered = header && getComputedStyle(header).position === 'sticky' ? header.getBoundingClientRect().bottom : 0;
+        const section = [...area.querySelectorAll('details[id]:not(.dropdown)')].find(one => one.getBoundingClientRect().bottom > covered);
+        try {
+            sessionStorage.setItem(PLACE_KEY, JSON.stringify({
+                path: location.pathname, y: window.scrollY, id: section?.id, top: section?.getBoundingClientRect().top, at: Date.now()}));
+        } catch (ignored) {
+            // the page then opens where the address says
+        }
+    });
+
+    let place = null;
+    try {
+        place = JSON.parse(sessionStorage.getItem(PLACE_KEY));
+        sessionStorage.removeItem(PLACE_KEY);
+    } catch (ignored) {
+        // nothing was kept
+    }
+    if (place && place.path === location.pathname && Date.now() - place.at < 60000) {
+        window.addEventListener('load', () => requestAnimationFrame(() => {
+            // where the header does not stay in view, an error is only seen at the top, so the page is left where the browser put it
+            if (document.getElementById('error') && header && getComputedStyle(header).position !== 'sticky') {
+                return;
+            }
+            const section = place.id && document.getElementById(place.id);
+            if (section) {
+                window.scrollBy(0, section.getBoundingClientRect().top - place.top);
+            } else {
+                window.scrollTo(0, place.y);
+            }
+        }));
+    }
+
     // A form that says data-autosave is saved when a field of it is left changed, with no button.
     document.addEventListener('change', event => {
         const form = event.target.form;

@@ -3,7 +3,7 @@
 <head><title th:text="#{plans.title}">Plans</title></head>
 <body>
 <main class="max-w-6xl mx-auto p-4">
-    <h1 class="text-xl font-semibold mb-3" th:text="#{plans.title}">Plans</h1>
+    <h1 class="area-title text-xl font-semibold mb-3" th:text="#{plans.title}">Plans</h1>
     <form class="flex gap-2 mb-4 max-w-md" method="post" th:action="@{/plans}">
         <input id="new-plan-name" class="input input-sm grow" name="name" required maxlength="100" pattern=".*\S.*"
                autocomplete="off"
