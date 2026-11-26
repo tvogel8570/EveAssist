@@ -448,7 +448,7 @@ Notes on reading the window:
 
 ## 6. Code and tests
 
-In the `industry` module, `com.eveassist.industry.internal.domain`:
+In the `industry` module, `com.eveassist.industry.internal.costing.domain`:
 
 | Class | What it holds |
 |---|---|

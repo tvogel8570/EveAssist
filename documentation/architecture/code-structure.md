@@ -48,17 +48,26 @@ eveassist/
 ```
 
 **A large module is divided by feature, then by layer** (`internal/<feature>/<layer>`). The developer chose this on 2026-11-26, because they look for code by
-feature and `industry/internal/application` held about a hundred files. `facility` was moved first, as a trial; the rest of `industry` is still directly under `internal`.
+feature and `industry/internal/application` held about a hundred files. `industry` is divided this way:
 
 ```
 industry/internal/
-    facility/
-        domain/  application/  persistence/  web/
-    domain/  application/  persistence/  web/      ← not yet moved
+    costing/    domain/                                         calculations that plans and projects share
+    facility/   domain/  application/  persistence/  web/
+    plan/       domain/  application/  persistence/  web/
+    tryplan/    application/  web/                              trying a plan without an account
+    project/    domain/  application/  persistence/  web/
+        costing/    domain/  application/  persistence/        running and storing a costing, the trace, comparisons
+        quote/      application/  persistence/
+        defaults/   application/  persistence/  web/           the account's project defaults
+    shared/     domain/  application/  web/
 ```
 
-The architecture rules find a layer in both places. Each adapter package (`web`, `persistence`) carries its own jMolecules `package-info.java`. Modulith guards the
-outside of `industry` only: nothing yet stops one feature from using another's classes.
+Where this document says `internal/application`, `internal/web` and so on, it means that layer's package, directly under `internal` in a module that is not divided
+and under the feature in one that is. The architecture rules find a layer in both places. Each adapter package (`web`, `persistence`) carries its own jMolecules
+`package-info.java`. Modulith guards the outside of `industry` only: **no rule yet limits which feature may use another's classes.** On 2026-11-26 `shared` used no
+feature, `costing` only itself, `facility` and `plan` only `costing` and `shared` (`facility` not even `shared`), nothing used `tryplan`, and `project` and its
+sub-features used each other both ways.
 
 - The module's base package is its public API: services, the plain objects they take and return, and its events.
 - The plain objects and events are Java records: immutable snapshots with no business logic (see [Records](#records)).

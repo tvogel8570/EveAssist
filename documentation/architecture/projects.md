@@ -50,8 +50,8 @@ project ─┬─ product, bought part, item, skill, price           the working
 facility belongs to the account and is used by projects
 ```
 
-Where it lives: the `industry` module, `internal/domain` (`Project` as an `@AggregateRoot`, with `ProjectId` public like `PlanId`),
-`internal/application` (use cases and the repository port), `internal/persistence` (JDBC). The module may use `identity`, `sde` and
+Where it lives: the `industry` module, under `internal/project`: `domain` (`Project` as an `@AggregateRoot`, with `ProjectId` public like `PlanId`),
+`application` (use cases and the repository port), `persistence` (JDBC) and `web`, with the sub-features `costing`, `quote` and `defaults` laid out the same way. The module may use `identity`, `sde` and
 `market` today. Reading owned blueprints needs `inventory` and is step 5, so this step types them.
 
 ## Tables
@@ -113,7 +113,7 @@ the case), so the JSON shapes live in `persistence`.
 
 ## Use cases
 
-Primary ports in `internal/application`, each `@Transactional`, each taking the `Viewer` first, as the plan's do. An edit of a quoted project is
+Primary ports in the `application` packages under `internal/project`, each `@Transactional`, each taking the `Viewer` first, as the plan's do. An edit of a quoted project is
 refused with `ProjectLockedException`.
 
 | Use case | What it does | Result |

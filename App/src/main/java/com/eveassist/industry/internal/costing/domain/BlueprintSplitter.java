@@ -1,6 +1,5 @@
 package com.eveassist.industry.internal.costing.domain;
 
-import com.eveassist.industry.internal.project.costing.domain.ProjectCosting;
 import com.eveassist.sde.Recipe;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -20,7 +19,7 @@ import java.util.List;
  * cut into the fewest jobs that fit {@link JobCosting#maximumRuns} (30 days) and, when the policy has one, the time bound.
  * With only the 30-day limit the jobs are full and the remainder is last. Where a time bound is what limits the jobs, the
  * runs are divided evenly so the jobs finish together; a bound that limits nothing changes nothing. Every job rounds its materials up on its own, so more jobs can use a little more material.
- * If the blueprints cannot cover the runs the jobs make too few units and {@link ProjectCosting} reports it.
+ * If the blueprints cannot cover the runs the jobs make too few units and {@code ProjectCosting} reports it.
  */
 public final class BlueprintSplitter {
 
