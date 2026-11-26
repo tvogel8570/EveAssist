@@ -221,6 +221,11 @@ public class IndustryData {
         return timeSkills.getOrDefault(product, List.of());
     }
 
+    /** Every skill that shortens the time of some product's blueprint, each once. */
+    public List<TimeSkill> allTimeSkills() {
+        return timeSkills.values().stream().flatMap(List::stream).distinct().toList();
+    }
+
     public Set<TypeId> materialTypes() {
         return recipes.values().stream()
                 .flatMap(recipe -> recipe.materials().stream())

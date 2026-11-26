@@ -130,12 +130,14 @@ Decided with the developer on 2026-11-17, and made exact on 2026-11-18 (the lock
 
 ### Project defaults
 
-Decided with the developer on 2026-11-25 ([issue #64](https://github.com/tvogel8570/EveAssist/issues/64)). **Stored and used by new projects** (built 2026-11-26); **the page to edit them is not built yet.**
+Decided with the developer on 2026-11-25 ([issue #64](https://github.com/tvogel8570/EveAssist/issues/64)). **Built** 2026-11-26.
 
 - Each account keeps **project defaults**, which a new project starts from and can change for itself: **every project setting except the buyer and the note** (price basis, hauling rate, contract fee,
   time value, quote step, quote mode, margin, premium, split policy and longest job, default facility, Industry, Advanced Industry, implant) and a level for **each time-saving skill any blueprint requires**.
-- They are edited on **one page of their own**, linked from the Projects list and from the account page. A project has no "save as my defaults" button. The page can reset to the built-in values.
-- The skills are all listed, grouped, in a section that is closed by default.
+- They are edited on **one page of their own** (`/project-defaults`), linked from the Projects list and from the account page. A project has no "save as my defaults" button. The page can reset to the built-in values, after asking.
+- Layout (the developer chose it from [the mockup](../mockups/project-defaults.html) on 2026-11-26): **every setting visible**, grouped as Costing, Job splitting and Quote, then a **Builder** block, with **one Save** in a bar that stays in view. The
+  skills are all listed in a section of the Builder block that is closed by default, **under the game's skill groups**, with **Set all** for a group.
+- **Split policy and longest job** (in days) are also in a project's Settings, so a project can change what it started with. The mockup's character states are **later work**.
 - **Changing a default does not change a project that exists.** A project owns its values once it is started, as it owns its prices after copying a plan.
 - Some of these, the skills especially, are replaced when a character is assigned to a project.
 

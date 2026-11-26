@@ -74,7 +74,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 class ProjectPageController {
 
     private static final Pattern PROJECT_ADDRESS = Pattern.compile("/projects/([0-9a-fA-F-]{36})");
-    private static final String SKILL_PREFIX = "skill-";
+    static final String SKILL_PREFIX = "skill-";
 
     private final ProjectQueries queries;
     private final ProjectEditing editing;
@@ -122,6 +122,7 @@ class ProjectPageController {
         project.quotes().forEach(quote -> exports.put(quote.number(), quoteExport.of(viewer, new ProjectId(id), quote.number())));
         model.addAttribute("exports", exports);
         model.addAttribute("project", project);
+        model.addAttribute("maxJobDays", ConfigForm.days(project.config().defaultPolicy().maxJobSeconds()));
         model.addAttribute("state", state);
         model.addAttribute("locked", locked);
         model.addAttribute("stored", stored);
@@ -170,6 +171,9 @@ class ProjectPageController {
             changed = form.applyTo(details.config(), skills);
         } catch (IllegalArgumentException invalid) {
             throw new InvalidFormException(invalid);
+        }
+        if (form.expectedVersion() == null) {
+            throw new InvalidFormException(new IllegalArgumentException("The version of the project is missing"));
         }
         editing.setConfig(viewer, new SetProjectConfigCommand(project, changed, form.expectedVersion()));
         return back(id, anchor);

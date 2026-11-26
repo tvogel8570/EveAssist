@@ -730,5 +730,25 @@ class ProjectPagesIT extends IntegrationTest {
         return jdbc.sql("SELECT s.skill_type_id, s.level FROM project_skill s JOIN project p ON p.id = s.project_id WHERE p.public_id = :id")
                 .param("id", id).query((rs, n) -> rs.getInt(1) + " " + rs.getInt(2)).list();
     }
+
+    @Test
+    void theSettingsChooseHowRunsAreSplitAndTheLongestJob() throws Exception {
+        var sub = newSub();
+        var id = quotable(sub);
+        page(sub, id).andExpect(content().string(containsString("name=\"splitStrategy\"")))
+                .andExpect(content().string(containsString("name=\"maxJobDays\" value=\"\"")));
+
+        mvc.perform(post("/projects/" + id + "/config").param("expectedVersion", String.valueOf(versionOf(id)))
+                .param("splitStrategy", "COPIES_FIRST").param("maxJobDays", "1.5").with(signedIn(sub)).with(csrf()))
+                .andExpect(redirectedUrl("/projects/" + id));
+        // a change of something else keeps them, as the quote card's form does not send them
+        mvc.perform(post("/projects/" + id + "/config").param("expectedVersion", String.valueOf(versionOf(id)))
+                .param("marginPercent", "10").with(signedIn(sub)).with(csrf()));
+
+        assertThat(jdbc.sql("SELECT split_strategy || ' ' || max_job_seconds FROM project WHERE public_id = :id").param("id", id)
+                .query(String.class).single()).isEqualTo("copies_first 129600");
+        page(sub, id).andExpect(content().string(containsString("name=\"maxJobDays\" value=\"1.5\"")))
+                .andExpect(content().string(containsString("id=\"banner-stale\"")));
+    }
 }
 

@@ -79,6 +79,13 @@
                                     th:selected="${cfg.defaultFacility != null and cfg.defaultFacility.value == facility.id.value}">Facility</option>
                             <option value="__new" th:attr="data-goto=@{/facilities(project=${project.id.value})}" th:text="#{project.addFacilityOption}">Add a new facility…</option>
                         </select></label>
+                    <label class="form-control"><span class="text-xs opacity-70" th:text="#{project.splitStrategy}">How runs are split</span>
+                        <select class="select select-sm w-full" name="splitStrategy" th:disabled="${locked}">
+                            <option value="LEAST_COST" th:selected="${cfg.defaultPolicy.strategy.name() == 'LEAST_COST'}" th:text="#{project.split.leastCost}">Least cost</option>
+                            <option value="COPIES_FIRST" th:selected="${cfg.defaultPolicy.strategy.name() == 'COPIES_FIRST'}" th:text="#{project.split.copiesFirst}">Copies first</option>
+                        </select></label>
+                    <label class="form-control"><span class="text-xs opacity-70" th:text="#{project.longestJob}">Longest job, days</span>
+                        <input class="input input-sm w-full" type="number" step="any" min="0" name="maxJobDays" th:value="${maxJobDays}" th:placeholder="#{project.noLimit}" th:disabled="${locked}"></label>
                     <label class="form-control"><span class="text-xs opacity-70" th:text="#{project.hauling}">Hauling, ISK per m³</span>
                         <input class="input input-sm w-full" type="number" step="any" min="0" name="iskPerCubicMeter" th:value="${set.iskPerCubicMeter.stripTrailingZeros().toPlainString()}" th:disabled="${locked}"></label>
                     <label class="form-control"><span class="text-xs opacity-70" th:text="#{project.contractFee}">Contract fee, flat</span>

@@ -10,6 +10,7 @@
 <form th:fragment="facilityForm(facility, action, project, prefix)" th:id="${prefix} + '-form'" class="group flex flex-col gap-3" data-track-unsaved
       method="post" th:action="${action}">
     <input type="hidden" name="project" th:value="${project}" th:if="${project != null}">
+    <input type="hidden" name="from" value="defaults" th:if="${fromDefaults}">
     <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <label class="form-control sm:col-span-2"><span class="text-xs opacity-70" th:text="#{facilities.name}">Name</span>
             <input class="input input-sm w-full" name="name" required maxlength="100" autocomplete="off" pattern=".*\S.*"

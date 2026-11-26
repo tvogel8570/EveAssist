@@ -1,5 +1,5 @@
 <!doctype html>
-<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: page(~{::title}, ~{::main})}">
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" th:replace="~{layout :: page(~{::title}, ~{::main})}">
 <head><title th:text="#{account.title}">Your account</title></head>
 <body>
 <main class="max-w-6xl mx-auto p-4">
@@ -12,6 +12,12 @@
         <dt class="opacity-70" th:text="#{account.roles}">Roles</dt>
         <dd id="roles" th:text="${#strings.listJoin(roles, ', ')}">Roles</dd>
     </dl>
+
+    <section id="preferences" class="mt-8 max-w-2xl" sec:authorize="hasRole('USER')">
+        <h2 class="text-lg font-semibold mb-2" th:text="#{account.preferences}">Preferences</h2>
+        <p><a id="account-project-defaults" class="link" th:href="@{/project-defaults}" th:text="#{defaults.title}">Project defaults</a>:
+            <span class="opacity-70" th:text="#{defaults.what}">what a new project starts from.</span></p>
+    </section>
 
     <section id="your-data" class="mt-8 max-w-2xl">
         <h2 class="text-lg font-semibold mb-2" th:text="#{account.data.title}">Your data</h2>

@@ -119,7 +119,7 @@ refused with `ProjectLockedException`.
 | Use case | What it does | Result |
 |---|---|---|
 | `ProjectEditing.start(viewer, planId)` | copies the plan's products, bought parts and prices into a new Draft, with the viewer's default settings | the project id |
-| `ProjectDefaults.of / save / reset(viewer)` | reads, replaces or forgets the account's project defaults. A change reaches no project that exists. In the account's export, and removed with the account | the configuration |
+| `ProjectDefaults.of / view / save / reset(viewer)` | reads (alone or with what its page shows), replaces or forgets the account's project defaults. A change reaches no project that exists. In the account's export, and removed with the account | the configuration |
 | `ProjectEditing.rename`, `archive`, `restore`, `delete` | like the plan's. Rename, archive and restore are allowed in either state, and **none of them changes the version** (the name is not an input of the costing, so a rename leaves a stored costing current). Delete removes the quotes, costings and traces | |
 | `ProjectQuoting.deleteQuote(viewer, projectId, number)` | deletes one quote with its costing and trace (see the rules under Concurrency) | |
 | `ProjectEditing.addProduct`, `removeProduct`, `changeQuantity` | Draft only, with an `expectedVersion`. A product the plan did not have is fine. **Adding fetches, at once, the prices of that product and of everything it needs that the project has no price for**, and leaves every price the project already has as it is. **Removing drops the prices that no remaining product needs**, so adding it back fetches them again at once | the new version |
