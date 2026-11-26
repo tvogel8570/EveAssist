@@ -100,7 +100,7 @@ class JdbcProjectRepositoryIT extends IntegrationTest {
         project.addProduct(SECOND_SHIP, 1);
         project.buyPart(COMPONENT);
         project.setItem(new ProjectItem(HAULER, BlueprintSource.TYPED, 8, 14, new BigDecimal("20000000.50"), facility,
-                new SplitPolicy(SplitStrategy.COPIES_FIRST, 172_800L), Map.of(SKILL, 5, new TypeId(11452), 3)));
+                new SplitPolicy(SplitStrategy.COPIES_FIRST, 172_800L)));
         project.setItem(ProjectItem.typed(SECOND_SHIP));
         project.setPrice(TRITANIUM, new PlanPrice(new BigDecimal("3.89"), new BigDecimal("3.10"), AS_OF));
         project.setPrice(COMPONENT, new PlanPrice(null, new BigDecimal("12.00"), AS_OF));
@@ -109,7 +109,7 @@ class JdbcProjectRepositoryIT extends IntegrationTest {
         project.priceSide(PriceSide.BUY);
         project.defaultPolicy(new SplitPolicy(SplitStrategy.LEAST_COST, null));
         project.defaultFacility(facility);
-        project.builder(new ProjectBuilder(5, 4, new BigDecimal("4")));
+        project.builder(new ProjectBuilder(5, 4, new BigDecimal("4"), Map.of(SKILL, 5, new TypeId(11452), 3)));
         project.buyer("Buyer", "deliver by contract");
 
         assertThat(projects.save(owner, project)).contains(1L);
@@ -125,14 +125,15 @@ class JdbcProjectRepositoryIT extends IntegrationTest {
     }
 
     @Test
-    void aSaveReplacesWhatWasStoredIncludingTheSkillsOfAnItem() {
+    void aSaveReplacesWhatWasStoredIncludingTheBuildersSkills() {
         var owner = viewerFor(newSub());
         var id = newProject(owner);
         var project = projects.find(owner, id).orElseThrow();
         project.addProduct(HAULER, 3);
         project.addProduct(SECOND_SHIP, 1);
         project.buyPart(COMPONENT);
-        project.setItem(new ProjectItem(HAULER, BlueprintSource.TYPED, 10, 20, BigDecimal.ZERO, null, null, Map.of(SKILL, 5)));
+        project.builder(new ProjectBuilder(0, 0, BigDecimal.ZERO, Map.of(SKILL, 5)));
+        project.setItem(ProjectItem.typed(HAULER));
         project.setItem(ProjectItem.typed(SECOND_SHIP));
         project.setPrice(TRITANIUM, new PlanPrice(new BigDecimal("3"), null, AS_OF));
         project.setPrice(PILOTS_MINERAL, new PlanPrice(new BigDecimal("4"), null, AS_OF));
@@ -142,7 +143,7 @@ class JdbcProjectRepositoryIT extends IntegrationTest {
         smaller.removeProduct(SECOND_SHIP);
         smaller.buildPart(COMPONENT);
         smaller.keepItemsFor(Set.of(HAULER));
-        smaller.setItem(new ProjectItem(HAULER, BlueprintSource.TYPED, 10, 20, BigDecimal.ZERO, null, null, Map.of(new TypeId(11452), 2)));
+        smaller.builder(new ProjectBuilder(0, 0, BigDecimal.ZERO, Map.of(new TypeId(11452), 2)));
         smaller.keepPricesFor(Set.of(TRITANIUM));
         projects.save(owner, smaller);
 
@@ -150,9 +151,9 @@ class JdbcProjectRepositoryIT extends IntegrationTest {
         assertThat(loaded.products()).containsExactly(new PlanProduct(HAULER, 3));
         assertThat(loaded.boughtParts()).isEmpty();
         assertThat(loaded.items()).containsOnlyKeys(HAULER);
-        assertThat(loaded.items().get(HAULER).skillLevels()).containsExactly(Map.entry(new TypeId(11452), 2));
+        assertThat(loaded.config().builder().skillLevels()).containsExactly(Map.entry(new TypeId(11452), 2));
         assertThat(loaded.prices()).containsOnlyKeys(TRITANIUM);
-        assertThat(count("project_item_skill", id)).isEqualTo(1);
+        assertThat(count("project_skill", id)).isEqualTo(1);
     }
 
     @Test
@@ -235,7 +236,7 @@ class JdbcProjectRepositoryIT extends IntegrationTest {
         var asDefault = projects.find(owner, id).orElseThrow();
         asDefault.defaultFacility(foreign);
         var onAnItem = projects.find(owner, id).orElseThrow();
-        onAnItem.setItem(new ProjectItem(HAULER, BlueprintSource.TYPED, 10, 20, BigDecimal.ZERO, foreign, null, Map.of()));
+        onAnItem.setItem(new ProjectItem(HAULER, BlueprintSource.TYPED, 10, 20, BigDecimal.ZERO, foreign, null));
 
         assertThatThrownBy(() -> projects.save(owner, asDefault)).isInstanceOf(FacilityNotFoundException.class);
         assertThatThrownBy(() -> projects.save(owner, onAnItem)).isInstanceOf(FacilityNotFoundException.class);
@@ -287,7 +288,8 @@ class JdbcProjectRepositoryIT extends IntegrationTest {
         var project = projects.find(owner, id).orElseThrow();
         project.addProduct(HAULER, 1);
         project.buyPart(COMPONENT);
-        project.setItem(new ProjectItem(HAULER, BlueprintSource.TYPED, 10, 20, BigDecimal.ZERO, null, null, Map.of(SKILL, 1)));
+        project.builder(new ProjectBuilder(0, 0, BigDecimal.ZERO, Map.of(SKILL, 1)));
+        project.setItem(ProjectItem.typed(HAULER));
         project.setPrice(TRITANIUM, new PlanPrice(new BigDecimal("3"), null, AS_OF));
         projects.save(owner, project);
 

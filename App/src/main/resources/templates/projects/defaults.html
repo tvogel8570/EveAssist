@@ -1,0 +1,126 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: page(~{::title}, ~{::main})}">
+<head><title th:text="#{defaults.title}">Project defaults</title></head>
+<body>
+<main class="max-w-6xl mx-auto p-4" th:with="cfg=${view.config}, set=${view.config.settings}">
+    <p class="mb-1 text-sm"><a class="link" th:href="@{/projects}" th:text="#{projects.title}">Projects</a></p>
+    <h1 class="text-xl font-semibold" th:text="#{defaults.title}">Project defaults</h1>
+    <p class="text-sm opacity-70 mb-3" th:text="#{defaults.intro}">A new project starts from these.</p>
+
+    <div id="defaults-saved" class="alert alert-success mb-3" th:if="${saved != null}" th:text="#{'defaults.done.' + ${saved}}">Saved</div>
+    <div id="defaults-error" class="alert alert-error mb-3" th:if="${error != null}" th:text="#{'defaults.error.' + ${error}}">Refused</div>
+    <div id="never-saved" class="alert mb-3" th:unless="${view.saved}" th:text="#{defaults.neverSaved}">These are the built-in values.</div>
+
+    <form id="defaults-form" class="group flex flex-col gap-3" data-track-unsaved method="post" th:action="@{/project-defaults}">
+        <div class="rounded-box bg-base-200 p-4 flex flex-col gap-4">
+            <fieldset class="flex flex-col gap-2">
+                <legend class="text-xs font-semibold uppercase opacity-70" th:text="#{defaults.costing}">Costing</legend>
+                <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    <label class="form-control"><span class="text-xs opacity-70" th:text="#{project.priceBasis}">Price basis</span>
+                        <select class="select select-sm w-full" name="priceSide">
+                            <option value="SELL" th:selected="${cfg.priceSide.name() == 'SELL'}" th:text="#{project.basis.sell}">Jita sell</option>
+                            <option value="BUY" th:selected="${cfg.priceSide.name() == 'BUY'}" th:text="#{project.basis.buy}">Jita buy</option>
+                            <option value="SPLIT" th:selected="${cfg.priceSide.name() == 'SPLIT'}" th:title="#{project.basis.splitHint}" th:text="#{project.basis.split}">Jita split</option>
+                        </select></label>
+                    <label class="form-control"><span class="text-xs opacity-70" th:text="#{project.defaultFacility}">Default facility</span>
+                        <select id="default-facility" class="select select-sm w-full" name="defaultFacility">
+                            <option value="" th:text="#{project.noFacility}">None</option>
+                            <option th:each="facility : ${view.facilities}" th:value="${facility.id.value}" th:text="${facility.name}"
+                                    th:selected="${cfg.defaultFacility != null and cfg.defaultFacility.value == facility.id.value}">Facility</option>
+                            <option value="__new" th:attr="data-goto=@{/facilities(from='defaults')}" th:text="#{project.addFacilityOption}">Add a new facility…</option>
+                        </select></label>
+                    <label class="form-control"><span class="text-xs opacity-70" th:text="#{project.hauling}">Hauling, ISK per m³</span>
+                        <input class="input input-sm w-full" type="number" step="any" min="0" required name="iskPerCubicMeter" th:value="${set.iskPerCubicMeter.stripTrailingZeros().toPlainString()}"></label>
+                    <label class="form-control"><span class="text-xs opacity-70" th:text="#{project.contractFee}">Contract fee, flat</span>
+                        <input class="input input-sm w-full" type="number" step="any" min="0" required name="contractFee" th:value="${set.contractFee.stripTrailingZeros().toPlainString()}"></label>
+                    <label class="form-control"><span class="text-xs opacity-70" th:text="#{project.timeValue}">Time value, ISK per hour</span>
+                        <input class="input input-sm w-full" type="number" step="any" min="0" required name="iskPerHour" th:value="${set.iskPerHour.stripTrailingZeros().toPlainString()}"></label>
+                </div>
+            </fieldset>
+            <fieldset class="flex flex-col gap-2">
+                <legend class="text-xs font-semibold uppercase opacity-70" th:text="#{defaults.splitting}">Job splitting</legend>
+                <div class="grid gap-3 sm:grid-cols-2">
+                    <label class="form-control"><span class="text-xs opacity-70" th:text="#{project.splitStrategy}">How runs are split</span>
+                        <select class="select select-sm w-full" name="splitStrategy">
+                            <option value="LEAST_COST" th:selected="${cfg.defaultPolicy.strategy.name() == 'LEAST_COST'}" th:text="#{project.split.leastCost}">Least cost</option>
+                            <option value="COPIES_FIRST" th:selected="${cfg.defaultPolicy.strategy.name() == 'COPIES_FIRST'}" th:text="#{project.split.copiesFirst}">Copies first</option>
+                        </select></label>
+                    <label class="form-control"><span class="text-xs opacity-70" th:text="#{project.longestJob}">Longest job, days</span>
+                        <input class="input input-sm w-full" type="number" step="any" min="0" name="maxJobDays" th:value="${maxJobDays}" th:placeholder="#{project.noLimit}"></label>
+                </div>
+            </fieldset>
+            <fieldset class="flex flex-col gap-2">
+                <legend class="text-xs font-semibold uppercase opacity-70" th:text="#{defaults.quote}">Quote</legend>
+                <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    <label class="form-control"><span class="text-xs opacity-70" th:text="#{defaults.quoteMode}">Quote mode</span>
+                        <select class="select select-sm w-full" name="mode">
+                            <option value="MARGIN" th:selected="${set.mode.name() == 'MARGIN'}" th:text="#{project.modeMargin}">Cost plus margin</option>
+                            <option value="MARKET" th:selected="${set.mode.name() == 'MARKET'}" th:text="#{project.modeMarket}">Market-referenced</option>
+                        </select></label>
+                    <label class="form-control"><span class="text-xs opacity-70" th:text="#{defaults.margin}">Margin, %</span>
+                        <input class="input input-sm w-full" type="number" step="any" min="0" max="99.9999" required name="marginPercent" th:value="${set.marginPercent.stripTrailingZeros().toPlainString()}"></label>
+                    <label class="form-control"><span class="text-xs opacity-70" th:text="#{defaults.premium}">Premium on market, %</span>
+                        <input class="input input-sm w-full" type="number" step="any" required name="premiumPercent" th:value="${set.premiumPercent.stripTrailingZeros().toPlainString()}"></label>
+                    <label class="form-control"><span class="text-xs opacity-70" th:text="#{project.quoteStep}">Round the quote up to</span>
+                        <input class="input input-sm w-full" type="number" step="any" min="0" required name="quoteStep" th:value="${set.quoteStep.stripTrailingZeros().toPlainString()}"></label>
+                </div>
+            </fieldset>
+        </div>
+
+        <div class="rounded-box bg-base-200 p-4 flex flex-col gap-3">
+            <h2 class="text-xs font-semibold uppercase opacity-70" th:text="#{defaults.builder}">Builder</h2>
+            <div class="grid gap-3 sm:grid-cols-3">
+                <label class="form-control"><span class="text-xs opacity-70" th:text="#{project.industry}">Industry</span>
+                    <input class="input input-sm w-full" type="number" min="0" max="5" required name="industry" th:value="${cfg.builder.industry}"></label>
+                <label class="form-control"><span class="text-xs opacity-70" th:text="#{project.advancedIndustry}">Advanced Industry</span>
+                    <input class="input input-sm w-full" type="number" min="0" max="5" required name="advancedIndustry" th:value="${cfg.builder.advancedIndustry}"></label>
+                <label class="form-control"><span class="text-xs opacity-70" th:text="#{project.implant}">Implant, % time saved</span>
+                    <input class="input input-sm w-full" type="number" step="any" min="0" max="100" required name="implantTimePercent" th:value="${cfg.builder.implantTimePercent.stripTrailingZeros().toPlainString()}"></label>
+            </div>
+            <details id="default-skills" data-section="default-skills" class="group/section rounded-box border border-base-300">
+                <summary class="flex cursor-pointer select-none items-center gap-2 rounded-box px-3 py-2 hover:bg-base-300/40">
+                    <svg class="h-4 w-4 shrink-0 opacity-70 transition-transform group-open/section:rotate-90" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M7 4l6 6-6 6V4z"/></svg>
+                    <h3 class="font-semibold grow" th:text="#{defaults.skills}">Blueprint skills</h3>
+                    <span class="badge badge-warning badge-sm hidden group-data-[dirty]/section:inline" data-section-unsaved th:text="#{project.unsavedShort}">Unsaved</span>
+                    <span id="skills-set" class="badge badge-ghost badge-sm" th:text="#{defaults.skillsSet(${view.skillsSet}, ${view.skillCount})}">0 of 0 set</span>
+                </summary>
+                <div class="flex flex-col gap-4 px-3 pb-3">
+                    <fieldset class="flex flex-col gap-2" th:each="group, groupStat : ${view.skillGroups}" data-skill-group>
+                        <div class="flex items-center gap-2">
+                            <h4 class="grow text-xs font-semibold uppercase opacity-70" th:text="${group.name}">Group</h4>
+                            <label class="flex items-center gap-2 text-xs opacity-70"><span th:text="#{defaults.setAll}">Set all</span>
+                                <select class="select select-xs w-16" data-set-all th:id="'set-all-' + ${groupStat.index}" th:aria-label="#{defaults.setAllIn(${group.name})}">
+                                    <option value="">…</option>
+                                    <option th:each="level : ${#numbers.sequence(0, 5)}" th:value="${level}" th:text="${level}">0</option>
+                                </select></label>
+                        </div>
+                        <div class="grid gap-x-6 gap-y-1 sm:grid-cols-2 lg:grid-cols-3">
+                            <label class="flex items-center justify-between gap-2 text-sm" th:each="skill : ${group.skills}">
+                                <span th:text="${skill.name} + ' (' + ${skill.percentPerLevel.stripTrailingZeros().toPlainString()} + '%)'">Skill</span>
+                                <select class="select select-xs w-16" data-skill th:name="'skill-' + ${skill.skill}">
+                                    <option th:each="level : ${#numbers.sequence(0, 5)}" th:value="${level}" th:text="${level}" th:selected="${level == skill.level}">0</option>
+                                </select>
+                            </label>
+                        </div>
+                    </fieldset>
+                </div>
+            </details>
+        </div>
+
+        <!--/* stays in view, so the page can be saved from wherever it was changed */-->
+        <div class="sticky bottom-0 z-10 flex flex-wrap items-center gap-3 rounded-box bg-base-300 p-3">
+            <button id="save-defaults" class="btn btn-sm btn-outline group-data-[dirty]:btn-warning" type="submit" th:text="#{defaults.save}">Save defaults</button>
+            <details id="reset-defaults" class="dropdown dropdown-top" data-autoclose th:if="${view.saved}">
+                <summary class="btn btn-outline btn-sm" th:text="#{defaults.reset}">Reset to built-in values</summary>
+                <div class="dropdown-content card bg-base-100 shadow z-30 w-80 p-3 gap-2">
+                    <p class="text-sm" th:text="#{defaults.resetConfirm}">Your saved defaults are removed.</p>
+                    <button id="reset-defaults-confirm" class="btn btn-error btn-sm" type="submit" form="reset-form" th:text="#{defaults.resetYes}">Reset</button>
+                </div>
+            </details>
+            <span class="hidden group-data-[dirty]:inline text-xs text-warning" data-unsaved-note th:text="#{defaults.unsaved}">Unsaved changes</span>
+        </div>
+    </form>
+    <form id="reset-form" method="post" th:action="@{/project-defaults/reset}"></form>
+</main>
+</body>
+</html>

@@ -27,7 +27,8 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 /**
  * The account's facilities: the page that lists them, and adding, changing and deleting one. The Default facility dropdown of a project leads
- * here with {@code project}, and a facility added then returns the user to that project. A facility belongs to the account and not to a project.
+ * here with {@code project}, and that of the project defaults with {@code from=defaults}; a facility added then returns the user there. A facility
+ * belongs to the account and not to a project.
  */
 @Controller
 @RequestMapping("/facilities")
@@ -44,8 +45,9 @@ class FacilityController {
 
     /** {@code project} is the project the user came from (the Default facility dropdown), to offer a way back and to return to after adding one. */
     @GetMapping
-    String list(Viewer viewer, @RequestParam(required = false) String project, Model model) {
+    String list(Viewer viewer, @RequestParam(required = false) String project, @RequestParam(required = false) String from, Model model) {
         model.addAttribute("project", projectId(project));
+        model.addAttribute("fromDefaults", fromDefaults(from));
         model.addAttribute("facilities", queries.list(viewer));
         model.addAttribute("structureTypes", List.of(StructureType.values()));
         return "facilities/list";
@@ -53,23 +55,29 @@ class FacilityController {
 
     /** A facility added for a project returns to that project's Settings, where it can be chosen. Added from the menu, it stays on this page. */
     @PostMapping
-    String add(Viewer viewer, @ModelAttribute FacilityForm form, @RequestParam(required = false) String project) {
+    String add(Viewer viewer, @ModelAttribute FacilityForm form, @RequestParam(required = false) String project,
+            @RequestParam(required = false) String from) {
         editing.add(viewer, form.values());
+        if (fromDefaults(from)) {
+            return "redirect:/project-defaults";
+        }
         var id = projectId(project);
         return id == null ? "redirect:/facilities" : "redirect:/projects/" + id + "#settings";
     }
 
     @PostMapping("/{id}")
-    String change(Viewer viewer, @PathVariable UUID id, @ModelAttribute FacilityForm form, @RequestParam(required = false) String project) {
+    String change(Viewer viewer, @PathVariable UUID id, @ModelAttribute FacilityForm form, @RequestParam(required = false) String project,
+            @RequestParam(required = false) String from) {
         editing.change(viewer, new FacilityId(id), form.values());
-        return staying(project);
+        return staying(project, from);
     }
 
     @PostMapping("/{id}/delete")
-    String delete(Viewer viewer, @PathVariable UUID id, @RequestParam(required = false) String project, RedirectAttributes flash) {
+    String delete(Viewer viewer, @PathVariable UUID id, @RequestParam(required = false) String project,
+            @RequestParam(required = false) String from, RedirectAttributes flash) {
         var deleted = editing.delete(viewer, new FacilityId(id));
         flash.addFlashAttribute("deletedDrafts", deleted.draftProjectsChanged());
-        return staying(project);
+        return staying(project, from);
     }
 
     /** The project id the user came from, or null for nothing or for anything that is not one, so the address cannot be pointed anywhere else. */
@@ -81,8 +89,16 @@ class FacilityController {
         }
     }
 
-    /** This page again, still remembering the project the user came from. */
-    private static String staying(String project) {
+    /** Only this one word is taken, so the address cannot be pointed anywhere else. */
+    private static boolean fromDefaults(String from) {
+        return "defaults".equals(from);
+    }
+
+    /** This page again, still remembering where the user came from. */
+    private static String staying(String project, String from) {
+        if (fromDefaults(from)) {
+            return "redirect:/facilities?from=defaults";
+        }
         var id = projectId(project);
         return id == null ? "redirect:/facilities" : "redirect:/facilities?project=" + id;
     }
@@ -98,6 +114,6 @@ class FacilityController {
             org.springframework.validation.BindException.class})
     String refused(Exception problem, HttpServletRequest request, RedirectAttributes flash) {
         flash.addFlashAttribute("facilityError", problem instanceof InvalidFacilityNameException ? "name" : "invalid");
-        return staying(request.getParameter("project"));
+        return staying(request.getParameter("project"), request.getParameter("from"));
     }
 }

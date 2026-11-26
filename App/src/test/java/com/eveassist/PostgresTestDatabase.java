@@ -21,6 +21,9 @@ public final class PostgresTestDatabase {
             .withEnv("EVEASSIST_APP_PASSWORD", "test-app")
             .withEnv("EVEASSIST_SDE_PASSWORD", "test-sde")
             .withUsername("postgres")
+            // Spring keeps the test applications it has started, each with its own pool, and together they used up the default 100 connections (seen
+            // as "remaining connection slots are reserved" in the full build). fsync=off is what the container starts with by itself.
+            .withCommand("postgres", "-c", "fsync=off", "-c", "max_connections=300")
             .withCopyFileToContainer(
                     MountableFile.forHostPath(Path.of("../Infrastructure/postgres/sql/init/3-init-eveassist.sh"), 0755),
                     "/docker-entrypoint-initdb.d/3-init-eveassist.sh");

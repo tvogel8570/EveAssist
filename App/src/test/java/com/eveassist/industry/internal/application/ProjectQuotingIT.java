@@ -142,7 +142,8 @@ class ProjectQuotingIT extends IntegrationTest {
         assertThat(draft.draft()).isTrue();
         assertThat(draft.products()).extracting(p -> p.type().value(), p -> p.quantity()).containsExactly(org.assertj.core.groups.Tuple.tuple(1001, 2L));
         assertThat(draft.boughtParts()).isEmpty();
-        assertThat(draft.items().get(HAULER).skillLevels()).hasSize(2);
+        // the stored example is from when the skills were on the items: they are the builder's now
+        assertThat(draft.config().builder().skillLevels()).hasSize(2);
         assertThat(draft.prices()).containsOnlyKeys(TRITANIUM, PILOTS_MINERAL);
         assertThat(draft.config().builder().industry()).isEqualTo(5);
         assertThat(draft.config().priceSide()).isEqualTo(com.eveassist.industry.internal.domain.PriceSide.SELL);

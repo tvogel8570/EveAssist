@@ -187,14 +187,14 @@ class ProjectQueriesIT extends IntegrationTest {
         var hauler = details.items().getFirst();
         assertThat(hauler.me()).isEqualTo(10);
         assertThat(hauler.te()).isEqualTo(20);
-        assertThat(hauler.skills()).extracting(ProjectDetails.SkillLine::name, ProjectDetails.SkillLine::level,
+        // each skill once for the project, by name
+        assertThat(details.skills()).extracting(ProjectDetails.SkillLine::name, ProjectDetails.SkillLine::level,
                 skill -> skill.percentPerLevel().intValue()).containsExactly(
-                        org.assertj.core.groups.Tuple.tuple("Nanite Engineering", 5, 1),
-                        org.assertj.core.groups.Tuple.tuple("Mechanical Engineering", 3, 2));
+                        org.assertj.core.groups.Tuple.tuple("Mechanical Engineering", 3, 2),
+                        org.assertj.core.groups.Tuple.tuple("Nanite Engineering", 5, 1));
         var component = details.items().get(1);
         assertThat(component.me()).isEqualTo(10);
         assertThat(component.facility()).isNull();
-        assertThat(component.skills()).isEmpty();
         assertThat(details.parts()).extracting(ProjectDetails.PartLine::name, ProjectDetails.PartLine::bought)
                 .containsExactly(org.assertj.core.groups.Tuple.tuple("Test Component", false));
         assertThat(details.facilities()).extracting(FacilityOverview::id).containsExactly(facility);

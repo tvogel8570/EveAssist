@@ -128,6 +128,19 @@ Decided with the developer on 2026-11-17, and made exact on 2026-11-18 (the lock
 | Price basis | account, plan, project (inheriting) | material cost, product value |
 | Hauling rate, contract fee, time value, margin | account defaults, project may change | delivered cost, quote |
 
+### Project defaults
+
+Decided with the developer on 2026-11-25 ([issue #64](https://github.com/tvogel8570/EveAssist/issues/64)). **Built** 2026-11-26.
+
+- Each account keeps **project defaults**, which a new project starts from and can change for itself: **every project setting except the buyer and the note** (price basis, hauling rate, contract fee,
+  time value, quote step, quote mode, margin, premium, split policy and longest job, default facility, Industry, Advanced Industry, implant) and a level for **each time-saving skill any blueprint requires**.
+- They are edited on **one page of their own** (`/project-defaults`), linked from the Projects list and from the account page. A project has no "save as my defaults" button. The page can reset to the built-in values, after asking.
+- Layout (the developer chose it from [the mockup](../mockups/project-defaults.html) on 2026-11-26): **every setting visible**, grouped as Costing, Job splitting and Quote, then a **Builder** block, with **one Save** in a bar that stays in view. The
+  skills are all listed in a section of the Builder block that is closed by default, **under the game's skill groups**, with **Set all** for a group.
+- **Split policy and longest job** (in days) are also in a project's Settings, so a project can change what it started with. The mockup's character states are **later work**.
+- **Changing a default does not change a project that exists.** A project owns its values once it is started, as it owns its prices after copying a plan.
+- Some of these, the skills especially, are replaced when a character is assigned to a project.
+
 ### Blueprints
 
 Decided with the developer on 2026-11-17: **pick per built item, from owned blueprints.**
@@ -207,6 +220,8 @@ Decided with the developer on 2026-11-17: **one builder for the whole project**,
   set the time of every job.
 - Skills and implants change time, not material cost. They do change cost through the **time value** (below).
 - Slot use is not checked in a project. Lead time across slots is not needed for now.
+- Until a character can be chosen, the levels are typed **once per project**: Industry, Advanced Industry, the implant, and each time-saving skill that an item's blueprint requires (decided with the
+  developer on 2026-11-25, replacing a level typed on each item). A character assigned to a project later replaces the typed skills.
 
 ## How the cost is worked out
 

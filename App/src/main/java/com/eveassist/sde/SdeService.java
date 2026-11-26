@@ -52,6 +52,11 @@ public class SdeService {
         return data.unitVolume(id);
     }
 
+    /** Every skill that shortens the manufacturing time of some blueprint, each once. */
+    public List<TimeSkill> allTimeSkills() {
+        return data.allTimeSkills();
+    }
+
     /** The skills a product's blueprint requires that shorten its manufacturing time (SDE attribute 1982). */
     public List<TimeSkill> timeSkillsOf(TypeId product) {
         return data.timeSkillsOf(product);

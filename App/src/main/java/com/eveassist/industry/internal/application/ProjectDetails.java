@@ -21,7 +21,8 @@ public record ProjectDetails(
         ProjectId id, String name, long version, ProjectStatus status, boolean archived, int lastQuoteNumber, Instant startedAt,
         String sourcePlanName, ProjectConfig config, List<ProductLine> products, List<PartLine> parts, List<ItemLine> items,
         List<FacilityOverview> facilities, List<ProjectQuoteRepository.QuoteSummary> quotes, CostingView costing,
-        Map<Integer, String> warningTypeNames, List<TypedPrice> typedPrices) {
+        Map<Integer, String> warningTypeNames, List<TypedPrice> typedPrices,
+        List<SkillLine> skills) {
 
     public ProjectDetails {
         products = List.copyOf(products);
@@ -31,6 +32,7 @@ public record ProjectDetails(
         quotes = List.copyOf(quotes);
         warningTypeNames = Map.copyOf(warningTypeNames);
         typedPrices = List.copyOf(typedPrices);
+        skills = List.copyOf(skills);
     }
 
     /** A price the user typed for an item: its name, the price of one unit, and when it was typed. */
@@ -55,14 +57,10 @@ public record ProjectDetails(
      */
     public record ItemLine(
             int type, String name, String group, boolean product, boolean configured, String blueprintSource, int me, int te,
-            BigDecimal blueprintCostPerRun, FacilityId facility, SplitPolicy policy, List<SkillLine> skills) {
-
-        public ItemLine {
-            skills = List.copyOf(skills);
-        }
+            BigDecimal blueprintCostPerRun, FacilityId facility, SplitPolicy policy) {
     }
 
-    /** A skill the item's blueprint requires that shortens its time: the builder's level (0 if not typed in) and what each level saves. */
+    /** A skill that some built item's blueprint requires and that shortens its time: the builder's level (0 if not typed in) and what each level saves. */
     public record SkillLine(int skill, String name, int level, BigDecimal percentPerLevel) {
     }
 }

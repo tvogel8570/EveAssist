@@ -8,6 +8,7 @@
             <h1 class="text-xl font-semibold" th:text="#{projects.title}">Projects</h1>
             <p class="text-sm opacity-70" th:text="#{projects.intro}">A project is a plan costed for one buyer.</p>
         </div>
+        <a id="project-defaults-link" class="btn btn-outline btn-sm" th:href="@{/project-defaults}" th:text="#{defaults.title}">Project defaults</a>
         <details id="start-project-menu" class="dropdown dropdown-end" data-autoclose>
             <summary id="start-project" class="btn btn-primary btn-sm" th:text="#{projects.start}">Start from a plan</summary>
             <form class="dropdown-content card bg-base-300 shadow z-30 w-80 p-3 gap-2" method="post" th:action="@{/projects}">

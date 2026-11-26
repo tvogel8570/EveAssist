@@ -85,11 +85,12 @@ class JdbcProjectRepository implements ProjectRepository {
                         rs.getBoolean("archived"), config(rs)))
                 .optional();
         return row.map(project -> new Project(id, project.name(), project.version(), project.status(), project.lastQuoteNumber(),
-                project.archived(), project.config(), products(project.key()), boughtParts(project.key()), items(project.key()),
+                project.archived(), withSkills(project.config(), skills(project.key())), products(project.key()), boughtParts(project.key()), items(project.key()),
                 prices(project.key()), typedPrices(project.key())));
     }
 
-    private static ProjectConfig config(ResultSet rs) throws SQLException {
+    /** A configuration from a row with the settings' column names, without the skills. */
+    static ProjectConfig config(ResultSet rs) throws SQLException {
         var settings = new ProjectSettings(rs.getBigDecimal("isk_per_hour"), rs.getBigDecimal("isk_per_cubic_meter"),
                 rs.getBigDecimal("contract_fee"), enumOf(QuoteMode.class, rs.getString("quote_mode")),
                 rs.getBigDecimal("margin_percent"), rs.getBigDecimal("premium_percent"), rs.getBigDecimal("quote_step"));
@@ -99,6 +100,12 @@ class JdbcProjectRepository implements ProjectRepository {
                 rs.getBigDecimal("implant_time_percent"));
         return new ProjectConfig(settings, enumOf(PriceSide.class, rs.getString("price_side")), policy,
                 facility == null ? null : new FacilityId(facility), builder, rs.getString("buyer_name"), rs.getString("note"));
+    }
+
+    /** The configuration with the builder's skills, which are rows of their own and not columns of the project. */
+    static ProjectConfig withSkills(ProjectConfig config, Map<TypeId, Integer> skills) {
+        var builder = config.builder();
+        return config.withBuilder(new ProjectBuilder(builder.industry(), builder.advancedIndustry(), builder.implantTimePercent(), skills));
     }
 
     private List<PlanProduct> products(long projectKey) {
@@ -133,13 +140,16 @@ class JdbcProjectRepository implements ProjectRepository {
                 .list());
     }
 
-    private Map<TypeId, ProjectItem> items(long projectKey) {
-        var skills = new HashMap<Integer, Map<TypeId, Integer>>();
-        jdbc.sql("SELECT item_type_id, skill_type_id, level FROM project_item_skill WHERE project_id = :p")
+    private Map<TypeId, Integer> skills(long projectKey) {
+        var skills = new HashMap<TypeId, Integer>();
+        jdbc.sql("SELECT skill_type_id, level FROM project_skill WHERE project_id = :p")
                 .param("p", projectKey)
-                .query((rs, n) -> skills.computeIfAbsent(rs.getInt("item_type_id"), key -> new HashMap<>())
-                        .put(new TypeId(rs.getInt("skill_type_id")), rs.getInt("level")))
+                .query((rs, n) -> skills.put(new TypeId(rs.getInt("skill_type_id")), rs.getInt("level")))
                 .list();
+        return skills;
+    }
+
+    private Map<TypeId, ProjectItem> items(long projectKey) {
         var items = new HashMap<TypeId, ProjectItem>();
         jdbc.sql("""
                 SELECT i.type_id, i.blueprint_kind, i.me, i.te, i.blueprint_cost_per_run, f.public_id AS facility,
@@ -156,8 +166,7 @@ class JdbcProjectRepository implements ProjectRepository {
                             : new SplitPolicy(enumOf(SplitStrategy.class, strategy), (Long) rs.getObject("max_job_seconds"));
                     return items.put(type, new ProjectItem(type, enumOf(BlueprintSource.class, rs.getString("blueprint_kind")),
                             rs.getInt("me"), rs.getInt("te"), rs.getBigDecimal("blueprint_cost_per_run"),
-                            facility == null ? null : new FacilityId(facility), policy,
-                            skills.getOrDefault(type.value(), Map.of())));
+                            facility == null ? null : new FacilityId(facility), policy));
                 })
                 .list();
         return items;
@@ -206,6 +215,7 @@ class JdbcProjectRepository implements ProjectRepository {
             saveProducts(row[0], project.products());
             saveBoughtParts(row[0], project.boughtParts());
             saveItems(row[0], owner, project.items());
+            saveSkills(row[0], project.config().builder().skillLevels());
             savePrices(row[0], project.prices(), project.typedPrices());
         });
         return updated.map(row -> row[1]);
@@ -257,8 +267,6 @@ class JdbcProjectRepository implements ProjectRepository {
     }
 
     private void saveItems(long projectKey, UUID owner, Map<TypeId, ProjectItem> items) {
-        // the skills hang on their item, so they go first and come back after the items are in place
-        jdbc.sql("DELETE FROM project_item_skill WHERE project_id = :p").param("p", projectKey).update();
         for (var item : items.values()) {
             var policy = item.policy();
             jdbc.sql("""
@@ -284,18 +292,16 @@ class JdbcProjectRepository implements ProjectRepository {
                     .update();
         }
         deleteOthers("project_item", "type_id", projectKey, items.keySet().stream().map(TypeId::value).toList());
-        for (var item : items.values()) {
-            for (var skill : item.skillLevels().entrySet()) {
-                jdbc.sql("""
-                        INSERT INTO project_item_skill (project_id, item_type_id, skill_type_id, level)
-                        VALUES (:p, :item, :skill, :level)
-                        """)
-                        .param("p", projectKey)
-                        .param("item", item.type().value())
-                        .param("skill", skill.getKey().value())
-                        .param("level", skill.getValue())
-                        .update();
-            }
+    }
+
+    private void saveSkills(long projectKey, Map<TypeId, Integer> levels) {
+        jdbc.sql("DELETE FROM project_skill WHERE project_id = :p").param("p", projectKey).update();
+        for (var skill : levels.entrySet()) {
+            jdbc.sql("INSERT INTO project_skill (project_id, skill_type_id, level) VALUES (:p, :skill, :level)")
+                    .param("p", projectKey)
+                    .param("skill", skill.getKey().value())
+                    .param("level", skill.getValue())
+                    .update();
         }
     }
 

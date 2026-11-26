@@ -72,7 +72,7 @@ class ProjectSchemaIT extends IntegrationTest {
         jdbc.sql("INSERT INTO project_bought_part (project_id, type_id) VALUES (:p, 1002)").param("p", project).update();
         jdbc.sql("INSERT INTO project_item (project_id, type_id, facility_id) VALUES (:p, 1001, :f)")
                 .param("p", project).param("f", facility).update();
-        jdbc.sql("INSERT INTO project_item_skill (project_id, item_type_id, skill_type_id, level) VALUES (:p, 1001, 11442, 5)")
+        jdbc.sql("INSERT INTO project_skill (project_id, skill_type_id, level) VALUES (:p, 11442, 5)")
                 .param("p", project).update();
         jdbc.sql("INSERT INTO project_price (project_id, type_id, as_of) VALUES (:p, 34, now())").param("p", project).update();
         var quote = quote(project, 1);
@@ -81,7 +81,7 @@ class ProjectSchemaIT extends IntegrationTest {
 
         jdbc.sql("DELETE FROM account WHERE public_id = :a").param("a", account).update();
 
-        for (var table : new String[] {"project_product", "project_bought_part", "project_item", "project_item_skill",
+        for (var table : new String[] {"project_product", "project_bought_part", "project_item", "project_skill",
                 "project_price", "project_quote", "project_costing"}) {
             assertThat(count(table, "project_id", project)).as(table).isZero();
         }
@@ -202,11 +202,14 @@ class ProjectSchemaIT extends IntegrationTest {
     }
 
     @Test
-    void anItemSkillNeedsItsItem() {
+    void aProjectHasOneLevelOfASkillFrom0To5() {
         var project = project(newAccount());
+        jdbc.sql("INSERT INTO project_skill (project_id, skill_type_id, level) VALUES (:p, 1, 1)").param("p", project).update();
 
-        assertThatThrownBy(() -> jdbc.sql("INSERT INTO project_item_skill (project_id, item_type_id, skill_type_id, level) VALUES (:p, 1001, 1, 1)")
-                .param("p", project).update()).isInstanceOf(DataIntegrityViolationException.class);
+        for (var refused : new String[] {"(:p, 1, 2)", "(:p, 2, 6)", "(:p, 3, -1)"}) {
+            assertThatThrownBy(() -> jdbc.sql("INSERT INTO project_skill (project_id, skill_type_id, level) VALUES " + refused)
+                    .param("p", project).update()).as(refused).isInstanceOf(DataIntegrityViolationException.class);
+        }
     }
 
     @Test

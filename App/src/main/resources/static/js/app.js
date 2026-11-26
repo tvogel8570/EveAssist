@@ -165,6 +165,16 @@
         }
     }, true);
 
+    // A dropdown that says data-set-all gives every data-skill dropdown of its data-skill-group the chosen level, and goes back to the dots. The
+    // change it made is heard by the form like any other, so the form says it has unsaved changes.
+    document.addEventListener('change', event => {
+        const all = event.target;
+        if (all instanceof HTMLSelectElement && all.hasAttribute('data-set-all') && all.value !== '') {
+            all.closest('[data-skill-group]').querySelectorAll('select[data-skill]').forEach(skill => skill.value = all.value);
+            all.value = '';
+        }
+    });
+
     // A form that says data-track-unsaved marks itself (data-dirty) as soon as one of its fields is edited, and the page's styles show
     // it: its Save button turns to a warning and its "unsaved changes" note appears. A field outside the form's own tags that names it
     // with the form attribute counts too, because event.target.form is the form it belongs to. Nothing is saved for the user.
@@ -172,8 +182,9 @@
         const form = event.target.form;
         if (form && form.hasAttribute('data-track-unsaved')) {
             form.setAttribute('data-dirty', '');
-            // a section that is closed afterwards still shows it, in its header
+            // a section that is closed afterwards still shows it, in its header: one around the form, or one inside it around the field
             form.closest('details[data-section]')?.setAttribute('data-dirty', '');
+            event.target.closest('details[data-section]')?.setAttribute('data-dirty', '');
         }
     }
 

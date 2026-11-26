@@ -6,6 +6,7 @@
     <h1 class="text-xl font-semibold" th:text="#{facilities.title}">Facilities</h1>
     <p class="text-sm opacity-70 mb-3" th:text="#{facilities.intro}">A facility is a structure you build in.</p>
     <p id="back-to-project" th:if="${project != null}" class="mb-3"><a class="link" th:href="@{/projects/{id}(id=${project})}" th:text="#{facilities.backToProject}">Back to the project</a></p>
+    <p id="back-to-defaults" th:if="${fromDefaults}" class="mb-3"><a class="link" th:href="@{/project-defaults}" th:text="#{facilities.backToDefaults}">Back to the project defaults</a></p>
 
     <div id="error" th:if="${facilityError != null}" class="alert alert-error my-3" role="alert"><span th:text="#{'facility.error.' + ${facilityError}}">Error</span></div>
     <div id="deleted" th:if="${deletedDrafts != null}" class="alert alert-info my-3"><span th:text="#{facilities.deleted(${deletedDrafts})}">Deleted</span></div>
@@ -41,6 +42,7 @@
                     <form class="dropdown-content card bg-base-300 shadow z-30 w-72 p-3 gap-2 text-left whitespace-normal" method="post"
                           th:action="@{/facilities/{id}/delete(id=${facility.id.value})}">
                         <input type="hidden" name="project" th:value="${project}" th:if="${project != null}">
+                        <input type="hidden" name="from" value="defaults" th:if="${fromDefaults}">
                         <p class="text-sm" th:text="#{facilities.deleteConfirm(${facility.name}, ${listing.draftProjects})}">Delete this facility?</p>
                         <button type="submit" class="btn btn-error btn-sm" th:id="'delete-confirm-' + ${facility.id.value}" th:text="#{facilities.deleteYes}">Delete facility</button>
                     </form>

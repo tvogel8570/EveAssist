@@ -298,7 +298,7 @@ class ProjectEditingIT extends IntegrationTest {
         var other = viewerFor(newSub());
         var id = emptyProject(owner);
         var version = editing.addProduct(owner, new AddProjectProductCommand(id, HAULER, 1, 0)).version();
-        var item = new ProjectItem(COMPONENT, BlueprintSource.TYPED, 8, 14, new BigDecimal("12.5"), null, null, Map.of());
+        var item = new ProjectItem(COMPONENT, BlueprintSource.TYPED, 8, 14, new BigDecimal("12.5"), null, null);
 
         version = editing.setItem(owner, new SetProjectItemCommand(id, item, version)).version();
         assertThat(projects.find(owner, id).orElseThrow().items()).containsKey(COMPONENT);
@@ -309,7 +309,7 @@ class ProjectEditingIT extends IntegrationTest {
         assertThatThrownBy(() -> editing.setItem(owner, new SetProjectItemCommand(id, ProjectItem.typed(TRITANIUM), current)))
                 .as("no blueprint").isInstanceOf(ProjectNotFoundException.class);
         var foreignFacility = facilityOf(other);
-        var onForeign = new ProjectItem(COMPONENT, BlueprintSource.TYPED, 10, 20, BigDecimal.ZERO, foreignFacility, null, Map.of());
+        var onForeign = new ProjectItem(COMPONENT, BlueprintSource.TYPED, 10, 20, BigDecimal.ZERO, foreignFacility, null);
         assertThatThrownBy(() -> editing.setItem(owner, new SetProjectItemCommand(id, onForeign, current)))
                 .isInstanceOf(FacilityNotFoundException.class);
     }

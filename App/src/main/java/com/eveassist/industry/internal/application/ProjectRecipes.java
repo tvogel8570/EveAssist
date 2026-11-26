@@ -70,6 +70,10 @@ class ProjectRecipes {
     }
 
     /** The skills the item's blueprint requires that shorten its time, which the project types the builder's levels for. */
+    List<TimeSkill> allTimeSkills() {
+        return sde.allTimeSkills();
+    }
+
     List<TimeSkill> timeSkills(TypeId type) {
         return sde.timeSkillsOf(type);
     }

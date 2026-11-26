@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.TreeSet;
+import java.util.stream.Stream;
 
 /**
  * The inputs snapshot of a quote, in both directions: a Draft into {@link QuoteInputsV1} when a quote is issued, and a stored one back into
@@ -58,9 +59,7 @@ final class QuoteInputs {
         new TreeSet<>(project.items().keySet().stream().map(TypeId::value).toList()).forEach(type -> {
             var item = project.items().get(new TypeId(type));
             items.add(new QuoteInputsV1.Item(type, name(item.source()), item.me(), item.te(), item.blueprintCostPerRun(),
-                    item.facility() == null ? null : item.facility().value().toString(), policy(item.policy()),
-                    new TreeSet<>(item.skillLevels().keySet().stream().map(TypeId::value).toList()).stream()
-                            .map(skill -> new QuoteInputsV1.Skill(skill, item.skillLevels().get(new TypeId(skill)))).toList()));
+                    item.facility() == null ? null : item.facility().value().toString(), policy(item.policy()), List.of()));
         });
         var prices = new ArrayList<QuoteInputsV1.Price>();
         new TreeSet<>(project.prices().keySet().stream().map(TypeId::value).toList()).forEach(type -> {
@@ -83,7 +82,7 @@ final class QuoteInputs {
                         settings.quoteStep(), policy(config.defaultPolicy()),
                         config.defaultFacility() == null ? null : config.defaultFacility().value().toString(),
                         new QuoteInputsV1.Builder(config.builder().industry(), config.builder().advancedIndustry(),
-                                config.builder().implantTimePercent()),
+                                config.builder().implantTimePercent(), skills(config.builder())),
                         config.buyerName(), config.note()),
                 prices, facilities);
     }
@@ -110,11 +109,9 @@ final class QuoteInputs {
             var config = inputs.config();
             var items = new HashMap<TypeId, ProjectItem>();
             for (var item : inputs.items()) {
-                var skills = new HashMap<TypeId, Integer>();
-                item.skills().forEach(skill -> skills.put(new TypeId(skill.skill()), skill.level()));
                 items.put(new TypeId(item.type()), new ProjectItem(new TypeId(item.type()),
                         enumOf(BlueprintSource.class, item.blueprintSource()), item.me(), item.te(), item.blueprintCostPerRun(),
-                        existing(item.facility(), gone), policy(item.policy()), skills));
+                        existing(item.facility(), gone), policy(item.policy())));
             }
             var prices = new HashMap<TypeId, PlanPrice>();
             var typed = new HashSet<TypeId>();
@@ -131,7 +128,7 @@ final class QuoteInputs {
                     enumOf(PriceSide.class, config.priceSide()), policy(config.defaultPolicy()),
                     existing(config.defaultFacility(), gone),
                     new ProjectBuilder(config.builder().industry(), config.builder().advancedIndustry(),
-                            config.builder().implantTimePercent()),
+                            config.builder().implantTimePercent(), skillLevels(inputs)),
                     config.buyerName(), config.note());
             return new Restored(
                     inputs.products().stream().map(product -> new PlanProduct(new TypeId(product.type()), product.quantity())).toList(),
@@ -139,6 +136,22 @@ final class QuoteInputs {
         } catch (RuntimeException e) {
             throw new UnreadableDocumentException("A stored quote's inputs cannot be restored", e);
         }
+    }
+
+    private static List<QuoteInputsV1.Skill> skills(ProjectBuilder builder) {
+        return new TreeSet<>(builder.skillLevels().keySet().stream().map(TypeId::value).toList()).stream()
+                .map(skill -> new QuoteInputsV1.Skill(skill, builder.level(new TypeId(skill)))).toList();
+    }
+
+    /**
+     * The builder's skills as the quote has them. An older quote kept them on its items, where two items could hold different levels of one skill: the
+     * higher one is taken, as the migration of the projects' own rows does.
+     */
+    private static Map<TypeId, Integer> skillLevels(QuoteInputsV1 inputs) {
+        var levels = new HashMap<TypeId, Integer>();
+        Stream.concat(inputs.config().builder().skills().stream(), inputs.items().stream().flatMap(item -> item.skills().stream()))
+                .forEach(skill -> levels.merge(new TypeId(skill.skill()), skill.level(), Math::max));
+        return levels;
     }
 
     /** The facility as an id, or null if it is gone. */

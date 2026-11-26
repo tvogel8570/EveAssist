@@ -79,6 +79,13 @@
                                     th:selected="${cfg.defaultFacility != null and cfg.defaultFacility.value == facility.id.value}">Facility</option>
                             <option value="__new" th:attr="data-goto=@{/facilities(project=${project.id.value})}" th:text="#{project.addFacilityOption}">Add a new facility…</option>
                         </select></label>
+                    <label class="form-control"><span class="text-xs opacity-70" th:text="#{project.splitStrategy}">How runs are split</span>
+                        <select class="select select-sm w-full" name="splitStrategy" th:disabled="${locked}">
+                            <option value="LEAST_COST" th:selected="${cfg.defaultPolicy.strategy.name() == 'LEAST_COST'}" th:text="#{project.split.leastCost}">Least cost</option>
+                            <option value="COPIES_FIRST" th:selected="${cfg.defaultPolicy.strategy.name() == 'COPIES_FIRST'}" th:text="#{project.split.copiesFirst}">Copies first</option>
+                        </select></label>
+                    <label class="form-control"><span class="text-xs opacity-70" th:text="#{project.longestJob}">Longest job, days</span>
+                        <input class="input input-sm w-full" type="number" step="any" min="0" name="maxJobDays" th:value="${maxJobDays}" th:placeholder="#{project.noLimit}" th:disabled="${locked}"></label>
                     <label class="form-control"><span class="text-xs opacity-70" th:text="#{project.hauling}">Hauling, ISK per m³</span>
                         <input class="input input-sm w-full" type="number" step="any" min="0" name="iskPerCubicMeter" th:value="${set.iskPerCubicMeter.stripTrailingZeros().toPlainString()}" th:disabled="${locked}"></label>
                     <label class="form-control"><span class="text-xs opacity-70" th:text="#{project.contractFee}">Contract fee, flat</span>
@@ -88,6 +95,16 @@
                     <label class="form-control"><span class="text-xs opacity-70" th:text="#{project.quoteStep}">Round the quote up to</span>
                         <input class="input input-sm w-full" type="number" step="any" min="0" name="quoteStep" th:value="${set.quoteStep.stripTrailingZeros().toPlainString()}" th:disabled="${locked}"></label>
                 </div>
+                <!--/* one level for each skill, however many items need it: one builder does all of the project's work */-->
+                <fieldset id="project-skills" class="flex flex-col gap-1" th:if="${!#lists.isEmpty(project.skills)}">
+                    <legend class="text-xs opacity-70" th:text="#{project.skills}">Skills this project needs</legend>
+                    <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                        <label class="flex items-center justify-between gap-2 text-xs" th:each="skill : ${project.skills}">
+                            <span th:text="${skill.name} + ' (' + ${skill.percentPerLevel.stripTrailingZeros().toPlainString()} + '%)'">Skill</span>
+                            <input class="input input-xs w-14 text-right" type="number" min="0" max="5" th:name="'skill-' + ${skill.skill}" th:value="${skill.level}" th:disabled="${locked}">
+                        </label>
+                    </div>
+                </fieldset>
                 <p class="text-xs opacity-70" th:text="#{project.settingsNote}">Sales tax is 0 and there is no broker fee: every project is delivered by contract.</p>
                 <div class="flex flex-wrap items-center gap-3">
                     <button id="save-settings" class="btn btn-sm btn-outline group-data-[dirty]:btn-warning" type="submit" th:disabled="${locked}" th:text="#{project.save}">Save</button>
@@ -137,20 +154,6 @@
                                         <button class="btn btn-xs btn-outline group-data-[dirty]:btn-warning" type="submit" th:id="'save-item-' + ${item.type}" th:disabled="${locked}" th:text="#{project.save}">Save</button>
                                         <span class="hidden group-data-[dirty]:block text-xs text-warning" data-unsaved-note th:text="#{project.unsaved}">Unsaved changes</span>
                                     </form>
-                                </td>
-                            </tr>
-                            <tr th:if="${!#lists.isEmpty(item.skills)}">
-                                <td colspan="6" class="pt-0">
-                                    <details>
-                                        <summary class="text-xs opacity-70 cursor-pointer" th:text="#{project.skills}">Time skills</summary>
-                                        <div class="flex flex-wrap gap-3 py-2">
-                                            <label class="flex items-center gap-1 text-xs" th:each="skill : ${item.skills}">
-                                                <span th:text="${skill.name} + ' (' + ${skill.percentPerLevel.stripTrailingZeros().toPlainString()} + '%)'">Skill</span>
-                                                <input class="input input-xs w-14 text-right" type="number" min="0" max="5" th:name="'skill-' + ${skill.skill}" th:value="${skill.level}"
-                                                       th:form="'item-form-' + ${item.type}" th:disabled="${locked}">
-                                            </label>
-                                        </div>
-                                    </details>
                                 </td>
                             </tr>
                         </th:block>
