@@ -44,7 +44,7 @@
                                 <input type="hidden" name="expectedVersion" th:value="${v}">
                                 <input type="hidden" name="anchor" value="products">
                                 <p class="text-sm" th:text="#{project.removeConfirm(${product.name})}">Remove it?</p>
-                                <button class="btn btn-error btn-sm" type="submit" th:id="'remove-confirm-' + ${product.type}" th:text="#{project.removeYes}">Remove</button>
+                                <div th:replace="~{fragments/confirm :: buttons(#{project.removeYes}, 'remove-confirm-' + ${product.type}, 'btn-error', null)}"></div>
                             </form>
                         </details>
                     </td>

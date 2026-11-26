@@ -1,0 +1,14 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!--/*
+    The two answers of every question asked before something is removed: a green Cancel, which has the focus when the question opens (app.js) so
+    that Enter removes nothing, and the button that does it. It goes inside the <details> that asks. yes is the button's text, yesId its id (or
+    null), yesClass its colour (btn-error for what removes), form the id of the form it sends when that is not the one around it (or null).
+*/-->
+<div th:fragment="buttons(yes, yesId, yesClass, form)" class="flex flex-wrap justify-end gap-2">
+    <button type="button" class="btn btn-success btn-sm" data-cancel th:text="#{confirm.cancel}">Cancel</button>
+    <button type="submit" th:class="'btn btn-sm ' + ${yesClass}" th:id="${yesId}" th:attr="form=${form}" th:text="${yes}">Yes</button>
+</div>
+</body>
+</html>

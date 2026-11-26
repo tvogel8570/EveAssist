@@ -114,7 +114,7 @@
                 <summary class="btn btn-outline btn-sm" th:text="#{defaults.reset}">Reset to built-in values</summary>
                 <div class="dropdown-content card bg-base-100 shadow z-30 w-80 p-3 gap-2">
                     <p class="text-sm" th:text="#{defaults.resetConfirm}">Your saved defaults are removed.</p>
-                    <button id="reset-defaults-confirm" class="btn btn-error btn-sm" type="submit" form="reset-form" th:text="#{defaults.resetYes}">Reset</button>
+                    <div th:replace="~{fragments/confirm :: buttons(#{defaults.resetYes}, 'reset-defaults-confirm', 'btn-error', 'reset-form')}"></div>
                 </div>
             </details>
             <span class="hidden group-data-[dirty]:inline text-xs text-warning" data-unsaved-note th:text="#{defaults.unsaved}">Unsaved changes</span>

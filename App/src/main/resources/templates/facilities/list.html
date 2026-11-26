@@ -44,7 +44,7 @@
                         <input type="hidden" name="project" th:value="${project}" th:if="${project != null}">
                         <input type="hidden" name="from" value="defaults" th:if="${fromDefaults}">
                         <p class="text-sm" th:text="#{facilities.deleteConfirm(${facility.name}, ${listing.draftProjects})}">Delete this facility?</p>
-                        <button type="submit" class="btn btn-error btn-sm" th:id="'delete-confirm-' + ${facility.id.value}" th:text="#{facilities.deleteYes}">Delete facility</button>
+                        <div th:replace="~{fragments/confirm :: buttons(#{facilities.deleteYes}, 'delete-confirm-' + ${facility.id.value}, 'btn-error', null)}"></div>
                     </form>
                 </details>
             </div>

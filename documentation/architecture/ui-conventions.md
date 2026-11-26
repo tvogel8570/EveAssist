@@ -97,3 +97,11 @@ Decided with the developer on 2026-11-26, from [the mockup](../mockups/list-head
 - **The choices of a filter column** (inventory's *Add filter*), opened **deep in the list**, lie over the rows, below the count, so the header does not grow. Opened at the top of the page they push the list
   down, so that no row is covered.
 
+## Asking before something is removed
+
+Issues #23 and #21, built 2026-11-26.
+
+- Anything that removes something **asks first**, with `fragments/confirm.html`: a **green Cancel that has the focus** when the question opens, so that Enter removes nothing, beside the button that does it
+  (red). Cancel closes the question and gives the focus back to what opened it. `ConfirmationTemplatesTest` fails on a red submit button written by hand.
+- **Deleting the account** asks on a page of its own: *Keep my account* is green and focused, and the delete button is **disabled until the box is ticked**. The server still refuses without the box.
+

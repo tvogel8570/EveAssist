@@ -585,6 +585,34 @@
         }
     }, true);
 
+    // A question asked before something is removed (fragments/confirm.html) opens on its Cancel, so that Enter removes nothing. Cancel closes it
+    // and gives the focus back to what opened it.
+    document.addEventListener('toggle', event => {
+        const menu = event.target;
+        if (menu instanceof HTMLDetailsElement && menu.open) {
+            menu.querySelector(':scope > :not(summary) [data-cancel]')?.focus();
+        }
+    }, true);
+
+    document.addEventListener('click', event => {
+        const menu = event.target.closest('button[data-cancel]')?.closest('details');
+        if (menu) {
+            menu.open = false;
+            menu.querySelector(':scope > summary').focus();
+        }
+    });
+
+    // A button that says data-needs waits for that box to be ticked. It is looked at again when the page is shown, since a browser can show a
+    // page again with its box as it was left.
+    function followBoxes() {
+        document.querySelectorAll('button[data-needs]').forEach(button =>
+            button.disabled = !document.querySelector(button.dataset.needs)?.checked);
+    }
+
+    followBoxes();
+    document.addEventListener('change', followBoxes);
+    window.addEventListener('pageshow', followBoxes);
+
     // Copy as text: one line for each item type the filter lets through, the name and the total with a tab between.
     // The server gives the whole list, because the page shows only the first of it.
     document.addEventListener('click', event => {

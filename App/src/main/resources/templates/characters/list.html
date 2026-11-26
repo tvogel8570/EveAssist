@@ -90,20 +90,20 @@
                 <div class="card-actions justify-end items-center">
                     <a class="btn btn-primary btn-sm" th:if="${character.status.name() != 'ACTIVE' and anyFeatureOn}"
                        th:href="@{/characters/link}" th:text="#{characters.reauthorize}">Re-authorize</a>
-                    <details class="dropdown dropdown-end" th:unless="${#lists.isEmpty(character.unused)}">
+                    <details data-autoclose class="dropdown dropdown-end" th:unless="${#lists.isEmpty(character.unused)}">
                         <summary class="btn btn-outline btn-sm" th:text="#{characters.drop}">Drop unused permissions</summary>
                         <form method="post" class="dropdown-content card bg-base-300 shadow z-10 w-72 p-3 gap-2"
                               th:action="@{/characters/{id}/drop-access(id=${character.id})}">
                             <p class="text-sm" th:text="#{characters.drop.confirm(${character.name})}">Drop?</p>
-                            <button class="btn btn-primary btn-sm" type="submit" th:text="#{characters.drop.yes}">Drop and link again</button>
+                            <div th:replace="~{fragments/confirm :: buttons(#{characters.drop.yes}, null, 'btn-primary', null)}"></div>
                         </form>
                     </details>
-                    <details class="dropdown dropdown-end">
+                    <details data-autoclose class="dropdown dropdown-end">
                         <summary class="btn btn-ghost btn-sm text-error" th:text="#{characters.remove}">Remove</summary>
                         <form method="post" class="dropdown-content card bg-base-300 shadow z-10 w-64 p-3 gap-2"
                               th:action="@{/characters/{id}/remove(id=${character.id})}">
                             <p class="text-sm" th:text="#{characters.remove.confirm(${character.name})}">Remove?</p>
-                            <button class="btn btn-error btn-sm" type="submit" th:text="#{characters.remove.yes}">Remove</button>
+                            <div th:replace="~{fragments/confirm :: buttons(#{characters.remove.yes}, null, 'btn-error', null)}"></div>
                         </form>
                     </details>
                 </div>

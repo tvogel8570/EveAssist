@@ -43,9 +43,7 @@
             <input type="hidden" name="view" th:value="${view}">
             <input type="hidden" name="archived" value="1" th:if="${showArchived}">
             <p class="text-sm" th:text="#{projects.deleteConfirm(${name})}">Delete this project permanently?</p>
-            <button type="submit" class="btn btn-error btn-sm"
-                    th:id="${from == 'project'} ? 'delete-project-confirm' : 'delete-confirm-' + ${id}"
-                    th:text="#{projects.deleteYes}">Delete project</button>
+            <div th:replace="~{fragments/confirm :: buttons(#{projects.deleteYes}, ${from == 'project'} ? 'delete-project-confirm' : 'delete-confirm-' + ${id}, 'btn-error', null)}"></div>
         </form>
     </details>
 </th:block>

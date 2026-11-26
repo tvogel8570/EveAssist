@@ -382,7 +382,7 @@
                                 <form class="dropdown-content card bg-base-300 shadow z-30 w-64 p-3 gap-2 whitespace-normal" method="post"
                                       th:action="@{/projects/{id}/quotes/{n}/delete(id=${project.id.value}, n=${quote.number})}">
                                     <p class="text-sm" th:text="#{project.deleteQuoteConfirm(${quote.number})}">Delete this quote?</p>
-                                    <button class="btn btn-error btn-sm" type="submit" th:id="'delete-quote-confirm-' + ${quote.number}" th:text="#{project.deleteQuoteYes}">Delete quote</button>
+                                    <div th:replace="~{fragments/confirm :: buttons(#{project.deleteQuoteYes}, 'delete-quote-confirm-' + ${quote.number}, 'btn-error', null)}"></div>
                                 </form>
                             </details>
                         </div>

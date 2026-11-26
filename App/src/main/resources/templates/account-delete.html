@@ -32,9 +32,11 @@
             <input id="confirm" name="confirm" type="checkbox" value="true" class="checkbox checkbox-error">
             <span th:text="#{account.delete.confirm}">I understand this cannot be undone</span>
         </label>
-        <div class="flex gap-2">
-            <button id="confirm-delete" type="submit" class="btn btn-error" th:text="#{account.delete.button}">Delete my account for good</button>
-            <a id="cancel-delete" class="btn btn-ghost" th:href="@{/account}" th:text="#{account.delete.cancel}">Keep my account</a>
+        <div class="flex flex-wrap gap-2">
+            <!--/* keeping the account is the default: it has the focus, so that Enter deletes nothing */-->
+            <a id="cancel-delete" class="btn btn-success" autofocus th:href="@{/account}" th:text="#{account.delete.cancel}">Keep my account</a>
+            <!--/* waits for the box (app.js). Without script it can be pressed, and the server refuses without the box */-->
+            <button id="confirm-delete" type="submit" class="btn btn-error" data-needs="#confirm" th:text="#{account.delete.button}">Delete my account for good</button>
         </div>
     </form>
 </main>

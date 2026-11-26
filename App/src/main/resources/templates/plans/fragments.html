@@ -257,9 +257,7 @@
               th:action="@{/plans/{id}/delete(id=${id})}">
             <input type="hidden" name="archived" value="1" th:if="${showArchived}">
             <p class="text-sm" th:text="#{plans.deleteConfirm(${name})}">Delete this plan permanently?</p>
-            <button type="submit" class="btn btn-error btn-sm"
-                    th:id="${from == 'plan'} ? 'delete-plan-confirm' : 'delete-confirm-' + ${id}"
-                    th:text="#{plans.deleteYes}">Delete plan</button>
+            <div th:replace="~{fragments/confirm :: buttons(#{plans.deleteYes}, ${from == 'plan'} ? 'delete-plan-confirm' : 'delete-confirm-' + ${id}, 'btn-error', null)}"></div>
         </form>
     </details>
 </th:block>
