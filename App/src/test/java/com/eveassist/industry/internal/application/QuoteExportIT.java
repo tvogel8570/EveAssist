@@ -115,6 +115,26 @@ class QuoteExportIT extends IntegrationTest {
         assertThat(shareable.text()).contains("Test Hauler: 2 \u00d7 7,500 = 15,000");
     }
 
+    private QuoteFacts splitQuoteOf(java.math.BigDecimal sell, java.math.BigDecimal buy) {
+        var owner = viewerFor(newSub());
+        var id = haulers.project(owner, haulers.azbel(owner, "2"), "Two Haulers", null);
+        var version = projects.find(owner, id).orElseThrow().version();
+        version = editing.replacePrices(owner, id, version, java.util.Map.of(HAULER, new com.eveassist.market.JitaQuote(HAULER, sell, buy, Instant.now()))).version();
+        editing.setConfig(owner, new SetProjectConfigCommand(id, projects.find(owner, id).orElseThrow().config()
+                .withPriceSide(com.eveassist.industry.internal.domain.PriceSide.SPLIT), version));
+        entry.cost(owner, id);
+        quoting.issue(owner, new IssueQuoteCommand(id, projects.find(owner, id).orElseThrow().version(), "Buyer", null, null));
+        var shareable = export.of(owner, id, 1);
+        return new QuoteFacts(1, null, null, null, java.math.BigDecimal.ONE, java.util.List.of(), shareable.evenly());
+    }
+
+    @Test
+    void underTheJitaSplitAProductWithBothSidesOfItsPriceHasAMarketValueAndOneWithOnlyASellPriceHasNone() {
+        assertThat(splitQuoteOf(new java.math.BigDecimal("8000"), new java.math.BigDecimal("7000")).evenly()).isFalse();
+        // nobody buys it, so there is no split price to share the total by, and the lines are priced alike
+        assertThat(splitQuoteOf(new java.math.BigDecimal("8000"), null).evenly()).isTrue();
+    }
+
     @Test
     void aQuoteWithNoBuyerNoNoteAndNoExpiryLeavesThemOut() {
         var owner = viewerFor(newSub());

@@ -21,8 +21,12 @@ Status: draft, interview in progress.
   price (listed as sell orders).
 - The user can instead cost materials at the Jita buy price (bought through buy orders) and value products at the Jita
   buy price (sold right away).
-- **Jita split** is a third basis (added 2026-11-25, as the appraisal site Janice offers it): the midpoint of the Jita buy and the Jita
-  sell price, used for materials and products alike. It is a fair-price reference when neither side of the spread is a good estimate.
+- **Jita split** is a third basis (decided 2026-11-25, as the appraisal site Janice offers it, and **built for projects the same day**): the midpoint of the Jita buy and
+  the Jita sell price, used for materials and products alike. It is a fair-price reference when neither side of the spread is a good estimate. It is **the midpoint of one unit's
+  two prices, and the quantity multiplies it**, which is what Janice does: its buy, sell and split totals for 2 and for 50 Vexor (10,020,000 buy, 10,920,000 sell) are the
+  prices times the quantity, with no walking of the order book, and the split is their midpoint (20,940,000 and 523,500,000). **It needs both sides.** An item nobody buys has
+  no buy price, and halving the sell price or taking it as it is would invent one, so under the split such an item has **no price** and is reported as unpriced, as under any basis when the price it needs is missing.
+  A manual price, which is the same on both sides, is itself. The unit price is not rounded (a half cent stays), so the split of a quantity is exact. Not built for plans yet: a plan costs at the sell price.
 - The price basis is a user-wide default, and each plan can override it.
 - The user can enter a manual price for an item, for example a contract price, which overrides the market. Manual prices
   stay until the user changes them. Each one shows its age, with a warning once it is older than a set number of days.

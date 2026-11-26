@@ -2,6 +2,7 @@ package com.eveassist.industry.internal.application;
 
 import com.eveassist.identity.Viewer;
 import com.eveassist.industry.ProjectId;
+import com.eveassist.industry.internal.domain.PriceSide;
 import org.jmolecules.architecture.hexagonal.PrimaryPort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,10 +31,10 @@ public class QuoteExport {
         var summary = quotes.find(viewer, project, number).orElseThrow(QuoteNotFoundException::new);
         var inputs = quotes.findInputs(viewer, project, number).orElseThrow(QuoteNotFoundException::new);
         // the price of each product at the project's price basis, from the prices frozen in the quote
-        var buy = "buy".equalsIgnoreCase(inputs.config().priceSide());
+        var side = PriceSide.valueOf(inputs.config().priceSide().toUpperCase(java.util.Locale.ROOT));
         var products = inputs.products().stream().map(product -> {
             var price = inputs.prices().stream().filter(frozen -> frozen.type() == product.type()).findFirst()
-                    .map(frozen -> buy ? frozen.buy() : frozen.sell()).orElse(null);
+                    .flatMap(frozen -> side.unitPrice(frozen.sell(), frozen.buy())).orElse(null);
             return new LinePrices.Product(recipes.name(new com.eveassist.sde.TypeId(product.type())), product.quantity(), price);
         }).toList();
         var priced = LinePrices.of(summary.price(), products);
