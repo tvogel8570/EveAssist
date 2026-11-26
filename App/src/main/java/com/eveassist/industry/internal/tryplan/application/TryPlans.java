@@ -1,4 +1,4 @@
-package com.eveassist.industry.internal.application;
+package com.eveassist.industry.internal.tryplan.application;
 
 import com.eveassist.identity.Visitor;
 import com.eveassist.industry.PlanId;

@@ -1,4 +1,4 @@
-package com.eveassist.industry.internal.web;
+package com.eveassist.industry.internal.tryplan.web;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;

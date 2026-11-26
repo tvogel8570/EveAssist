@@ -1,8 +1,8 @@
-package com.eveassist.industry.internal.web;
+package com.eveassist.industry.internal.tryplan.web;
 
 import com.eveassist.identity.Visitor;
-import com.eveassist.industry.internal.application.TryPlans;
-import com.eveassist.industry.internal.application.TryResult;
+import com.eveassist.industry.internal.tryplan.application.TryPlans;
+import com.eveassist.industry.internal.tryplan.application.TryResult;
 import com.eveassist.industry.internal.shared.application.UnknownProductException;
 import com.eveassist.industry.internal.shared.domain.InvalidQuantityException;
 import jakarta.servlet.http.HttpServletRequest;

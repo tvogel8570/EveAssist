@@ -1,4 +1,4 @@
-package com.eveassist.industry.internal.web;
+package com.eveassist.industry.internal.tryplan.web;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
