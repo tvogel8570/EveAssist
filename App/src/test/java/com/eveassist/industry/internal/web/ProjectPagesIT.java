@@ -15,11 +15,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.eveassist.IntegrationTest;
 import com.eveassist.industry.PlanId;
 import com.eveassist.industry.ProjectId;
-import com.eveassist.industry.internal.application.AddProductCommand;
-import com.eveassist.industry.internal.application.CreatePlanCommand;
+import com.eveassist.industry.internal.plan.application.AddProductCommand;
+import com.eveassist.industry.internal.plan.application.CreatePlanCommand;
 import com.eveassist.industry.internal.application.IssueQuoteCommand;
-import com.eveassist.industry.internal.application.PlanEditing;
-import com.eveassist.industry.internal.application.PlanEntry;
+import com.eveassist.industry.internal.plan.application.PlanEditing;
+import com.eveassist.industry.internal.plan.application.PlanEntry;
 import com.eveassist.industry.internal.application.ProjectQuoting;
 import com.eveassist.market.AdjustedPriceService;
 import java.time.Instant;

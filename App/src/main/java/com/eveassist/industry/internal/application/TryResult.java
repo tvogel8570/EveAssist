@@ -1,5 +1,7 @@
 package com.eveassist.industry.internal.application;
 
+import com.eveassist.industry.internal.plan.application.PlanDetails;
+import com.eveassist.industry.internal.plan.application.ProductRemoval;
 import java.util.List;
 
 /**

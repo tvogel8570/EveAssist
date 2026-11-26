@@ -4,7 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.eveassist.IntegrationTest;
-import com.eveassist.industry.internal.application.PlanRepository;
+import com.eveassist.industry.internal.plan.application.PlanRepository;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -7,6 +7,7 @@ import com.eveassist.IntegrationTest;
 import com.eveassist.industry.ProjectId;
 import com.eveassist.industry.internal.domain.ProjectStatus;
 import com.eveassist.industry.internal.facility.application.FacilityOverview;
+import com.eveassist.industry.internal.plan.application.PlanRepository;
 import com.eveassist.market.AdjustedPriceService;
 import java.math.BigDecimal;
 import java.time.Duration;
