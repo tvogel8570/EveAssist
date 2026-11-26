@@ -23,6 +23,10 @@
         <playwright.version>1.64.0</playwright.version>
         <frontend-maven-plugin.version>2.0.2</frontend-maven-plugin.version>
         <node.version>v26.13.0</node.version>
+        <!-- How many JVMs run the *IT classes side by side. Each starts its own Postgres container and Spring contexts, so
+             more is not always faster: of 1, 2, 4 and 8 on a 32-core machine, 4 was fastest. On a smaller or busy
+             machine, override it, for example ./mvnw verify -Dit.forks=1 -->
+        <it.forks>4</it.forks>
     </properties>
 
     <dependencyManagement>
@@ -234,6 +238,9 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
+                <configuration>
+                    <forkCount>${it.forks}</forkCount>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.springframework.boot</groupId>

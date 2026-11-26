@@ -181,9 +181,9 @@
 
     // A plan without an account (/try) lives in this browser only. Its state is a short text in the page's #try-state box,
     // which every answer from the server swaps. It is kept in local storage after each swap. When the page opens with a
-    // plan kept, the box gets it before htmx starts (this script runs after the page is read and before htmx processes
-    // it), and the hidden #try-restore element sends it to the server once the page has loaded. Private windows and
-    // blocked storage throw, so the page works without it, forgetting.
+    // plan kept, the box gets it before htmx starts (this script runs after the page is read and before htmx, which the
+    // layout loads after it), and the hidden #try-restore element sends it to the server once the page has loaded. Private
+    // windows and blocked storage throw, so the page works without it, forgetting.
     const TRY_PLAN_KEY = 'eveassist.try.plan';
 
     function keepTryPlan() {

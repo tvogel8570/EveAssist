@@ -148,6 +148,9 @@ What the htmx UI must get right, found while building the spikes:
   a correct response and no error. Only a browser shows this, so each kind of update has a browser test.
 - **A request waiting in an `hx-sync` queue sends the values from when it was triggered.** The shared set-up in `app.js`
   refreshes `expectedVersion` just before it is sent, or a quick second edit is refused as out of date.
+- **`app.js` loads before htmx**, found by a browser test. htmx 4 starts on a timer when the page is already read, so it
+  can start before a later deferred script has arrived. With `app.js` second, a late `app.js` made `/try` send an empty
+  plan on reload, and the answer could replace the plan the browser had kept.
 - **Latency**: screens are tried with Chrome's network throttling at 50 ms and 150 ms, which stand for a player near
   the AWS region and one on another continent.
 - **Large plans** update only the rows that changed and the totals, not the whole tree.
