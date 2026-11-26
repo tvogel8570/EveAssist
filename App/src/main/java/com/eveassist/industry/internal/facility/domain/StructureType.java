@@ -11,11 +11,16 @@ import java.util.Optional;
  * <p>The values are the structures' own bonuses and not the rigs': SDE attributes 2600 (materials), 2602 (time) and 2601 (job fee) of
  * Raitaru, Azbel and Sotiyo, which the game's Industry window confirmed for the Azbel ({@code costing-detail.md}, 4.1 and readings G1 to
  * G16). They change with game patches, so this is the one place to change them. An NPC station has no structure bonus.
+ *
+ * <p>The game's manufacturing plant also fits citadels and refineries (SDE, {@code canFitShipGroup} of the Standup Manufacturing Plant),
+ * which are {@code UPWELL_NO_BONUS}. Three faction Fortizars do give a job fee and a time bonus (costing-detail.md, 4.1) and have no type
+ * here: their bonuses are typed.
  */
 public enum StructureType {
     RAITARU("1", "15", "3"),
     AZBEL("1", "20", "4"),
     SOTIYO("1", "30", "5"),
+    UPWELL_NO_BONUS("0", "0", "0"),
     NPC_STATION("0", "0", "0");
 
     private final BigDecimal materialPercent;

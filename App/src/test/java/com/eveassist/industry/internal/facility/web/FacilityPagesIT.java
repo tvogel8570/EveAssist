@@ -256,4 +256,27 @@ class FacilityPagesIT extends IntegrationTest {
                 .andExpect(content().string(org.hamcrest.Matchers.matchesPattern(
                         "(?s).*<select id=\"default-facility\".*?value=\"\".*?Dodenvale Azbel.*?value=\"__new\".*?</select>.*")));
     }
+
+    /** Any Upwell structure can run manufacturing. One that is no engineering complex is a type of its own, with nothing to fill in. */
+    @Test
+    void anUpwellStructureWithNoBonusCanBeChosenAndIsKept() throws Exception {
+        var sub = newSub();
+        accounts.signedIn(sub, "Test Pilot");
+        var who = org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.oidcLogin()
+                .idToken(token -> token.subject(sub))
+                .authorities(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_USER"));
+        var csrf = org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf();
+
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/facilities").with(who).with(csrf)
+                .param("structureType", "upwell_no_bonus").param("name", "A Fortizar").param("structureMaterialPercent", "0")
+                .param("rigMaterialPercent", "0").param("structureTimePercent", "0").param("rigTimePercent", "0")
+                .param("structureCostPercent", "0").param("systemCostIndexPercent", "2").param("taxPercent", "0").param("sccSurchargePercent", "4"));
+
+        var page = mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/facilities").with(who))
+                .andReturn().getResponse().getContentAsString();
+        org.assertj.core.api.Assertions.assertThat(page)
+                .containsPattern("<option value=\"upwell_no_bonus\" data-material=\"0\" data-time=\"0\" data-cost=\"0\"[^>]*selected")
+                .contains("Upwell structure, no bonus").contains("A Fortizar").doesNotContain("??");
+    }
 }
+

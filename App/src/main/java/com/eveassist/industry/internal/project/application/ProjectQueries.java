@@ -81,10 +81,29 @@ public class ProjectQueries {
                 project.lastQuoteNumber(), meta.createdAt(), meta.sourcePlanName(), project.config(),
                 project.products().stream().map(product -> new ProjectDetails.ProductLine(product.type().value(),
                         recipes.name(product.type()), product.quantity())).toList(),
-                recipes.visibleParts(project).stream().map(type -> new ProjectDetails.PartLine(type.value(), recipes.name(type),
-                        project.boughtParts().contains(type))).toList(),
+                parts(project, costing),
                 items(project), viewersFacilities, projectQuotes, costing,
                 warningTypeNames(costing), typedPrices(project), skills(project));
+    }
+
+    private List<ProjectDetails.PartLine> parts(Project project, CostingView costing) {
+        var needed = new HashMap<Integer, Long>();
+        if (costing != null) {
+            costing.costing().document().jobs().forEach(job -> job.materials()
+                    .forEach(material -> needed.merge(material.type(), material.quantity(), Long::sum)));
+        }
+        var byProduct = project.products().stream()
+                .map(product -> Map.entry(recipes.name(product.type()), recipes.partsOf(product, project.boughtParts()))).toList();
+        return recipes.visibleParts(project).stream().map(type -> new ProjectDetails.PartLine(type.value(), recipes.name(type),
+                project.boughtParts().contains(type),
+                byProduct.stream().filter(product -> product.getValue().contains(type)).map(Map.Entry::getKey).sorted().toList(),
+                needed.get(type.value()))).toList();
+    }
+
+    /** The items a project can be given as a product. Refused for a project that is not the viewer's, so that the search is only part of its page. */
+    public List<ItemType> searchProducts(Viewer viewer, ProjectId id, String text) {
+        projects.find(viewer, id).orElseThrow(ProjectNotFoundException::new);
+        return sde.searchBuildable(text, 12);
     }
 
     /** The prices the user typed, by the item's name. */

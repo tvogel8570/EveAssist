@@ -141,7 +141,8 @@ class InventoryBrowseIT extends IntegrationTest {
         var secondEve = jdbc.sql("SELECT eve_character_id FROM character WHERE public_id = :id").param("id", s.two())
                 .query(Long.class).single();
         var lowerIsOne = firstEve < secondEve;
-        var tritaniumBar = page.substring(page.indexOf("<svg"), page.indexOf("</svg>"));
+        var bars = withoutTriangles(page);
+        var tritaniumBar = bars.substring(bars.indexOf("<svg"), bars.indexOf("</svg>"));
         assertThat(tritaniumBar.indexOf(lowerIsOne ? "Alt One" : "Alt Two")).isLessThan(tritaniumBar.length());
         assertThat(tritaniumBar).contains("seg-0").contains("seg-1");
     }
@@ -245,17 +246,22 @@ class InventoryBrowseIT extends IntegrationTest {
         assertThat(page.indexOf("Pilot&#39;s Mineral")).isLessThan(page.indexOf("Tritanium"));
     }
 
+    /** The page without the rows' triangles, so that what is left to find as a drawing is a bar of who holds what. */
+    private static String withoutTriangles(String page) {
+        return page.replaceAll("(?s)<span class=\"chevron\".*?</span>", "");
+    }
+
     @Test
     void charactersCanBeLeftOutAndTheBarGoesWithThem() throws Exception {
         var s = setup();
 
         var hidden = partial(s.sub(), "?ui=1");
 
-        assertThat(hidden).doesNotContain("<svg").doesNotContain("class=\"seg-");
+        assertThat(withoutTriangles(hidden)).doesNotContain("<svg").doesNotContain("class=\"seg-");
         assertThat(text(hidden)).contains("Tritanium").doesNotContain("Held by");
-        assertThat(partial(s.sub(), "?ui=1&chars=1")).contains("<svg");
+        assertThat(withoutTriangles(partial(s.sub(), "?ui=1&chars=1"))).contains("<svg");
         // with nothing said, they are shown
-        assertThat(partial(s.sub(), "")).contains("<svg");
+        assertThat(withoutTriangles(partial(s.sub(), ""))).contains("<svg");
         assertThat(whole(s.sub(), "?ui=1")).doesNotContain("class=\"seg-");
     }
 

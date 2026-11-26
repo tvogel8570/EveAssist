@@ -50,8 +50,15 @@ public record ProjectDetails(
     public record ProductLine(int type, String name, long quantity) {
     }
 
-    /** A part of the products with a blueprint, and whether the project buys it. */
-    public record PartLine(int type, String name, boolean bought) {
+    /**
+     * A part of the products with a blueprint, and whether the project buys it. {@code usedBy} names the products that need it, at any depth.
+     * {@code needed} is how many units the jobs of the shown costing take, or null when there is no costing or none of its jobs takes the part.
+     */
+    public record PartLine(int type, String name, boolean bought, List<String> usedBy, Long needed) {
+
+        public PartLine {
+            usedBy = List.copyOf(usedBy);
+        }
     }
 
     /**

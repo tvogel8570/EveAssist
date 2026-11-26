@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Active page and project header</title>
+<style>
+:root{--bg:#1d232a;--nav:#191e24;--panel:#232a33;--panel2:#2a323d;--line:#38424f;--text:#e6ebf2;--dim:#9aa7b8;--pri:#605dff;--acc:#00d3bb;--info:#00bafe;--warn:#fcb700;--ok:#35c28d;--r:8px;--barh:0px}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,sans-serif}
+.mock{position:sticky;top:0;z-index:30;display:flex;flex-direction:column;gap:5px;padding:7px 16px;background:#3a2f12;border-bottom:1px solid #6b5518;color:#f3d98a}
+.mock .g{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.mock .g>span{min-width:100px}
+.mock button{background:#2a2410;color:#f3d98a;border:1px solid #6b5518;border-radius:6px;padding:2px 9px;cursor:pointer}
+.mock button.on{background:#f3d98a;color:#2a2410}
+nav{display:flex;flex-wrap:wrap;gap:4px;align-items:center;background:var(--nav);padding:12px 16px}
+nav b{font-size:17px;margin-right:14px}
+nav a{color:var(--text);text-decoration:none;padding:5px 11px;border-radius:6px;border-bottom:3px solid transparent;cursor:pointer}
+nav a:hover{background:var(--panel2)}
+nav.filled a.on{background:var(--pri);color:#fff}
+nav.under a.on,nav.area a.on{border-bottom-color:var(--c,var(--acc));border-radius:6px 6px 0 0;font-weight:700}
+nav.area a.on{background:color-mix(in srgb,var(--c) 18%,transparent)}
+main{max-width:1100px;margin:0 auto;padding:16px}
+h1{font-size:22px;margin:0}h2{font-size:15px;margin:0}
+.dim{color:var(--dim)}
+.kind{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;border:1px solid var(--c);color:var(--c);border-radius:4px;padding:0 7px;margin-bottom:3px}
+.stripe{border-left:4px solid var(--c);padding-left:12px}
+.badge{display:inline-block;padding:1px 9px;border-radius:99px;font-size:12px;border:1px solid var(--line);color:var(--dim);white-space:nowrap}
+.badge.info{background:var(--info);color:#002b3d;border-color:var(--info)}.badge.warn{border-color:var(--warn);color:var(--warn)}.badge.ok{border-color:var(--ok);color:var(--ok)}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}.grow{flex:1;min-width:0}
+button.b{background:transparent;border:1px solid var(--line);color:var(--text);border-radius:6px;padding:4px 12px;cursor:pointer;font:inherit}
+button.b.pri{background:var(--pri);border-color:var(--pri);color:#fff}
+.banner{border-radius:var(--r);padding:12px 16px;margin:12px 0;background:var(--warn);color:#3d2b00;display:flex;gap:14px;align-items:center}
+.banner.ok{background:var(--ok);color:#04301f}
+.sticky{position:sticky;top:var(--barh);z-index:20;background:var(--bg);border-bottom:1px solid var(--line);padding:10px 0;margin-bottom:12px}
+.sticky .why{font-size:13px;color:var(--warn)}
+.fig{text-align:right}.fig b{display:block;font-size:17px;font-variant-numeric:tabular-nums}
+.slim{position:fixed;left:0;right:0;top:var(--barh);z-index:20;background:var(--nav);border-bottom:1px solid var(--line);padding:8px 16px;transform:translateY(-140%);transition:transform .15s}
+.slim.show{transform:none}.slim .row{max-width:1068px;margin:0 auto}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin:12px 0}
+input{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:4px 8px;font:inherit;width:100px;text-align:right}
+table{width:100%;border-collapse:collapse}th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left}th{font-size:12px;color:var(--dim);text-transform:uppercase}.n{text-align:right}
+.flash{animation:f 1.2s}@keyframes f{from{background:rgba(96,93,255,.45)}}
+.note{max-width:1100px;margin:0 auto;padding:0 16px 40vh}.note div{border-left:3px solid var(--warn);padding:4px 10px;color:var(--dim)}
+.hide{display:none}
+</style>
+</head>
+<body>
+<div class="mock" id="mock">
+  <div class="g"><b>Mockup, fake data</b> <span class="dim" style="color:#cbb46a">Use the menu to change page; scroll down on the project, then change a quantity.</span></div>
+  <div class="g"><span>1. Menu:</span><button data-k="nav" data-v="today">Today</button><button data-k="nav" data-v="filled">Filled</button><button data-k="nav" data-v="under">Underline</button><button data-k="nav" data-v="area">Underline in area colour</button></div>
+  <div class="g"><span>1. On the page:</span><button data-k="label" data-v="none">Nothing more</button><button data-k="label" data-v="kind">“Plan” / “Project” label</button><button data-k="label" data-v="stripe">Label and colour stripe</button></div>
+  <div class="g"><span>2. Header:</span><button data-k="head" data-v="today">Today (banner)</button><button data-k="head" data-v="a">A Fixed header</button><button data-k="head" data-v="b">B Header with figures</button><button data-k="head" data-v="c">C Bar on scroll</button></div>
+  <div class="g"><span>2. After saving:</span><button data-k="place" data-v="jump">Today (jumps)</button><button data-k="place" data-v="keep">Keep my place</button></div>
+  <div class="g"><span>State:</span><button data-k="state" data-v="draft">Not costed</button><button data-k="state" data-v="costed">Costed</button><button data-k="state" data-v="stale">Out of date</button><button data-k="state" data-v="quoted">Quoted</button></div>
+</div>
+<div id="nav"></div>
+<div id="slim"></div>
+<main id="app"></main>
+<div class="note"><div id="about"></div></div>
+<script>
+const PAGES=["Plans","Projects","Facilities","Blueprint copies","Inventory","Blueprints","Characters"];
+const AREA={Plans:"#00bafe",Projects:"#00d3bb",Facilities:"#a78bfa","Blueprint copies":"#a78bfa",Inventory:"#35c28d",Blueprints:"#35c28d",Characters:"#f472b6"};
+let S={nav:"under",label:"kind",head:"a",place:"keep",state:"costed",page:"Projects",qty:[5,1,10]};
+const NAMES=["Vexor","Legion","Large Targeting Systems Stabilizer I"];
+const stateBadge=()=>({draft:'<span class="badge warn">Draft</span>',costed:'<span class="badge info">Costed</span>',stale:'<span class="badge info">Costed</span> <span class="badge warn">Out of date</span>',quoted:'<span class="badge ok">Quoted</span>'}[S.state]);
+const action=(small)=>S.state==="draft"?'<button class="b pri" data-cost>Cost it</button>':S.state==="stale"?'<button class="b pri" data-cost>Cost it again</button>':S.state==="costed"?'<button class="b" data-cost>Cost it again</button>':'<button class="b">New version</button>';
+const why=()=>S.state==="stale"?'<span class="why">You changed something after the last costing.</span>':S.state==="draft"?'<span class="why">Not costed yet.</span>':S.state==="quoted"?'<span class="dim">Quote 1, issued today. Locked.</span>':'<span class="dim">Costed 2 min ago.</span>';
+const figs=()=>S.state==="draft"?"":`<div class="fig"><span class="dim">Delivered cost</span><b style="${S.state==="stale"?"opacity:.45":""}">612,480,000</b></div><div class="fig"><span class="dim">Quote</span><b style="${S.state==="stale"?"opacity:.45":""}">766,000,000</b></div>`;
+const kind=t=>S.label==="none"?"":`<span class="kind">${t}</span><br>`;
+const title=(t,name,sub)=>`<div class="${S.label==="stripe"?"stripe":""}">${kind(t)}<h1>${name}</h1><div class="dim">${sub}</div></div>`;
+function projectHead(){
+  const name=title("Project","Fleet order for a buyer","From plan Mining fleet");
+  const tail=`${stateBadge()} <button class="b">Archive</button>`;
+  if(S.head==="today") return `<div class="row"><div class="grow">${name}</div>${tail}</div>`
+    +(S.state==="stale"?'<div class="banner"><div class="grow">This costing may be out of date.<br>• You changed something after the last costing.</div><button class="b pri" data-cost>Cost it again</button></div>':S.state==="draft"?'<div class="banner"><div class="grow">Not costed yet.</div><button class="b pri" data-cost>Cost it</button></div>':S.state==="quoted"?'<div class="banner ok">Quote 1 was issued today.</div>':"");
+  if(S.head==="c") return `<div class="row" id="fullhead"><div class="grow">${name}</div>${tail} ${action()}</div><div style="margin:6px 0 12px">${why()}</div>`;
+  return `<div class="sticky"><div class="row"><div class="grow">${name}<div>${why()}</div></div>${S.head==="b"?figs():""}${tail} ${action()}</div></div>`;
+}
+const section=(t,body)=>`<div class="card"><h2>${t}</h2>${body}</div>`;
+const filler=n=>`<table><tbody>${Array.from({length:n},(_,i)=>`<tr><td>Row ${i+1}</td><td class="n dim">…</td></tr>`).join("")}</tbody></table>`;
+function pageBody(){
+  if(S.page==="Projects") return projectHead()
+    +section("Settings",filler(6))
+    +`<div class="card" id="products"><h2>Products</h2><table><thead><tr><th>Product</th><th class="n">Quantity</th></tr></thead><tbody>${NAMES.map((n,i)=>`<tr><td>${n}</td><td class="n"><input type="number" value="${S.qty[i]}" data-q="${i}" ${S.state==="quoted"?"disabled":""}></td></tr>`).join("")}</tbody></table></div>`
+    +section("Manufactured items",filler(9))+section("Jobs",filler(12));
+  if(S.page==="Plans") return title("Plan","Mining fleet","Total to buy 612,480,000 ISK")+section("Products",filler(3))+section("Parts",filler(5))+section("Materials to buy",filler(12));
+  return title(S.page,S.page,"Only the menu and the label differ here.")+section(S.page,filler(6));
+}
+const ABOUT={
+  nav:{today:"every menu entry looks the same.",filled:"the active entry is a filled button: the strongest mark, and it competes with the page's own blue buttons.",under:"an accent line and bold text: clear and quiet, one colour everywhere.",area:"the line and a tint take the area's colour, so Plans and Projects differ at a glance. More colours to keep meaningful, and colour alone should not carry the difference."},
+  head:{today:"the banner appears and disappears, which moves everything under it.",a:"<b>A</b>: name, state and the action stay in view. The reason is text in the header, so nothing below moves. It takes about 80 px of every screen.",b:"<b>B</b>: A with delivered cost and quote, dimmed when out of date. Most useful while editing; it repeats the quote card and needs more width on a phone.",c:"<b>C</b>: the header scrolls away and a slim bar slides in with name, state and action. Gives the most room, but the page has two places for one thing."},
+  place:{jump:"after a save the page goes to the top of the section that was changed, and costing goes to the top of the page.",keep:"the page comes back where you were. This is separate from the header: the header alone does not stop the jumping."}
+};
+function render(){
+  document.querySelectorAll(".mock button").forEach(b=>b.classList.toggle("on",S[b.dataset.k]===b.dataset.v));
+  document.documentElement.style.setProperty("--barh",document.getElementById("mock").offsetHeight+"px");
+  document.documentElement.style.setProperty("--c",S.nav==="area"?AREA[S.page]:"#00d3bb");
+  document.getElementById("nav").innerHTML=`<nav class="${S.nav}"><b>EveAssist</b>${PAGES.map(p=>`<a data-page="${p}" class="${p===S.page&&S.nav!=="today"?"on":""}" ${p===S.page?'aria-current="page"':""}>${p}</a>`).join("")}</nav>`;
+  document.getElementById("app").innerHTML=pageBody();
+  document.getElementById("slim").innerHTML=S.page==="Projects"&&S.head==="c"?`<div class="slim" id="bar"><div class="row"><span class="kind">Project</span><b>Fleet order for a buyer</b>${stateBadge()}<span class="grow">${why()}</span>${action()}</div></div>`:"";
+  document.getElementById("about").innerHTML=`<b>Menu</b>: ${ABOUT.nav[S.nav]}<br><b>Header</b>: ${ABOUT.head[S.head]}<br><b>After saving</b>: ${ABOUT.place[S.place]}`;
+  onScroll();
+}
+function onScroll(){const bar=document.getElementById("bar"),h=document.getElementById("fullhead");if(bar&&h)bar.classList.toggle("show",h.getBoundingClientRect().bottom<document.getElementById("mock").offsetHeight)}
+function save(next,sectionId){
+  const y=scrollY;S.state=next;render();
+  if(S.place==="keep")scrollTo(0,y);
+  else if(sectionId)scrollTo(0,document.getElementById(sectionId).getBoundingClientRect().top+scrollY-document.getElementById("mock").offsetHeight);
+  else scrollTo(0,0);
+}
+document.addEventListener("click",e=>{
+  const k=e.target.closest(".mock button[data-k]");if(k){S[k.dataset.k]=k.dataset.v;render();return}
+  const p=e.target.closest("[data-page]");if(p){S.page=p.dataset.page;render();scrollTo(0,0);return}
+  if(e.target.closest("[data-cost]"))save("costed",null);
+});
+document.addEventListener("change",e=>{if(e.target.dataset.q!==undefined){S.qty[e.target.dataset.q]=e.target.value;save("stale","products")}});
+addEventListener("scroll",onScroll);addEventListener("resize",render);
+render();
+</script>
+</body>
+</html>

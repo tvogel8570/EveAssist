@@ -4,7 +4,7 @@
 <body>
 <main class="max-w-6xl mx-auto p-4" th:with="cfg=${view.config}, set=${view.config.settings}">
     <p class="mb-1 text-sm"><a class="link" th:href="@{/projects}" th:text="#{projects.title}">Projects</a></p>
-    <h1 class="text-xl font-semibold" th:text="#{defaults.title}">Project defaults</h1>
+    <div class="area-title"><span class="area-kind" th:text="#{kind.project}">Project</span><br><h1 class="text-xl font-semibold" th:text="#{defaults.title}">Project defaults</h1></div>
     <p class="text-sm opacity-70 mb-3" th:text="#{defaults.intro}">A new project starts from these.</p>
 
     <div id="defaults-saved" class="alert alert-success mb-3" th:if="${saved != null}" th:text="#{'defaults.done.' + ${saved}}">Saved</div>
@@ -79,7 +79,7 @@
             </div>
             <details id="default-skills" data-section="default-skills" class="group/section rounded-box border border-base-300">
                 <summary class="flex cursor-pointer select-none items-center gap-2 rounded-box px-3 py-2 hover:bg-base-300/40">
-                    <svg class="h-4 w-4 shrink-0 opacity-70 transition-transform group-open/section:rotate-90" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M7 4l6 6-6 6V4z"/></svg>
+                    <span th:replace="~{fragments/chevron :: chevron}"></span>
                     <h3 class="font-semibold grow" th:text="#{defaults.skills}">Blueprint skills</h3>
                     <span class="badge badge-warning badge-sm hidden group-data-[dirty]/section:inline" data-section-unsaved th:text="#{project.unsavedShort}">Unsaved</span>
                     <span id="skills-set" class="badge badge-ghost badge-sm" th:text="#{defaults.skillsSet(${view.skillsSet}, ${view.skillCount})}">0 of 0 set</span>
@@ -114,7 +114,7 @@
                 <summary class="btn btn-outline btn-sm" th:text="#{defaults.reset}">Reset to built-in values</summary>
                 <div class="dropdown-content card bg-base-100 shadow z-30 w-80 p-3 gap-2">
                     <p class="text-sm" th:text="#{defaults.resetConfirm}">Your saved defaults are removed.</p>
-                    <button id="reset-defaults-confirm" class="btn btn-error btn-sm" type="submit" form="reset-form" th:text="#{defaults.resetYes}">Reset</button>
+                    <div th:replace="~{fragments/confirm :: buttons(#{defaults.resetYes}, 'reset-defaults-confirm', 'btn-error', 'reset-form')}"></div>
                 </div>
             </details>
             <span class="hidden group-data-[dirty]:inline text-xs text-warning" data-unsaved-note th:text="#{defaults.unsaved}">Unsaved changes</span>

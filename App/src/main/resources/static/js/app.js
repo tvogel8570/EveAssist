@@ -146,12 +146,19 @@
 
     // The page sends a section closed unless it has something in it (the warnings), so what the user opened is kept as "open", and what the
     // user closed of a section that came open (the warnings) is kept as "closed". With nothing kept the page's own state stands.
-    document.querySelectorAll('details[data-section]:not([data-keep-open])').forEach(section => {
-        const kept = keptState(section.dataset.section);
-        if (kept === 'open' || kept === 'closed') {
-            section.open = kept === 'open';
-        }
-    });
+    function putSectionsBack() {
+        document.querySelectorAll('details[data-section]:not([data-keep-open])').forEach(section => {
+            const kept = keptState(section.dataset.section);
+            if (kept === 'open' || kept === 'closed') {
+                section.open = kept === 'open';
+            }
+        });
+    }
+
+    putSectionsBack();
+    // An edit of a plan draws sections again, closed as the server sends them, and htmx can set an element's attributes once more after it has
+    // put it in place, so what the user opened is put back after both.
+    ['htmx:after:swap', 'htmx:after:settle', 'htmx:finally:request'].forEach(name => document.addEventListener(name, putSectionsBack));
 
     // toggle does not bubble, so it is heard while it travels down
     document.addEventListener('toggle', event => {
@@ -174,6 +181,203 @@
             all.value = '';
         }
     });
+
+    // The height of a project's header, which stays in view, so that what else stays in view (the quote card) and what an address leads to are
+    // kept below it.
+    const header = document.getElementById('project-header');
+    if (header) {
+        const tellHeight = () => document.documentElement.style.setProperty('--header-height',
+            getComputedStyle(header).position === 'sticky' ? `${header.offsetHeight}px` : '0px');
+        new ResizeObserver(tellHeight).observe(header);
+        tellHeight();
+    }
+
+    // Inside data-keep-place a save comes back to the same place on the page. As a form is sent, the first section still in view is noted with
+    // where it is in the window; when the same address is drawn again, the page is scrolled so that the section is there again, even if
+    // something above it appeared or went. It is kept for this tab only, and briefly. The browser first goes to the address's own #part, so
+    // this waits until the page has loaded.
+    const PLACE_KEY = 'eveassist.place';
+
+    window.addEventListener('submit', event => {
+        const area = event.target.closest('[data-keep-place]');
+        // a refused or repeated submit goes nowhere (heard last, on the window, so that this is already decided)
+        if (!area || event.defaultPrevented) {
+            return;
+        }
+        const covered = header && getComputedStyle(header).position === 'sticky' ? header.getBoundingClientRect().bottom : 0;
+        const section = [...area.querySelectorAll('details[id]:not(.dropdown)')].find(one => one.getBoundingClientRect().bottom > covered);
+        try {
+            sessionStorage.setItem(PLACE_KEY, JSON.stringify({
+                path: location.pathname, y: window.scrollY, id: section?.id, top: section?.getBoundingClientRect().top, at: Date.now()}));
+        } catch (ignored) {
+            // the page then opens where the address says
+        }
+    });
+
+    let place = null;
+    try {
+        place = JSON.parse(sessionStorage.getItem(PLACE_KEY));
+        sessionStorage.removeItem(PLACE_KEY);
+    } catch (ignored) {
+        // nothing was kept
+    }
+    if (place && place.path === location.pathname && Date.now() - place.at < 60000) {
+        window.addEventListener('load', () => requestAnimationFrame(() => {
+            // where the header does not stay in view, an error is only seen at the top, so the page is left where the browser put it
+            if (document.getElementById('error') && header && getComputedStyle(header).position !== 'sticky') {
+                return;
+            }
+            const section = place.id && document.getElementById(place.id);
+            if (section) {
+                window.scrollBy(0, section.getBoundingClientRect().top - place.top);
+            } else {
+                window.scrollTo(0, place.y);
+            }
+        }));
+    }
+
+    // A long list (data-list-page) keeps its filter, its count and actions and its column headings in view (app.css). They stack, so each needs
+    // the height of those above it; and the headings only stay over a table that fits its place without scrolling sideways. Heights and widths
+    // change as lists are drawn again, rows open and the window changes.
+    const listPage = document.querySelector('[data-list-page]');
+
+    function measureList() {
+        if (!listPage) {
+            return;
+        }
+        const style = document.documentElement.style;
+        style.setProperty('--list-filter-height', `${listPage.querySelector('.list-filter')?.offsetHeight ?? 0}px`);
+        style.setProperty('--list-head-height', `${listPage.querySelector('.list-head')?.offsetHeight ?? 0}px`);
+        listPage.querySelectorAll('[data-wide-table]').forEach(box =>
+            box.toggleAttribute('data-fits', box.querySelector('table').scrollWidth <= box.clientWidth + 1));
+    }
+
+    if (listPage) {
+        const watch = new ResizeObserver(measureList);
+        const watchAll = () => {
+            listPage.querySelectorAll('.list-filter, .list-head, [data-wide-table], [data-wide-table] > table').forEach(part => watch.observe(part));
+            measureList();
+        };
+        watchAll();
+        ['htmx:after:swap', 'htmx:after:settle', 'htmx:finally:request'].forEach(name => document.addEventListener(name, watchAll));
+    }
+
+    // A change of the filter, the tech level or the sort draws the list again: someone far down it is brought to the new list's start, since
+    // where they were means nothing in it. More of the same list (data-keeps-place), a refresh the list asks for itself, and an opened row
+    // leave the page where it is. Which of these it is, is noted as the request is sent: by the time the answer is in, a link that was inside
+    // the list is gone, and htmx then names the list as the request's source.
+    const LISTS = ['browse', 'blueprint-results'];
+
+    document.addEventListener('htmx:before:request', event => {
+        const ctx = event.detail.ctx;
+        ctx.keepsPlace = LISTS.includes(ctx.sourceElement.id) || !!ctx.sourceElement.closest('[data-keeps-place]');
+    });
+
+    document.addEventListener('htmx:after:swap', event => {
+        const {target, keepsPlace} = event.detail.ctx;
+        if (!listPage || keepsPlace || !target || !LISTS.includes(target.id)) {
+            return;
+        }
+        measureList();
+        const filter = listPage.querySelector('.list-filter');
+        const covered = filter && getComputedStyle(filter).position === 'sticky' ? filter.offsetHeight : 0;
+        const start = target.getBoundingClientRect().top + window.scrollY - covered;
+        if (window.scrollY > start) {
+            window.scrollTo(0, start);
+        }
+    });
+
+    // Inventory's choices for a column float over the rows when they are opened while the filter is held at the top of the window (app.css). It is
+    // decided as they open, so that scrolling afterwards moves nothing about.
+    document.addEventListener('htmx:after:swap', event => {
+        const {target} = event.detail.ctx;
+        if (target?.id !== 'filter-pop') {
+            return;
+        }
+        const filter = target.closest('.list-filter');
+        target.toggleAttribute('data-floating', !!filter && getComputedStyle(filter).position === 'sticky'
+            && window.scrollY > 0 && filter.getBoundingClientRect().top < 1);
+    });
+
+    // A form that says data-autosave is saved when a field of it is left changed, with no button.
+    document.addEventListener('change', event => {
+        const form = event.target.form;
+        if (form && form.hasAttribute('data-autosave')) {
+            form.requestSubmit();
+        }
+    });
+
+    // A form that says data-reloads-page (itself, or an element around it) saves at once and draws the page again, which would throw away what
+    // is typed in another form and not saved. Then it asks first, with the attribute's text, and a refusal puts its own fields back. This is
+    // registered before the busy marking below, so that a refused submit does not leave the page waiting.
+    document.addEventListener('submit', event => {
+        const form = event.target;
+        const asking = form.closest('[data-reloads-page]');
+        if (!asking) {
+            return;
+        }
+        const unsaved = [...document.querySelectorAll('form[data-dirty]')].some(other => other !== form);
+        if (unsaved && !window.confirm(asking.dataset.reloadsPage)) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            form.reset();
+        }
+    }, true);
+
+    // A form that says data-busy waits visibly once it is submitted: the cursor says so, the buttons of its data-busy-group (or its own) are
+    // disabled, the chosen one shows a spinner, and a further submit of any such form is dropped, so that one choice is not sent twice. An htmx
+    // form is released when its request is over. A form that leaves the page stays as it is until the next page is there; the browser shows a
+    // page again as it was left when the user goes back to it, so everything is released then.
+    let waiting = null;
+
+    function release() {
+        if (!waiting) {
+            return;
+        }
+        document.documentElement.classList.remove('busy');
+        waiting.buttons.forEach(button => button.disabled = false);
+        waiting.spinner?.remove();
+        waiting = null;
+    }
+
+    document.addEventListener('submit', event => {
+        const form = event.target;
+        if (!form.hasAttribute('data-busy')) {
+            return;
+        }
+        if (waiting) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            return;
+        }
+        const group = form.closest('[data-busy-group]') || form;
+        const now = {form, buttons: [...group.querySelectorAll('button:not([disabled])')], spinner: null};
+        waiting = now;
+        document.documentElement.classList.add('busy');
+        const chosen = event.submitter;
+        // after this event, so that the submit that is under way is not affected by its button being disabled
+        setTimeout(() => {
+            if (waiting !== now) {
+                return;
+            }
+            now.buttons.forEach(button => button.disabled = true);
+            if (chosen) {
+                now.spinner = document.createElement('span');
+                now.spinner.className = 'loading loading-spinner loading-xs';
+                now.spinner.setAttribute('aria-hidden', 'true');
+                chosen.appendChild(now.spinner);
+            }
+        });
+    }, true);
+
+    // Heard on the document: the answer can have removed the form before the request is over, and htmx then reports it there.
+    document.addEventListener('htmx:finally:request', event => {
+        if (waiting && event.detail.ctx.sourceElement === waiting.form) {
+            release();
+        }
+    });
+
+    window.addEventListener('pageshow', release);
 
     // A form that says data-track-unsaved marks itself (data-dirty) as soon as one of its fields is edited, and the page's styles show
     // it: its Save button turns to a warning and its "unsaved changes" note appears. A field outside the form's own tags that names it
@@ -347,9 +551,9 @@
             return;
         }
         detail.hidden = !detail.hidden;
-        const mark = row.querySelector('[data-expander]');
+        const mark = row.querySelector('.chevron');
         if (mark) {
-            mark.textContent = detail.hidden ? '▸' : '▾';
+            mark.toggleAttribute('data-open', !detail.hidden);
         }
     });
 
@@ -380,6 +584,34 @@
             menu.querySelector('input:not([type=hidden]):not([type=checkbox]):not([type=radio]), textarea, select')?.focus();
         }
     }, true);
+
+    // A question asked before something is removed (fragments/confirm.html) opens on its Cancel, so that Enter removes nothing. Cancel closes it
+    // and gives the focus back to what opened it.
+    document.addEventListener('toggle', event => {
+        const menu = event.target;
+        if (menu instanceof HTMLDetailsElement && menu.open) {
+            menu.querySelector(':scope > :not(summary) [data-cancel]')?.focus();
+        }
+    }, true);
+
+    document.addEventListener('click', event => {
+        const menu = event.target.closest('button[data-cancel]')?.closest('details');
+        if (menu) {
+            menu.open = false;
+            menu.querySelector(':scope > summary').focus();
+        }
+    });
+
+    // A button that says data-needs waits for that box to be ticked. It is looked at again when the page is shown, since a browser can show a
+    // page again with its box as it was left.
+    function followBoxes() {
+        document.querySelectorAll('button[data-needs]').forEach(button =>
+            button.disabled = !document.querySelector(button.dataset.needs)?.checked);
+    }
+
+    followBoxes();
+    document.addEventListener('change', followBoxes);
+    window.addEventListener('pageshow', followBoxes);
 
     // Copy as text: one line for each item type the filter lets through, the name and the total with a tab between.
     // The server gives the whole list, because the page shows only the first of it.

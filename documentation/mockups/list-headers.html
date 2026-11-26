@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>List headers</title>
+<style>
+:root{--bg:#1d232a;--nav:#191e24;--panel:#232a33;--panel2:#2a323d;--line:#38424f;--text:#e6ebf2;--dim:#9aa7b8;--pri:#605dff;--area:#35c28d;--acc:#00d3bb;--mockh:0px}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,sans-serif}
+.mock{position:sticky;top:0;z-index:40;display:flex;flex-direction:column;gap:5px;padding:7px 16px;background:#3a2f12;border-bottom:1px solid #6b5518;color:#f3d98a}
+.mock .g{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.mock .g>span{min-width:130px}
+.mock button{background:#2a2410;color:#f3d98a;border:1px solid #6b5518;border-radius:6px;padding:2px 9px;cursor:pointer}
+.mock button.on{background:#f3d98a;color:#2a2410}
+nav{display:flex;gap:18px;background:var(--nav);padding:12px 16px;flex-wrap:wrap}nav b{font-size:17px}
+nav span.on{color:var(--area);font-weight:700;border-bottom:3px solid var(--area)}
+main{max-width:1180px;margin:0 auto;padding:12px 16px}
+h1{font-size:21px;margin:0;border-left:4px solid var(--area);padding-left:10px}
+.dim{color:var(--dim)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.grow{flex:1;min-width:0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:8px}
+input,select{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:4px 8px;font:inherit}
+input.search{flex:1;min-width:160px}input.num{width:56px}
+button.b{background:transparent;border:1px solid var(--line);color:var(--text);border-radius:6px;padding:4px 11px;cursor:pointer;font:inherit}
+button.b.on{background:var(--pri);border-color:var(--pri);color:#fff}
+.chip{border:1px solid var(--pri);color:#b9b8ff;border-radius:99px;padding:1px 10px;font-size:12px;cursor:pointer}
+#sticky{position:sticky;top:var(--mockh);z-index:30;background:var(--bg);padding-top:6px}
+table{width:100%;border-collapse:separate;border-spacing:0}
+th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left}
+th{color:var(--dim);font-size:12px;text-transform:uppercase;letter-spacing:.04em;background:var(--bg);cursor:pointer;position:sticky;top:var(--headtop,0px);z-index:25;border-bottom:2px solid var(--line)}
+.n{text-align:right;font-variant-numeric:tabular-nums}
+.pill{display:flex;gap:10px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 10px;margin-bottom:6px}
+.note{max-width:1180px;margin:0 auto;padding:0 16px 60vh}.note div{border-left:3px solid var(--acc);padding:4px 10px;color:var(--dim)}
+.hide{display:none}
+@media(max-width:1023px){#sticky{position:static}th{position:static}.wide{overflow-x:auto}}
+</style>
+</head>
+<body>
+<div class="mock" id="mock">
+  <div class="g"><b>Mockup, fake data</b> <span style="min-width:0;color:#cbb46a">Scroll down the list, then change a filter. The header stays only on a wide window.</span></div>
+  <div class="g"><span>Page:</span><button data-k="page" data-v="inv">Inventory</button><button data-k="page" data-v="bp">Blueprints</button></div>
+  <div class="g"><span>What stays:</span><button data-k="keep" data-v="a">A Whole filter</button><button data-k="keep" data-v="b">B Main row only</button><button data-k="keep" data-v="c">C One line, opens</button></div>
+  <div class="g"><span>Count and actions:</span><button data-k="acts" data-v="yes">Stay too</button><button data-k="acts" data-v="no">Scroll away</button></div>
+  <div class="g"><span>After a filter change:</span><button data-k="after" data-v="top">Show the list's start</button><button data-k="after" data-v="stay">Stay where I am</button></div>
+  <div class="g"><span id="height"></span></div>
+</div>
+<nav><b>EveAssist</b><span>Plans</span><span>Projects</span><span id="n-inv">Inventory</span><span id="n-bp">Blueprints</span></nav>
+<main>
+  <div id="intro"></div>
+  <div id="sticky"></div>
+  <div id="loose"></div>
+  <div class="wide"><table><thead id="head"></thead><tbody id="rows"></tbody></table></div>
+</main>
+<div class="note"><div id="about"></div></div>
+<script>
+const NAMES=["Tritanium","Pyerite","Mexallon","Isogen","Nocxium","Zydrine","Megacyte","Morphite","Vexor","Rifter","Hobgoblin II","Mining Laser I","Damage Control II","Cap Booster 800","Nanite Repair Paste","Legion","Capital Construction Parts","Antimatter Charge M"];
+const ITEMS=Array.from({length:140},(_,i)=>({name:NAMES[i%NAMES.length]+(i>=NAMES.length?" "+(Math.floor(i/NAMES.length)+1):""),total:(i*7919)%98000+3,cat:["Mineral","Ship","Drone","Module","Charge"][i%5],kind:i%3?"BPC":"BPO",me:i%11,te:(i*2)%21}));
+let S={page:"inv",keep:"b",acts:"yes",after:"top",q:"",kind:"",open:false,chip:false};
+const shown=()=>ITEMS.filter(x=>x.name.toLowerCase().includes(S.q.toLowerCase())&&(!S.kind||x.kind===S.kind)&&(!S.chip||x.cat==="Mineral"));
+const mainRow=()=>S.page==="inv"
+ ?`<input class="search" data-q placeholder="Search items" value="${S.q}"><button class="b" data-chip>+ Add filter</button>`
+ :`<input class="search" data-q placeholder="Search blueprints" value="${S.q}"><select data-kind><option value="">All kinds</option><option ${S.kind==="BPO"?"selected":""}>BPO</option><option ${S.kind==="BPC"?"selected":""}>BPC</option></select><label>ME ≥ <input class="num" type="number"></label><label>TE ≥ <input class="num" type="number"></label>`;
+const moreRow=()=>S.page==="inv"
+ ?`<label><input type="checkbox" checked> Show characters</label><label>Sort <select><option>Most units</option><option>Name</option></select></label>`
+ :`<select><option>All holders</option></select><select><option>All statuses</option></select><label><input type="checkbox"> Needs research only</label><button class="b" data-clear>Clear</button>`;
+const chips=()=>S.chip?`<div class="row" style="margin-bottom:6px"><span class="dim">Filters:</span><span class="chip" data-chip>Category: Mineral ✕</span></div>`:"";
+const acts=()=>S.page==="inv"
+ ?`<div class="row" style="margin-bottom:6px"><span>${shown().length} item types</span><span class="grow"></span><button class="b">Copy as text</button><button class="b">Export CSV</button></div>`
+ :`<div class="row" style="margin-bottom:6px"><span class="join"><button class="b on">All ${shown().length}</button><button class="b">T1</button><button class="b">T2</button></span><button class="b">Actions ▾</button><span class="dim">Tick blueprints to act on them.</span></div>`;
+function stickyHtml(){
+  if(S.keep==="a") return `<div class="card"><div class="row">${mainRow()}</div><div class="row" style="margin-top:8px">${moreRow()}</div></div>${chips()}`;
+  if(S.keep==="b") return `<div class="card"><div class="row">${mainRow()}</div></div>${chips()}`;
+  const said=[S.q&&`“${S.q}”`,S.kind,S.chip&&"Category: Mineral"].filter(Boolean).join(" · ")||"No filters";
+  return S.open?`<div class="card"><div class="row">${mainRow()}<button class="b" data-open>Close</button></div><div class="row" style="margin-top:8px">${moreRow()}</div></div>${chips()}`
+    :`<div class="pill"><button class="b" data-open>Filters ▸</button><span class="grow dim">${said}</span></div>`;
+}
+function head(){return S.page==="inv"?'<tr><th></th><th>Item</th><th class="n">Total</th><th>Held by</th><th>Category</th></tr>':'<tr><th></th><th>Type</th><th>Kind</th><th class="n">ME</th><th class="n">TE</th><th>Holder</th></tr>'}
+function rows(){const l=shown();return l.length?l.map(x=>S.page==="inv"?`<tr><td>▸</td><td>${x.name}</td><td class="n">${x.total.toLocaleString("en-US")}</td><td class="dim">▇▇▇▇▇</td><td class="dim">${x.cat}</td></tr>`:`<tr><td><input type="checkbox"></td><td>${x.name} Blueprint</td><td>${x.kind}</td><td class="n">${x.me}</td><td class="n">${x.te}</td><td class="dim">Pilot ${x.me%3+1}</td></tr>`).join(""):'<tr><td colspan="6" class="dim">Nothing matches.</td></tr>'}
+const ABOUT={a:"<b>A Whole filter.</b> Every control is at hand. The tallest, so the fewest rows show.",
+ b:"<b>B Main row only.</b> Search and the most used filters stay, with the active filters; the rest scrolls away with the page's top. Good balance, but a less used filter needs a scroll up.",
+ c:"<b>C One line, opens.</b> The most rows. The line says what is filtered; opening it costs a click each time."};
+function measure(){
+  const st=document.getElementById("sticky"),said=document.getElementById("height");
+  const kept=st.offsetHeight+document.getElementById("head").offsetHeight;
+  // the readout first: it is part of the bar whose height the rest is placed below
+  said.textContent=innerWidth>=1024?`Stays on screen: ${kept} px, about ${Math.max(0,Math.floor((800-kept)/35))} rows of an 800 px window`:"Narrow window: nothing stays.";
+  const m=document.getElementById("mock").offsetHeight;
+  document.documentElement.style.setProperty("--mockh",m+"px");
+  document.documentElement.style.setProperty("--headtop",(m+st.offsetHeight)+"px");
+}
+function render(focus){
+  document.querySelectorAll(".mock button").forEach(b=>b.classList.toggle("on",S[b.dataset.k]===b.dataset.v));
+  for(const p of ["inv","bp"])document.getElementById("n-"+p).className=S.page===p?"on":"";
+  document.getElementById("intro").innerHTML=`<div class="row"><h1>${S.page==="inv"?"Inventory":"Blueprints"}</h1><span class="grow"></span><button class="b">Refresh</button></div><p class="dim">EVE keeps its copy for a while.</p>`
+    +(S.keep==="b"?`<div class="card"><div class="row">${moreRow()}</div></div>`:"")+'<div class="card dim">3 characters, all up to date</div>';
+  document.getElementById("sticky").innerHTML=stickyHtml()+(S.acts==="yes"?acts():"");
+  document.getElementById("loose").innerHTML=S.acts==="yes"?"":acts();
+  document.getElementById("head").innerHTML=head();
+  document.getElementById("rows").innerHTML=rows();
+  document.getElementById("about").innerHTML=ABOUT[S.keep];
+  measure();
+  if(focus){const i=document.querySelector("[data-q]");if(i){i.focus({preventScroll:true});i.setSelectionRange(i.value.length,i.value.length)}}
+}
+function filtered(focus){
+  const y=scrollY;render(focus);
+  const start=document.getElementById("head").parentElement.getBoundingClientRect().top+scrollY-parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--headtop"));
+  scrollTo(0,S.after==="top"?Math.min(y,Math.max(0,start)):y);
+}
+document.addEventListener("click",e=>{
+  const k=e.target.closest(".mock button[data-k]");if(k){S[k.dataset.k]=k.dataset.v;render();return}
+  if(e.target.closest("[data-open]")){S.open=!S.open;render();return}
+  if(e.target.closest("[data-chip]")){S.chip=!S.chip;filtered();return}
+  if(e.target.closest("[data-clear]")){S.q="";S.kind="";S.chip=false;filtered()}
+});
+document.addEventListener("input",e=>{if(e.target.dataset.q!==undefined){S.q=e.target.value;filtered(true)}});
+document.addEventListener("change",e=>{if(e.target.dataset.kind!==undefined){S.kind=e.target.value;filtered()}});
+addEventListener("resize",measure);
+render();
+</script>
+</body>
+</html>

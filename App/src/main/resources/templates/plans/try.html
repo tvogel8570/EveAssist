@@ -4,7 +4,7 @@
 <body>
 <main class="max-w-6xl mx-auto p-4">
     <div class="flex items-start gap-3 mb-1">
-        <h1 class="text-xl font-semibold grow" th:text="#{try.title}">Try a plan</h1>
+        <div class="area-title grow"><span class="area-kind" th:text="#{kind.plan}">Plan</span><br><h1 class="text-xl font-semibold" th:text="#{try.title}">Try a plan</h1></div>
         <button type="button" id="try-start-over" class="btn btn-sm btn-outline"
                 hx-post="/try/render" hx-vals='{"state": ""}' hx-swap="none"
                 th:text="#{try.startOver}">Start over</button>
@@ -27,12 +27,21 @@
     <div th:replace="~{plans/fragments :: tryNotes(${unpriced}, ${stale}, ${notice}, false)}"></div>
 
     <div th:replace="~{plans/fragments :: undoBar(null, false)}"></div>
+    <details id="products-section" data-section="plan-products" open class="group/section mt-3 rounded-box bg-base-200 [&>:not(summary)]:mx-4 [&>:not(summary):not(:last-child)]:mb-4 open:pb-4">
+    <summary class="flex cursor-pointer select-none items-center gap-2 rounded-box px-4 py-3 hover:bg-base-300/40">
+        <span th:replace="~{fragments/chevron :: chevron}"></span>
+        <h2 class="font-semibold grow" th:text="#{plan.products}">Products</h2>
+        <span th:replace="~{plans/fragments :: productCount(${plan}, false)}"></span>
+    </summary>
+    <div>
     <div th:replace="~{plans/fragments :: products(${plan}, false)}"></div>
     <div th:replace="~{plans/fragments :: trySearch(false)}"></div>
+    </div>
+    </details>
 
-    <div th:replace="~{plans/fragments :: parts(${plan}, false)}"></div>
-    <div th:replace="~{plans/fragments :: runs(${plan.runs}, false)}"></div>
-    <div th:replace="~{plans/fragments :: materials(${plan}, false)}"></div>
+    <details th:replace="~{plans/fragments :: parts(${plan}, false)}"></details>
+    <details th:replace="~{plans/fragments :: runs(${plan.runs}, false)}"></details>
+    <details th:replace="~{plans/fragments :: materials(${plan}, false)}"></details>
 </main>
 </body>
 </html>

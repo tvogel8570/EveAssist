@@ -10,6 +10,7 @@
      th:hx-trigger="${startOnLoad} ? 'load' : 'every 2s'" hx-swap="outerHTML" hx-include="#browse-form, #browse-view">
     <details class="bg-base-200 rounded-box" th:unless="${#lists.isEmpty(rows)}">
         <summary class="px-3 py-2 cursor-pointer flex flex-wrap gap-2 items-center">
+            <span th:replace="~{fragments/chevron :: chevron}"></span>
             <span class="text-sm" th:text="#{inventory.status.title(${#lists.size(rows)})}">3 characters:</span>
             <span class="badge badge-success badge-outline py-3" th:if="${current > 0}" th:text="#{inventory.status.current(${current})}">3 up to date</span>
             <span class="badge badge-info badge-outline py-3 gap-1" th:if="${waiting > 0}">

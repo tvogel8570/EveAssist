@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sections and products</title>
+<style>
+:root{--bg:#1d232a;--panel:#232a33;--panel2:#2a323d;--line:#38424f;--text:#e6ebf2;--dim:#9aa7b8;--pri:#605dff;--sec:#f43098;--acc:#00d3bb;--info:#00bafe;--ok:#35c28d;--warn:#fcb700;--err:#ff627d;--r:8px;--tri:rgba(230,235,242,.7)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,sans-serif}
+.bar{position:sticky;top:0;z-index:20;display:flex;flex-direction:column;gap:6px;padding:8px 16px;background:#3a2f12;border-bottom:1px solid #6b5518;color:#f3d98a}
+.bar .g{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.bar .g>span{min-width:110px}
+.bar button{background:#2a2410;color:#f3d98a;border:1px solid #6b5518;border-radius:6px;padding:3px 9px;cursor:pointer}
+.bar button.on{background:#f3d98a;color:#2a2410}
+.sw{display:inline-block;width:10px;height:10px;border-radius:99px;margin-right:5px;vertical-align:-1px;border:1px solid #0006}
+main{max-width:1100px;margin:0 auto;padding:16px}
+h1{font-size:22px;margin:0 0 2px}h2{font-size:15px;margin:0}h3{font-size:12px;margin:12px 0 4px;color:var(--dim);text-transform:uppercase;letter-spacing:.04em}
+.dim{color:var(--dim)}.sub{color:var(--dim);margin-bottom:12px}
+details.sec{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);margin-bottom:12px;min-width:0}
+details.sec>summary{display:flex;gap:10px;align-items:center;cursor:pointer;padding:11px 14px;list-style:none}
+details.sec>summary:hover{background:var(--panel2);border-radius:var(--r)}
+summary::-webkit-details-marker{display:none}
+details.sec>summary h2{flex:1}
+.in{padding:0 14px 14px}
+.tri{display:inline-flex;align-items:center;justify-content:center;flex:none;width:16px;height:16px;color:var(--tri);transition:transform .15s}
+.tri svg{width:16px;height:16px}
+details[open]>summary>.tri,tr.open .tri,div.open>.tri{transform:rotate(90deg)}
+body.circle .tri{width:24px;height:24px;border-radius:99px;background:color-mix(in srgb,var(--tri) 18%,transparent)}
+body.large .tri,body.large .tri svg{width:22px;height:22px}
+.badge{display:inline-block;padding:1px 8px;border-radius:99px;font-size:12px;border:1px solid var(--line);color:var(--dim);white-space:nowrap}
+.badge.warn{color:var(--warn);border-color:var(--warn)}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+th{color:var(--dim);font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+input,select{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:4px 8px;font:inherit;max-width:100%}
+input.q{width:80px;text-align:right}
+input.search{width:360px}
+button.b{background:transparent;border:1px solid var(--line);color:var(--text);border-radius:6px;padding:3px 10px;cursor:pointer;font:inherit}
+button.b.pri{background:var(--pri);border-color:var(--pri);color:#fff}
+button.b.dirty{background:var(--warn);border-color:var(--warn);color:#201a08}
+.join{display:inline-flex}.join button{border-radius:0}.join button:first-child{border-radius:6px 0 0 6px}.join button:last-child{border-radius:0 6px 6px 0}
+.join button.on{background:var(--pri);border-color:var(--pri);color:#fff}
+.menu{background:var(--panel2);border:1px solid var(--line);border-radius:6px;margin-top:4px;width:360px;max-width:100%}
+.menu div{padding:6px 10px;cursor:pointer}.menu div:hover{background:var(--panel)}
+.ind{padding-left:32px}
+.banner{border:1px solid var(--warn);background:rgba(252,183,0,.09);border-radius:var(--r);padding:10px 14px;margin-bottom:12px}
+tr.exp{cursor:pointer}tr.where td{background:var(--panel2);font-size:13px}
+.note{max-width:1100px;margin:0 auto;padding:0 16px 24px}.note div{border-left:3px solid var(--warn);padding:4px 10px;color:var(--dim)}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.hide{display:none}
+</style>
+</head>
+<body>
+<div class="bar">
+  <div class="g"><b>Mockup, fake data</b></div>
+  <div class="g"><span>Page:</span><button data-k="page" data-v="project">Project</button><button data-k="page" data-v="plan">Plan</button><button data-k="page" data-v="inv">Inventory</button></div>
+  <div class="g"><span>Triangle colour:</span>
+    <button data-k="color" data-v="today"><i class="sw" style="background:rgba(230,235,242,.7)"></i>Today</button>
+    <button data-k="color" data-v="text"><i class="sw" style="background:#e6ebf2"></i>Bright text</button>
+    <button data-k="color" data-v="primary"><i class="sw" style="background:#605dff"></i>Primary</button>
+    <button data-k="color" data-v="accent"><i class="sw" style="background:#00d3bb"></i>Accent</button>
+    <button data-k="color" data-v="info"><i class="sw" style="background:#00bafe"></i>Info</button>
+    <button data-k="color" data-v="secondary"><i class="sw" style="background:#f43098"></i>Secondary</button></div>
+  <div class="g"><span>Triangle style:</span><button data-k="style" data-v="plain">Plain</button><button data-k="style" data-v="large">Larger</button><button data-k="style" data-v="circle">In a circle</button></div>
+  <div class="g" data-only="project"><span>Products layout:</span><button data-k="layout" data-v="a">A Products, then parts</button><button data-k="layout" data-v="b">B One tree</button></div>
+  <div class="g" data-only="project"><span>Saving:</span><button data-k="saving" data-v="button">Save button</button><button data-k="saving" data-v="auto">Saves on change</button></div>
+  <div class="g" data-only="plan"><span>Open at first:</span><button data-k="open" data-v="products">Products only</button><button data-k="open" data-v="all">All</button><button data-k="open" data-v="none">None</button></div>
+</div>
+<main id="app"></main>
+<div class="note"><div id="about"></div></div>
+<script>
+const COLORS={today:"rgba(230,235,242,.7)",text:"#e6ebf2",primary:"#605dff",accent:"#00d3bb",info:"#00bafe",secondary:"#f43098"};
+const tri=`<span class="tri" aria-hidden="true"><svg viewBox="0 0 20 20" fill="currentColor"><path d="M7 4l6 6-6 6V4z"/></svg></span>`;
+let S={page:"project",color:"today",style:"plain",layout:"a",saving:"button",open:"products",dirty:false,stale:false,toggled:{}};
+const products=[{n:"Vexor",q:5,parts:[]},{n:"Legion",q:1,parts:[["Capital Construction Parts",2,"build"],["Electromechanical Interface Nexus",12,"buy"],["Emergent Neurovisual Interface",6,"build"]]},{n:"Large Targeting Systems Stabilizer I",q:10,parts:[]}];
+const isOpen=(id,d)=>S.toggled[id]===undefined?d:S.toggled[id];
+const sec=(id,title,badge,body,open)=>`<details class="sec" data-id="${id}" ${isOpen(id,open)?"open":""}><summary>${tri}<h2>${title}</h2>${badge}</summary><div class="in">${body}</div></details>`;
+const badge=t=>`<span class="badge">${t}</span>`;
+const bb=m=>`<span class="join"><button class="b ${m==="build"?"on":""}" data-bb>Build</button><button class="b ${m==="buy"?"on":""}" data-bb>Buy</button></span>`;
+const qty=p=>`<input class="q" type="number" min="1" value="${p.q}" data-q>${S.saving==="button"?` <button class="b ${S.dirty?"dirty":""}" data-save>Save</button>`:""}`;
+const search=()=>`<div style="margin-top:10px"><input class="search" id="s" placeholder="Add a product…" autocomplete="off"><div class="menu hide" id="m"><div data-add>Hauler Example</div><div data-add>Rifter</div></div></div>`;
+const rm=`<button class="b" data-rm title="Remove">✕</button>`;
+function productsA(){
+  const rows=products.map(p=>`<tr><td>${p.n}</td><td class="n">${qty(p)}</td><td class="n">${rm}</td></tr>`).join("");
+  const parts=products.flatMap(p=>p.parts.map(x=>`<tr><td>${x[0]}</td><td class="dim">${p.n}</td><td class="n">${x[1]}</td><td class="n">${bb(x[2])}</td></tr>`)).join("");
+  return `<div class="scroll"><table><thead><tr><th>Product</th><th class="n">Quantity</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>${search()}
+    <h3>Parts that can be built</h3><div class="scroll"><table><thead><tr><th>Part</th><th>For</th><th class="n">Needed</th><th class="n">Source</th></tr></thead><tbody>${parts}</tbody></table></div>`;
+}
+function productsB(){
+  const rows=products.map((p,i)=>{
+    const o=isOpen("p"+i,i===1);
+    return `<tr class="${o?"open":""}"><td><div class="row">${p.parts.length?`<span class="${o?"open":""}" data-tree="p${i}" style="cursor:pointer;display:inline-flex">${tri}</span>`:'<span style="width:16px;display:inline-block"></span>'}${p.n}</div></td><td class="n">${qty(p)}</td><td class="n">${rm}</td></tr>`
+      +(o?p.parts.map(x=>`<tr class="where"><td class="ind">${x[0]}</td><td class="n dim">${x[1]} needed</td><td class="n">${bb(x[2])}</td></tr>`).join(""):"");
+  }).join("");
+  return `<div class="scroll"><table><thead><tr><th>Product and its parts</th><th class="n">Quantity</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>${search()}`;
+}
+function project(){
+  return `<h1>Fleet order for a buyer</h1><div class="sub">Draft · 3 products</div>
+    ${S.stale?'<div class="banner">The costing is out of date: the products changed. <button class="b">Cost it again</button></div>':""}
+    ${sec("settings","Settings","", '<span class="dim">As today.</span>',false)}
+    ${sec("products","Products",badge("3 products, 3 parts"),S.layout==="a"?productsA():productsB(),true)}
+    ${sec("items","Items","",'<span class="dim">As today.</span>',false)}
+    ${sec("jobs","Jobs",badge("9"),'<span class="dim">As today.</span>',false)}
+    ${sec("cost","Delivered cost",badge("612,480,000 ISK"),'<span class="dim">As today.</span>',false)}`;
+}
+function plan(){
+  const d=k=>S.open==="all"||(S.open==="products"&&k==="products");
+  return `<h1>Mining fleet</h1><div class="sub">Total cost 612,480,000 ISK · prices from 2 h ago <button class="b">Refresh prices</button></div>
+    ${sec("pl-products","Products",badge("3"),`<table><thead><tr><th>Product</th><th class="n">Quantity</th><th class="n">Cost</th><th></th></tr></thead><tbody>${products.map(p=>`<tr><td>${p.n}</td><td class="n"><input class="q" type="number" value="${p.q}"></td><td class="n">${(p.q*38_200_000).toLocaleString("en-US")}</td><td class="n">${rm}</td></tr>`).join("")}</tbody></table>${search()}`,d("products"))}
+    ${sec("pl-parts","Parts",badge("3 · 2 built"),`<table><thead><tr><th>Part</th><th class="n">Needed</th><th class="n">Source</th></tr></thead><tbody>${products[1].parts.map(x=>`<tr><td>${x[0]}</td><td class="n">${x[1]}</td><td class="n">${bb(x[2])}</td></tr>`).join("")}</tbody></table>`,d("parts"))}
+    ${sec("pl-runs","Runs needed",badge("5"),'<table><thead><tr><th>Item</th><th class="n">Runs</th></tr></thead><tbody><tr><td>Vexor</td><td class="n">5</td></tr><tr><td>Legion</td><td class="n">1</td></tr></tbody></table>',d("runs"))}
+    ${sec("pl-mat","Materials",badge("22 · 1 unpriced")+' <span class="badge warn">Check prices</span>','<table><thead><tr><th>Material</th><th class="n">Quantity</th><th class="n">Cost</th></tr></thead><tbody><tr><td>Tritanium</td><td class="n">1,840,220</td><td class="n">7,360,880</td></tr><tr><td>Pyerite</td><td class="n">402,118</td><td class="n">5,629,652</td></tr></tbody></table>',d("mat"))}`;
+}
+function inv(){
+  const rows=[["Tritanium","12,400,000"],["Vexor","7"],["Mining Drone II","240"]].map((r,i)=>{
+    const o=isOpen("i"+i,i===0);
+    return `<tr class="exp ${o?"open":""}" data-tree="i${i}"><td style="width:36px">${tri}</td><td>${r[0]}</td><td class="n">${r[1]}</td></tr>${o?`<tr class="where"><td></td><td colspan="2">Jita IV-4 · Hangar · ${r[1]}</td></tr>`:""}`}).join("");
+  return `<h1>Inventory</h1><div class="sub">The same triangle on rows and on panels</div>
+    ${sec("inv-status","3 characters, all up to date","",'<span class="dim">Each character and when it was fetched.</span>',false)}
+    <div class="scroll"><table><thead><tr><th></th><th>Item</th><th class="n">Total</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+const ABOUT={
+ project:()=>(S.layout==="a"?"<b>A Products, then parts.</b> Two short tables. Easy to scan and to build, but a part is away from its product, and a part used by several products needs one row listing them.":"<b>B One tree.</b> Each part sits under its product, so cause and effect are visible. A part that several products use appears more than once, and switching one switches all, which can surprise.")
+   +"<br>"+(S.saving==="button"?"<b>Save button</b>, as the rest of the project page: predictable, one more click.":"<b>Saves on change</b>, as the plan page: faster, but unlike the other sections of a project.")
+   +"<br>Buy or build applies to the part in the whole project. A change makes the costing out of date.",
+ plan:()=>"Each section remembers whether you left it open, as on a project; <b>Open at first</b> is only what a new browser shows. The header badge keeps the key figure visible while closed.",
+ inv:()=>"One shared triangle for table rows and panels. Yellow is not offered as a colour: it already means unsaved or needs attention."
+};
+function render(){
+  document.querySelectorAll(".bar button[data-k]").forEach(b=>b.classList.toggle("on",S[b.dataset.k]===b.dataset.v));
+  document.querySelectorAll("[data-only]").forEach(g=>g.classList.toggle("hide",g.dataset.only!==S.page));
+  document.documentElement.style.setProperty("--tri",COLORS[S.color]);
+  document.body.className=S.style;
+  document.getElementById("app").innerHTML=S.page==="project"?project():S.page==="plan"?plan():inv();
+  document.getElementById("about").innerHTML=ABOUT[S.page]();
+}
+document.addEventListener("click",e=>{
+  const bar=e.target.closest(".bar button[data-k]");
+  if(bar){S[bar.dataset.k]=bar.dataset.v;if(bar.dataset.k==="open")S.toggled={};S.dirty=false;S.stale=false;render();return}
+  const tree=e.target.closest("[data-tree]");
+  if(tree){const id=tree.dataset.tree;S.toggled[id]=!isOpen(id,id==="p1"||id==="i0");render();return}
+  if(e.target.closest("[data-bb]")){e.target.parentElement.querySelectorAll("button").forEach(b=>b.classList.toggle("on",b===e.target));if(S.page==="project"){S.stale=true;render()}return}
+  if(e.target.closest("[data-save]")){S.dirty=false;S.stale=true;render();return}
+  if(e.target.closest("[data-add],[data-rm]")){if(S.page==="project"){S.stale=true;render()}}
+});
+document.addEventListener("input",e=>{
+  if(e.target.id==="s")document.getElementById("m").classList.toggle("hide",!e.target.value);
+  if(e.target.dataset.q!==undefined){if(S.saving==="button"){S.dirty=true;e.target.nextElementSibling.classList.add("dirty")}else{S.stale=true;render()}}
+});
+document.addEventListener("toggle",e=>{if(e.target.dataset&&e.target.dataset.id)S.toggled[e.target.dataset.id]=e.target.open},true);
+render();
+</script>
+</body>
+</html>

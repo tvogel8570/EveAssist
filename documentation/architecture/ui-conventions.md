@@ -60,3 +60,48 @@ also serve the choice of a colour for each character (issue #17).
 `InventoryBrowserIT` types slowly in a real browser and checks that nothing applies within a second of the last key, that
 the list and address then change, that focus and the caret stay, that the history does not grow, that Enter applies at once,
 and that the Add filter list keeps focus, caret and text while its list is refreshed.
+
+## Opening and closing
+
+Decided with the developer on 2026-11-26.
+
+- **One triangle** for everything that opens and closes, on a section or a table row: `templates/fragments/chevron.html`, a triangle **in a circle in the accent colour** (`.chevron` in `app.css`). It turns when
+  its `<details>` is open, or when it carries `data-open`. A menu's own arrow (a dropdown such as *Actions*) is not this.
+- **A page of sections** uses `<details data-section="name">`: what the user opens or closes is kept in the browser, and put back after an htmx edit draws a section again. A header says how much is inside, so a
+  closed section still tells something.
+- **Open at first:** a project shows its Products and anything with a warning; a plan shows its Products only.
+
+## Waiting
+
+An action that can wait on ESI says so: a form with `data-busy` gets a **wait cursor**, its choices **disabled** (those of its `data-busy-group`) and a spinner on the chosen one, and a second submit is dropped. It is
+used for **adding a product** (plan, try-a-plan, project), **costing** a project (also *Create and cost*), **taking the market price again** and **refreshing the contracts**.
+
+## Where the user is
+
+Decided with the developer on 2026-11-26, from [the mockup](../mockups/navigation-and-project-header.html).
+
+- **The menu** marks the page's area: the entry's text and underline in the **area's colour**, with a tint (`PageArea` tells the layout the area from the address; the colours are in `app.css`). Plans are blue,
+  projects the accent colour, facilities and blueprint copies violet, inventory and blueprints green, characters pink. Colour is never the only sign: the entry is also bold, underlined and marked as the current page.
+- **The title** has a stripe in that colour, and the pages of a plan or a project say **Plan** or **Project** above it, because the two look alike.
+- **A project's header stays in view** (not on a narrow screen): name, delivered cost and quote (dimmed when out of date), state, *Archive* and *Delete*, the action that moves it on (*Cost it*, *Cost it again* or *New version*),
+  one line for the costing's state, and what went wrong with the last change. It replaces the banners that appeared and went.
+- **A save keeps the place** on a project's page (`data-keep-place`), instead of going to the top of the page or of the saved section.
+
+## Long lists
+
+Decided with the developer on 2026-11-26, from [the mockup](../mockups/list-headers.html). **Inventory** and **Blueprints**:
+
+- **Deep in the list**, the **whole filter**, the **count with its actions** and the **column headings** stay in view (`data-list-page`, `.list-filter`, `.list-head`).
+- **Only on a window at least 1024 px wide**, and the headings only where the table fits without scrolling sideways. Narrower, everything scrolls as before.
+- **A change of the filter, tech level or sort** brings someone far down the list to the **new list's start**. *Show more*, a refresh and opening a row leave the page where it is.
+- **The choices of a filter column** (inventory's *Add filter*), opened **deep in the list**, lie over the rows, below the count, so the header does not grow. Opened at the top of the page they push the list
+  down, so that no row is covered.
+
+## Asking before something is removed
+
+Issues #23 and #21, built 2026-11-26.
+
+- Anything that removes something **asks first**, with `fragments/confirm.html`: a **green Cancel that has the focus** when the question opens, so that Enter removes nothing, beside the button that does it
+  (red). Cancel closes the question and gives the focus back to what opened it. `ConfirmationTemplatesTest` fails on a red submit button written by hand.
+- **Deleting the account** asks on a page of its own: *Keep my account* is green and focused, and the delete button is **disabled until the box is ticked**. The server still refuses without the box.
+

@@ -69,6 +69,80 @@
   text-decoration: underline;
 }
 
+html.busy,
+html.busy * {
+  cursor: wait !important;
+}
+
+/* Where the user is: the menu entry of the page's area, and the page's title, in the area's colour. Plans and projects look alike, so they differ
+   by this and by the word above the title. */
+body[data-area="plans"] { --area: var(--color-info); }
+body[data-area="projects"] { --area: var(--color-accent); }
+body[data-area="facilities"], body[data-area="blueprint-copies"] { --area: #a78bfa; }
+body[data-area="inventory"], body[data-area="blueprints"] { --area: var(--color-success); }
+body[data-area="characters"] { --area: #f472b6; }
+
+.navbar a[aria-current="page"] {
+  color: var(--area);
+  font-weight: 700;
+  background: color-mix(in oklab, var(--area) 18%, transparent);
+  border-width: 0 0 3px;
+  border-style: solid;
+  border-color: var(--area);
+  border-radius: .375rem .375rem 0 0;
+}
+
+/* A part of a project's page that an address names (#settings) is not left under the header that stays in view. */
+[data-keep-place] [id] {
+  scroll-margin-top: calc(var(--header-height, 0px) + .5rem);
+}
+
+.area-title {
+  border-left: 4px solid var(--area, transparent);
+  padding-left: .75rem;
+}
+
+.area-kind {
+  display: inline-block;
+  margin-bottom: .125rem;
+  padding: 0 .45rem;
+  border: 1px solid var(--area);
+  border-radius: .25rem;
+  color: var(--area);
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+/* The triangle of everything that opens and closes (fragments/chevron.html): in a circle, in the accent colour. */
+.chevron {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 9999px;
+  color: var(--color-accent);
+  background: color-mix(in oklab, var(--color-accent) 18%, transparent);
+}
+
+.chevron svg {
+  width: 1rem;
+  height: 1rem;
+  transition: rotate .15s;
+}
+
+details[open] > summary > .chevron svg,
+.chevron[data-open] svg {
+  rotate: 90deg;
+}
+
+#search-list button:disabled {
+  opacity: .5;
+}
+
 #search-list button:focus {
   outline: 2px solid var(--color-primary);
   outline-offset: -2px;
@@ -100,6 +174,66 @@
 .seg-22 { fill: hsl(145 62% 58%); }
 .seg-23 { fill: hsl(283 62% 58%); }
 .seg-rest { fill: var(--color-base-300); }
+
+/*
+ * A long list (data-list-page: inventory, blueprints). On a wide window its filter, the count with its actions, and the column headings stay
+ * in view, one under the other; app.js tells their heights. The headings can only stay where the table fits (data-fits), because a box that
+ * scrolls its table sideways holds the headings inside it too.
+ */
+.list-filter,
+.list-head {
+  /* holds its children's margins, so that what is below starts where the measured height ends */
+  display: flow-root;
+  background: var(--color-base-100);
+}
+
+.list-filter {
+  padding: .5rem 0;
+}
+
+/* Nothing open takes no room, so that opening a floating list leaves the filter's height as it was. */
+#filter-pop:empty {
+  display: none;
+}
+
+/* The choices of one column, opened while the filter is held at the top of the window, lie over the rows instead of making what is held
+   taller: under the count and its actions. Opened at the top of the page, they take their own room, as anything on a page does. */
+#filter-pop[data-floating] {
+  position: absolute;
+  z-index: 35;
+  top: calc(100% + .5rem + var(--list-head-height, 0px));
+  right: .75rem;
+  left: .75rem;
+  max-height: 60vh;
+  overflow-y: auto;
+  border-radius: .5rem;
+  box-shadow: 0 .5rem 1.25rem #0008;
+}
+
+@media (min-width: 1024px) {
+  [data-list-page] .list-filter {
+    position: sticky;
+    z-index: 22;
+    top: 0;
+  }
+
+  [data-list-page] .list-head {
+    position: sticky;
+    z-index: 21;
+    top: var(--list-filter-height, 0px);
+  }
+
+  [data-wide-table][data-fits] {
+    overflow: visible;
+  }
+
+  [data-wide-table][data-fits] > table > thead > tr > th {
+    position: sticky;
+    z-index: 10;
+    top: calc(var(--list-filter-height, 0px) + var(--list-head-height, 0px));
+    background: var(--color-base-100);
+  }
+}
 
 .blueprint-actions-menu {
   position: absolute;

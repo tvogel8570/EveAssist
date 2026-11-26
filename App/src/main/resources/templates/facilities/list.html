@@ -3,7 +3,7 @@
 <head><title th:text="#{facilities.title}">Facilities</title></head>
 <body>
 <main class="max-w-6xl mx-auto p-4">
-    <h1 class="text-xl font-semibold" th:text="#{facilities.title}">Facilities</h1>
+    <h1 class="area-title text-xl font-semibold" th:text="#{facilities.title}">Facilities</h1>
     <p class="text-sm opacity-70 mb-3" th:text="#{facilities.intro}">A facility is a structure you build in.</p>
     <p id="back-to-project" th:if="${project != null}" class="mb-3"><a class="link" th:href="@{/projects/{id}(id=${project})}" th:text="#{facilities.backToProject}">Back to the project</a></p>
     <p id="back-to-defaults" th:if="${fromDefaults}" class="mb-3"><a class="link" th:href="@{/project-defaults}" th:text="#{facilities.backToDefaults}">Back to the project defaults</a></p>
@@ -11,7 +11,7 @@
     <div id="error" th:if="${facilityError != null}" class="alert alert-error my-3" role="alert"><span th:text="#{'facility.error.' + ${facilityError}}">Error</span></div>
     <div id="deleted" th:if="${deletedDrafts != null}" class="alert alert-info my-3"><span th:text="#{facilities.deleted(${deletedDrafts})}">Deleted</span></div>
 
-    <details id="add-facility" open class="group/section rounded-box bg-base-200 mb-4 [&>:not(summary)]:mx-4 [&>:not(summary)]:mb-4">
+    <details id="add-facility" open class="group/section rounded-box bg-base-200 mb-4 [&>:not(summary)]:mx-4 [&>:not(summary):not(:last-child)]:mb-4 open:pb-4">
         <summary class="flex cursor-pointer select-none items-center gap-2 rounded-box px-4 py-3 hover:bg-base-300/40">
             <svg class="h-4 w-4 shrink-0 opacity-70 transition-transform group-open/section:rotate-90" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M7 4l6 6-6 6V4z"/></svg>
             <h2 class="font-semibold grow" th:text="#{facilities.add}">Add facility</h2>
@@ -23,7 +23,7 @@
 
     <div id="facility-list" class="space-y-3">
         <details th:each="listing : ${facilities}" th:with="facility=${listing.facility}" th:id="'facility-' + ${facility.id.value}"
-                 class="group/section rounded-box bg-base-200 [&>:not(summary)]:mx-4 [&>:not(summary)]:mb-4">
+                 class="group/section rounded-box bg-base-200 [&>:not(summary)]:mx-4 [&>:not(summary):not(:last-child)]:mb-4 open:pb-4">
             <summary class="flex cursor-pointer select-none items-center gap-2 rounded-box px-4 py-3 hover:bg-base-300/40">
                 <svg class="h-4 w-4 shrink-0 opacity-70 transition-transform group-open/section:rotate-90" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M7 4l6 6-6 6V4z"/></svg>
                 <h2 class="font-semibold" th:text="${facility.name}">Name</h2>
@@ -44,7 +44,7 @@
                         <input type="hidden" name="project" th:value="${project}" th:if="${project != null}">
                         <input type="hidden" name="from" value="defaults" th:if="${fromDefaults}">
                         <p class="text-sm" th:text="#{facilities.deleteConfirm(${facility.name}, ${listing.draftProjects})}">Delete this facility?</p>
-                        <button type="submit" class="btn btn-error btn-sm" th:id="'delete-confirm-' + ${facility.id.value}" th:text="#{facilities.deleteYes}">Delete facility</button>
+                        <div th:replace="~{fragments/confirm :: buttons(#{facilities.deleteYes}, 'delete-confirm-' + ${facility.id.value}, 'btn-error', null)}"></div>
                     </form>
                 </details>
             </div>
