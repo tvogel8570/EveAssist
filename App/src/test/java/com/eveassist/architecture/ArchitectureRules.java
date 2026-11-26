@@ -28,6 +28,8 @@ final class ArchitectureRules {
     /** The packages of a layer, with whatever is between {@code internal} and it, and everything under it. */
     private static final String DOMAIN = "..internal..domain..";
     private static final String APPLICATION = "..internal..application..";
+    /** The mark of a helper that is not a use case, under the base package. */
+    private static final String NO_ACCOUNT_DATA = ".identity.ReadsNoAccountData";
 
     private final String base;
 
@@ -102,6 +104,17 @@ final class ArchitectureRules {
                 .allowEmptyShould(true);
     }
 
+    /**
+     * The mark takes a class out of the viewer-first rule, so its claim is checked: such a class depends on no repository and on no database access.
+     * Only what the class itself depends on is checked, not what its collaborators do.
+     */
+    ArchRule helpersMarkedAsReadingNoAccountDataReachNone() {
+        return noClasses().that().areAnnotatedWith(base + NO_ACCOUNT_DATA)
+                .should().dependOnClassesThat().haveSimpleNameEndingWith("Repository")
+                .orShould().dependOnClassesThat().resideInAnyPackage("java.sql..", "javax.sql..", "org.springframework.jdbc..")
+                .allowEmptyShould(true);
+    }
+
     ArchRule queriesAndWritesDoNotStartFetches() {
         return noClasses().that().resideInAPackage(base + APPLICATION)
                 .and().haveNameMatching(".*(Queries|Editing)")
@@ -123,6 +136,7 @@ final class ArchitectureRules {
                 && !c.isEnum()
                 && !c.isRecord()
                 && !c.isAssignableTo(Throwable.class)
+                && !c.isAnnotatedWith(base + NO_ACCOUNT_DATA)
                 && !c.getSimpleName().equals("package-info"));
     }
 

@@ -47,7 +47,9 @@ class ArchitectureRulesFixtureTest {
                 rule(ArchitectureRules::domainStaysPlain, "SpringAwareFacility"),
                 rule(ArchitectureRules::everyUseCaseMethodTakesTheViewerFirst, "FacilityUseCases"),
                 rule(ArchitectureRules::queriesAndWritesDoNotStartFetches, "FacilityEditing"),
-                rule(ArchitectureRules::facadesDoNotReachPageEntryUseCases, "FacadeOfAFeaturesEntry"));
+                rule(ArchitectureRules::facadesDoNotReachPageEntryUseCases, "FacadeOfAFeaturesEntry"),
+                rule(ArchitectureRules::helpersMarkedAsReadingNoAccountDataReachNone, "MarkedButReadingPlans"),
+                rule(ArchitectureRules::helpersMarkedAsReadingNoAccountDataReachNone, "MarkedButUsingSql"));
     }
 
     private static Arguments rule(Function<ArchitectureRules, ArchRule> rule, String offender) {

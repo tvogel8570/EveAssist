@@ -62,6 +62,11 @@ class ArchitectureTest {
     }
 
     @Test
+    void helpersMarkedAsReadingNoAccountDataReachNone() {
+        RULES.helpersMarkedAsReadingNoAccountDataReachNone().check(PRODUCTION);
+    }
+
+    @Test
     void everyRepositoryMethodTakesTheViewerFirst() {
         RULES.everyRepositoryMethodTakesTheViewerFirst().check(PRODUCTION);
     }

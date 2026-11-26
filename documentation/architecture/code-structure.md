@@ -149,6 +149,9 @@ They therefore meet at the use cases, not at the controllers or the facade:
   stores nothing and reads no account's data. No repository takes one, and the build still fails for a repository
   method without a `Viewer`, so a visitor cannot reach an account's records. This widens a rule that is still
   **proposed**, so the developer should confirm it.
+- **The one exception is a class marked `@ReadsNoAccountData`** (decided with the developer on 2026-11-26): a helper in an application package that is not a use case, such as one
+  that only asks the SDE. Splitting `industry` by feature made such helpers public, so that other features' packages can use them. The build refuses a marked class that depends on a
+  repository or on database access. It does not follow what the class's collaborators do, so the mark goes only on a class whose calls cannot reach an account's records.
 - **Every public repository method takes the `Viewer` as its first parameter, and its SQL filters on it.** A use case
   cannot get or change a record without one, so the build fails when a new repository method leaves it out. The
   developer chose this over a viewer-checking class such as `VisiblePlans`, which the spike used, because the check then
