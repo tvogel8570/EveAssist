@@ -151,6 +151,16 @@ public class ProjectPageController {
         return "projects/compare";
     }
 
+    /** Takes current market prices for everything the project could need, except those the user typed. It changes inputs, so the costing is out of date. */
+    @PostMapping("/prices/refresh")
+    String refreshPrices(Viewer viewer, @PathVariable UUID id, @RequestParam(required = false) String anchor, RedirectAttributes flash) {
+        var refresh = entry.refreshPrices(viewer, new ProjectId(id));
+        if (!refresh.failedItems().isEmpty()) {
+            flash.addFlashAttribute("pricesFailed", refresh.failedItems());
+        }
+        return back(id, anchor);
+    }
+
     @PostMapping("/cost")
     String cost(Viewer viewer, @PathVariable UUID id, @RequestParam(required = false) String anchor, RedirectAttributes flash) {
         var run = entry.cost(viewer, new ProjectId(id));

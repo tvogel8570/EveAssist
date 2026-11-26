@@ -39,6 +39,11 @@
                   th:text="#{'projects.state.' + ${state}}">Draft</span>
             <span id="out-of-date-badge" th:if="${!#lists.isEmpty(reasons)}" class="badge badge-warning badge-outline" th:text="#{projects.outOfDate}">Out of date</span>
             <th:block th:replace="~{projects/fragments :: projectActions(${project.id.value}, ${project.name}, ${project.archived}, 'project', 'table', false)}"></th:block>
+            <!--/* the market's prices, taken again: the project keeps its own until then. A typed price stays */-->
+            <form method="post" data-busy th:if="${!locked}" th:attr="data-reloads-page=#{project.reloadAsks}"
+                  th:action="@{/projects/{id}/prices/refresh(id=${project.id.value})}">
+                <button id="refresh-prices" class="btn btn-sm btn-outline" type="submit" th:text="#{plan.refreshPrices}">Refresh prices</button>
+            </form>
             <form method="post" data-busy th:if="${!locked}" th:action="@{/projects/{id}/cost(id=${project.id.value})}">
                 <button class="btn btn-sm" type="submit" th:id="${state == 'draft' or stale} ? 'cost-it' : 'cost-it-current'"
                         th:classappend="${state == 'draft' or stale} ? 'btn-primary' : 'btn-outline'"
@@ -67,6 +72,7 @@
         <!--/* what went wrong with the last change, and what happened that needs saying */-->
         <div id="error" th:if="${error != null}" class="alert alert-error mt-2 py-2" role="alert"><span th:text="#{'project.error.' + ${error}}">Error</span></div>
         <div id="prices-problem" th:if="${pricesProblem != null}" class="alert alert-warning mt-2 py-2"><span th:text="#{project.pricesProblem}">Prices</span></div>
+        <div id="prices-failed" th:if="${pricesFailed != null}" class="alert alert-warning mt-2 py-2"><span th:text="#{project.refreshFailed(${#strings.listJoin(pricesFailed, ', ')})}">Not refreshed</span></div>
         <div id="facilities-changed" th:if="${facilitiesChanged != null}" class="alert alert-info mt-2 py-2"><span th:text="#{project.facilitiesChanged}">Facilities</span></div>
     </header>
 

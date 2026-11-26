@@ -161,6 +161,20 @@ class ProjectHeaderBrowserIT extends IntegrationTest {
     }
 
     @Test
+    void refreshingThePricesFromTheHeaderKeepsThePlaceAndNamesWhatCouldNotBeRead() {
+        scrollSoThatItIs("#quantity-1001", 350);
+        var before = top("#quantity-1001");
+        esi.fail(TRITANIUM.value());
+
+        saving(() -> page.evaluate("document.querySelector('#refresh-prices').click()"));
+
+        assertThat(page.locator("#project-header #prices-failed")).containsText("Tritanium");
+        assertThat(page.locator("#banner-stale")).isVisible();
+        // the header grew by the message, and what the user was looking at is where it was
+        assertThat(top("#quantity-1001")).isBetween(before - 3, before + 3);
+    }
+
+    @Test
     void aQuotedProjectOffersTheNewVersionFromTheHeader() {
         var owner = viewerFor(sub).accountId().value();
         jdbc.sql("INSERT INTO facility (public_id, owner_account_id, name) VALUES (:id, :owner, 'Azbel')")

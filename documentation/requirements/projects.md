@@ -96,7 +96,10 @@ reviewed with the developer.
 **Products section** (decided with the developer on 2026-11-26, from [the mockup](../mockups/sections-and-products.html)): between Settings and Items, open unless the user closed it. A table of the **products**
 with their units, a search that adds one (one unit, fetching the prices it brings in) and a removal that asks first; below it a table of the **parts that can be built**, with the products that use each, the units
 the shown costing's jobs take (dimmed when that costing is out of date, a dash when there is none) and **Build or Buy**, which applies to the part everywhere in the project. **A change is saved as it is made**, with no Save
-button, and redraws the page; when another form of the page has unsaved work, it **asks first**. A quoted project shows the section and offers no change. **Not built:** refreshing a project's prices from the page.
+button, and redraws the page; when another form of the page has unsaved work, it **asks first**. A quoted project shows the section and offers no change.
+
+**Refresh prices** (added 2026-11-26) is in the project's header beside *Cost it again*, on a Draft: it takes current market prices for everything the project could need, **leaves typed prices**, names an item ESI could not answer
+for (which keeps its earlier price), and makes the costing out of date.
 
 **Typed prices** (decided with the developer on 2026-11-25). An item with no Jita price, or too little of one (the Jita split needs both sides), is priced by **a price the user types for the
 project**. Until then it stays a blocking warning that says why: a bought material or a surplus item is *unpriced*, and in a **market-referenced** quote a product with no price at the basis raises

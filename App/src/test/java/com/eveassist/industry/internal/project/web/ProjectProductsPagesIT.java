@@ -199,4 +199,52 @@ class ProjectProductsPagesIT extends IntegrationTest {
                         "(?s).*id=\"buy-" + COMPONENT.value() + "\"[^>]*disabled.*")));
         mvc.perform(change("/products/1001/quantity").param("quantity", "2")).andExpect(flash().attribute("error", "locked"));
     }
+
+    // ---- refreshing the prices ----
+
+    private String storedSell(int type) {
+        return jdbc.sql("SELECT x.sell FROM project_price x JOIN project p ON p.id = x.project_id WHERE p.public_id = :id AND x.type_id = :type")
+                .param("id", id).param("type", type).query((rs, n) -> rs.getBigDecimal(1).stripTrailingZeros().toPlainString()).single();
+    }
+
+    @Test
+    void refreshingThePricesTakesTheMarketsLeavesATypedOneAndMakesTheCostingOutOfDate() throws Exception {
+        mvc.perform(change("/prices/" + COMPONENT.value()).param("price", "77"));
+        mvc.perform(post("/projects/" + id + "/cost").with(signedIn(sub)).with(csrf()));
+        page().andExpect(content().string(containsString("id=\"refresh-prices\"")));
+        esi.sell(TRITANIUM.value(), "6.50");
+        esi.sell(COMPONENT.value(), "90.00");
+
+        mvc.perform(change("/prices/refresh")).andExpect(redirectedUrl("/projects/" + id + "#products"))
+                .andExpect(flash().attributeCount(0));
+
+        assertThat(storedSell(TRITANIUM.value())).isEqualTo("6.5");
+        assertThat(storedSell(COMPONENT.value())).isEqualTo("77");
+        page().andExpect(content().string(containsString("id=\"banner-stale\"")));
+    }
+
+    @Test
+    void anItemEsiCannotAnswerForIsNamedAndKeepsItsPrice() throws Exception {
+        var before = storedSell(TRITANIUM.value());
+        esi.fail(TRITANIUM.value());
+        mvc.perform(change("/prices/refresh")).andExpect(flash().attribute("pricesFailed", List.of("Tritanium")));
+
+        assertThat(storedSell(TRITANIUM.value())).isEqualTo(before);
+    }
+
+    @Test
+    void aQuotedProjectRefusesARefreshAndAnotherAccountFindsNone() throws Exception {
+        mvc.perform(post("/projects/" + id + "/prices/refresh").with(signedIn(newSub())).with(csrf())).andExpect(status().isNotFound());
+
+        var facility = UUID.randomUUID();
+        jdbc.sql("INSERT INTO facility (public_id, owner_account_id, name) VALUES (:id, :owner, 'Azbel')")
+                .param("id", facility).param("owner", viewerFor(sub).accountId().value()).update();
+        mvc.perform(change("/config").param("defaultFacility", facility.toString()));
+        mvc.perform(post("/projects/" + id + "/cost").with(signedIn(sub)).with(csrf()));
+        mvc.perform(change("/quotes"));
+
+        page().andExpect(content().string(not(containsString("id=\"refresh-prices\""))));
+        mvc.perform(change("/prices/refresh")).andExpect(flash().attribute("error", "locked"));
+    }
 }
+
