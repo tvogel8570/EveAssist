@@ -8,6 +8,7 @@ import com.microsoft.playwright.Browser;
 import com.microsoft.playwright.BrowserContext;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Playwright;
+import com.microsoft.playwright.Route;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.AfterAll;
@@ -99,6 +100,36 @@ class TryPlanBrowserIT extends IntegrationTest {
         assertThat(page.locator("#buy-1002")).hasAttribute("aria-pressed", "true");
         assertThat(page.locator("#try-state")).hasValue("p=1001:2;b=1002");
         assertThat(jdbc.sql("SELECT count(*) FROM plan").query(Integer.class).single()).isEqualTo(plansBefore);
+    }
+
+    /**
+     * htmx starts on a timer, which can fire while a later script is still loading. app.js has to put the kept plan in the
+     * page before then, or the empty plan is sent and its answer is kept over the real one. The answer is held back too,
+     * so that it arrives after app.js has started, which is when the kept plan was lost.
+     */
+    @Test
+    void thePlanSurvivesAReloadWhenAppJsArrivesLate() {
+        addHauler();
+        page.fill("#quantity-1001", "2");
+        page.press("#quantity-1001", "Tab");
+        assertThat(page.locator("#plan-total-value")).hasText("1,260 ISK");
+        page.route("**/js/app.js", route -> resumeAfter(route, 300));
+        page.route("**/try/render", route -> resumeAfter(route, 800));
+
+        page.reload();
+
+        assertThat(page.locator("#quantity-1001")).hasValue("2");
+        assertThat(page.evaluate("() => localStorage.getItem('eveassist.try.plan')"))
+                .isEqualTo("p=1001:2;b=");
+    }
+
+    private static void resumeAfter(Route route, int millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        route.resume();
     }
 
     @Test
