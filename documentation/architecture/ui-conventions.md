@@ -74,5 +74,5 @@ Decided with the developer on 2026-11-26.
 ## Waiting
 
 An action that can wait on ESI says so: a form with `data-busy` gets a **wait cursor**, its choices **disabled** (those of its `data-busy-group`) and a spinner on the chosen one, and a second submit is dropped. It is
-used for **adding a product** (plan, try-a-plan, project). Which other actions get it is not decided.
+used for **adding a product** (plan, try-a-plan, project), **costing** a project (also *Create and cost*), **taking the market price again** and **refreshing the contracts**.
 

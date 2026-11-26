@@ -30,14 +30,14 @@
     <!--/* one banner for the state the costing is in, with the button that moves it on */-->
     <div id="banner-uncosted" th:if="${state == 'draft'}" class="alert alert-warning my-3">
         <span th:text="#{project.banner.uncosted}">Not costed yet.</span>
-        <form method="post" th:action="@{/projects/{id}/cost(id=${project.id.value})}"><button id="cost-it" class="btn btn-primary btn-sm" type="submit" th:text="#{project.costIt}">Cost it</button></form>
+        <form method="post" data-busy th:action="@{/projects/{id}/cost(id=${project.id.value})}"><button id="cost-it" class="btn btn-primary btn-sm" type="submit" th:text="#{project.costIt}">Cost it</button></form>
     </div>
     <div id="banner-stale" th:if="${state == 'costed' and !#lists.isEmpty(reasons)}" class="alert alert-warning my-3">
         <div class="grow">
             <p th:text="#{project.banner.stale}">This costing may be out of date.</p>
             <ul class="text-sm list-disc ml-5"><li th:each="reason : ${reasons}" th:text="#{'project.stale.' + ${reason.name()}}">Reason</li></ul>
         </div>
-        <form method="post" th:action="@{/projects/{id}/cost(id=${project.id.value})}"><button id="cost-it" class="btn btn-primary btn-sm" type="submit" th:text="#{project.costAgain}">Cost it again</button></form>
+        <form method="post" data-busy th:action="@{/projects/{id}/cost(id=${project.id.value})}"><button id="cost-it" class="btn btn-primary btn-sm" type="submit" th:text="#{project.costAgain}">Cost it again</button></form>
     </div>
     <div id="banner-quoted" th:if="${state == 'quoted'}" class="alert alert-success my-3">
         <span th:text="#{project.banner.quoted(${latestQuote.number}, ${@utcTime.format(latestQuote.issuedAt)})}">Quoted</span>
@@ -218,7 +218,7 @@
                             <td class="num" th:text="${#numbers.formatDecimal(typed.price, 1, 'COMMA', 2, 'POINT')}">1.00</td>
                             <td th:text="${@utcTime.format(typed.asOf)} + ' UTC'">time</td>
                             <td class="text-right">
-                                <form th:if="${!locked}" method="post" th:action="@{/projects/{id}/prices/{type}/market(id=${project.id.value}, type=${typed.type})}">
+                                <form th:if="${!locked}" method="post" data-busy th:action="@{/projects/{id}/prices/{type}/market(id=${project.id.value}, type=${typed.type})}">
                                     <input type="hidden" name="expectedVersion" th:value="${v}">
                                     <input type="hidden" name="anchor" value="typed-prices">
                                     <button class="btn btn-xs btn-outline" type="submit" th:id="'use-market-' + ${typed.type}" th:text="#{project.useMarket}">Use the market price</button>
@@ -261,7 +261,7 @@
             </summary>
                 <div class="flex justify-end" th:if="${!locked}">
                     <!--/* always there on a draft: a costing is only made on request, and prices and the cost index move */-->
-                    <form method="post" th:action="@{/projects/{id}/cost(id=${project.id.value})}">
+                    <form method="post" data-busy th:action="@{/projects/{id}/cost(id=${project.id.value})}">
                         <input type="hidden" name="anchor" value="delivered-cost">
                         <button id="recost" class="btn btn-xs btn-outline" type="submit" th:text="#{project.costAgain}">Cost it again</button>
                     </form>

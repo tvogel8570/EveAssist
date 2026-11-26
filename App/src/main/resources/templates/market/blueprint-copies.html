@@ -7,7 +7,7 @@
     <p class="opacity-70 mb-3" th:text="#{bpc.intro}">Prices per run from public item exchange contracts in The Forge.</p>
 
     <div class="flex flex-wrap items-center gap-3 mb-4">
-        <form method="post" th:action="@{/market/blueprint-copies/refresh}">
+        <form method="post" data-busy th:action="@{/market/blueprint-copies/refresh}">
             <input type="hidden" name="q" th:value="${q}">
             <input type="hidden" name="type" th:if="${blueprint != null}" th:value="${blueprint.id.value}">
             <input type="hidden" name="me" th:if="${blueprint != null}" th:value="${me}">
