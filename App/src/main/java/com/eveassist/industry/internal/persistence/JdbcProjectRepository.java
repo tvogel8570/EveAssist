@@ -4,7 +4,7 @@ import com.eveassist.identity.Viewer;
 import com.eveassist.industry.FacilityId;
 import com.eveassist.industry.PlanId;
 import com.eveassist.industry.ProjectId;
-import com.eveassist.industry.internal.application.FacilityNotFoundException;
+import com.eveassist.industry.internal.facility.application.FacilityNotFoundException;
 import com.eveassist.industry.internal.application.ProjectMeta;
 import com.eveassist.industry.internal.application.ProjectOverview;
 import com.eveassist.industry.internal.application.ProjectRepository;

@@ -1,7 +1,7 @@
-package com.eveassist.industry.internal.application;
+package com.eveassist.industry.internal.facility.application;
 
 import com.eveassist.industry.internal.domain.FacilityTerms;
-import com.eveassist.industry.internal.domain.StructureType;
+import com.eveassist.industry.internal.facility.domain.StructureType;
 
 /**
  * What a facility is made of when it is added or changed: a name, which structure it is (or null), and its terms. A name is stripped, and a

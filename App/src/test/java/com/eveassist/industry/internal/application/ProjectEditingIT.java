@@ -19,6 +19,7 @@ import com.eveassist.industry.internal.domain.ProjectLockedException;
 import com.eveassist.industry.internal.domain.ProjectSettings;
 import com.eveassist.industry.internal.domain.SplitPolicy;
 import com.eveassist.industry.internal.domain.SplitStrategy;
+import com.eveassist.industry.internal.facility.application.FacilityNotFoundException;
 import com.eveassist.market.JitaQuote;
 import com.eveassist.sde.TypeId;
 import java.math.BigDecimal;

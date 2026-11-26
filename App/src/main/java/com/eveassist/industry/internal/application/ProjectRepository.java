@@ -4,6 +4,7 @@ import com.eveassist.identity.Viewer;
 import com.eveassist.industry.PlanId;
 import com.eveassist.industry.ProjectId;
 import com.eveassist.industry.internal.domain.Project;
+import com.eveassist.industry.internal.facility.application.FacilityNotFoundException;
 import java.util.List;
 import java.util.Optional;
 import org.jmolecules.architecture.hexagonal.SecondaryPort;

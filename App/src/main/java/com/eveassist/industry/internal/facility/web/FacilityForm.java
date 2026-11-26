@@ -1,8 +1,8 @@
-package com.eveassist.industry.internal.web;
+package com.eveassist.industry.internal.facility.web;
 
-import com.eveassist.industry.internal.application.FacilityValues;
+import com.eveassist.industry.internal.facility.application.FacilityValues;
 import com.eveassist.industry.internal.domain.FacilityTerms;
-import com.eveassist.industry.internal.domain.StructureType;
+import com.eveassist.industry.internal.facility.domain.StructureType;
 import java.math.BigDecimal;
 
 /**

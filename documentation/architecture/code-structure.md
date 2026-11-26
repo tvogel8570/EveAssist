@@ -47,6 +47,19 @@ eveassist/
         ...
 ```
 
+**A large module is divided by feature, then by layer** (`internal/<feature>/<layer>`). The developer chose this on 2026-11-26, because they look for code by
+feature and `industry/internal/application` held about a hundred files. `facility` was moved first, as a trial; the rest of `industry` is still directly under `internal`.
+
+```
+industry/internal/
+    facility/
+        domain/  application/  persistence/  web/
+    domain/  application/  persistence/  web/      ← not yet moved
+```
+
+The architecture rules find a layer in both places. Each adapter package (`web`, `persistence`) carries its own jMolecules `package-info.java`. Modulith guards the
+outside of `industry` only: nothing yet stops one feature from using another's classes.
+
 - The module's base package is its public API: services, the plain objects they take and return, and its events.
 - The plain objects and events are Java records: immutable snapshots with no business logic (see [Records](#records)).
   The service maps its domain model or rows to them at the module boundary, so other modules never hold a domain

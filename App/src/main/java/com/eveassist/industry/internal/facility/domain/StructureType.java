@@ -1,4 +1,4 @@
-package com.eveassist.industry.internal.domain;
+package com.eveassist.industry.internal.facility.domain;
 
 import java.math.BigDecimal;
 import java.util.Locale;

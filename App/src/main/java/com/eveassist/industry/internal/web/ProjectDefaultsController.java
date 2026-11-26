@@ -1,7 +1,7 @@
 package com.eveassist.industry.internal.web;
 
 import com.eveassist.identity.Viewer;
-import com.eveassist.industry.internal.application.FacilityNotFoundException;
+import com.eveassist.industry.internal.facility.application.FacilityNotFoundException;
 import com.eveassist.industry.internal.application.ProjectDefaults;
 import com.eveassist.sde.TypeId;
 import java.util.HashMap;

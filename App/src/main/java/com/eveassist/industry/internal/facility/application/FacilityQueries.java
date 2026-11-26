@@ -1,4 +1,4 @@
-package com.eveassist.industry.internal.application;
+package com.eveassist.industry.internal.facility.application;
 
 import com.eveassist.identity.Viewer;
 import com.eveassist.industry.FacilityId;

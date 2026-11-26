@@ -1,6 +1,7 @@
 package com.eveassist.industry.internal.application;
 
 import com.eveassist.industry.internal.domain.ProjectConfig;
+import com.eveassist.industry.internal.facility.application.FacilityOverview;
 import java.math.BigDecimal;
 import java.util.List;
 

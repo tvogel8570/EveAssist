@@ -1,4 +1,4 @@
-package com.eveassist.industry.internal.application;
+package com.eveassist.industry.internal.facility.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -7,8 +7,16 @@ import com.eveassist.IntegrationTest;
 import com.eveassist.identity.Viewer;
 import com.eveassist.industry.FacilityId;
 import com.eveassist.industry.ProjectId;
+import com.eveassist.industry.internal.application.CostingStaleness;
+import com.eveassist.industry.internal.application.IssueQuoteCommand;
+import com.eveassist.industry.internal.application.ProjectEditing;
+import com.eveassist.industry.internal.application.ProjectEntry;
+import com.eveassist.industry.internal.application.ProjectQueries;
+import com.eveassist.industry.internal.application.ProjectQuoting;
+import com.eveassist.industry.internal.application.ProjectRepository;
+import com.eveassist.industry.internal.application.TwoHaulers;
 import com.eveassist.industry.internal.domain.FacilityTerms;
-import com.eveassist.industry.internal.domain.StructureType;
+import com.eveassist.industry.internal.facility.domain.StructureType;
 import com.eveassist.market.AdjustedPriceService;
 import java.math.BigDecimal;
 import java.time.Duration;

@@ -1,7 +1,7 @@
 package com.eveassist.industry.internal.persistence;
 
 import com.eveassist.identity.Viewer;
-import com.eveassist.industry.internal.application.FacilityNotFoundException;
+import com.eveassist.industry.internal.facility.application.FacilityNotFoundException;
 import com.eveassist.industry.internal.application.ProjectDefaultsRepository;
 import com.eveassist.industry.internal.domain.ProjectConfig;
 import com.eveassist.sde.TypeId;

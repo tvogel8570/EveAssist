@@ -1,12 +1,12 @@
-package com.eveassist.industry.internal.persistence;
+package com.eveassist.industry.internal.facility.persistence;
 
 import com.eveassist.identity.Viewer;
 import com.eveassist.industry.FacilityId;
-import com.eveassist.industry.internal.application.FacilityOverview;
-import com.eveassist.industry.internal.application.FacilityRepository;
-import com.eveassist.industry.internal.application.FacilityValues;
+import com.eveassist.industry.internal.facility.application.FacilityOverview;
+import com.eveassist.industry.internal.facility.application.FacilityRepository;
+import com.eveassist.industry.internal.facility.application.FacilityValues;
 import com.eveassist.industry.internal.domain.FacilityTerms;
-import com.eveassist.industry.internal.domain.StructureType;
+import com.eveassist.industry.internal.facility.domain.StructureType;
 import java.sql.Types;
 import java.util.HashMap;
 import java.util.List;

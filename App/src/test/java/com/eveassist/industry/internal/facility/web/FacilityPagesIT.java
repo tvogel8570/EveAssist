@@ -1,4 +1,4 @@
-package com.eveassist.industry.internal.web;
+package com.eveassist.industry.internal.facility.web;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;

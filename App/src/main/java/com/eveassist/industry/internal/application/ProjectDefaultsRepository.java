@@ -2,6 +2,7 @@ package com.eveassist.industry.internal.application;
 
 import com.eveassist.identity.Viewer;
 import com.eveassist.industry.internal.domain.ProjectConfig;
+import com.eveassist.industry.internal.facility.application.FacilityNotFoundException;
 import java.util.Optional;
 import org.jmolecules.architecture.hexagonal.SecondaryPort;
 

@@ -3,6 +3,7 @@ package com.eveassist.industry.internal.application;
 import com.eveassist.identity.Viewer;
 import com.eveassist.industry.internal.domain.ProjectBuilder;
 import com.eveassist.industry.internal.domain.ProjectConfig;
+import com.eveassist.industry.internal.facility.application.FacilityRepository;
 import com.eveassist.sde.TypeId;
 import java.util.Comparator;
 import java.util.Map;

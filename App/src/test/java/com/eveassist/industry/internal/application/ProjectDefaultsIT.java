@@ -15,6 +15,8 @@ import com.eveassist.industry.internal.domain.ProjectSettings;
 import com.eveassist.industry.internal.domain.ProjectSettings.QuoteMode;
 import com.eveassist.industry.internal.domain.SplitPolicy;
 import com.eveassist.industry.internal.domain.SplitStrategy;
+import com.eveassist.industry.internal.facility.application.FacilityEditing;
+import com.eveassist.industry.internal.facility.application.FacilityNotFoundException;
 import com.eveassist.sde.TypeId;
 import java.math.BigDecimal;
 import java.util.List;

@@ -1,12 +1,12 @@
-package com.eveassist.industry.internal.web;
+package com.eveassist.industry.internal.facility.web;
 
 import com.eveassist.identity.Viewer;
 import com.eveassist.industry.FacilityId;
-import com.eveassist.industry.internal.application.FacilityEditing;
-import com.eveassist.industry.internal.application.FacilityNotFoundException;
-import com.eveassist.industry.internal.application.FacilityQueries;
-import com.eveassist.industry.internal.application.InvalidFacilityNameException;
-import com.eveassist.industry.internal.domain.StructureType;
+import com.eveassist.industry.internal.facility.application.FacilityEditing;
+import com.eveassist.industry.internal.facility.application.FacilityNotFoundException;
+import com.eveassist.industry.internal.facility.application.FacilityQueries;
+import com.eveassist.industry.internal.facility.application.InvalidFacilityNameException;
+import com.eveassist.industry.internal.facility.domain.StructureType;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.UUID;

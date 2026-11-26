@@ -7,7 +7,7 @@ import com.eveassist.IntegrationTest;
 import com.eveassist.identity.Viewer;
 import com.eveassist.industry.FacilityId;
 import com.eveassist.industry.ProjectId;
-import com.eveassist.industry.internal.application.FacilityNotFoundException;
+import com.eveassist.industry.internal.facility.application.FacilityNotFoundException;
 import com.eveassist.industry.internal.application.PlanRepository;
 import com.eveassist.industry.internal.application.ProjectRepository;
 import com.eveassist.industry.internal.domain.BlueprintSource;
