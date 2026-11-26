@@ -65,9 +65,12 @@
     </button>
 </th:block>
 
-<section th:fragment="parts(plan, oob)" id="parts-section" th:attr="hx-swap-oob=${oob ? 'true' : null}">
-    <h2 class="font-semibold mt-5 mb-1"><span th:text="#{plan.parts}">Parts</span>
-        <span class="badge badge-sm" th:text="${#lists.size(plan.parts)}">0</span></h2>
+<details th:fragment="parts(plan, oob)" id="parts-section" data-section="plan-parts" class="group/section mt-3 rounded-box bg-base-200 [&>:not(summary)]:mx-4 [&>:not(summary):not(:last-child)]:mb-4 open:pb-4" th:attr="hx-swap-oob=${oob ? 'true' : null}">
+    <summary class="flex cursor-pointer select-none items-center gap-2 rounded-box px-4 py-3 hover:bg-base-300/40">
+        <span th:replace="~{fragments/chevron :: chevron}"></span>
+        <h2 class="font-semibold grow" th:text="#{plan.parts}">Parts</h2>
+        <span class="badge badge-warning badge-sm" th:if="${!#lists.isEmpty(plan.parts.?[!built and unitPrice == null])}" th:text="#{plan.checkPrices}">Check prices</span>
+        <span class="badge badge-ghost badge-sm" th:text="${#lists.size(plan.parts)}">0</span></summary>
     <div class="overflow-x-auto">
         <table class="table table-sm">
             <thead>
@@ -85,14 +88,17 @@
             </tbody>
         </table>
     </div>
-</section>
+</details>
 
 <!--
   The runs of each blueprint the plan needs, for the products and the parts marked build. It has no input of its own, so
   the whole section is drawn again after any change.
 -->
-<section th:fragment="runs(runs, oob)" id="runs-section" th:attr="hx-swap-oob=${oob ? 'true' : null}">
-    <h2 class="font-semibold mt-5 mb-1" th:text="#{plan.runs}">Runs needed</h2>
+<details th:fragment="runs(runs, oob)" id="runs-section" data-section="plan-runs" class="group/section mt-3 rounded-box bg-base-200 [&>:not(summary)]:mx-4 [&>:not(summary):not(:last-child)]:mb-4 open:pb-4" th:attr="hx-swap-oob=${oob ? 'true' : null}">
+    <summary class="flex cursor-pointer select-none items-center gap-2 rounded-box px-4 py-3 hover:bg-base-300/40">
+        <span th:replace="~{fragments/chevron :: chevron}"></span>
+        <h2 class="font-semibold grow" th:text="#{plan.runs}">Runs needed</h2>
+        <span class="badge badge-ghost badge-sm" th:text="${#lists.size(runs)}">0</span></summary>
     <p class="text-xs opacity-70 mb-1" th:text="#{plan.runsHint}">Runs</p>
     <p id="no-runs" class="opacity-70 my-2" th:if="${#lists.isEmpty(runs)}" th:text="#{plan.runsNone}">Nothing is built yet.</p>
     <div class="overflow-x-auto" th:unless="${#lists.isEmpty(runs)}">
@@ -119,11 +125,14 @@
             </tbody>
         </table>
     </div>
-</section>
+</details>
 
-<section th:fragment="materials(plan, oob)" id="materials-section" th:attr="hx-swap-oob=${oob ? 'true' : null}">
-    <h2 class="font-semibold mt-5 mb-1"><span th:text="#{plan.materials}">Materials</span>
-        <span class="badge badge-sm" th:text="${#lists.size(plan.bought)}">0</span></h2>
+<details th:fragment="materials(plan, oob)" id="materials-section" data-section="plan-materials" class="group/section mt-3 rounded-box bg-base-200 [&>:not(summary)]:mx-4 [&>:not(summary):not(:last-child)]:mb-4 open:pb-4" th:attr="hx-swap-oob=${oob ? 'true' : null}">
+    <summary class="flex cursor-pointer select-none items-center gap-2 rounded-box px-4 py-3 hover:bg-base-300/40">
+        <span th:replace="~{fragments/chevron :: chevron}"></span>
+        <h2 class="font-semibold grow" th:text="#{plan.materials}">Materials</h2>
+        <span class="badge badge-warning badge-sm" th:if="${!#lists.isEmpty(plan.bought.?[unitPrice == null])}" th:text="#{plan.checkPrices}">Check prices</span>
+        <span class="badge badge-ghost badge-sm" th:text="${#lists.size(plan.bought)}">0</span></summary>
     <div class="overflow-x-auto">
         <table class="table table-sm table-zebra">
             <thead>
@@ -140,7 +149,7 @@
             </tbody>
         </table>
     </div>
-</section>
+</details>
 
 <!--/* Always on the page, so that a redraw can fill it or clear it. */-->
 <div th:fragment="priceWarning(items, oob)" id="price-warning" role="status"
@@ -154,10 +163,13 @@
     <input th:replace="~{plans/fragments :: version(${plan.version}, true)}">
     <div th:replace="~{plans/fragments :: priceWarning(${failedItems}, true)}"></div>
     <div th:replace="~{plans/fragments :: total(${plan.totalCost}, ${plan.unpricedLines}, ${plan.pricesAsOf}, true)}"></div>
-    <section th:replace="~{plans/fragments :: parts(${plan}, true)}"></section>
-    <section th:replace="~{plans/fragments :: runs(${plan.runs}, true)}"></section>
-    <section th:replace="~{plans/fragments :: materials(${plan}, true)}"></section>
+    <details th:replace="~{plans/fragments :: parts(${plan}, true)}"></details>
+    <details th:replace="~{plans/fragments :: runs(${plan.runs}, true)}"></details>
+    <details th:replace="~{plans/fragments :: materials(${plan}, true)}"></details>
 </th:block>
+
+<span th:fragment="productCount(plan, oob)" id="products-count" class="badge badge-ghost badge-sm"
+      th:attr="hx-swap-oob=${oob ? 'true' : null}" th:text="${#lists.size(plan.products)}">0</span>
 
 <!--
   The products of a plan: a table with the units of each and a button to remove it, or a note that there are none. It
@@ -217,6 +229,7 @@
 <th:block th:fragment="productsRedraw">
     <th:block th:replace="~{plans/fragments :: planRedraw}"></th:block>
     <div th:replace="~{plans/fragments :: products(${plan}, true)}"></div>
+    <span th:replace="~{plans/fragments :: productCount(${plan}, true)}"></span>
     <div th:replace="~{plans/fragments :: undoBar(${removed}, true)}"></div>
 </th:block>
 
@@ -254,7 +267,7 @@
 <th:block th:fragment="change">
     <input th:replace="~{plans/fragments :: version(${change.version}, true)}">
     <div th:replace="~{plans/fragments :: total(${change.totalCost}, ${change.unpricedLines}, ${change.pricesAsOf}, true)}"></div>
-    <section th:replace="~{plans/fragments :: runs(${change.runs}, true)}"></section>
+    <details th:replace="~{plans/fragments :: runs(${change.runs}, true)}"></details>
     <span th:id="'saved-' + ${editedTypeId}" hx-swap-oob="true"><span class="saved-cue text-xs text-success" th:text="#{plan.saved}">Saved</span></span>
     <!--/* A row needs its own hx-partial: the browser would drop a bare tr here, because the response starts with an input. */-->
     <hx-partial th:each="line : ${change.changedLines}" th:attr="hx-target='#line-' + ${line.typeId}" hx-swap="outerHTML">
@@ -264,14 +277,14 @@
 </th:block>
 
 <th:block th:fragment="searchResults">
-    <ul id="search-list" class="menu bg-base-200 rounded-box w-full" th:unless="${#lists.isEmpty(items)}">
+    <ul id="search-list" class="menu bg-base-200 rounded-box w-full" data-busy-group th:unless="${#lists.isEmpty(items)}">
         <li th:each="item : ${items}">
-            <form method="post" th:unless="${tryMode}" th:action="@{/plans/{id}/products(id=${planId})}">
+            <form method="post" data-busy th:unless="${tryMode}" th:action="@{/plans/{id}/products(id=${planId})}">
                 <input type="hidden" name="typeId" th:value="${item.id.value}">
                 <button type="submit" class="w-full text-left" th:text="${item.name}">Item</button>
             </form>
             <!--/* A plan without an account has no page to go back to: the answer redraws it. */-->
-            <form th:if="${tryMode}" th:attr="hx-post=@{/try/products}" hx-swap="none" hx-include="#try-state">
+            <form data-busy th:if="${tryMode}" th:attr="hx-post=@{/try/products}" hx-swap="none" hx-include="#try-state">
                 <input type="hidden" name="typeId" th:value="${item.id.value}">
                 <button type="submit" class="w-full text-left" th:text="${item.name}">Item</button>
             </form>

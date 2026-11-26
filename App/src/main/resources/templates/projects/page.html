@@ -50,9 +50,9 @@
         <div class="min-w-0 space-y-4">
 
             <!--/* ---- settings ---- */-->
-            <details id="settings" data-section="settings" class="group/section rounded-box bg-base-200 [&>:not(summary)]:mx-4 [&>:not(summary)]:mb-4" th:attr="data-keep-open=${openSettings} ? 'true' : null, open=${openSettings} ? 'open' : null">
+            <details id="settings" data-section="settings" class="group/section rounded-box bg-base-200 [&>:not(summary)]:mx-4 [&>:not(summary):not(:last-child)]:mb-4 open:pb-4" th:attr="data-keep-open=${openSettings} ? 'true' : null, open=${openSettings} ? 'open' : null">
             <summary class="flex cursor-pointer select-none items-center gap-2 rounded-box px-4 py-3 hover:bg-base-300/40">
-                <svg class="h-4 w-4 shrink-0 opacity-70 transition-transform group-open/section:rotate-90" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M7 4l6 6-6 6V4z"/></svg>
+                <span th:replace="~{fragments/chevron :: chevron}"></span>
                 <h2 class="font-semibold grow" th:text="#{project.settings}">Settings</h2>
                 <span class="badge badge-warning badge-sm hidden group-data-[dirty]/section:inline" data-section-unsaved th:text="#{project.unsavedShort}">Unsaved</span>
             </summary>
@@ -113,11 +113,13 @@
             </form>
             </details>
 
-            <!--/* ---- facilities, read-only until the facility pages exist ---- */-->
+            <!--/* ---- the products and their parts ---- */-->
+            <details th:replace="~{projects/products :: section(${project}, ${locked}, ${openProducts})}"></details>
+
             <!--/* ---- the items the project builds ---- */-->
-            <details id="items" data-section="items" class="group/section rounded-box bg-base-200 [&>:not(summary)]:mx-4 [&>:not(summary)]:mb-4" th:attr="data-keep-open=${openItems} ? 'true' : null, open=${openItems} ? 'open' : null">
+            <details id="items" data-section="items" class="group/section rounded-box bg-base-200 [&>:not(summary)]:mx-4 [&>:not(summary):not(:last-child)]:mb-4 open:pb-4" th:attr="data-keep-open=${openItems} ? 'true' : null, open=${openItems} ? 'open' : null">
             <summary class="flex cursor-pointer select-none items-center gap-2 rounded-box px-4 py-3 hover:bg-base-300/40">
-                <svg class="h-4 w-4 shrink-0 opacity-70 transition-transform group-open/section:rotate-90" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M7 4l6 6-6 6V4z"/></svg>
+                <span th:replace="~{fragments/chevron :: chevron}"></span>
                 <h2 class="font-semibold grow" th:text="#{project.items}">Items</h2>
                 <span class="badge badge-warning badge-sm hidden group-data-[dirty]/section:inline" data-section-unsaved th:text="#{project.unsavedShort}">Unsaved</span>
             </summary>
@@ -163,14 +165,15 @@
             </details>
 
             <!--/* ---- what the costing found ---- */-->
-            <details id="warnings" data-section="warnings" class="group/section rounded-box bg-base-200 [&>:not(summary)]:mx-4 [&>:not(summary)]:mb-4" open th:if="${doc != null and !#lists.isEmpty(doc.warnings)}" th:attr="data-keep-open=${openWarnings} ? 'true' : null">
+            <details id="warnings" data-section="warnings" class="group/section rounded-box bg-base-200 [&>:not(summary)]:mx-4 [&>:not(summary):not(:last-child)]:mb-4 open:pb-4" open th:if="${doc != null and !#lists.isEmpty(doc.warnings)}" th:attr="data-keep-open=${openWarnings} ? 'true' : null">
             <summary class="flex cursor-pointer select-none items-center gap-2 rounded-box px-4 py-3 hover:bg-base-300/40">
-                <svg class="h-4 w-4 shrink-0 opacity-70 transition-transform group-open/section:rotate-90" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M7 4l6 6-6 6V4z"/></svg>
+                <span th:replace="~{fragments/chevron :: chevron}"></span>
                 <h2 class="font-semibold grow" th:text="#{project.warnings}">Warnings</h2>
                 <span class="badge badge-warning badge-sm" th:text="${#lists.size(doc.warnings)}">1</span>
                 <span class="badge badge-error badge-sm" th:if="${!stored.quotable}" th:text="#{project.blocksQuote}">Blocks the quote</span>
                 <span class="badge badge-warning badge-sm hidden group-data-[dirty]/section:inline" data-section-unsaved th:text="#{project.unsavedShort}">Unsaved</span>
             </summary>
+                <div>
                 <ul class="list-disc ml-5 text-sm">
                     <li th:each="warning : ${doc.warnings}"
                         th:with="name=${project.warningTypeNames.getOrDefault(warning.type, '#' + warning.type)}, needsPrice=${warning.kind == 'unpriced_material' or warning.kind == 'unpriced_surplus' or warning.kind == 'no_market_price'}">
@@ -192,12 +195,13 @@
                         </th:block>
                     </li>
                 </ul>
+                </div>
             </details>
 
             <!--/* the prices the user typed: each stays until the market price is asked for again */-->
-            <details id="typed-prices" data-section="typed-prices" class="group/section rounded-box bg-base-200 [&>:not(summary)]:mx-4 [&>:not(summary)]:mb-4" th:if="${!#lists.isEmpty(project.typedPrices)}">
+            <details id="typed-prices" data-section="typed-prices" class="group/section rounded-box bg-base-200 [&>:not(summary)]:mx-4 [&>:not(summary):not(:last-child)]:mb-4 open:pb-4" th:if="${!#lists.isEmpty(project.typedPrices)}">
             <summary class="flex cursor-pointer select-none items-center gap-2 rounded-box px-4 py-3 hover:bg-base-300/40">
-                <svg class="h-4 w-4 shrink-0 opacity-70 transition-transform group-open/section:rotate-90" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M7 4l6 6-6 6V4z"/></svg>
+                <span th:replace="~{fragments/chevron :: chevron}"></span>
                 <h2 class="font-semibold grow" th:text="#{project.typedPrices}">Typed prices</h2>
                 <span class="badge badge-ghost badge-sm" th:text="${#lists.size(project.typedPrices)}">1</span>
             </summary>
@@ -225,9 +229,9 @@
                 </div>
             </details>
 
-            <details id="jobs" data-section="jobs" class="group/section rounded-box bg-base-200 [&>:not(summary)]:mx-4 [&>:not(summary)]:mb-4" th:if="${doc != null and !#lists.isEmpty(doc.jobs)}">
+            <details id="jobs" data-section="jobs" class="group/section rounded-box bg-base-200 [&>:not(summary)]:mx-4 [&>:not(summary):not(:last-child)]:mb-4 open:pb-4" th:if="${doc != null and !#lists.isEmpty(doc.jobs)}">
             <summary class="flex cursor-pointer select-none items-center gap-2 rounded-box px-4 py-3 hover:bg-base-300/40">
-                <svg class="h-4 w-4 shrink-0 opacity-70 transition-transform group-open/section:rotate-90" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M7 4l6 6-6 6V4z"/></svg>
+                <span th:replace="~{fragments/chevron :: chevron}"></span>
                 <h2 class="font-semibold grow" th:text="#{project.jobs}">Jobs</h2>
             </summary>
                 <div class="overflow-x-auto">
@@ -250,9 +254,9 @@
                 </div>
             </details>
 
-            <details id="delivered-cost" data-section="delivered-cost" class="group/section rounded-box bg-base-200 [&>:not(summary)]:mx-4 [&>:not(summary)]:mb-4" th:if="${doc != null}" th:classappend="${!#lists.isEmpty(reasons)} ? 'opacity-60'">
+            <details id="delivered-cost" data-section="delivered-cost" class="group/section rounded-box bg-base-200 [&>:not(summary)]:mx-4 [&>:not(summary):not(:last-child)]:mb-4 open:pb-4" th:if="${doc != null}" th:classappend="${!#lists.isEmpty(reasons)} ? 'opacity-60'">
             <summary class="flex cursor-pointer select-none items-center gap-2 rounded-box px-4 py-3 hover:bg-base-300/40">
-                <svg class="h-4 w-4 shrink-0 opacity-70 transition-transform group-open/section:rotate-90" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M7 4l6 6-6 6V4z"/></svg>
+                <span th:replace="~{fragments/chevron :: chevron}"></span>
                 <h2 class="font-semibold grow" th:text="#{project.deliveredCost}">Delivered cost</h2>
             </summary>
                 <div class="flex justify-end" th:if="${!locked}">
@@ -361,7 +365,7 @@
                         </div>
                         <div class="text-xs opacity-70" th:text="#{project.quoteLine(${@utcTime.format(quote.issuedAt)}, ${quote.expiresAt == null ? '—' : @utcTime.format(quote.expiresAt)})}">issued</div>
                         <details class="mt-1" th:with="export=${exports.get(quote.number)}">
-                            <summary class="cursor-pointer select-none text-xs opacity-70" th:text="#{project.share}">Text and CSV to send</summary>
+                            <summary class="flex cursor-pointer select-none items-center gap-2 text-xs"><span th:replace="~{fragments/chevron :: chevron}"></span><span class="opacity-70" th:text="#{project.share}">Text and CSV to send</span></summary>
                             <textarea th:id="'quote-text-' + ${quote.number}" class="textarea textarea-sm mt-1 w-full font-mono text-xs" rows="7" readonly th:text="${export.text}"></textarea>
                             <div class="mt-1 flex flex-wrap items-center gap-2">
                                 <button type="button" class="btn btn-xs btn-outline" th:id="'copy-quote-' + ${quote.number}" th:attr="data-copy-from='#quote-text-' + ${quote.number}" th:text="#{project.copyText}">Copy text</button>

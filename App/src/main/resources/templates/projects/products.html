@@ -1,0 +1,114 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!--/*
+    The Products section of a project: the products with their units, the search that adds one, and the parts that can be built, each built or
+    bought. A change is saved as it is made (data-autosave, or a button that acts at once), and the page is drawn again, so a change here asks
+    first when another form of the page has unsaved work (data-reloads-page). A quoted project shows the same and offers no change.
+*/-->
+<details th:fragment="section(project, locked, open)" id="products" data-section="products" open
+         class="group/section rounded-box bg-base-200 [&>:not(summary)]:mx-4 [&>:not(summary):not(:last-child)]:mb-4 open:pb-4" th:attr="data-keep-open=${open} ? 'true' : null">
+    <summary class="flex cursor-pointer select-none items-center gap-2 rounded-box px-4 py-3 hover:bg-base-300/40">
+        <span th:replace="~{fragments/chevron :: chevron}"></span>
+        <h2 class="font-semibold grow" th:text="#{project.products}">Products</h2>
+        <span class="badge badge-ghost badge-sm" th:text="#{project.productsCount(${#lists.size(project.products)}, ${#lists.size(project.parts)})}">1 product</span>
+    </summary>
+    <div th:with="v=${project.version}, ask=#{project.reloadAsks}" class="flex flex-col gap-3">
+        <p id="no-products" class="opacity-70" th:if="${#lists.isEmpty(project.products)}" th:text="#{project.noProducts}">No products</p>
+        <div class="overflow-x-auto" th:unless="${#lists.isEmpty(project.products)}">
+            <table class="table table-sm">
+                <thead><tr>
+                    <th th:text="#{project.productColumn}">Product</th>
+                    <th class="num" th:text="#{project.quantity}">Quantity</th>
+                    <th class="w-20"></th>
+                </tr></thead>
+                <tbody>
+                <tr th:each="product : ${project.products}" th:id="'product-' + ${product.type}">
+                    <td class="font-medium" th:text="${product.name}">Product</td>
+                    <td class="num">
+                        <span th:if="${locked}" th:text="${#numbers.formatInteger(product.quantity, 1, 'COMMA')}">1</span>
+                        <form th:unless="${locked}" method="post" data-autosave th:attr="data-reloads-page=${ask}"
+                              th:action="@{/projects/{id}/products/{type}/quantity(id=${project.id.value}, type=${product.type})}">
+                            <input type="hidden" name="expectedVersion" th:value="${v}">
+                            <input type="hidden" name="anchor" value="products">
+                            <input class="input input-sm w-28 text-right" type="number" name="quantity" min="1" max="1000000" required
+                                   th:id="'quantity-' + ${product.type}" th:value="${product.quantity}" th:aria-label="#{project.unitsOf(${product.name})}">
+                        </form>
+                    </td>
+                    <td class="text-right">
+                        <details class="dropdown dropdown-end" data-autoclose th:unless="${locked}">
+                            <summary class="btn btn-ghost btn-xs" th:id="'remove-' + ${product.type}" th:aria-label="#{project.removeProduct(${product.name})}"
+                                     th:title="#{project.removeProduct(${product.name})}">&#10005;</summary>
+                            <form class="dropdown-content card bg-base-300 shadow z-30 w-72 p-3 gap-2 text-left" method="post" th:attr="data-reloads-page=${ask}"
+                                  th:action="@{/projects/{id}/products/{type}/remove(id=${project.id.value}, type=${product.type})}">
+                                <input type="hidden" name="expectedVersion" th:value="${v}">
+                                <input type="hidden" name="anchor" value="products">
+                                <p class="text-sm" th:text="#{project.removeConfirm(${product.name})}">Remove it?</p>
+                                <button class="btn btn-error btn-sm" type="submit" th:id="'remove-confirm-' + ${product.type}" th:text="#{project.removeYes}">Remove</button>
+                            </form>
+                        </details>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="max-w-md" th:unless="${locked}">
+            <input type="hidden" id="products-version" name="expectedVersion" th:value="${v}">
+            <input id="product-search" class="input input-sm w-full" type="search" name="q" autocomplete="off"
+                   th:placeholder="#{project.addProduct}" th:aria-label="#{project.addProduct}"
+                   th:attr="hx-get=@{/projects/{id}/product-search(id=${project.id.value})}"
+                   hx-include="#products-version" hx-trigger="input changed delay:250ms, search" hx-target="#search-results" hx-sync="this:replace"
+                   hx-indicator="#request-indicator">
+            <div id="search-results" class="mt-1" th:attr="data-reloads-page=${ask}"></div>
+        </div>
+        <th:block th:unless="${#lists.isEmpty(project.parts)}">
+            <h3 class="text-xs font-semibold uppercase opacity-70" th:text="#{project.partsTitle}">Parts that can be built</h3>
+            <div class="overflow-x-auto">
+                <table class="table table-sm">
+                    <thead><tr>
+                        <th th:text="#{project.partColumn}">Part</th>
+                        <th th:text="#{project.usedBy}">For</th>
+                        <th class="num" th:text="#{project.needed}">Needed</th>
+                        <th class="text-right" th:text="#{project.source}">Source</th>
+                    </tr></thead>
+                    <tbody>
+                    <tr th:each="part : ${project.parts}" th:id="'part-' + ${part.type}">
+                        <td th:text="${part.name}">Part</td>
+                        <td class="opacity-70" th:id="'part-for-' + ${part.type}" th:text="${#strings.listJoin(part.usedBy, ', ')}">Product</td>
+                        <td class="num" th:id="'part-needed-' + ${part.type}"
+                            th:classappend="${project.costing != null and !project.costing.current()} ? 'opacity-50'"
+                            th:text="${part.needed != null} ? ${#numbers.formatInteger(part.needed, 1, 'COMMA')} : '—'">0</td>
+                        <td class="text-right">
+                            <form class="join" method="post" th:attr="data-reloads-page=${ask}"
+                                  th:action="@{/projects/{id}/parts/{type}(id=${project.id.value}, type=${part.type})}">
+                                <input type="hidden" name="expectedVersion" th:value="${v}">
+                                <input type="hidden" name="anchor" value="products">
+                                <button class="btn btn-xs join-item" type="submit" name="buy" value="false" th:id="'build-' + ${part.type}"
+                                        th:classappend="${!part.bought} ? 'btn-primary'" th:attr="aria-pressed=${!part.bought}" th:disabled="${locked}" th:text="#{project.build}">Build</button>
+                                <button class="btn btn-xs join-item" type="submit" name="buy" value="true" th:id="'buy-' + ${part.type}"
+                                        th:classappend="${part.bought} ? 'btn-primary'" th:attr="aria-pressed=${part.bought}" th:disabled="${locked}" th:text="#{project.buy}">Buy</button>
+                            </form>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </th:block>
+    </div>
+</details>
+
+<th:block th:fragment="searchResults">
+    <ul id="search-list" class="menu bg-base-200 rounded-box w-full" data-busy-group th:unless="${#lists.isEmpty(items)}">
+        <li th:each="item : ${items}">
+            <form method="post" data-busy th:action="@{/projects/{id}/products(id=${projectId})}">
+                <input type="hidden" name="expectedVersion" th:value="${v}">
+                <input type="hidden" name="anchor" value="products">
+                <input type="hidden" name="typeId" th:value="${item.id.value}">
+                <button type="submit" class="w-full text-left" th:text="${item.name}">Item</button>
+            </form>
+        </li>
+    </ul>
+    <p class="text-sm opacity-60 p-2" th:if="${searched and #lists.isEmpty(items)}" th:text="#{plan.noMatches}">No items found</p>
+</th:block>
+</body>
+</html>

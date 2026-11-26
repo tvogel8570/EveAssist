@@ -35,9 +35,9 @@
 
         <div class="space-y-3">
             <details th:each="job : ${view.jobs}" th:id="'job-' + ${job.index}" th:open="${job.index == 0}"
-                     class="group/section rounded-box bg-base-200 [&>:not(summary)]:mx-4 [&>:not(summary)]:mb-4">
+                     class="group/section rounded-box bg-base-200 [&>:not(summary)]:mx-4 [&>:not(summary):not(:last-child)]:mb-4 open:pb-4">
                 <summary class="flex cursor-pointer select-none flex-wrap items-center gap-2 rounded-box px-4 py-3 hover:bg-base-300/40">
-                    <svg class="h-4 w-4 shrink-0 opacity-70 transition-transform group-open/section:rotate-90" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M7 4l6 6-6 6V4z"/></svg>
+                    <span th:replace="~{fragments/chevron :: chevron}"></span>
                     <h2 class="font-semibold" th:text="#{compare.job(${job.product}, ${#numbers.formatInteger(job.unitsMade, 1, 'COMMA')})}">Job</h2>
                     <span class="text-xs opacity-70" th:text="#{compare.runs(${job.runs})} + ' · ME ' + ${job.me} + ' · TE ' + ${job.te}">1 runs</span>
                     <span class="grow"></span>

@@ -79,7 +79,7 @@
             </div>
             <details id="default-skills" data-section="default-skills" class="group/section rounded-box border border-base-300">
                 <summary class="flex cursor-pointer select-none items-center gap-2 rounded-box px-3 py-2 hover:bg-base-300/40">
-                    <svg class="h-4 w-4 shrink-0 opacity-70 transition-transform group-open/section:rotate-90" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M7 4l6 6-6 6V4z"/></svg>
+                    <span th:replace="~{fragments/chevron :: chevron}"></span>
                     <h3 class="font-semibold grow" th:text="#{defaults.skills}">Blueprint skills</h3>
                     <span class="badge badge-warning badge-sm hidden group-data-[dirty]/section:inline" data-section-unsaved th:text="#{project.unsavedShort}">Unsaved</span>
                     <span id="skills-set" class="badge badge-ghost badge-sm" th:text="#{defaults.skillsSet(${view.skillsSet}, ${view.skillCount})}">0 of 0 set</span>

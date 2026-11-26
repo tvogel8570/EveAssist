@@ -4,8 +4,9 @@
 <section th:fragment="status" id="blueprint-status" class="mb-3"
          th:attr="hx-get=${startOnLoad} ? @{/blueprints/status(start=1)} : @{/blueprints/status},hx-trigger=${startOnLoad} ? 'load' : (${running} ? 'every 2s' : null),hx-swap='outerHTML',hx-include='#blueprint-filters, #blueprint-view'">
     <details id="blueprint-status-details" th:unless="${#lists.isEmpty(statuses)}">
-        <summary class="cursor-pointer text-sm select-none"
+        <summary class="flex cursor-pointer items-center gap-2 text-sm select-none"
                  th:classappend="${summary.state.name() == 'ATTENTION'} ? 'text-warning' : 'opacity-80'">
+            <span th:replace="~{fragments/chevron :: chevron}"></span>
             <span th:switch="${summary.state.name()}">
                 <span th:case="'RUNNING'" th:text="#{blueprints.statusSummary.running(${summary.holders})}">3 holders · reading from ESI…</span>
                 <span th:case="'ATTENTION'" th:text="#{blueprints.statusSummary.attention(${summary.holders}, ${summary.needAttention})}">3 holders · 1 needs attention</span>

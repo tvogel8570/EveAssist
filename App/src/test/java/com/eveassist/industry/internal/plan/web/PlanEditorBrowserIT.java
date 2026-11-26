@@ -57,6 +57,8 @@ class PlanEditorBrowserIT extends IntegrationTest {
     @BeforeEach
     void signIn() {
         context = browser.newContext();
+        // these tests are about what is in the sections, so all are open, as a user who opened them has it (PlanSectionsBrowserIT is about that)
+        context.addInitScript("['plan-parts', 'plan-runs', 'plan-materials'].forEach(name => localStorage.setItem('eveassist.section.' + name, 'open'))");
         page = context.newPage();
         page.onPageError(pageErrors::add);
         page.navigate(url("/test-sign-in?sub=" + newSub()));

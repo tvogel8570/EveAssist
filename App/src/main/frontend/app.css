@@ -69,6 +69,39 @@
   text-decoration: underline;
 }
 
+html.busy,
+html.busy * {
+  cursor: wait !important;
+}
+
+/* The triangle of everything that opens and closes (fragments/chevron.html): in a circle, in the accent colour. */
+.chevron {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 9999px;
+  color: var(--color-accent);
+  background: color-mix(in oklab, var(--color-accent) 18%, transparent);
+}
+
+.chevron svg {
+  width: 1rem;
+  height: 1rem;
+  transition: rotate .15s;
+}
+
+details[open] > summary > .chevron svg,
+.chevron[data-open] svg {
+  rotate: 90deg;
+}
+
+#search-list button:disabled {
+  opacity: .5;
+}
+
 #search-list button:focus {
   outline: 2px solid var(--color-primary);
   outline-offset: -2px;

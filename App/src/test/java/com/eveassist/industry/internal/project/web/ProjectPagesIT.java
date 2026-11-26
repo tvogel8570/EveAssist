@@ -362,12 +362,12 @@ class ProjectPagesIT extends IntegrationTest {
     @Test
     void everySectionHeaderHasAnIndicatorThatTurnsWhenItIsOpen() throws Exception {
         var sub = newSub();
-        // a project with warnings, so that all five sections are there
+        // a project with warnings, so that all six sections are there
         var id = started(sub);
 
         var html = page(sub, id).andReturn().getResponse().getContentAsString();
-        // one chevron for each of the five sections: the header is a flex box, which leaves the browser's own triangle out
-        assertThat(html.split("group-open/section:rotate-90", -1).length - 1).isEqualTo(5);
+        // one shared triangle for each of the six sections: the header is a flex box, which leaves the browser's own triangle out
+        assertThat(html.split("class=\"chevron\"", -1).length - 1).isEqualTo(6);
     }
 
     @Test

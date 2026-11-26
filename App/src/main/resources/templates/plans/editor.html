@@ -38,6 +38,13 @@
     <div th:replace="~{plans/fragments :: priceWarning(null, false)}"></div>
 
     <div th:replace="~{plans/fragments :: undoBar(null, false)}"></div>
+    <details id="products-section" data-section="plan-products" open class="group/section mt-3 rounded-box bg-base-200 [&>:not(summary)]:mx-4 [&>:not(summary):not(:last-child)]:mb-4 open:pb-4">
+    <summary class="flex cursor-pointer select-none items-center gap-2 rounded-box px-4 py-3 hover:bg-base-300/40">
+        <span th:replace="~{fragments/chevron :: chevron}"></span>
+        <h2 class="font-semibold grow" th:text="#{plan.products}">Products</h2>
+        <span th:replace="~{plans/fragments :: productCount(${plan}, false)}"></span>
+    </summary>
+    <div>
     <div th:replace="~{plans/fragments :: products(${plan}, false)}"></div>
 
     <div class="max-w-md mt-3">
@@ -48,10 +55,12 @@
                hx-indicator="#request-indicator">
         <div id="search-results" class="mt-1"></div>
     </div>
+    </div>
+    </details>
 
-    <div th:replace="~{plans/fragments :: parts(${plan}, false)}"></div>
-    <div th:replace="~{plans/fragments :: runs(${plan.runs}, false)}"></div>
-    <div th:replace="~{plans/fragments :: materials(${plan}, false)}"></div>
+    <details th:replace="~{plans/fragments :: parts(${plan}, false)}"></details>
+    <details th:replace="~{plans/fragments :: runs(${plan.runs}, false)}"></details>
+    <details th:replace="~{plans/fragments :: materials(${plan}, false)}"></details>
 </main>
 </body>
 </html>

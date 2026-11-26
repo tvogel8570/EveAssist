@@ -106,6 +106,55 @@ class ProjectSectionsBrowserIT extends IntegrationTest {
         return (String) page.locator("#" + section + " > summary svg").evaluate("svg => getComputedStyle(svg).rotate");
     }
 
+    /** One triangle everywhere: in a circle, in the theme's accent colour, and turned when what it stands for is open. */
+    @Test
+    void everySectionHasTheSharedTriangleInAnAccentCircleThatTurnsWhenItOpens() {
+        for (var section : List.of("settings", "items", "warnings", "jobs", "delivered-cost")) {
+            var triangle = page.locator("#" + section + " > summary > .chevron");
+            assertThat(triangle.count()).as(section).isEqualTo(1);
+            var look = (String) triangle.evaluate("""
+                    mark => {
+                        const probe = document.body.appendChild(document.createElement('span'));
+                        probe.style.color = 'var(--color-accent)';
+                        const accent = getComputedStyle(probe).color;
+                        probe.remove();
+                        const style = getComputedStyle(mark);
+                        return [style.color === accent, style.width === style.height, parseFloat(style.borderTopLeftRadius) >= parseFloat(style.width) / 2,
+                                style.backgroundColor !== 'rgba(0, 0, 0, 0)'].join(' ');
+                    }""");
+            assertThat(look).as(section).isEqualTo("true true true true");
+        }
+        assertThat(chevron("jobs")).isEqualTo("none");
+        page.click("#jobs > summary");
+        page.waitForFunction("getComputedStyle(document.querySelector('#jobs > summary .chevron svg')).rotate === '90deg'");
+    }
+
+    /** The space under what an open section holds, and for the warnings the room their bullets need left of the text, in pixels. */
+    private String roomIn(String section) {
+        return (String) page.locator("#" + section).evaluate("""
+                details => {
+                    const box = details.getBoundingClientRect();
+                    const shown = [...details.querySelectorAll(':scope > :not(summary) *, :scope > :not(summary)')]
+                            .map(e => e.getBoundingClientRect()).filter(r => r.height > 0);
+                    const below = Math.round(box.bottom - Math.max(...shown.map(r => r.bottom)));
+                    const item = details.querySelector('li');
+                    return below + ' ' + (item ? Math.round(item.getBoundingClientRect().left - box.left) : '-');
+                }""");
+    }
+
+    @Test
+    void anOpenSectionHasRoomUnderWhatItHoldsAndTheWarningsBulletsSitInsideIt() {
+        for (var section : List.of("settings", "products", "items", "warnings", "jobs", "delivered-cost")) {
+            open(section);
+            var room = roomIn(section).split(" ");
+            assertThat(Integer.parseInt(room[0])).as(section + " below, " + roomIn(section)).isBetween(14, 20);
+            if (section.equals("warnings")) {
+                // the text of a bulleted line starts where a bullet fits between it and the box: the section's 16 pixels and the list's 20
+                assertThat(Integer.parseInt(room[1])).as("warnings text from the left").isBetween(34, 40);
+            }
+        }
+    }
+
     @Test
     void sectionsStartClosedExceptTheOneWithWarnings() {
         for (var section : List.of("settings", "items", "jobs", "delivered-cost")) {

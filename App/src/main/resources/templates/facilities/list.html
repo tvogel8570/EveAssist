@@ -11,7 +11,7 @@
     <div id="error" th:if="${facilityError != null}" class="alert alert-error my-3" role="alert"><span th:text="#{'facility.error.' + ${facilityError}}">Error</span></div>
     <div id="deleted" th:if="${deletedDrafts != null}" class="alert alert-info my-3"><span th:text="#{facilities.deleted(${deletedDrafts})}">Deleted</span></div>
 
-    <details id="add-facility" open class="group/section rounded-box bg-base-200 mb-4 [&>:not(summary)]:mx-4 [&>:not(summary)]:mb-4">
+    <details id="add-facility" open class="group/section rounded-box bg-base-200 mb-4 [&>:not(summary)]:mx-4 [&>:not(summary):not(:last-child)]:mb-4 open:pb-4">
         <summary class="flex cursor-pointer select-none items-center gap-2 rounded-box px-4 py-3 hover:bg-base-300/40">
             <svg class="h-4 w-4 shrink-0 opacity-70 transition-transform group-open/section:rotate-90" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M7 4l6 6-6 6V4z"/></svg>
             <h2 class="font-semibold grow" th:text="#{facilities.add}">Add facility</h2>
@@ -23,7 +23,7 @@
 
     <div id="facility-list" class="space-y-3">
         <details th:each="listing : ${facilities}" th:with="facility=${listing.facility}" th:id="'facility-' + ${facility.id.value}"
-                 class="group/section rounded-box bg-base-200 [&>:not(summary)]:mx-4 [&>:not(summary)]:mb-4">
+                 class="group/section rounded-box bg-base-200 [&>:not(summary)]:mx-4 [&>:not(summary):not(:last-child)]:mb-4 open:pb-4">
             <summary class="flex cursor-pointer select-none items-center gap-2 rounded-box px-4 py-3 hover:bg-base-300/40">
                 <svg class="h-4 w-4 shrink-0 opacity-70 transition-transform group-open/section:rotate-90" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M7 4l6 6-6 6V4z"/></svg>
                 <h2 class="font-semibold" th:text="${facility.name}">Name</h2>

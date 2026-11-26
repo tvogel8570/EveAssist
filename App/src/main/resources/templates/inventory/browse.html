@@ -86,7 +86,7 @@
                 <tbody th:each="item : ${view.items}">
                 <tr class="hover cursor-pointer" th:attr="data-expand=${'where-' + item.typeId},data-item=${item.name},data-total=${item.total},hx-get=@{/inventory/item/{type}(type=${item.typeId})},hx-target=${'#where-body-' + item.typeId}"
                     hx-include="#browse-form" hx-trigger="click once" hx-swap="innerHTML">
-                    <td class="px-1"><span data-expander>&#9656;</span></td>
+                    <td class="px-1"><span th:replace="~{fragments/chevron :: chevron}"></span></td>
                     <td>
                         <a class="link font-medium" data-blueprint-link th:if="${item.blueprintCopy or item.blueprintOriginal}"
                            th:href="@{/blueprints(type=${item.typeId})}" th:text="${item.name}">Blueprint</a>

@@ -76,8 +76,8 @@ reviewed with the developer.
 2. **Done: the facility forms** (2026-11-25). Decided with the developer: a **Facilities page** (`/facilities`, a menu link) lists, adds, changes and deletes facilities.
    Adding a facility is rare, so a **project's page has no Facilities section**: its **Default facility** dropdown ends with *Add a new facility…*, which opens the
    Facilities page for that project, and a facility added there returns the user to the project's Settings, where it can be chosen (the same page, opened from the menu,
-   stays on itself). Facilities are **typed**: the eight percents, plus a **structure type** (Raitaru, Azbel, Sotiyo or an NPC station) whose *Fill the structure's bonuses*
-   button proposes the structure's materials, time and job fee bonuses (which the user can type over; Fortizars are not offered, so they are typed). The **cost index is typed
+   stays on itself). Facilities are **typed**: the eight percents, plus a **structure type** (Raitaru, Azbel, Sotiyo, an NPC station, or, from 2026-11-26, an **Upwell structure with no bonus**: citadels and refineries can run manufacturing too) whose *Fill the structure's bonuses*
+   button proposes the structure's materials, time and job fee bonuses (which the user can type over; the faction Fortizars, which do give bonuses, are not offered, so theirs are typed). The **cost index is typed
    with the date it was entered**, and the Facilities page shows its age ("typed 3 d ago"), as the wormhole rule asks; reading it from ESI, and the structure's rigs and system
    as chosen values, are later steps. Deleting a facility clears it from the Drafts that use it, says how many, and makes their costing out of date; a quote already issued is
    not changed. See [Projects: persistence and use cases](../architecture/projects.md).
@@ -90,6 +90,11 @@ reviewed with the developer.
    was changed after it. A diagnostic, not a core page (decided 2026-11-20): it is not a main tab. Layout C (a copyable text block of the hovers) is not built.
 
 **Jita split** (see [Price basis](market-logistics.md#price-basis)) was built afterwards: the project's price basis dropdown offers it as a third choice beside Jita sell and Jita buy.
+
+**Products section** (decided with the developer on 2026-11-26, from [the mockup](../mockups/sections-and-products.html)): between Settings and Items, open unless the user closed it. A table of the **products**
+with their units, a search that adds one (one unit, fetching the prices it brings in) and a removal that asks first; below it a table of the **parts that can be built**, with the products that use each, the units
+the shown costing's jobs take (dimmed when that costing is out of date, a dash when there is none) and **Build or Buy**, which applies to the part everywhere in the project. **A change is saved as it is made**, with no Save
+button, and redraws the page; when another form of the page has unsaved work, it **asks first**. A quoted project shows the section and offers no change. **Not built:** refreshing a project's prices from the page.
 
 **Typed prices** (decided with the developer on 2026-11-25). An item with no Jita price, or too little of one (the Jita split needs both sides), is priced by **a price the user types for the
 project**. Until then it stays a blocking warning that says why: a bought material or a surplus item is *unpriced*, and in a **market-referenced** quote a product with no price at the basis raises
@@ -169,8 +174,8 @@ Decided with the developer on 2026-11-17: **facility records entered by hand.** 
 [Facilities](manufacturing-invention.md#facilities) section, and it is needed anyway because ESI does not give a
 structure's rigs.
 
-- A facility records its name, structure type (Raitaru, Azbel, Sotiyo, and the Athanor and Tatara refineries are not
-  needed), rigs, solar system and the facility tax rate.
+- A facility records its name, structure type (Raitaru, Azbel, Sotiyo, an NPC station, or an Upwell structure with no bonus; the developer decided on
+  2026-11-26 that citadels and refineries are one such type and are not listed one by one), rigs, solar system and the facility tax rate.
 - The system's security band (high, low, null/wormhole) comes from the system, and it scales the rig bonus.
 - The **system cost index** for the activity is read from ESI (`GET /industry/systems`, public) for every system ESI lists,
   and the **adjusted prices** for the estimated item value from `GET /markets/prices`. Neither is typed in, **except the

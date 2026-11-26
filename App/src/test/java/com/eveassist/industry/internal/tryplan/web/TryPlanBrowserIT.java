@@ -54,6 +54,8 @@ class TryPlanBrowserIT extends IntegrationTest {
         jdbc.sql("DELETE FROM jita_order").update();
         jdbc.sql("DELETE FROM jita_fetch").update();
         context = browser.newContext();
+        // these tests are about what is in the sections, so all are open, as a user who opened them has it (PlanSectionsBrowserIT is about that)
+        context.addInitScript("['plan-parts', 'plan-runs', 'plan-materials'].forEach(name => localStorage.setItem('eveassist.section.' + name, 'open'))");
         page = context.newPage();
         page.onPageError(pageErrors::add);
         page.onRequest(request -> requests.add(request.method() + " " + request.url()));

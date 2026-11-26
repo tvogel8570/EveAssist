@@ -146,12 +146,19 @@
 
     // The page sends a section closed unless it has something in it (the warnings), so what the user opened is kept as "open", and what the
     // user closed of a section that came open (the warnings) is kept as "closed". With nothing kept the page's own state stands.
-    document.querySelectorAll('details[data-section]:not([data-keep-open])').forEach(section => {
-        const kept = keptState(section.dataset.section);
-        if (kept === 'open' || kept === 'closed') {
-            section.open = kept === 'open';
-        }
-    });
+    function putSectionsBack() {
+        document.querySelectorAll('details[data-section]:not([data-keep-open])').forEach(section => {
+            const kept = keptState(section.dataset.section);
+            if (kept === 'open' || kept === 'closed') {
+                section.open = kept === 'open';
+            }
+        });
+    }
+
+    putSectionsBack();
+    // An edit of a plan draws sections again, closed as the server sends them, and htmx can set an element's attributes once more after it has
+    // put it in place, so what the user opened is put back after both.
+    ['htmx:after:swap', 'htmx:after:settle', 'htmx:finally:request'].forEach(name => document.addEventListener(name, putSectionsBack));
 
     // toggle does not bubble, so it is heard while it travels down
     document.addEventListener('toggle', event => {
@@ -174,6 +181,86 @@
             all.value = '';
         }
     });
+
+    // A form that says data-autosave is saved when a field of it is left changed, with no button.
+    document.addEventListener('change', event => {
+        const form = event.target.form;
+        if (form && form.hasAttribute('data-autosave')) {
+            form.requestSubmit();
+        }
+    });
+
+    // A form that says data-reloads-page (itself, or an element around it) saves at once and draws the page again, which would throw away what
+    // is typed in another form and not saved. Then it asks first, with the attribute's text, and a refusal puts its own fields back. This is
+    // registered before the busy marking below, so that a refused submit does not leave the page waiting.
+    document.addEventListener('submit', event => {
+        const form = event.target;
+        const asking = form.closest('[data-reloads-page]');
+        if (!asking) {
+            return;
+        }
+        const unsaved = [...document.querySelectorAll('form[data-dirty]')].some(other => other !== form);
+        if (unsaved && !window.confirm(asking.dataset.reloadsPage)) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            form.reset();
+        }
+    }, true);
+
+    // A form that says data-busy waits visibly once it is submitted: the cursor says so, the buttons of its data-busy-group (or its own) are
+    // disabled, the chosen one shows a spinner, and a further submit of any such form is dropped, so that one choice is not sent twice. An htmx
+    // form is released when its request is over. A form that leaves the page stays as it is until the next page is there; the browser shows a
+    // page again as it was left when the user goes back to it, so everything is released then.
+    let waiting = null;
+
+    function release() {
+        if (!waiting) {
+            return;
+        }
+        document.documentElement.classList.remove('busy');
+        waiting.buttons.forEach(button => button.disabled = false);
+        waiting.spinner?.remove();
+        waiting = null;
+    }
+
+    document.addEventListener('submit', event => {
+        const form = event.target;
+        if (!form.hasAttribute('data-busy')) {
+            return;
+        }
+        if (waiting) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            return;
+        }
+        const group = form.closest('[data-busy-group]') || form;
+        const now = {form, buttons: [...group.querySelectorAll('button:not([disabled])')], spinner: null};
+        waiting = now;
+        document.documentElement.classList.add('busy');
+        const chosen = event.submitter;
+        // after this event, so that the submit that is under way is not affected by its button being disabled
+        setTimeout(() => {
+            if (waiting !== now) {
+                return;
+            }
+            now.buttons.forEach(button => button.disabled = true);
+            if (chosen) {
+                now.spinner = document.createElement('span');
+                now.spinner.className = 'loading loading-spinner loading-xs';
+                now.spinner.setAttribute('aria-hidden', 'true');
+                chosen.appendChild(now.spinner);
+            }
+        });
+    }, true);
+
+    // Heard on the document: the answer can have removed the form before the request is over, and htmx then reports it there.
+    document.addEventListener('htmx:finally:request', event => {
+        if (waiting && event.detail.ctx.sourceElement === waiting.form) {
+            release();
+        }
+    });
+
+    window.addEventListener('pageshow', release);
 
     // A form that says data-track-unsaved marks itself (data-dirty) as soon as one of its fields is edited, and the page's styles show
     // it: its Save button turns to a warning and its "unsaved changes" note appears. A field outside the form's own tags that names it
@@ -347,9 +434,9 @@
             return;
         }
         detail.hidden = !detail.hidden;
-        const mark = row.querySelector('[data-expander]');
+        const mark = row.querySelector('.chevron');
         if (mark) {
-            mark.textContent = detail.hidden ? '▸' : '▾';
+            mark.toggleAttribute('data-open', !detail.hidden);
         }
     });
 

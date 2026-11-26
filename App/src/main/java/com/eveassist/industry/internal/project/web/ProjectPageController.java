@@ -1,6 +1,12 @@
 package com.eveassist.industry.internal.project.web;
 
 import com.eveassist.identity.Viewer;
+import com.eveassist.industry.internal.shared.domain.InvalidQuantityException;
+import com.eveassist.industry.internal.shared.application.UnknownProductException;
+import com.eveassist.industry.internal.project.application.RemoveProjectProductCommand;
+import com.eveassist.industry.internal.project.application.ChooseProjectPartSourceCommand;
+import com.eveassist.industry.internal.project.application.ChangeProjectQuantityCommand;
+import com.eveassist.industry.internal.project.application.AddProjectProductCommand;
 import com.eveassist.industry.FacilityId;
 import com.eveassist.industry.ProjectId;
 import com.eveassist.industry.internal.project.costing.application.CostingOutOfDateException;
@@ -117,6 +123,7 @@ public class ProjectPageController {
         model.addAttribute("openWarnings", stored != null && !stored.quotable());
         model.addAttribute("openSettings", failed);
         model.addAttribute("openItems", failed);
+        model.addAttribute("openProducts", failed);
         // what each issued quote says to its buyer, to copy or to download (made from the quote as it was frozen)
         Map<Integer, ShareableQuote> exports = new LinkedHashMap<>();
         project.quotes().forEach(quote -> exports.put(quote.number(), quoteExport.of(viewer, new ProjectId(id), quote.number())));
@@ -195,6 +202,47 @@ public class ProjectPageController {
             throw new InvalidFormException(invalid);
         }
         editing.setItem(viewer, new SetProjectItemCommand(project, item, expectedVersion));
+        return back(id, anchor);
+    }
+
+    /** The items matching what is typed in the Products section's search, as forms that add one. The page's version goes with the choice. */
+    @GetMapping("/product-search")
+    String productSearch(Viewer viewer, @PathVariable UUID id, @RequestParam(defaultValue = "") String q,
+            @RequestParam long expectedVersion, Model model) {
+        model.addAttribute("items", queries.searchProducts(viewer, new ProjectId(id), q));
+        model.addAttribute("searched", !q.isBlank());
+        model.addAttribute("projectId", id);
+        model.addAttribute("v", expectedVersion);
+        return "projects/products :: searchResults";
+    }
+
+    /** Adds one unit of a product, fetching the prices of the items it brings in that the project has none for. */
+    @PostMapping("/products")
+    String addProduct(Viewer viewer, @PathVariable UUID id, @RequestParam int typeId, @RequestParam long expectedVersion,
+            @RequestParam(required = false) String anchor) {
+        entry.addProduct(viewer, new AddProjectProductCommand(new ProjectId(id), new TypeId(typeId), 1, expectedVersion));
+        return back(id, anchor);
+    }
+
+    @PostMapping("/products/{type}/quantity")
+    String changeQuantity(Viewer viewer, @PathVariable UUID id, @PathVariable int type, @RequestParam long quantity,
+            @RequestParam long expectedVersion, @RequestParam(required = false) String anchor) {
+        editing.changeQuantity(viewer, new ChangeProjectQuantityCommand(new ProjectId(id), new TypeId(type), quantity, expectedVersion));
+        return back(id, anchor);
+    }
+
+    @PostMapping("/products/{type}/remove")
+    String removeProduct(Viewer viewer, @PathVariable UUID id, @PathVariable int type, @RequestParam long expectedVersion,
+            @RequestParam(required = false) String anchor) {
+        editing.removeProduct(viewer, new RemoveProjectProductCommand(new ProjectId(id), new TypeId(type), expectedVersion));
+        return back(id, anchor);
+    }
+
+    /** Builds a part or buys it, everywhere in the project. */
+    @PostMapping("/parts/{type}")
+    String choosePartSource(Viewer viewer, @PathVariable UUID id, @PathVariable int type, @RequestParam boolean buy,
+            @RequestParam long expectedVersion, @RequestParam(required = false) String anchor) {
+        editing.choosePartSource(viewer, new ChooseProjectPartSourceCommand(new ProjectId(id), new TypeId(type), buy, expectedVersion));
         return back(id, anchor);
     }
 
@@ -289,7 +337,7 @@ public class ProjectPageController {
             ProjectLockedException.class, ProjectNotQuotedException.class, InvalidQuoteException.class,
             NothingToCostException.class, InvalidFormException.class, InvalidPriceException.class, PriceNotNeededException.class,
             MethodArgumentTypeMismatchException.class, org.springframework.validation.BindException.class,
-            java.time.format.DateTimeParseException.class, NumberFormatException.class})
+            java.time.format.DateTimeParseException.class, NumberFormatException.class, InvalidQuantityException.class, UnknownProductException.class})
     String refused(Exception problem, HttpServletRequest request, RedirectAttributes flash) {
         var found = PROJECT_ADDRESS.matcher(request.getRequestURI());
         if (!found.find()) {
@@ -309,6 +357,8 @@ public class ProjectPageController {
             case InvalidQuoteException invalid -> "invalidQuote";
             case NothingToCostException nothing -> "nothingToCost";
             case InvalidPriceException price -> "price";
+            case InvalidQuantityException quantity -> "quantity";
+            case UnknownProductException unknown -> "notBuildable";
             default -> "invalid";
         };
     }

@@ -241,7 +241,7 @@ class InventoryBrowserIT extends IntegrationTest {
         assertThat(detail).isVisible();
         assertThat(detail).containsText("Jita IV - Moon 4 - Caldari Navy Assembly Plant");
         assertThat(detail).containsText("Alt One 1,500, Alt Two 500");
-        assertThat(row.locator("[data-expander]")).hasText("▾");
+        assertThat(row.locator(".chevron[data-open]")).hasCount(1);
 
         row.click();
 
@@ -264,18 +264,21 @@ class InventoryBrowserIT extends IntegrationTest {
         assertThat(page.locator("#where-34")).not().containsText("1,500");
     }
 
+    /** The bars of who holds what, which are drawings, as the triangle of a row is. */
+    private static final String BARS = "#items svg:not(.chevron > svg)";
+
     @Test
     void theCharactersCanBeHiddenAndTheBarsGoWithThem() {
         open();
-        assertThat(page.locator("#items svg:visible").first()).isVisible();
+        assertThat(page.locator(BARS + ":visible").first()).isVisible();
 
         page.locator("#show-characters").uncheck();
 
-        assertThat(page.locator("#items svg")).hasCount(0);
+        assertThat(page.locator(BARS)).hasCount(0);
         assertThat(page.locator("#summary")).containsText("4 item types");
         assertThat(page.url()).doesNotContain("chars=1");
         page.locator("#show-characters").check();
-        assertThat(page.locator("#items svg:visible").first()).isVisible();
+        assertThat(page.locator(BARS + ":visible").first()).isVisible();
     }
 
     @Test
