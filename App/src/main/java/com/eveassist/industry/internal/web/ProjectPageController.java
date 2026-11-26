@@ -154,12 +154,20 @@ class ProjectPageController {
 
     @PostMapping("/config")
     String config(Viewer viewer, @PathVariable UUID id, @ModelAttribute ConfigForm form,
-            @RequestParam(required = false) String anchor) {
+            @RequestParam(required = false) String anchor, @RequestParam Map<String, String> all) {
         var project = new ProjectId(id);
-        var current = queries.details(viewer, project).config();
+        var details = queries.details(viewer, project);
+        // only the skills the page shows are read, and the levels of any others stay, so a product removed and added again keeps its skill
+        var skills = new HashMap<TypeId, Integer>();
+        for (var skill : details.skills()) {
+            var typed = all.get(SKILL_PREFIX + skill.skill());
+            if (typed != null && !typed.isBlank()) {
+                skills.put(new TypeId(skill.skill()), Integer.parseInt(typed.strip()));
+            }
+        }
         ProjectConfig changed;
         try {
-            changed = form.applyTo(current);
+            changed = form.applyTo(details.config(), skills);
         } catch (IllegalArgumentException invalid) {
             throw new InvalidFormException(invalid);
         }
@@ -170,21 +178,15 @@ class ProjectPageController {
     @PostMapping("/items/{type}")
     String item(Viewer viewer, @PathVariable UUID id, @PathVariable int type, @RequestParam long expectedVersion,
             @RequestParam int me, @RequestParam int te, @RequestParam(required = false) String facility,
-            @RequestParam(required = false) BigDecimal blueprintCostPerRun, @RequestParam(required = false) String anchor,
-            @RequestParam Map<String, String> all) {
+            @RequestParam(required = false) BigDecimal blueprintCostPerRun, @RequestParam(required = false) String anchor) {
         var project = new ProjectId(id);
         var line = queries.details(viewer, project).items().stream().filter(item -> item.type() == type).findFirst()
                 .orElseThrow(ProjectNotFoundException::new);
-        var skills = new HashMap<TypeId, Integer>();
-        for (var skill : line.skills()) {
-            var typed = all.get(SKILL_PREFIX + skill.skill());
-            skills.put(new TypeId(skill.skill()), typed == null || typed.isBlank() ? skill.level() : Integer.parseInt(typed.strip()));
-        }
         ProjectItem item;
         try {
             item = new ProjectItem(new TypeId(type), BlueprintSource.valueOf(line.blueprintSource().toUpperCase(java.util.Locale.ROOT)),
                     me, te, blueprintCostPerRun == null ? line.blueprintCostPerRun() : blueprintCostPerRun, facilityOf(facility),
-                    line.policy(), skills);
+                    line.policy());
         } catch (IllegalArgumentException invalid) {
             throw new InvalidFormException(invalid);
         }

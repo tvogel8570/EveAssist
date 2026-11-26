@@ -76,7 +76,7 @@ public class ProjectQueries {
                 recipes.visibleParts(project).stream().map(type -> new ProjectDetails.PartLine(type.value(), recipes.name(type),
                         project.boughtParts().contains(type))).toList(),
                 items(project), viewersFacilities, projectQuotes, costing,
-                warningTypeNames(costing), typedPrices(project));
+                warningTypeNames(costing), typedPrices(project), skills(project));
     }
 
     /** The prices the user typed, by the item's name. */
@@ -106,15 +106,17 @@ public class ProjectQueries {
             var item = chosen != null ? chosen : ProjectItem.typed(type);
             lines.add(new ProjectDetails.ItemLine(type.value(), recipes.name(type), recipes.groupName(type), project.hasProduct(type),
                     chosen != null, item.source().name().toLowerCase(java.util.Locale.ROOT), item.me(), item.te(),
-                    item.blueprintCostPerRun(), item.facility(), item.policy(), skills(item)));
+                    item.blueprintCostPerRun(), item.facility(), item.policy()));
         }
         return lines;
     }
 
-    private List<ProjectDetails.SkillLine> skills(ProjectItem item) {
-        return recipes.timeSkills(item.type()).stream()
+    /** The time-saving skills that the blueprints of the built items require, each once, by name, with the builder's level. */
+    private List<ProjectDetails.SkillLine> skills(Project project) {
+        return recipes.builtItems(project).stream().flatMap(type -> recipes.timeSkills(type).stream()).distinct()
                 .map(skill -> new ProjectDetails.SkillLine(skill.skill().value(), recipes.name(skill.skill()),
-                        item.skillLevels().getOrDefault(skill.skill(), 0), skill.percentPerLevel()))
+                        project.config().builder().level(skill.skill()), skill.percentPerLevel()))
+                .sorted(java.util.Comparator.comparing(ProjectDetails.SkillLine::name))
                 .toList();
     }
 

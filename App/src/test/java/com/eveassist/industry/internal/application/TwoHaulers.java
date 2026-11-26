@@ -68,9 +68,9 @@ final class TwoHaulers {
         var version = editing.addProduct(owner, new AddProjectProductCommand(id, HAULER, 2, 0), Map.of(
                 TRITANIUM, quote(TRITANIUM, "5", "4"), PILOTS_MINERAL, quote(PILOTS_MINERAL, "10", "8"))).version();
         version = editing.setItem(owner, new SetProjectItemCommand(id, new ProjectItem(HAULER, BlueprintSource.TYPED, 10, 20,
-                BigDecimal.ZERO, null, null, Map.of(NANITE, 5, MECHANICAL, 3)), version)).version();
+                BigDecimal.ZERO, null, null), version)).version();
         editing.setConfig(owner, new SetProjectConfigCommand(id, ProjectConfig.defaults()
-                .withBuilder(new ProjectBuilder(5, 5, BigDecimal.ZERO)).withDefaultFacility(facility), version));
+                .withBuilder(new ProjectBuilder(5, 5, BigDecimal.ZERO, Map.of(NANITE, 5, MECHANICAL, 3))).withDefaultFacility(facility), version));
         return id;
     }
 }

@@ -97,9 +97,9 @@ class ProjectCostingsIT extends IntegrationTest {
         var version = editing.addProduct(owner, new AddProjectProductCommand(id, HAULER, 2, 0), Map.of(
                 TRITANIUM, quote(TRITANIUM, "5", "4"), PILOTS_MINERAL, quote(PILOTS_MINERAL, "10", "8"))).version();
         version = editing.setItem(owner, new SetProjectItemCommand(id, new ProjectItem(HAULER, BlueprintSource.TYPED, 10, 20,
-                BigDecimal.ZERO, null, null, Map.of(NANITE, 5, MECHANICAL, 3)), version)).version();
+                BigDecimal.ZERO, null, null), version)).version();
         editing.setConfig(owner, new SetProjectConfigCommand(id, ProjectConfig.defaults().withBuilder(new ProjectBuilder(5, 5,
-                BigDecimal.ZERO)).withDefaultFacility(facility), version));
+                BigDecimal.ZERO, Map.of(NANITE, 5, MECHANICAL, 3))).withDefaultFacility(facility), version));
         return id;
     }
 
@@ -160,7 +160,7 @@ class ProjectCostingsIT extends IntegrationTest {
         var project = projects.find(owner, id).orElseThrow();
         var hauler = project.items().get(HAULER);
         editing.setItem(owner, new SetProjectItemCommand(id, new ProjectItem(HAULER, hauler.source(), hauler.me(), hauler.te(),
-                hauler.blueprintCostPerRun(), free, null, hauler.skillLevels()), project.version()));
+                hauler.blueprintCostPerRun(), free, null), project.version()));
 
         var cost = costings.cost(owner, id).cost();
 
@@ -418,7 +418,7 @@ class ProjectCostingsIT extends IntegrationTest {
         var id = twoHaulers(owner, azbel(owner, "2"));
         var project = projects.find(owner, id).orElseThrow();
         editing.setItem(owner, new SetProjectItemCommand(id, new ProjectItem(COMPONENT, BlueprintSource.OWNED, 10, 20,
-                BigDecimal.ZERO, null, null, Map.of()), project.version()));
+                BigDecimal.ZERO, null, null), project.version()));
 
         assertThatThrownBy(() -> costings.cost(owner, id)).isInstanceOf(OwnedBlueprintsNotAvailableException.class);
     }

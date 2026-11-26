@@ -44,7 +44,7 @@ plan into a new Draft, and the plan is not changed afterwards. *Issue quote* fre
 **Archived** is a separate flag and does not change the state.
 
 ```
-project ─┬─ product, bought part, item, item skill, price      the working inputs, in tables you can query
+project ─┬─ product, bought part, item, skill, price           the working inputs, in tables you can query
          ├─ costing (latest, replaced each time)  ── trace     the result of "Cost", for the Draft
          └─ quote 1, 2, ...  each with its costing ── trace    frozen snapshots, never edited
 facility belongs to the account and is used by projects
@@ -65,7 +65,7 @@ Every table is account-owned through `project`, which references the account wit
 | `project_product` | `project_id`, `type_id`, `quantity` | copied from the plan at start. **Editable in a Draft**: add (any buildable type the SDE knows), remove, change the quantity |
 | `project_bought_part` | `project_id`, `type_id` | a part with a recipe that is bought, copied from the plan, changeable in a Draft |
 | `project_item` | one row per built item: `me`, `te`, `blueprint_cost_per_run`, `blueprint_kind` (`typed` now, `owned` in step 5), `facility_id` (null means the project's default), split strategy and time bound if they differ from the project's | the Draft's blueprint choices. Typed ME and TE are the first form |
-| `project_item_skill` | `project_id`, `item_type_id`, `skill_type_id`, `level` | the builder's level in each time-saving skill the item's blueprint requires. The percent per level is read from the SDE, not stored |
+| `project_skill` | `project_id`, `skill_type_id`, `level` | the builder's level in each time-saving skill some blueprint requires, **once per project** (2026-11-25, replacing the per-item `project_item_skill`; the migration kept the higher level). The percent per level is read from the SDE, not stored. A quote stored before the change keeps them on its items, and restoring it merges them the same way |
 | `project_price` | like `plan_price`: `type_id`, `source` (`market` or `manual`), `sell`, `buy`, `as_of` | copied from the plan at start, then **the project's own**, refreshed only when the user asks. Costing never reads the shared Jita orders |
 | `facility` | account-owned: name, the eight terms of `FacilityTerms` (structure and rig material, time and cost percents, cost index, tax, SCC), the **structure type** (`raitaru`, `azbel`, `sotiyo`, `npc_station` or null, which only proposes the structure's bonuses in the form) and **`index_entered_at`** (when the cost index was last typed, since it is typed and its age is shown), and later rigs and system | typed percents. An item points at one, or the project's default. Deleting a facility sets `facility_id` to null, and the use case adds one to the version of every Draft that used it |
 | `project_costing` | the Draft's latest costing (`quote_id` null) and each quote's (`quote_id` set, and the project must be the quote's, by a composite foreign key): provenance (`costed_project_version`, `costed_sde_version`, `prices_as_of`, `costed_at`), `delivered_cost`, `quotable`, `document_format_version`, and one `jsonb` **display document** of the costing | one row with no quote per project (a partial unique index), replaced on each costing. A quote's row is never changed, and **the database refuses an update** of it |
@@ -139,7 +139,7 @@ costing does not change:
 | Unit prices | the project's `project_price` | built |
 | Adjusted prices | `AdjustedPriceService` in the `market` module, over the shared `adjusted_price` table ([Adjusted prices](esi.md#adjusted-prices)) | built (step 2). `ProjectEntry.cost` refreshes them first, and a material with no adjusted price gives a `MISSING_ADJUSTED_PRICE` notice that names the material and does not block a quote (the game counts it as 0, reading G16, decided 2026-11-25) |
 | Cost index, facility terms | the `facility` row | typed |
-| Builder | the project's columns and `project_item_skill` | typed |
+| Builder | the project's columns and `project_skill` | typed |
 | Owned blueprints | none yet | typed ME and TE per item (`ProjectBuild.Typed`, cut at the 30-day limit and at a time bound, with the item's or the project's split policy); the splitter's `FromBlueprints` waits for step 5 |
 
 ## Relationships and deletes
@@ -148,7 +148,7 @@ costing does not change:
 |---|---|
 | account → plan, project, facility | CASCADE. Deleting an account removes everything it owns |
 | plan → project | **No cascade.** `source_plan_id` becomes null. A project is a copy and owns its prices, so deleting, archiving or editing its plan changes nothing |
-| project → product, bought part, item, item skill, price, costing, quote | CASCADE. Deleting a project removes it all, quotes and traces included |
+| project → product, bought part, item, skill, price, costing, quote | CASCADE. Deleting a project removes it all, quotes and traces included |
 | costing → trace | CASCADE. The purge of an archived project's traces deletes trace rows and touches nothing else |
 | facility → item's `facility_id` | SET NULL (decided), so the item falls back to the project's default. A quote is unaffected, since it holds the facility's values and not a reference |
 

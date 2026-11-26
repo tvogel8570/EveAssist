@@ -28,6 +28,7 @@ public record QuoteInputsV1(
     }
 
     /** How one built item was made. {@code facility} is a facility's public id as text, or null for the project's default. */
+    /** {@code skills} of an item are only in quotes stored before 2026-11-25, when the levels moved to the {@link Builder}. They are written empty now. */
     public record Item(
             int type, String blueprintSource, int me, int te, BigDecimal blueprintCostPerRun, String facility, Policy policy,
             List<Skill> skills) {
@@ -50,7 +51,15 @@ public record QuoteInputsV1(
             Builder builder, String buyerName, String note) {
     }
 
-    public record Builder(int industry, int advancedIndustry, BigDecimal implantTimePercent) {
+    /**
+     * The builder the quote was costed with. {@code skills} are the levels in the skills only some blueprints require. A quote stored before 2026-11-25
+     * has none here: it kept them on each {@link Item}.
+     */
+    public record Builder(int industry, int advancedIndustry, BigDecimal implantTimePercent, List<Skill> skills) {
+
+        public Builder {
+            skills = skills == null ? List.of() : List.copyOf(skills);
+        }
     }
 
     /**

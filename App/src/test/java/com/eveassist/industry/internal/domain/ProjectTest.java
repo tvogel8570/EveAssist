@@ -155,7 +155,6 @@ class ProjectTest {
         assertThat(item.te()).isEqualTo(20);
         assertThat(item.facility()).isNull();
         assertThat(item.policy()).isNull();
-        assertThat(item.skillLevels()).isEmpty();
     }
 
     @Test
@@ -182,10 +181,12 @@ class ProjectTest {
     void impossibleLevelsAreRefused() {
         assertThatThrownBy(() -> new ProjectBuilder(6, 0, BigDecimal.ZERO)).isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> new ProjectBuilder(0, 0, new BigDecimal("101"))).isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> new ProjectItem(SHIP, BlueprintSource.TYPED, 11, 20, BigDecimal.ZERO, null, null, Map.of()))
+        assertThatThrownBy(() -> new ProjectItem(SHIP, BlueprintSource.TYPED, 11, 20, BigDecimal.ZERO, null, null))
                 .isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> new ProjectItem(SHIP, BlueprintSource.TYPED, 10, 20, BigDecimal.ZERO, null, null,
-                Map.of(ORE, 6))).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> new ProjectBuilder(0, 0, BigDecimal.ZERO, Map.of(ORE, 6))).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> new ProjectBuilder(0, 0, BigDecimal.ZERO, Map.of(ORE, -1))).isInstanceOf(IllegalArgumentException.class);
+        assertThat(new ProjectBuilder(0, 0, BigDecimal.ZERO, Map.of(ORE, 3)).level(ORE)).isEqualTo(3);
+        assertThat(ProjectBuilder.NONE.level(ORE)).isZero();
     }
 
     // ---- a price the user typed ----

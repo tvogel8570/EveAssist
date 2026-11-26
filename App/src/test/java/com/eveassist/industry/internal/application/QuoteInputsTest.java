@@ -47,11 +47,11 @@ class QuoteInputsTest {
         var config = new ProjectConfig(
                 new ProjectSettings(new BigDecimal("500000"), new BigDecimal("300"), new BigDecimal("10000"), QuoteMode.MARKET,
                         new BigDecimal("12.5"), new BigDecimal("-5"), new BigDecimal("1000")),
-                PriceSide.BUY, new SplitPolicy(SplitStrategy.COPIES_FIRST, 86_400L), AZBEL, new ProjectBuilder(5, 4, new BigDecimal("4")),
+                PriceSide.BUY, new SplitPolicy(SplitStrategy.COPIES_FIRST, 86_400L), AZBEL, new ProjectBuilder(5, 4, new BigDecimal("4"), Map.of(new TypeId(11442), 5, new TypeId(11452), 3)),
                 "Buyer", "by Friday");
         var items = Map.of(
                 SHIP, new ProjectItem(SHIP, BlueprintSource.TYPED, 8, 14, new BigDecimal("20000000.50"), OTHER,
-                        new SplitPolicy(SplitStrategy.LEAST_COST, null), Map.of(new TypeId(11442), 5, new TypeId(11452), 3)),
+                        new SplitPolicy(SplitStrategy.LEAST_COST, null)),
                 PART, ProjectItem.typed(PART));
         return new Project(new ProjectId(UUID.randomUUID()), "P", 7, ProjectStatus.DRAFT, 2, false, config,
                 List.of(new PlanProduct(SHIP, 3)), Set.of(PART), items,
@@ -78,6 +78,26 @@ class QuoteInputsTest {
                 .isEqualTo(project.config());
         assertThat(restored.changedFacilities()).isEmpty();
         assertThat(restored.goneFacilities()).isEmpty();
+    }
+
+    @Test
+    void aQuoteStoredWithSkillsOnItsItemsGivesTheBuilderTheHigherLevelOfEach() {
+        var snapshot = QuoteInputs.snapshot(project(), both());
+        var config = snapshot.config();
+        // as quotes were stored before 2026-11-25: no skills on the builder, and each item with its own, which could disagree
+        var old = new QuoteInputsV1(snapshot.products(), snapshot.boughtParts(), List.of(
+                new QuoteInputsV1.Item(1001, "typed", 10, 20, BigDecimal.ZERO, null, null,
+                        List.of(new QuoteInputsV1.Skill(11442, 2), new QuoteInputsV1.Skill(11452, 4))),
+                new QuoteInputsV1.Item(1002, "typed", 10, 20, BigDecimal.ZERO, null, null, List.of(new QuoteInputsV1.Skill(11442, 5)))),
+                new QuoteInputsV1.Config(config.priceSide(), config.iskPerHour(), config.iskPerCubicMeter(), config.contractFee(), config.quoteMode(),
+                        config.marginPercent(), config.premiumPercent(), config.quoteStep(), config.defaultPolicy(), config.defaultFacility(),
+                        new QuoteInputsV1.Builder(5, 4, new BigDecimal("4"), null), config.buyerName(), config.note()),
+                snapshot.prices(), snapshot.facilities());
+
+        var restored = QuoteInputs.restore(old, both());
+
+        assertThat(restored.config().builder().skillLevels()).containsOnly(
+                java.util.Map.entry(new TypeId(11442), 5), java.util.Map.entry(new TypeId(11452), 4));
     }
 
     @Test

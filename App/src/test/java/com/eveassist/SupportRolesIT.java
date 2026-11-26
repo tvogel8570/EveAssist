@@ -29,7 +29,7 @@ class SupportRolesIT {
      * (a quote holds a buyer's name and a note, which are another person's data). They move to the allowlist when the statement does.
      */
     private static final Set<String> EXCLUDED = Set.of("character_token", "spring_session", "spring_session_attributes",
-            "facility", "project", "project_product", "project_bought_part", "project_item", "project_item_skill", "project_price",
+            "facility", "project", "project_product", "project_bought_part", "project_item", "project_skill", "project_price",
             "project_quote", "project_costing", "project_trace");
 
     private static final String DATABASE = "support_roles";

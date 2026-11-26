@@ -6,8 +6,11 @@ import com.eveassist.industry.internal.domain.ProjectBuilder;
 import com.eveassist.industry.internal.domain.ProjectConfig;
 import com.eveassist.industry.internal.domain.ProjectSettings;
 import com.eveassist.industry.internal.domain.ProjectSettings.QuoteMode;
+import com.eveassist.sde.TypeId;
 import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -19,8 +22,11 @@ record ConfigForm(
         String mode, BigDecimal marginPercent, BigDecimal premiumPercent, String priceSide, String defaultFacility,
         Integer industry, Integer advancedIndustry, BigDecimal implantTimePercent) {
 
-    /** The configuration with what the form sent put in. The domain refuses a value outside its range with an IllegalArgumentException. */
-    ProjectConfig applyTo(ProjectConfig current) {
+    /**
+     * The configuration with what the form sent put in, and the skill levels it sent, which are fields named by their skill. The domain refuses a value
+     * outside its range with an IllegalArgumentException.
+     */
+    ProjectConfig applyTo(ProjectConfig current, Map<TypeId, Integer> sentSkills) {
         var settings = current.settings();
         var changed = new ProjectSettings(
                 or(iskPerHour, settings.iskPerHour()), or(iskPerCubicMeter, settings.iskPerCubicMeter()),
@@ -29,9 +35,11 @@ record ConfigForm(
                 or(marginPercent, settings.marginPercent()), or(premiumPercent, settings.premiumPercent()),
                 or(quoteStep, settings.quoteStep()));
         var builder = current.builder();
+        var skills = new HashMap<>(builder.skillLevels());
+        skills.putAll(sentSkills);
         var changedBuilder = new ProjectBuilder(industry == null ? builder.industry() : industry,
                 advancedIndustry == null ? builder.advancedIndustry() : advancedIndustry,
-                or(implantTimePercent, builder.implantTimePercent()));
+                or(implantTimePercent, builder.implantTimePercent()), skills);
         var side = priceSide == null || priceSide.isBlank() ? current.priceSide()
                 : PriceSide.valueOf(priceSide.strip().toUpperCase(Locale.ROOT));
         // an absent field keeps the facility, a present but empty one clears it ("no default facility")

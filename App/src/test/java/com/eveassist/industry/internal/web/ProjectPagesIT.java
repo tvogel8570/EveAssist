@@ -698,4 +698,37 @@ class ProjectPagesIT extends IntegrationTest {
         mvc.perform(post("/projects/" + id + "/prices/" + HAULER.value() + "/market").param("expectedVersion", "1")
                 .with(signedIn(newSub())).with(csrf())).andExpect(status().isNotFound());
     }
+
+    // ---- one list of skills for the project ----
+
+    @Test
+    void theSettingsListEachSkillTheItemsNeedOnceAndSaveItsLevelForTheProject() throws Exception {
+        var sub = newSub();
+        var id = quotable(sub);
+        var nanite = 11442; // Nanite Engineering, which the Hauler's blueprint requires
+        page(sub, id).andExpect(content().string(containsString("id=\"project-skills\"")))
+                .andExpect(content().string(containsString("name=\"skill-" + nanite + "\"")));
+
+        mvc.perform(post("/projects/" + id + "/config").param("expectedVersion", String.valueOf(versionOf(id)))
+                        .param("skill-" + nanite, "4").param("skill-999999", "3").with(signedIn(sub)).with(csrf()))
+                .andExpect(redirectedUrl("/projects/" + id));
+
+        // a skill the page does not show is not taken from the form
+        assertThat(skillRows(id)).containsExactly(nanite + " 4");
+        page(sub, id).andExpect(content().string(containsString("id=\"banner-stale\"")));
+
+        // saving something else keeps the level, and a level out of range is refused
+        mvc.perform(post("/projects/" + id + "/config").param("expectedVersion", String.valueOf(versionOf(id)))
+                .param("industry", "3").with(signedIn(sub)).with(csrf()));
+        mvc.perform(post("/projects/" + id + "/config").param("expectedVersion", String.valueOf(versionOf(id)))
+                        .param("skill-" + nanite, "6").with(signedIn(sub)).with(csrf()))
+                .andExpect(flash().attribute("error", "invalid"));
+        assertThat(skillRows(id)).containsExactly(nanite + " 4");
+    }
+
+    private List<String> skillRows(UUID id) {
+        return jdbc.sql("SELECT s.skill_type_id, s.level FROM project_skill s JOIN project p ON p.id = s.project_id WHERE p.public_id = :id")
+                .param("id", id).query((rs, n) -> rs.getInt(1) + " " + rs.getInt(2)).list();
+    }
 }
+

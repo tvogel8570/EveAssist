@@ -11,6 +11,7 @@ import com.eveassist.industry.internal.domain.PlanPrice;
 import com.eveassist.industry.internal.domain.PriceSide;
 import com.eveassist.industry.internal.domain.ProductSkill;
 import com.eveassist.industry.internal.domain.ProjectBuild;
+import com.eveassist.industry.internal.domain.ProjectBuilder;
 import com.eveassist.industry.internal.domain.ProjectCosting;
 import com.eveassist.industry.internal.domain.ProjectDefinition;
 import com.eveassist.industry.internal.domain.ProjectItem;
@@ -134,7 +135,7 @@ public class ProjectCostings {
                 facility = read.computeIfAbsent(facilityId,
                         key -> facilities.termsOf(viewer, key).orElseThrow(FacilityNotFoundException::new));
             }
-            var builder = new BuilderTerms(config.builder().industry(), config.builder().advancedIndustry(), productSkills(item),
+            var builder = new BuilderTerms(config.builder().industry(), config.builder().advancedIndustry(), productSkills(type, config.builder()),
                     config.builder().implantTimePercent());
             var policy = item.policy() != null ? item.policy() : config.defaultPolicy();
             builds.put(type, new ProjectBuild.Typed(new JobTerms(item.me(), item.te(), facility, builder),
@@ -153,10 +154,10 @@ public class ProjectCostings {
                 oldestBoughtPrice(comparison.chosen(), prices), adjustedPrices.age().orElse(null), comparison, warnings));
     }
 
-    /** The builder's level in each skill the item's blueprint requires that saves time. A skill the developer did not type is level 0. */
-    private java.util.List<ProductSkill> productSkills(ProjectItem item) {
-        return recipes.timeSkills(item.type()).stream()
-                .map(skill -> new ProductSkill(item.skillLevels().getOrDefault(skill.skill(), 0), skill.percentPerLevel()))
+    /** The builder's level in each skill the item's blueprint requires that saves time. A skill with no level typed is level 0. */
+    private java.util.List<ProductSkill> productSkills(TypeId type, ProjectBuilder builder) {
+        return recipes.timeSkills(type).stream()
+                .map(skill -> new ProductSkill(builder.level(skill.skill()), skill.percentPerLevel()))
                 .toList();
     }
 
