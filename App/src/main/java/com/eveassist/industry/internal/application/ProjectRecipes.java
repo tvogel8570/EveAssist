@@ -1,8 +1,8 @@
 package com.eveassist.industry.internal.application;
 
-import com.eveassist.industry.internal.domain.Costing;
-import com.eveassist.industry.internal.domain.LineCost;
-import com.eveassist.industry.internal.domain.PlanProduct;
+import com.eveassist.industry.internal.costing.domain.Costing;
+import com.eveassist.industry.internal.costing.domain.LineCost;
+import com.eveassist.industry.internal.costing.domain.PlanProduct;
 import com.eveassist.industry.internal.domain.Project;
 import com.eveassist.sde.Recipe;
 import com.eveassist.sde.SdeService;

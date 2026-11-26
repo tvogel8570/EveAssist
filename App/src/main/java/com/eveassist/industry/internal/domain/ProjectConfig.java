@@ -1,6 +1,7 @@
 package com.eveassist.industry.internal.domain;
 
 import com.eveassist.industry.FacilityId;
+import com.eveassist.industry.internal.costing.domain.SplitPolicy;
 import org.jmolecules.ddd.annotation.ValueObject;
 
 /**

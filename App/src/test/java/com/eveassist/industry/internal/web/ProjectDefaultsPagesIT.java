@@ -19,7 +19,7 @@ import com.eveassist.industry.internal.application.ProjectDefaults;
 import com.eveassist.industry.internal.domain.PriceSide;
 import com.eveassist.industry.internal.domain.ProjectConfig;
 import com.eveassist.industry.internal.domain.ProjectSettings.QuoteMode;
-import com.eveassist.industry.internal.domain.SplitStrategy;
+import com.eveassist.industry.internal.costing.domain.SplitStrategy;
 import com.eveassist.sde.TypeId;
 import java.util.List;
 import java.util.UUID;

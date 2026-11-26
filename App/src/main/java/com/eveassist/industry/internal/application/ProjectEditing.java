@@ -2,8 +2,9 @@ package com.eveassist.industry.internal.application;
 
 import com.eveassist.identity.Viewer;
 import com.eveassist.industry.ProjectId;
-import com.eveassist.industry.internal.domain.PlanPrice;
+import com.eveassist.industry.internal.costing.domain.PlanPrice;
 import com.eveassist.industry.internal.domain.Project;
+import com.eveassist.industry.internal.shared.application.UnknownProductException;
 import com.eveassist.market.JitaQuote;
 import com.eveassist.sde.TypeId;
 import java.util.Map;

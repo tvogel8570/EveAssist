@@ -1,5 +1,6 @@
 package com.eveassist.industry.internal.domain;
 
+import com.eveassist.industry.internal.costing.domain.PlanProduct;
 import com.eveassist.sde.TypeId;
 import java.util.List;
 import java.util.Map;

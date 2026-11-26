@@ -1,6 +1,9 @@
 package com.eveassist.industry.internal.domain;
 
 import com.eveassist.industry.PlanId;
+import com.eveassist.industry.internal.costing.domain.PlanPrice;
+import com.eveassist.industry.internal.costing.domain.PlanProduct;
+import com.eveassist.industry.internal.shared.domain.InvalidQuantityException;
 import com.eveassist.sde.TypeId;
 import java.util.ArrayList;
 import java.util.HashMap;

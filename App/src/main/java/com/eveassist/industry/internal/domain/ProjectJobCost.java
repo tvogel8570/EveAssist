@@ -1,5 +1,8 @@
 package com.eveassist.industry.internal.domain;
 
+import com.eveassist.industry.internal.costing.domain.BlueprintKind;
+import com.eveassist.industry.internal.costing.domain.JobCost;
+import com.eveassist.industry.internal.costing.domain.JobTerms;
 import java.math.BigDecimal;
 import org.jmolecules.ddd.annotation.ValueObject;
 

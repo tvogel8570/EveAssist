@@ -2,9 +2,10 @@ package com.eveassist.industry.internal.application;
 
 import com.eveassist.identity.Visitor;
 import com.eveassist.industry.PlanId;
+import com.eveassist.industry.internal.costing.domain.PlanPrice;
+import com.eveassist.industry.internal.costing.domain.PlanProduct;
 import com.eveassist.industry.internal.domain.Plan;
-import com.eveassist.industry.internal.domain.PlanPrice;
-import com.eveassist.industry.internal.domain.PlanProduct;
+import com.eveassist.industry.internal.shared.application.UnknownProductException;
 import com.eveassist.market.JitaQuote;
 import com.eveassist.market.MarketService;
 import com.eveassist.sde.ItemType;

@@ -1,11 +1,11 @@
 package com.eveassist.industry.internal.application;
 
-import com.eveassist.industry.internal.domain.Costing;
-import com.eveassist.industry.internal.domain.LineCost;
+import com.eveassist.industry.internal.costing.domain.Costing;
+import com.eveassist.industry.internal.costing.domain.LineCost;
 import com.eveassist.industry.internal.domain.Plan;
-import com.eveassist.industry.internal.domain.PlanCost;
-import com.eveassist.industry.internal.domain.PlanPrice;
-import com.eveassist.industry.internal.domain.PlanProduct;
+import com.eveassist.industry.internal.costing.domain.PlanCost;
+import com.eveassist.industry.internal.costing.domain.PlanPrice;
+import com.eveassist.industry.internal.costing.domain.PlanProduct;
 import com.eveassist.sde.SdeService;
 import com.eveassist.sde.TypeId;
 import java.time.Instant;

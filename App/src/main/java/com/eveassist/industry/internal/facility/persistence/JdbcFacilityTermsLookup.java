@@ -3,7 +3,7 @@ package com.eveassist.industry.internal.facility.persistence;
 import com.eveassist.identity.Viewer;
 import com.eveassist.industry.FacilityId;
 import com.eveassist.industry.internal.facility.application.FacilityTermsLookup;
-import com.eveassist.industry.internal.domain.FacilityTerms;
+import com.eveassist.industry.internal.costing.domain.FacilityTerms;
 import java.util.Optional;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;

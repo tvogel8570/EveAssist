@@ -2,8 +2,9 @@ package com.eveassist.industry.internal.application;
 
 import com.eveassist.identity.Viewer;
 import com.eveassist.industry.PlanId;
+import com.eveassist.industry.internal.costing.domain.PlanProduct;
 import com.eveassist.industry.internal.domain.Plan;
-import com.eveassist.industry.internal.domain.PlanProduct;
+import com.eveassist.industry.internal.shared.application.UnknownProductException;
 import com.eveassist.market.JitaQuotes;
 import com.eveassist.market.MarketService;
 import java.util.ArrayList;

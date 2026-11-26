@@ -1,7 +1,7 @@
 package com.eveassist.industry.internal.facility.application;
 
 import com.eveassist.industry.FacilityId;
-import com.eveassist.industry.internal.domain.FacilityTerms;
+import com.eveassist.industry.internal.costing.domain.FacilityTerms;
 import com.eveassist.industry.internal.facility.domain.StructureType;
 import java.time.Instant;
 

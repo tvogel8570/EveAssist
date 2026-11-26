@@ -1,6 +1,8 @@
 package com.eveassist.industry.internal.domain;
 
 import com.eveassist.industry.FacilityId;
+import com.eveassist.industry.internal.costing.domain.Costing;
+import com.eveassist.industry.internal.costing.domain.SplitPolicy;
 import com.eveassist.sde.TypeId;
 import java.math.BigDecimal;
 import org.jmolecules.ddd.annotation.ValueObject;

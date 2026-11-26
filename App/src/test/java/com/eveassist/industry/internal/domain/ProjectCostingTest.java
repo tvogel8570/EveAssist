@@ -3,6 +3,15 @@ package com.eveassist.industry.internal.domain;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.eveassist.industry.internal.costing.domain.BlueprintKind;
+import com.eveassist.industry.internal.costing.domain.BuilderTerms;
+import com.eveassist.industry.internal.costing.domain.FacilityTerms;
+import com.eveassist.industry.internal.costing.domain.JobTerms;
+import com.eveassist.industry.internal.costing.domain.OwnedBlueprint;
+import com.eveassist.industry.internal.costing.domain.PlanProduct;
+import com.eveassist.industry.internal.costing.domain.ProjectJob;
+import com.eveassist.industry.internal.costing.domain.SplitPolicy;
+import com.eveassist.industry.internal.costing.domain.SplitStrategy;
 import com.eveassist.industry.internal.domain.CostLine.Component;
 import com.eveassist.industry.internal.domain.ProjectSettings.QuoteMode;
 import com.eveassist.industry.internal.domain.ProjectWarning.Kind;

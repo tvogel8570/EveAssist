@@ -3,7 +3,7 @@ package com.eveassist.industry.internal.application;
 import com.eveassist.identity.Viewer;
 import com.eveassist.industry.FacilityId;
 import com.eveassist.industry.ProjectId;
-import com.eveassist.industry.internal.domain.FacilityTerms;
+import com.eveassist.industry.internal.costing.domain.FacilityTerms;
 import com.eveassist.industry.internal.domain.ProjectLockedException;
 import com.eveassist.industry.internal.facility.application.FacilityTermsLookup;
 import java.time.Clock;

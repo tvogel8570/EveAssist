@@ -15,7 +15,7 @@ import com.eveassist.industry.internal.application.ProjectQueries;
 import com.eveassist.industry.internal.application.ProjectQuoting;
 import com.eveassist.industry.internal.application.ProjectRepository;
 import com.eveassist.industry.internal.application.TwoHaulers;
-import com.eveassist.industry.internal.domain.FacilityTerms;
+import com.eveassist.industry.internal.costing.domain.FacilityTerms;
 import com.eveassist.industry.internal.facility.domain.StructureType;
 import com.eveassist.market.AdjustedPriceService;
 import java.math.BigDecimal;

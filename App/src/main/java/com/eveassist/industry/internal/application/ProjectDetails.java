@@ -4,7 +4,7 @@ import com.eveassist.industry.FacilityId;
 import com.eveassist.industry.ProjectId;
 import com.eveassist.industry.internal.domain.ProjectConfig;
 import com.eveassist.industry.internal.domain.ProjectStatus;
-import com.eveassist.industry.internal.domain.SplitPolicy;
+import com.eveassist.industry.internal.costing.domain.SplitPolicy;
 import com.eveassist.industry.internal.facility.application.FacilityOverview;
 import java.math.BigDecimal;
 import java.time.Instant;
