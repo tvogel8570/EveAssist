@@ -62,6 +62,21 @@ class ArchitectureTest {
     }
 
     @Test
+    void helpersMarkedAsReadingNoAccountDataReachNone() {
+        RULES.helpersMarkedAsReadingNoAccountDataReachNone().check(PRODUCTION);
+    }
+
+    @Test
+    void industryFeaturesUseOnlyWhatTheyMay() {
+        RULES.industryFeaturesUseOnlyWhatTheyMay().check(PRODUCTION);
+    }
+
+    @Test
+    void charactersFeaturesUseOnlyWhatTheyMay() {
+        RULES.charactersFeaturesUseOnlyWhatTheyMay().check(PRODUCTION);
+    }
+
+    @Test
     void everyRepositoryMethodTakesTheViewerFirst() {
         RULES.everyRepositoryMethodTakesTheViewerFirst().check(PRODUCTION);
     }

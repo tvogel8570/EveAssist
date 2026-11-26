@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 /** A rule that cannot fail proves nothing, so each one is run against code that breaks it and code that does not. */
 class ArchitectureRulesFixtureTest {
@@ -42,7 +43,14 @@ class ArchitectureRulesFixtureTest {
                 rule(ArchitectureRules::everyRepositoryMethodTakesTheViewerFirst, "PlanRepository"),
                 rule(ArchitectureRules::everyRepositoryMethodTakesTheViewerFirst, "JdbcPlanRepository"),
                 rule(ArchitectureRules::queriesAndWritesDoNotStartFetches, "FetchingQueries"),
-                rule(ArchitectureRules::facadesDoNotReachPageEntryUseCases, "BrokenFacade"));
+                rule(ArchitectureRules::facadesDoNotReachPageEntryUseCases, "BrokenFacade"),
+                // the same breaks from a feature's own folder, internal/<feature>/<layer>, which a pattern for internal/<layer> alone passes over
+                rule(ArchitectureRules::domainStaysPlain, "SpringAwareFacility"),
+                rule(ArchitectureRules::everyUseCaseMethodTakesTheViewerFirst, "FacilityUseCases"),
+                rule(ArchitectureRules::queriesAndWritesDoNotStartFetches, "FacilityEditing"),
+                rule(ArchitectureRules::facadesDoNotReachPageEntryUseCases, "FacadeOfAFeaturesEntry"),
+                rule(ArchitectureRules::helpersMarkedAsReadingNoAccountDataReachNone, "MarkedButReadingPlans"),
+                rule(ArchitectureRules::helpersMarkedAsReadingNoAccountDataReachNone, "MarkedButUsingSql"));
     }
 
     private static Arguments rule(Function<ArchitectureRules, ArchRule> rule, String offender) {
@@ -61,6 +69,44 @@ class ArchitectureRulesFixtureTest {
     @MethodSource("rules")
     void ruleAcceptsCleanCode(Function<ArchitectureRules, ArchRule> rule, String offender) {
         assertThatCode(() -> rule.apply(ON_CLEAN).check(CLEAN)).doesNotThrowAnyException();
+    }
+
+    private static final String FEATURES = "archfixture.features.";
+
+    @ParameterizedTest(name = "{0}")
+    @ValueSource(strings = {"SharedUsingCosting", "CostingUsingPlan", "FacilityUsingPlan", "PlanUsingProject", "AttemptUsingFacility",
+            "ProjectUsingTryPlan", "QuoteUsingTryPlan", "InUnlistedFolder", "InNoFeature"})
+    void featureRuleCatchesItsFixture(String offender) {
+        var rule = new ArchitectureRules(FEATURES + "broken").industryFeaturesUseOnlyWhatTheyMay();
+
+        assertThatThrownBy(() -> rule.check(new ClassFileImporter().importPackages(FEATURES + "broken")))
+                .isInstanceOf(AssertionError.class)
+                .hasMessageContaining(offender);
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @ValueSource(strings = {"SsoUsingLinking", "MembershipUsingTokens", "TokensUsingAnotherLinkingClass", "TokensUsingMembership",
+            "MembershipUsingAnotherLinkingClass", "InUnlistedCharactersFolder", "FlatCharactersClass"})
+    void charactersFeatureRuleCatchesItsFixture(String offender) {
+        var rule = new ArchitectureRules(FEATURES + "broken").charactersFeaturesUseOnlyWhatTheyMay();
+
+        assertThatThrownBy(() -> rule.check(new ClassFileImporter().importPackages(FEATURES + "broken")))
+                .isInstanceOf(AssertionError.class)
+                .hasMessageContaining(offender);
+    }
+
+    @Test
+    void charactersFeatureRuleAcceptsEverythingItsTableAllows() {
+        var rule = new ArchitectureRules(FEATURES + "clean").charactersFeaturesUseOnlyWhatTheyMay();
+
+        assertThatCode(() -> rule.check(new ClassFileImporter().importPackages(FEATURES + "clean"))).doesNotThrowAnyException();
+    }
+
+    @Test
+    void featureRuleAcceptsEverythingItsTableAllows() {
+        var rule = new ArchitectureRules(FEATURES + "clean").industryFeaturesUseOnlyWhatTheyMay();
+
+        assertThatCode(() -> rule.check(new ClassFileImporter().importPackages(FEATURES + "clean"))).doesNotThrowAnyException();
     }
 
     @Test

@@ -218,7 +218,7 @@ loads for it, below, is **proposed**. The formulas and the decisions behind them
 [sample walkthrough](../requirements/sample-project-cost-walkthrough.md).
 
 **Where it sits.** `ProjectCosting`, `BlueprintSplitter` and `JobCosting` are pure domain classes in the `industry` module
-(`com.eveassist.industry.internal.domain`), the way plan costing is. They hold no database, no ESI client and no clock. Every
+(`ProjectCosting` in `internal.project.costing.domain`, the other two in `internal.costing.domain`), the way plan costing is. They hold no database, no ESI client and no clock. Every
 input arrives as a value or a function, so the same inputs always give the same costing (exact decimals, no floating point).
 That determinism is what makes a stored [trace](../requirements/projects.md#costing-trace) reproducible.
 

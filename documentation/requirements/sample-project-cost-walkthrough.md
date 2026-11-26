@@ -275,6 +275,6 @@ This is the real output for the same Golem with every job bounded:
 
 A throwaway program (not in the repository) loaded the recipes and volumes from the SDE and the prices from ESI, built the
 `ProjectDefinition` described above, and printed the `ProjectCost`. The classes are `ProjectCosting`, `BlueprintSplitter` and
-`JobCosting` in `com.eveassist.industry.internal.domain`, and the hand-worked cases that check them are in `ProjectCostingTest`,
+`JobCosting` in `com.eveassist.industry.internal` (`ProjectCosting` in `project.costing.domain`, the others in `costing.domain`), and the hand-worked cases that check them are in `ProjectCostingTest`,
 `BlueprintSplitterTest` and `JobCostingTest`. The figures here are rounded to whole ISK from the exact decimals, so adding the table
 rows may differ from a total by 1 ISK.
