@@ -6,6 +6,7 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 
 import com.tngtech.archunit.base.DescribedPredicate;
+import com.tngtech.archunit.core.domain.PackageMatcher;
 import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaMethod;
 import com.tngtech.archunit.core.domain.JavaModifier;
@@ -18,8 +19,15 @@ import org.springframework.stereotype.Component;
 /**
  * EveAssist's own rules from documentation/architecture/code-structure.md. The base package is a parameter so that each
  * rule can also be run against a fixture that breaks it on purpose.
+ *
+ * <p>A module's layers are directly under {@code internal}, or under a feature's package there ({@code internal.<feature>.<layer>}), and
+ * the rules find a layer in both places.
  */
 final class ArchitectureRules {
+
+    /** The packages of a layer, with whatever is between {@code internal} and it, and everything under it. */
+    private static final String DOMAIN = "..internal..domain..";
+    private static final String APPLICATION = "..internal..application..";
 
     private final String base;
 
@@ -28,7 +36,7 @@ final class ArchitectureRules {
     }
 
     ArchRule domainStaysPlain() {
-        return noClasses().that().resideInAPackage(base + "..internal.domain..")
+        return noClasses().that().resideInAPackage(base + DOMAIN)
                 .should().dependOnClassesThat().resideInAnyPackage(
                         "org.springframework..", "jakarta.persistence..",
                         "com.fasterxml.jackson..", "tools.jackson..")
@@ -95,7 +103,7 @@ final class ArchitectureRules {
     }
 
     ArchRule queriesAndWritesDoNotStartFetches() {
-        return noClasses().that().resideInAPackage(base + "..internal.application..")
+        return noClasses().that().resideInAPackage(base + APPLICATION)
                 .and().haveNameMatching(".*(Queries|Editing)")
                 .should().dependOnClassesThat().haveSimpleNameEndingWith("FetchQueue")
                 .allowEmptyShould(true);
@@ -108,7 +116,7 @@ final class ArchitectureRules {
     }
 
     private DescribedPredicate<JavaClass> areUseCaseClasses() {
-        return describe("are use case classes", c -> c.getPackageName().contains(".internal.application")
+        return describe("are use case classes", c -> PackageMatcher.of(APPLICATION).matches(c.getPackageName())
                 && c.getPackageName().startsWith(base + ".")
                 && c.isTopLevelClass()
                 && !c.isInterface()
@@ -201,6 +209,7 @@ final class ArchitectureRules {
 
     private static DescribedPredicate<JavaClass> arePageEntryUseCases() {
         return describe("are page-entry use cases",
-                c -> c.getSimpleName().endsWith("Entry") && c.getPackageName().endsWith(".internal.application"));
+                // the layer's own package and not one under it
+                c -> c.getSimpleName().endsWith("Entry") && PackageMatcher.of("..internal..application").matches(c.getPackageName()));
     }
 }

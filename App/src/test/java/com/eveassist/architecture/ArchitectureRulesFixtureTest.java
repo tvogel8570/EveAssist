@@ -42,7 +42,12 @@ class ArchitectureRulesFixtureTest {
                 rule(ArchitectureRules::everyRepositoryMethodTakesTheViewerFirst, "PlanRepository"),
                 rule(ArchitectureRules::everyRepositoryMethodTakesTheViewerFirst, "JdbcPlanRepository"),
                 rule(ArchitectureRules::queriesAndWritesDoNotStartFetches, "FetchingQueries"),
-                rule(ArchitectureRules::facadesDoNotReachPageEntryUseCases, "BrokenFacade"));
+                rule(ArchitectureRules::facadesDoNotReachPageEntryUseCases, "BrokenFacade"),
+                // the same breaks from a feature's own folder, internal/<feature>/<layer>, which a pattern for internal/<layer> alone passes over
+                rule(ArchitectureRules::domainStaysPlain, "SpringAwareFacility"),
+                rule(ArchitectureRules::everyUseCaseMethodTakesTheViewerFirst, "FacilityUseCases"),
+                rule(ArchitectureRules::queriesAndWritesDoNotStartFetches, "FacilityEditing"),
+                rule(ArchitectureRules::facadesDoNotReachPageEntryUseCases, "FacadeOfAFeaturesEntry"));
     }
 
     private static Arguments rule(Function<ArchitectureRules, ArchRule> rule, String offender) {
