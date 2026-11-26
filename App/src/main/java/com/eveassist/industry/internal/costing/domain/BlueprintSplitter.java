@@ -1,6 +1,6 @@
 package com.eveassist.industry.internal.costing.domain;
 
-import com.eveassist.industry.internal.domain.ProjectCosting;
+import com.eveassist.industry.internal.project.costing.domain.ProjectCosting;
 import com.eveassist.sde.Recipe;
 import java.util.ArrayList;
 import java.util.Comparator;
