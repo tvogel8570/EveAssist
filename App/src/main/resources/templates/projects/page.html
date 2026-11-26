@@ -166,11 +166,60 @@
                 <h2 class="font-semibold grow" th:text="#{project.warnings}">Warnings</h2>
                 <span class="badge badge-warning badge-sm" th:text="${#lists.size(doc.warnings)}">1</span>
                 <span class="badge badge-error badge-sm" th:if="${!stored.quotable}" th:text="#{project.blocksQuote}">Blocks the quote</span>
+                <span class="badge badge-warning badge-sm hidden group-data-[dirty]/section:inline" data-section-unsaved th:text="#{project.unsavedShort}">Unsaved</span>
             </summary>
                 <ul class="list-disc ml-5 text-sm">
                     <li th:each="warning : ${doc.warnings}"
-                        th:text="#{'project.warning.' + ${warning.kind}(${project.warningTypeNames.getOrDefault(warning.type, '#' + warning.type)})}">Warning</li>
+                        th:with="name=${project.warningTypeNames.getOrDefault(warning.type, '#' + warning.type)}, needsPrice=${warning.kind == 'unpriced_material' or warning.kind == 'unpriced_surplus' or warning.kind == 'no_market_price'}">
+                        <span th:text="#{'project.warning.' + ${warning.kind}(${name})}">Warning</span>
+                        <!--/* no check for a quoted project: a warning that needs a price blocks the quote, so a quoted project never has one */-->
+                        <th:block th:if="${needsPrice}" th:with="typed=${project.typedPrice(warning.type)}">
+                            <!--/* a price typed since the costing: the warning stays until the project is costed again */-->
+                            <span th:if="${typed != null}" class="block text-xs text-success" th:id="'typed-' + ${warning.type}"
+                                  th:text="#{project.typedNote(${#numbers.formatDecimal(typed.price, 1, 'COMMA', 2, 'POINT')})}">Typed</span>
+                            <form th:if="${typed == null}" class="group mt-1 flex flex-wrap items-center gap-2" data-track-unsaved method="post"
+                                  th:action="@{/projects/{id}/prices/{type}(id=${project.id.value}, type=${warning.type})}">
+                                <input type="hidden" name="expectedVersion" th:value="${v}">
+                                <input type="hidden" name="anchor" value="warnings">
+                                <input class="input input-xs w-40 text-right" type="text" inputmode="decimal" name="price" required autocomplete="off"
+                                       th:aria-label="#{project.priceFor(${name})}" th:placeholder="#{project.pricePlaceholder}">
+                                <button class="btn btn-xs btn-outline group-data-[dirty]:btn-warning" type="submit" th:id="'save-price-' + ${warning.type} + '-' + ${warning.kind}" th:text="#{project.savePrice}">Save price</button>
+                                <span class="hidden group-data-[dirty]:inline text-xs text-warning" data-unsaved-note th:text="#{project.unsaved}">Unsaved changes</span>
+                            </form>
+                        </th:block>
+                    </li>
                 </ul>
+            </details>
+
+            <!--/* the prices the user typed: each stays until the market price is asked for again */-->
+            <details id="typed-prices" data-section="typed-prices" class="group/section rounded-box bg-base-200 [&>:not(summary)]:mx-4 [&>:not(summary)]:mb-4" th:if="${!#lists.isEmpty(project.typedPrices)}">
+            <summary class="flex cursor-pointer select-none items-center gap-2 rounded-box px-4 py-3 hover:bg-base-300/40">
+                <svg class="h-4 w-4 shrink-0 opacity-70 transition-transform group-open/section:rotate-90" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M7 4l6 6-6 6V4z"/></svg>
+                <h2 class="font-semibold grow" th:text="#{project.typedPrices}">Typed prices</h2>
+                <span class="badge badge-ghost badge-sm" th:text="${#lists.size(project.typedPrices)}">1</span>
+            </summary>
+                <div class="overflow-x-auto">
+                    <table class="table table-sm">
+                        <thead><tr>
+                            <th th:text="#{project.item}">Item</th>
+                            <th class="num" th:text="#{project.pricePerUnitColumn}">Price per unit, ISK</th>
+                            <th th:text="#{project.typedOn}">Typed</th>
+                            <th></th>
+                        </tr></thead>
+                        <tbody><tr th:each="typed : ${project.typedPrices}" th:id="'typed-price-' + ${typed.type}">
+                            <td th:text="${typed.name}">Item</td>
+                            <td class="num" th:text="${#numbers.formatDecimal(typed.price, 1, 'COMMA', 2, 'POINT')}">1.00</td>
+                            <td th:text="${@utcTime.format(typed.asOf)} + ' UTC'">time</td>
+                            <td class="text-right">
+                                <form th:if="${!locked}" method="post" th:action="@{/projects/{id}/prices/{type}/market(id=${project.id.value}, type=${typed.type})}">
+                                    <input type="hidden" name="expectedVersion" th:value="${v}">
+                                    <input type="hidden" name="anchor" value="typed-prices">
+                                    <button class="btn btn-xs btn-outline" type="submit" th:id="'use-market-' + ${typed.type}" th:text="#{project.useMarket}">Use the market price</button>
+                                </form>
+                            </td>
+                        </tr></tbody>
+                    </table>
+                </div>
             </details>
 
             <details id="jobs" data-section="jobs" class="group/section rounded-box bg-base-200 [&>:not(summary)]:mx-4 [&>:not(summary)]:mb-4" th:if="${doc != null and !#lists.isEmpty(doc.jobs)}">

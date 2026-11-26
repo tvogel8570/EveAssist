@@ -244,6 +244,52 @@ class ProjectCostingTest {
      * Reading G16 (2026-11-25, the Legion): a material with no adjusted price adds nothing to the game's estimated item value, which is what this
      * costing does, so the install cost is right and the quote is not blocked. The notice is raised once for the material, however many jobs use it.
      */
+    /**
+     * A market-referenced quote is the products' Jita prices (with the premium), so one product with no price at the basis leaves no quote at all. The developer
+     * decided on 2026-11-25 that it stays blocked and says why, naming the product, and that the way out is a price the user types. A margin quote does not use them.
+     */
+    @Test
+    void aProductWithNoPriceMakesAMarketReferencedQuoteImpossibleAndIsNamed() {
+        prices.put(SHIP_A, bd("20000"));
+        var market = settings("0", "0", "0", QuoteMode.MARKET, "20", "0", "0");
+
+        var cost = costing().cost(project(List.of(new PlanProduct(SHIP_A, 1), new PlanProduct(SHIP_B, 1)), Set.of(), planBuilds(), market));
+
+        assertThat(cost.warnings()).contains(new ProjectWarning(Kind.NO_MARKET_PRICE, SHIP_B));
+        assertThat(cost.warnings()).doesNotContain(new ProjectWarning(Kind.NO_MARKET_PRICE, SHIP_A));
+        assertThat(cost.quote()).isNull();
+        assertThat(cost.quotable()).isFalse();
+        // the margin quote is still there, as the comparison
+        assertThat(cost.comparison()).isNotNull();
+    }
+
+    @Test
+    void aMarketReferencedQuoteOfProductsThatAllHavePricesHasNoSuchWarningAndIsQuotable() {
+        prices.put(SHIP_A, bd("20000"));
+        prices.put(SHIP_B, bd("10000"));
+        var market = settings("0", "0", "0", QuoteMode.MARKET, "20", "-5", "0");
+
+        var cost = costing().cost(project(List.of(new PlanProduct(SHIP_A, 1), new PlanProduct(SHIP_B, 2)), Set.of(), planBuilds(), market));
+
+        assertThat(cost.warnings()).noneMatch(warning -> warning.kind() == Kind.NO_MARKET_PRICE);
+        // 20,000 + 2 x 10,000 = 40,000 less the 5% premium
+        assertThat(cost.quote().price()).isEqualByComparingTo("38000");
+        assertThat(cost.quotable()).isTrue();
+    }
+
+    @Test
+    void aMarginQuoteDoesNotNeedTheProductsPricesSoNothingIsSaidAboutThem() {
+        var margin = settings("0", "0", "0", QuoteMode.MARGIN, "20", "0", "0");
+
+        var cost = costing().cost(project(List.of(new PlanProduct(SHIP_A, 1), new PlanProduct(SHIP_B, 1)), Set.of(), planBuilds(), margin));
+
+        assertThat(cost.warnings()).noneMatch(warning -> warning.kind() == Kind.NO_MARKET_PRICE);
+        assertThat(cost.quote()).isNotNull();
+        assertThat(cost.quotable()).isTrue();
+        // and the market quote, which would need them, is the comparison that is missing
+        assertThat(cost.comparison()).isNull();
+    }
+
     @Test
     void aMaterialWithNoAdjustedPriceIsANoticeAndDoesNotBlockTheQuote() {
         adjusted.remove(ORE);

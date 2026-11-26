@@ -89,7 +89,8 @@ public class ProjectQuoting {
         inputs.facilities().forEach(values -> quoted.add(new FacilityId(java.util.UUID.fromString(values.id()))));
         var restored = QuoteInputs.restore(inputs, termsOf(viewer, quoted));
         project.reopen();
-        project.replaceInputs(restored.products(), restored.boughtParts(), restored.items(), restored.prices(), restored.config());
+        project.replaceInputs(restored.products(), restored.boughtParts(), restored.items(), restored.prices(), restored.typedPrices(),
+                restored.config());
         var version = projects.save(viewer, project).orElseThrow(ProjectChangedException::new);
         return new NewVersion(new ProjectChanged(command.project(), version), restored.changedFacilities(), restored.goneFacilities());
     }

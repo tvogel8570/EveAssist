@@ -5,10 +5,12 @@ import com.eveassist.industry.FacilityId;
 import com.eveassist.industry.ProjectId;
 import com.eveassist.industry.internal.application.CostingOutOfDateException;
 import com.eveassist.industry.internal.application.InvalidQuoteException;
+import com.eveassist.industry.internal.application.InvalidPriceException;
 import com.eveassist.industry.internal.application.IssueQuoteCommand;
 import com.eveassist.industry.internal.application.NewVersionCommand;
 import com.eveassist.industry.internal.application.NotQuotableException;
 import com.eveassist.industry.internal.application.NothingToCostException;
+import com.eveassist.industry.internal.application.PriceNotNeededException;
 import com.eveassist.industry.internal.application.ProjectChangedException;
 import com.eveassist.industry.internal.application.ProjectComparison;
 import com.eveassist.industry.internal.application.ProjectDetails;
@@ -23,6 +25,8 @@ import com.eveassist.industry.internal.application.ShareableQuote;
 import com.eveassist.industry.internal.application.QuoteExport;
 import com.eveassist.industry.internal.application.SetProjectConfigCommand;
 import com.eveassist.industry.internal.application.SetProjectItemCommand;
+import com.eveassist.industry.internal.application.TypePriceCommand;
+import com.eveassist.industry.internal.application.UseMarketPriceCommand;
 import com.eveassist.industry.internal.domain.BlueprintSource;
 import com.eveassist.industry.internal.domain.ProjectConfig;
 import com.eveassist.industry.internal.domain.ProjectItem;
@@ -188,6 +192,33 @@ class ProjectPageController {
         return back(id, anchor);
     }
 
+    /** A price the user types for an item the market has none for (or too little of one). It changes an input, so the costing is out of date. */
+    @PostMapping("/prices/{type}")
+    String typePrice(Viewer viewer, @PathVariable UUID id, @PathVariable int type, @RequestParam long expectedVersion,
+            @RequestParam(required = false) String price, @RequestParam(required = false) String anchor) {
+        editing.typePrice(viewer, new TypePriceCommand(new ProjectId(id), new TypeId(type), amountOf(price), expectedVersion));
+        return back(id, anchor);
+    }
+
+    /** Gives up the typed price of an item and takes the market's, which is fetched. */
+    @PostMapping("/prices/{type}/market")
+    String useMarketPrice(Viewer viewer, @PathVariable UUID id, @PathVariable int type, @RequestParam long expectedVersion,
+            @RequestParam(required = false) String anchor) {
+        entry.useMarketPrice(viewer, new UseMarketPriceCommand(new ProjectId(id), new TypeId(type), expectedVersion));
+        return back(id, anchor);
+    }
+
+    /** A number as the game writes it: 7500, 7500.50 or with commas between thousands (1,250,000). A comma used as a decimal point (7,5) is refused and not read as 75. */
+    private static final Pattern AMOUNT = Pattern.compile("(\\d{1,3}(,\\d{3})+|\\d+)(\\.\\d+)?");
+
+    private static BigDecimal amountOf(String typed) {
+        var text = typed == null ? "" : typed.strip();
+        if (!AMOUNT.matcher(text).matches()) {
+            throw new InvalidPriceException();
+        }
+        return new BigDecimal(text.replace(",", ""));
+    }
+
     @PostMapping("/quotes")
     String issue(Viewer viewer, @PathVariable UUID id, @RequestParam long expectedVersion,
             @RequestParam(required = false) String buyer, @RequestParam(required = false) String note,
@@ -250,7 +281,8 @@ class ProjectPageController {
 
     @ExceptionHandler({ProjectChangedException.class, CostingOutOfDateException.class, NotQuotableException.class,
             ProjectLockedException.class, ProjectNotQuotedException.class, InvalidQuoteException.class,
-            NothingToCostException.class, InvalidFormException.class, MethodArgumentTypeMismatchException.class, org.springframework.validation.BindException.class,
+            NothingToCostException.class, InvalidFormException.class, InvalidPriceException.class, PriceNotNeededException.class,
+            MethodArgumentTypeMismatchException.class, org.springframework.validation.BindException.class,
             java.time.format.DateTimeParseException.class, NumberFormatException.class})
     String refused(Exception problem, HttpServletRequest request, RedirectAttributes flash) {
         var found = PROJECT_ADDRESS.matcher(request.getRequestURI());
@@ -270,6 +302,7 @@ class ProjectPageController {
             case ProjectNotQuotedException notQuoted -> "notQuoted";
             case InvalidQuoteException invalid -> "invalidQuote";
             case NothingToCostException nothing -> "nothingToCost";
+            case InvalidPriceException price -> "price";
             default -> "invalid";
         };
     }

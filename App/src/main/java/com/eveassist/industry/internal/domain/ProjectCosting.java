@@ -149,6 +149,14 @@ public final class ProjectCosting {
         long units = project.products().stream().mapToLong(PlanProduct::quantity).sum();
         var perUnit = units == 0 ? BigDecimal.ZERO : delivered.divide(BigDecimal.valueOf(units), SCALE, RoundingMode.HALF_UP);
 
+        // a market-referenced quote is the products' Jita prices, so a product with none leaves no quote. That is said and not left silent
+        if (settings.mode() == QuoteMode.MARKET) {
+            for (PlanProduct product : project.products()) {
+                if (prices.apply(product.type()).isEmpty()) {
+                    warnings.add(new ProjectWarning(Kind.NO_MARKET_PRICE, product.type()));
+                }
+            }
+        }
         var margin = quote(delivered, delivered.multiply(HUNDRED)
                 .divide(HUNDRED.subtract(settings.marginPercent()), SCALE, RoundingMode.HALF_UP), units, settings);
         var market = marketPrice(project.products(), settings)

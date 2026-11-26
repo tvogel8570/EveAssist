@@ -38,7 +38,7 @@ final class QuoteInputs {
     /** What a Draft's inputs become when restored from a snapshot, and which facilities could not be restored as they were. */
     record Restored(
             List<PlanProduct> products, Set<TypeId> boughtParts, Map<TypeId, ProjectItem> items, Map<TypeId, PlanPrice> prices,
-            ProjectConfig config, List<FacilityId> changedFacilities, List<FacilityId> goneFacilities) {
+            Set<TypeId> typedPrices, ProjectConfig config, List<FacilityId> changedFacilities, List<FacilityId> goneFacilities) {
     }
 
     /** Every facility the project refers to, by its default and by its items. */
@@ -65,7 +65,7 @@ final class QuoteInputs {
         var prices = new ArrayList<QuoteInputsV1.Price>();
         new TreeSet<>(project.prices().keySet().stream().map(TypeId::value).toList()).forEach(type -> {
             var price = project.prices().get(new TypeId(type));
-            prices.add(new QuoteInputsV1.Price(type, price.sell(), price.buy(), price.asOf()));
+            prices.add(new QuoteInputsV1.Price(type, price.sell(), price.buy(), price.asOf(), project.typedPrices().contains(new TypeId(type))));
         });
         var facilities = new ArrayList<QuoteInputsV1.FacilityValues>();
         facilityValues.entrySet().stream().sorted(java.util.Map.Entry.comparingByKey(
@@ -117,7 +117,13 @@ final class QuoteInputs {
                         existing(item.facility(), gone), policy(item.policy()), skills));
             }
             var prices = new HashMap<TypeId, PlanPrice>();
-            inputs.prices().forEach(price -> prices.put(new TypeId(price.type()), new PlanPrice(price.sell(), price.buy(), price.asOf())));
+            var typed = new HashSet<TypeId>();
+            inputs.prices().forEach(price -> {
+                prices.put(new TypeId(price.type()), new PlanPrice(price.sell(), price.buy(), price.asOf()));
+                if (price.typed()) {
+                    typed.add(new TypeId(price.type()));
+                }
+            });
             var restoredConfig = new ProjectConfig(
                     new ProjectSettings(config.iskPerHour(), config.iskPerCubicMeter(), config.contractFee(),
                             enumOf(QuoteMode.class, config.quoteMode()), config.marginPercent(), config.premiumPercent(),
@@ -129,7 +135,7 @@ final class QuoteInputs {
                     config.buyerName(), config.note());
             return new Restored(
                     inputs.products().stream().map(product -> new PlanProduct(new TypeId(product.type()), product.quantity())).toList(),
-                    new HashSet<>(inputs.boughtParts().stream().map(TypeId::new).toList()), items, prices, restoredConfig, changed, gone);
+                    new HashSet<>(inputs.boughtParts().stream().map(TypeId::new).toList()), items, prices, typed, restoredConfig, changed, gone);
         } catch (RuntimeException e) {
             throw new UnreadableDocumentException("A stored quote's inputs cannot be restored", e);
         }

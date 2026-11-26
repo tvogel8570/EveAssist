@@ -86,7 +86,7 @@ class JdbcProjectRepository implements ProjectRepository {
                 .optional();
         return row.map(project -> new Project(id, project.name(), project.version(), project.status(), project.lastQuoteNumber(),
                 project.archived(), project.config(), products(project.key()), boughtParts(project.key()), items(project.key()),
-                prices(project.key())));
+                prices(project.key()), typedPrices(project.key())));
     }
 
     private static ProjectConfig config(ResultSet rs) throws SQLException {
@@ -123,6 +123,14 @@ class JdbcProjectRepository implements ProjectRepository {
                         rs.getBigDecimal("sell"), rs.getBigDecimal("buy"), rs.getTimestamp("as_of").toInstant())))
                 .list();
         return prices;
+    }
+
+    /** The items whose price the user typed, which the table says by the source of the price. */
+    private Set<TypeId> typedPrices(long projectKey) {
+        return Set.copyOf(jdbc.sql("SELECT type_id FROM project_price WHERE project_id = :p AND source = 'manual'")
+                .param("p", projectKey)
+                .query((rs, n) -> new TypeId(rs.getInt("type_id")))
+                .list());
     }
 
     private Map<TypeId, ProjectItem> items(long projectKey) {
@@ -198,7 +206,7 @@ class JdbcProjectRepository implements ProjectRepository {
             saveProducts(row[0], project.products());
             saveBoughtParts(row[0], project.boughtParts());
             saveItems(row[0], owner, project.items());
-            savePrices(row[0], project.prices());
+            savePrices(row[0], project.prices(), project.typedPrices());
         });
         return updated.map(row -> row[1]);
     }
@@ -291,17 +299,18 @@ class JdbcProjectRepository implements ProjectRepository {
         }
     }
 
-    private void savePrices(long projectKey, Map<TypeId, PlanPrice> prices) {
+    private void savePrices(long projectKey, Map<TypeId, PlanPrice> prices, Set<TypeId> typed) {
         for (var entry : prices.entrySet()) {
             jdbc.sql("""
-                    INSERT INTO project_price (project_id, type_id, sell, buy, as_of) VALUES (:p, :type, :sell, :buy, :asOf)
-                    ON CONFLICT (project_id, type_id) DO UPDATE SET sell = excluded.sell, buy = excluded.buy,
+                    INSERT INTO project_price (project_id, type_id, source, sell, buy, as_of) VALUES (:p, :type, :source, :sell, :buy, :asOf)
+                    ON CONFLICT (project_id, type_id) DO UPDATE SET source = excluded.source, sell = excluded.sell, buy = excluded.buy,
                         as_of = excluded.as_of
-                    WHERE (project_price.sell, project_price.buy, project_price.as_of)
-                        IS DISTINCT FROM (excluded.sell, excluded.buy, excluded.as_of)
+                    WHERE (project_price.source, project_price.sell, project_price.buy, project_price.as_of)
+                        IS DISTINCT FROM (excluded.source, excluded.sell, excluded.buy, excluded.as_of)
                     """)
                     .param("p", projectKey)
                     .param("type", entry.getKey().value())
+                    .param("source", typed.contains(entry.getKey()) ? "manual" : "market")
                     .param("sell", entry.getValue().sell())
                     .param("buy", entry.getValue().buy())
                     .param("asOf", Timestamp.from(entry.getValue().asOf()))

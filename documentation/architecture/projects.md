@@ -100,6 +100,8 @@ the case), so the JSON shapes live in `persistence`.
   its mapper and read straight back by Jackson with no further annotation. A new version adds a class and keeps the old one, and the page renders
   through one reader per version. Direct Jackson serialization of the domain records was considered and **not taken**: it saves only the writing mapper,
   since a reader per version is needed either way (checked with Jackson 3.1.7: a required or primitive field added to a record makes old JSON fail to load).
+  `QuoteInputsV1.Price` gained **`typed`** on 2026-11-25 (a price the user typed): a `Boolean` that reads a missing field as false, so format 1 still reads every stored quote. A first version of it was a
+  primitive `boolean`, and the stored example of format 1 (`ProjectQuotingIT`) failed to load, which is what that test is for.
 - **Retiring a version.** A reader may go only when no stored document has that version. A Flyway data migration converts the old documents to the
   current version first, and is itself tested against a stored example. Until then the reader stays.
 - **Tests:** a stored example of every version that is still stored, loaded or rendered, so a change that breaks old data fails a test and not a

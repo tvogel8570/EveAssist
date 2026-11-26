@@ -53,7 +53,21 @@ public record QuoteInputsV1(
     public record Builder(int industry, int advancedIndustry, BigDecimal implantTimePercent) {
     }
 
-    public record Price(int type, BigDecimal sell, BigDecimal buy, Instant asOf) {
+    /**
+     * The price of an item the quote was costed with. {@code typed} says that the user typed it (so it is one number on both sides, and a new version made from
+     * the quote keeps it typed, which a refresh of the market prices then leaves). A document stored before typed prices existed has no such field, so it is read
+     * as nothing and made false: it must be a {@code Boolean} for that, since a missing primitive makes the whole document unreadable.
+     */
+    public record Price(int type, BigDecimal sell, BigDecimal buy, Instant asOf, Boolean typed) {
+
+        public Price {
+            typed = typed != null && typed;
+        }
+
+        /** A price taken from the market, which is every price of a quote issued before typed prices existed. */
+        public Price(int type, BigDecimal sell, BigDecimal buy, Instant asOf) {
+            this(type, sell, buy, asOf, false);
+        }
     }
 
     /** What a facility did to a job when the quote was costed. */

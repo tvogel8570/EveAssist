@@ -123,8 +123,30 @@ public class ProjectEditing {
      */
     public ProjectChanged replacePrices(Viewer viewer, ProjectId id, long expectedVersion, Map<TypeId, JitaQuote> prices) {
         var project = loadAt(viewer, id, expectedVersion);
-        prices.forEach((type, quote) -> project.setPrice(type, priceOf(quote)));
+        // a price the user typed is not replaced by the market's
+        prices.forEach((type, quote) -> project.setMarketPrice(type, priceOf(quote)));
         project.keepPricesFor(recipes.requiredTypes(project.products()));
+        return new ProjectChanged(project.id(), save(viewer, project));
+    }
+
+    /**
+     * Takes the price the user typed for an item, in place of the market's, so that a project can be costed (and quoted) with an item the market has no price for,
+     * or too little of one for the price basis. It stays until the user asks for the market price again, and a refresh of the prices leaves it. Only an item the
+     * project prices can be given one. It is an edit, so the version rises and a costing made before is out of date.
+     */
+    public ProjectChanged typePrice(Viewer viewer, TypePriceCommand command) {
+        var project = loadAt(viewer, command.project(), command.expectedVersion());
+        if (!recipes.requiredTypes(project.products()).contains(command.type())) {
+            throw new PriceNotNeededException();
+        }
+        project.typePrice(command.type(), command.price(), java.time.Instant.now());
+        return new ProjectChanged(project.id(), save(viewer, project));
+    }
+
+    /** Takes the market's price for an item in place of the one the user typed, or no price when the market has none. {@code quote} is what {@link ProjectEntry} fetched. */
+    public ProjectChanged useMarketPrice(Viewer viewer, UseMarketPriceCommand command, java.util.Optional<JitaQuote> quote) {
+        var project = loadAt(viewer, command.project(), command.expectedVersion());
+        project.useMarketPrice(command.type(), quote.map(ProjectEditing::priceOf).orElse(null));
         return new ProjectChanged(project.id(), save(viewer, project));
     }
 
