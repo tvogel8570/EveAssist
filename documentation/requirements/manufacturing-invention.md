@@ -12,6 +12,9 @@ Planning, tracking and profit analysis all have equal weight.
 
 ## Profit ranking
 
+Specified in [Market analysis](market-analysis.md) from 2026-11-26, which replaces what follows. Where they differ, that document applies: it ranks by margin % first and starts
+with chosen market groups.
+
 - A toggle limits the ranking to products the user can build from their own blueprints (imported or hand-entered,
   plus what they can invent from them), or shows everything buildable in the SDE.
 - The ranking can be sorted by volume-capped profit per day (see [Market and logistics](market-logistics.md)),

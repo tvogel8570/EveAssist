@@ -83,9 +83,9 @@ Cost and profit include every fee:
   have been outbid or undercut are marked. Orders are not checked in the background.
 - **Sales history**: actual sales are read from wallet transactions, so each project shows its real profit as well as
   its expected profit. When several open projects built the same item, a sale goes to the oldest of them first.
-- **Demand check**: price and volume history for each product. Profit ranking uses profit per day, capped at a share of
-  the product's average daily volume in Jita over a set number of days, so that items that cannot be sold in quantity
-  do not rank high. The share and the number of days are user settings, 10% and 30 days by default.
+- **Demand check**: price and volume history for each product. Profit ranking was to use profit per day, capped at a share of
+  the product's average daily volume in Jita over a set number of days (10% and 30 days by default). **Changed 2026-11-26:** the ranking is by margin % with the daily volume shown and a minimum-volume filter
+  (see [Market analysis](market-analysis.md#the-ranking)); whether the share cap is still used is an open question there.
 - **Shopping lists**: export the materials still needed in a format that can be pasted into the in-game multibuy window,
   for one project or for several selected projects added together.
 
