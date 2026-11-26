@@ -267,6 +267,12 @@ public class Project {
         typedPrices.retainAll(needed);
     }
 
+    /** Takes the whole configuration, as a new project does from its account's defaults. */
+    public void startWith(ProjectConfig start) {
+        requireDraft();
+        config = start;
+    }
+
     public void settings(ProjectSettings settings) {
         requireDraft();
         config = config.withSettings(settings);

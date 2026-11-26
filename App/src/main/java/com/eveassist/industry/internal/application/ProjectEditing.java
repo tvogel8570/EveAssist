@@ -26,20 +26,24 @@ public class ProjectEditing {
     private final PlanRepository plans;
     private final ProjectRecipes recipes;
 
-    ProjectEditing(ProjectRepository projects, PlanRepository plans, ProjectRecipes recipes) {
+    private final ProjectDefaultsRepository defaults;
+
+    ProjectEditing(ProjectRepository projects, PlanRepository plans, ProjectRecipes recipes, ProjectDefaultsRepository defaults) {
+        this.defaults = defaults;
         this.projects = projects;
         this.plans = plans;
         this.recipes = recipes;
     }
 
     /**
-     * Copies a plan into a new Draft: its products, the parts it buys and its prices. After this the project is its own, and the
-     * plan can change or go without reaching it.
+     * Copies a plan into a new Draft: its products, the parts it buys and its prices, with the settings of the account's project defaults. After this the
+     * project is its own, and the plan or the defaults can change or go without reaching it.
      */
     public ProjectChanged start(Viewer viewer, StartProjectCommand command) {
         var plan = plans.find(viewer, command.plan()).orElseThrow(PlanNotFoundException::new);
         var id = projects.create(viewer, command.name() == null ? plan.name() : command.name(), plan.id());
         var project = load(viewer, id);
+        defaults.find(viewer).ifPresent(project::startWith);
         plan.products().forEach(product -> project.addProduct(product.type(), product.quantity()));
         plan.boughtParts().forEach(project::buyPart);
         plan.prices().forEach(project::setPrice);

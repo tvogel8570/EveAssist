@@ -89,7 +89,8 @@ class JdbcProjectRepository implements ProjectRepository {
                 prices(project.key()), typedPrices(project.key())));
     }
 
-    private static ProjectConfig config(ResultSet rs) throws SQLException {
+    /** A configuration from a row with the settings' column names, without the skills. */
+    static ProjectConfig config(ResultSet rs) throws SQLException {
         var settings = new ProjectSettings(rs.getBigDecimal("isk_per_hour"), rs.getBigDecimal("isk_per_cubic_meter"),
                 rs.getBigDecimal("contract_fee"), enumOf(QuoteMode.class, rs.getString("quote_mode")),
                 rs.getBigDecimal("margin_percent"), rs.getBigDecimal("premium_percent"), rs.getBigDecimal("quote_step"));
@@ -102,7 +103,7 @@ class JdbcProjectRepository implements ProjectRepository {
     }
 
     /** The configuration with the builder's skills, which are rows of their own and not columns of the project. */
-    private static ProjectConfig withSkills(ProjectConfig config, Map<TypeId, Integer> skills) {
+    static ProjectConfig withSkills(ProjectConfig config, Map<TypeId, Integer> skills) {
         var builder = config.builder();
         return config.withBuilder(new ProjectBuilder(builder.industry(), builder.advancedIndustry(), builder.implantTimePercent(), skills));
     }

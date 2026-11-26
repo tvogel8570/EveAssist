@@ -130,7 +130,7 @@ Decided with the developer on 2026-11-17, and made exact on 2026-11-18 (the lock
 
 ### Project defaults
 
-Decided with the developer on 2026-11-25 ([issue #64](https://github.com/tvogel8570/EveAssist/issues/64)). **Not built yet.**
+Decided with the developer on 2026-11-25 ([issue #64](https://github.com/tvogel8570/EveAssist/issues/64)). **Stored and used by new projects** (built 2026-11-26); **the page to edit them is not built yet.**
 
 - Each account keeps **project defaults**, which a new project starts from and can change for itself: **every project setting except the buyer and the note** (price basis, hauling rate, contract fee,
   time value, quote step, quote mode, margin, premium, split policy and longest job, default facility, Industry, Advanced Industry, implant) and a level for **each time-saving skill any blueprint requires**.
