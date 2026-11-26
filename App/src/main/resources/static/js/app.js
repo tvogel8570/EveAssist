@@ -236,6 +236,69 @@
         }));
     }
 
+    // A long list (data-list-page) keeps its filter, its count and actions and its column headings in view (app.css). They stack, so each needs
+    // the height of those above it; and the headings only stay over a table that fits its place without scrolling sideways. Heights and widths
+    // change as lists are drawn again, rows open and the window changes.
+    const listPage = document.querySelector('[data-list-page]');
+
+    function measureList() {
+        if (!listPage) {
+            return;
+        }
+        const style = document.documentElement.style;
+        style.setProperty('--list-filter-height', `${listPage.querySelector('.list-filter')?.offsetHeight ?? 0}px`);
+        style.setProperty('--list-head-height', `${listPage.querySelector('.list-head')?.offsetHeight ?? 0}px`);
+        listPage.querySelectorAll('[data-wide-table]').forEach(box =>
+            box.toggleAttribute('data-fits', box.querySelector('table').scrollWidth <= box.clientWidth + 1));
+    }
+
+    if (listPage) {
+        const watch = new ResizeObserver(measureList);
+        const watchAll = () => {
+            listPage.querySelectorAll('.list-filter, .list-head, [data-wide-table], [data-wide-table] > table').forEach(part => watch.observe(part));
+            measureList();
+        };
+        watchAll();
+        ['htmx:after:swap', 'htmx:after:settle', 'htmx:finally:request'].forEach(name => document.addEventListener(name, watchAll));
+    }
+
+    // A change of the filter, the tech level or the sort draws the list again: someone far down it is brought to the new list's start, since
+    // where they were means nothing in it. More of the same list (data-keeps-place), a refresh the list asks for itself, and an opened row
+    // leave the page where it is. Which of these it is, is noted as the request is sent: by the time the answer is in, a link that was inside
+    // the list is gone, and htmx then names the list as the request's source.
+    const LISTS = ['browse', 'blueprint-results'];
+
+    document.addEventListener('htmx:before:request', event => {
+        const ctx = event.detail.ctx;
+        ctx.keepsPlace = LISTS.includes(ctx.sourceElement.id) || !!ctx.sourceElement.closest('[data-keeps-place]');
+    });
+
+    document.addEventListener('htmx:after:swap', event => {
+        const {target, keepsPlace} = event.detail.ctx;
+        if (!listPage || keepsPlace || !target || !LISTS.includes(target.id)) {
+            return;
+        }
+        measureList();
+        const filter = listPage.querySelector('.list-filter');
+        const covered = filter && getComputedStyle(filter).position === 'sticky' ? filter.offsetHeight : 0;
+        const start = target.getBoundingClientRect().top + window.scrollY - covered;
+        if (window.scrollY > start) {
+            window.scrollTo(0, start);
+        }
+    });
+
+    // Inventory's choices for a column float over the rows when they are opened while the filter is held at the top of the window (app.css). It is
+    // decided as they open, so that scrolling afterwards moves nothing about.
+    document.addEventListener('htmx:after:swap', event => {
+        const {target} = event.detail.ctx;
+        if (target?.id !== 'filter-pop') {
+            return;
+        }
+        const filter = target.closest('.list-filter');
+        target.toggleAttribute('data-floating', !!filter && getComputedStyle(filter).position === 'sticky'
+            && window.scrollY > 0 && filter.getBoundingClientRect().top < 1);
+    });
+
     // A form that says data-autosave is saved when a field of it is left changed, with no button.
     document.addEventListener('change', event => {
         const form = event.target.form;

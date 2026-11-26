@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: page(~{::title}, ~{::main})}">
 <head><title th:text="#{inventory.title}">Inventory</title></head>
 <body>
-<main class="max-w-7xl mx-auto p-3 sm:p-4">
+<main class="max-w-7xl mx-auto p-3 sm:p-4" data-list-page>
     <div class="flex flex-wrap items-center gap-2 mb-3">
         <h1 class="area-title text-xl font-semibold" th:text="#{inventory.title}">Inventory</h1>
         <span class="grow"></span>
@@ -19,7 +19,9 @@
       pushed, so the page can be reloaded, bookmarked and sent. A tick, the sort and a typed number ask when they change;
       the search also asks after a pause in typing, and Enter asks too instead of reloading the page.
     -->
-    <form id="browse-form" method="get" th:action="@{/inventory}" class="card bg-base-200 mb-3" th:if="${view.hasAssets}"
+    <!--/* stays in view with the whole filter while the list is long (app.css, data-list-page) */-->
+    <div class="list-filter" th:if="${view.hasAssets}">
+    <form id="browse-form" method="get" th:action="@{/inventory}" class="card relative bg-base-200"
           th:attr="hx-get=@{/inventory}" hx-target="#browse" hx-push-url="true" hx-sync="this:replace"
           hx-indicator="#request-indicator"
           hx-trigger="change, submit">
@@ -57,6 +59,7 @@
             <div id="filter-pop"></div>
         </div>
     </form>
+    </div>
 
     <div id="browse" th:attr="hx-get=@{/inventory}" hx-include="#browse-form" hx-trigger="browse-refresh from:document"
          hx-swap="innerHTML">

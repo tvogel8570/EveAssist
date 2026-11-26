@@ -28,6 +28,8 @@
         <input type="hidden" name="seen" th:value="${view.fingerprint}">
         <input type="hidden" name="limit" th:value="${filter.limit}">
     </div>
+    <!--/* the tech levels, the count and the actions on what is ticked: they stay in view under the filter */-->
+    <div class="list-head">
     <!-- One button for each tech level, with how many blueprints it would show under the other filters. -->
     <div class="join flex-wrap mb-2" role="group" th:attr="aria-label=#{blueprints.tech.aria}"
          th:if="${#lists.size(view.techLevels) > 1 or filter.tech != null}">
@@ -75,7 +77,9 @@
         </span>
     </div>
 
-    <div class="overflow-x-auto" th:if="${not #lists.isEmpty(view.items)}">
+    </div>
+
+    <div class="overflow-x-auto" data-wide-table th:if="${not #lists.isEmpty(view.items)}">
         <table class="table table-sm" id="blueprint-table">
             <thead><tr>
                 <th class="w-8 px-1"><input type="checkbox" id="blueprint-pick-all" class="checkbox checkbox-xs"
@@ -131,7 +135,7 @@
     <p id="blueprints-capped" class="text-center text-sm opacity-80 mt-3" th:if="${view.capped}"
        th:text="#{blueprints.capped(${#lists.size(view.items)})}">Showing the first 1,000 blueprints.</p>
     <div class="text-center mt-3" th:if="${view.more}">
-        <a id="blueprints-show-more" class="btn btn-sm btn-outline"
+        <a id="blueprints-show-more" data-keeps-place class="btn btn-sm btn-outline"
            th:href="@{'/blueprints?' + ${filter.moreQuery}}" th:attr="hx-get=@{'/blueprints?' + ${filter.moreQuery}}"
            hx-target="#blueprint-results" hx-push-url="true" th:text="#{blueprints.showMore}">Show more</a>
     </div>

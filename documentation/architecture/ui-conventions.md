@@ -87,3 +87,13 @@ Decided with the developer on 2026-11-26, from [the mockup](../mockups/navigatio
   one line for the costing's state, and what went wrong with the last change. It replaces the banners that appeared and went.
 - **A save keeps the place** on a project's page (`data-keep-place`), instead of going to the top of the page or of the saved section.
 
+## Long lists
+
+Decided with the developer on 2026-11-26, from [the mockup](../mockups/list-headers.html). **Inventory** and **Blueprints**:
+
+- **Deep in the list**, the **whole filter**, the **count with its actions** and the **column headings** stay in view (`data-list-page`, `.list-filter`, `.list-head`).
+- **Only on a window at least 1024 px wide**, and the headings only where the table fits without scrolling sideways. Narrower, everything scrolls as before.
+- **A change of the filter, tech level or sort** brings someone far down the list to the **new list's start**. *Show more*, a refresh and opening a row leave the page where it is.
+- **The choices of a filter column** (inventory's *Add filter*), opened **deep in the list**, lie over the rows, below the count, so the header does not grow. Opened at the top of the page they push the list
+  down, so that no row is covered.
+

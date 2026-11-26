@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: page(~{::title}, ~{::main})}">
 <head><title th:text="#{blueprints.title}">Blueprints</title></head>
 <body>
-<main class="max-w-7xl mx-auto p-3 sm:p-4">
+<main class="max-w-7xl mx-auto p-3 sm:p-4" data-list-page>
     <div id="blueprints-page" th:attr="data-drawer-open=${drawerOpen}">
         <div class="flex flex-wrap items-center gap-2 mb-1">
             <h1 class="area-title text-xl font-semibold" th:text="#{blueprints.title}">Blueprints</h1>
@@ -19,8 +19,10 @@
             <a class="link" th:href="@{/characters}" th:text="#{blueprints.charactersLink}">Characters →</a>
         </div>
 
-        <form id="blueprint-filters" method="get" th:action="@{/blueprints}" class="card bg-base-200 mb-3"
-              th:if="${view.hasSources}" th:attr="hx-get=@{/blueprints}" hx-target="#blueprint-results"
+        <!--/* stays in view with the whole filter while the list is long (app.css, data-list-page) */-->
+        <div class="list-filter" th:if="${view.hasSources}">
+        <form id="blueprint-filters" method="get" th:action="@{/blueprints}" class="card bg-base-200"
+              th:attr="hx-get=@{/blueprints}" hx-target="#blueprint-results"
               hx-push-url="true" hx-sync="this:replace" hx-indicator="#request-indicator" hx-trigger="change, submit">
             <div class="card-body p-3 gap-2">
                 <div th:replace="~{blueprints/results :: state(false)}"></div>
@@ -55,6 +57,7 @@
                 </div>
             </div>
         </form>
+        </div>
 
         <div id="blueprint-results" th:if="${view.hasSources}" th:attr="hx-get=@{/blueprints}" hx-include="#blueprint-filters, #blueprint-view"
              hx-trigger="blueprints-refresh from:document" hx-swap="innerHTML">

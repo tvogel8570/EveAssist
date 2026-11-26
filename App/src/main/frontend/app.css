@@ -175,6 +175,66 @@ details[open] > summary > .chevron svg,
 .seg-23 { fill: hsl(283 62% 58%); }
 .seg-rest { fill: var(--color-base-300); }
 
+/*
+ * A long list (data-list-page: inventory, blueprints). On a wide window its filter, the count with its actions, and the column headings stay
+ * in view, one under the other; app.js tells their heights. The headings can only stay where the table fits (data-fits), because a box that
+ * scrolls its table sideways holds the headings inside it too.
+ */
+.list-filter,
+.list-head {
+  /* holds its children's margins, so that what is below starts where the measured height ends */
+  display: flow-root;
+  background: var(--color-base-100);
+}
+
+.list-filter {
+  padding: .5rem 0;
+}
+
+/* Nothing open takes no room, so that opening a floating list leaves the filter's height as it was. */
+#filter-pop:empty {
+  display: none;
+}
+
+/* The choices of one column, opened while the filter is held at the top of the window, lie over the rows instead of making what is held
+   taller: under the count and its actions. Opened at the top of the page, they take their own room, as anything on a page does. */
+#filter-pop[data-floating] {
+  position: absolute;
+  z-index: 35;
+  top: calc(100% + .5rem + var(--list-head-height, 0px));
+  right: .75rem;
+  left: .75rem;
+  max-height: 60vh;
+  overflow-y: auto;
+  border-radius: .5rem;
+  box-shadow: 0 .5rem 1.25rem #0008;
+}
+
+@media (min-width: 1024px) {
+  [data-list-page] .list-filter {
+    position: sticky;
+    z-index: 22;
+    top: 0;
+  }
+
+  [data-list-page] .list-head {
+    position: sticky;
+    z-index: 21;
+    top: var(--list-filter-height, 0px);
+  }
+
+  [data-wide-table][data-fits] {
+    overflow: visible;
+  }
+
+  [data-wide-table][data-fits] > table > thead > tr > th {
+    position: sticky;
+    z-index: 10;
+    top: calc(var(--list-filter-height, 0px) + var(--list-head-height, 0px));
+    background: var(--color-base-100);
+  }
+}
+
 .blueprint-actions-menu {
   position: absolute;
   z-index: 30;

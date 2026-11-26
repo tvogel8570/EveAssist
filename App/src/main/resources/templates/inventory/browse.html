@@ -30,6 +30,8 @@
 <div th:fragment="results">
     <!-- What this list shows, sent back with the status poll (see BrowseView.fingerprint). -->
     <div id="browse-view" hidden><input type="hidden" name="seen" th:value="${view.fingerprint}"></div>
+    <!--/* the filters in force, and the count with what can be done with the list: they stay in view under the filter */-->
+    <div class="list-head">
     <div id="chips" class="flex flex-wrap gap-2 items-center mb-2" th:unless="${#lists.isEmpty(view.chips)}">
         <span class="text-xs opacity-70" th:text="#{inventory.chips}">Filters, all of them apply:</span>
         <span class="badge badge-primary badge-outline gap-1 py-3" th:each="chip : ${view.chips}">
@@ -45,10 +47,7 @@
            th:text="#{inventory.clearAll}">Clear all</a>
     </div>
 
-    <p id="no-assets" class="opacity-70 text-center py-6" th:unless="${view.hasAssets}" th:text="#{inventory.noCharacters}">No characters.</p>
-
-    <div th:if="${view.hasAssets}">
-        <div class="flex flex-wrap items-center gap-3 text-sm mb-2">
+        <div class="flex flex-wrap items-center gap-3 text-sm pb-2" th:if="${view.hasAssets}">
             <span id="summary" class="opacity-80"
                   th:text="#{inventory.summary(${view.itemTypes}, ${view.stacks}, ${view.units})}">3 item types in 5 stacks with 12 units</span>
             <span class="grow"></span>
@@ -58,7 +57,11 @@
             <a id="export-csv" class="btn btn-ghost btn-xs" th:href="@{'/inventory/export.csv?' + ${view.exportQuery}}"
                th:text="#{inventory.export}">Export CSV</a>
         </div>
+    </div>
 
+    <p id="no-assets" class="opacity-70 text-center py-6" th:unless="${view.hasAssets}" th:text="#{inventory.noCharacters}">No characters.</p>
+
+    <div th:if="${view.hasAssets}">
         <div id="nothing-yet" class="card bg-base-200" th:if="${view.itemTypes == 0 and view.unfiltered}">
             <div class="card-body items-center text-center"><p th:text="#{inventory.nothingYet}">Nothing to show yet.</p></div>
         </div>
@@ -71,7 +74,7 @@
             </div>
         </div>
 
-        <div class="overflow-x-auto" th:if="${not #lists.isEmpty(view.items)}">
+        <div class="overflow-x-auto" data-wide-table th:if="${not #lists.isEmpty(view.items)}">
             <table class="table" id="items">
                 <thead>
                 <tr>
@@ -117,7 +120,7 @@
            th:text="#{inventory.capped(${#lists.size(view.items)})}">Showing the first 1,000 item types.</p>
 
         <div class="text-center mt-3" th:if="${view.more}">
-            <a id="show-more" class="btn btn-sm btn-outline" th:href="@{'/inventory?' + ${view.moreQuery}}"
+            <a id="show-more" data-keeps-place class="btn btn-sm btn-outline" th:href="@{'/inventory?' + ${view.moreQuery}}"
                th:attr="hx-get=@{'/inventory?' + ${view.moreQuery}}" hx-target="#browse" hx-push-url="true"
                th:text="#{inventory.showMore}">Show more</a>
         </div>
