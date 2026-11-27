@@ -1,6 +1,6 @@
 # Market analysis
 
-Status: draft, interview in progress (first eight rounds done 2026-11-26).
+Status: draft, interview in progress (requirements agreed 2026-11-27).
 
 **Market analysis** ranks items by how profitable they would be to build, so that the user can decide what to make. It
 evaluates many items at once, where a [plan](manufacturing-invention.md#plans) or a [project](projects.md) costs work
@@ -11,18 +11,23 @@ the next feature on 2026-11-26, before project tracking.
 
 ## Scope
 
-Decided with the developer on 2026-11-26.
+Decided with the developer on 2026-11-26, the limit and what is left out on 2026-11-27.
 
 - **Which items.** The goal is three ways of choosing, switchable: **chosen groups**, **everything buildable**, and
   **the user's own blueprints**. **The first version has chosen groups only.**
 - **Choosing groups.** Branches of **the game's market tree** (as in the game's market window, for example Ships ›
   Frigates). A branch includes everything below it. An item with no market group is not offered.
 - **Kinds of item.** What is built directly from a blueprint, and **Tech II roughly** (see [Tech II](#tech-ii-roughly)).
+- **No limit on the number of items** in an analysis ([timed](#how-long-a-run-takes)).
+- **Left out:** a recipe that **needs its own product**, such as the Silo
+  ([#76](https://github.com/tvogel8570/EveAssist/issues/76)).
 - **Saved.** The user keeps **named analyses**, each with its groups and settings, for example *Frigates* and
   *Ammunition*. The **last result** of each is kept with its date.
 
 ## How an item is costed
 
+- **For 10 runs**, and for **1 run** of a capital ship or a structure. Material rounding and job splitting depend on the
+  number of runs, so the cost of a unit does too.
 - **Settings start from the user's [project defaults](projects.md#project-defaults)** (facility, builder and skills,
   hauling), and **each named analysis can change them**.
 - **ME and TE are defaults by kind of item**, not the user's own blueprints:
@@ -212,6 +217,35 @@ counted**.
 ME 0 / TE 0, and **1** had a copy at ME 10 / TE 20 or better. A contract price uses copies at least as good as the ME and
 TE asked for, so asking at the [Tech I default](#how-an-item-is-costed) would find almost no price.
 
+## How long a run takes
+
+Measured 2026-11-27 on the development computer (WSL, 32 threads, one thread used), with a throwaway program that calls
+the application's costing classes on the loaded SDE and that day's order book. *Cheapest* does not exist in the
+application, so the program chose build or buy itself. Each item was costed for 10 runs, with one facility.
+
+| Costing all 4,030 items with a market group (4,029 succeeded) | Fresh process | Warmed up |
+|---|---|---|
+| Parts bought | 0.06 s | 0.02 s |
+| Cheapest parts | 0.9 s | 0.3 s |
+| Parts built | 1.0 s | 0.8 s |
+
+| Market data | Measured |
+|---|---|
+| Fetch The Forge's whole order book, 8 requests at a time | 418 pages, 418,000 orders, 99 MB, **47 s** |
+| Store its 343,000 Jita 4-4 orders (an empty Postgres, one table and one index) | 0.5 s |
+| Read and price the 4,642 item types a full run needs | 0.2 s |
+| Sales history, one request per item at about 7 a second (from [the earlier measurement](#facts-that-shape-the-design)) | about **10 minutes** for 4,000 items, estimated |
+
+- **A run is fast enough to wait for**, even over everything buildable. **Collecting market data is the slow part** and
+  belongs in the background, as already decided. A sales history that is missing would make a first run wait minutes.
+- **One item took most of the time**: the Upwell Palatine Keepstar, 0.2 to 0.9 s.
+- **Not measured:** reading an analysis's settings, contract prices, storing and showing a result, or several users at
+  once.
+- **Found on the way:** 40 published recipes (old starbase structures such as the Silo) need **only the product
+  itself**. The current plan and project costing give them a **cost of 0**. None of their blueprints is on the market or
+  was offered on contracts, so the [blueprint rule](#how-an-item-is-costed) hides them, but the switch would show them at
+  a 100% margin. One product, the Apotheosis, has a blueprint with no materials.
+
 ## Privacy
 
 Named analyses are new data held for an account. They belong in the account export and the privacy statement, which do
@@ -220,4 +254,4 @@ not yet cover projects either ([#70](https://github.com/tvogel8570/EveAssist/iss
 
 ## Open questions
 
-1. **Size:** how many items may one analysis hold? To be decided after measuring how long costing takes.
+None at present.
