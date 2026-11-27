@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Market analysis</title>
+<style>
+:root{--bg:#1d232a;--nav:#191e24;--panel:#232a33;--panel2:#2a323d;--line:#38424f;--text:#e6ebf2;--dim:#9aa7b8;--pri:#605dff;--area:#fb923c;--acc:#00d3bb;--warn:#f3c969;--good:#35c28d;--bad:#ff7a85}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,sans-serif}
+.mock{display:flex;flex-direction:column;gap:5px;padding:7px 16px;background:#3a2f12;border-bottom:1px solid #6b5518;color:#f3d98a}
+.mock .g{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.mock .g>span{min-width:110px}
+.mock button{background:#2a2410;color:#f3d98a;border:1px solid #6b5518;border-radius:6px;padding:2px 9px;cursor:pointer}
+.mock button.on{background:#f3d98a;color:#2a2410}
+nav{display:flex;gap:18px;background:var(--nav);padding:12px 16px;flex-wrap:wrap}nav b{font-size:17px}
+nav span.on{color:var(--area);font-weight:700;border-bottom:3px solid var(--area)}
+main{max-width:1180px;margin:0 auto;padding:12px 16px 50vh}
+h1{font-size:21px;margin:0;border-left:4px solid var(--area);padding-left:10px}
+h2{font-size:15px;margin:0 0 8px}
+.dim{color:var(--dim)}.warn{color:var(--warn)}.bad{color:var(--bad)}.good{color:var(--good)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.grow{flex:1;min-width:0}
+.card,details{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-bottom:8px}
+summary{cursor:pointer;font-weight:600;list-style:none;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+summary i{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--acc);color:#05231f;font-style:normal;font-size:10px}
+details[open]>summary i{transform:rotate(90deg)}details[open]>summary{margin-bottom:10px}
+summary em{font-weight:400;font-style:normal;color:var(--dim)}
+input,select{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:4px 8px;font:inherit;max-width:100%}
+input.num{width:80px;text-align:right}
+button.b{background:transparent;border:1px solid var(--line);color:var(--text);border-radius:6px;padding:4px 11px;cursor:pointer;font:inherit}
+button.p{background:var(--pri);border-color:var(--pri);color:#fff}
+button.b:disabled{opacity:.5;cursor:wait}
+.tag{border:1px solid var(--warn);color:var(--warn);border-radius:99px;padding:0 7px;font-size:11px;white-space:nowrap}
+.tag.red{border-color:var(--bad);color:var(--bad)}.tag.grey{border-color:var(--dim);color:var(--dim)}
+.banner{border:1px solid var(--warn);background:#3a2f1255;border-radius:8px;padding:8px 12px;margin-bottom:8px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+.field label{display:block;color:var(--dim);font-size:12px}.field select,.field input:not(.num){width:100%}
+.wide{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th,td{padding:6px 7px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{color:var(--dim);font-size:11px;text-transform:uppercase;letter-spacing:.03em;border-bottom:2px solid var(--line)}
+th.sort{color:var(--text)}
+.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+tr.item{cursor:pointer}tr.item:hover td{background:var(--panel2)}tr.sel td{background:var(--panel2)}
+td.brk{background:#1a2027;padding:10px}
+.tree div{padding:2px 0}.tree .l1{padding-left:20px}.tree .l2{padding-left:40px}
+.side{display:grid;grid-template-columns:290px minmax(0,1fr);gap:12px;align-items:start}
+.split{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:12px;align-items:start}
+.drawer{position:sticky;top:8px;min-width:0}
+td:first-child{min-width:150px}
+.tabs{display:flex;gap:2px;border-bottom:2px solid var(--line);margin:10px 0}
+.tabs button{background:none;border:0;color:var(--dim);padding:6px 14px;cursor:pointer;font:inherit}
+.tabs button.on{color:var(--text);border-bottom:3px solid var(--area);margin-bottom:-2px}
+.note{border-left:3px solid var(--acc);padding:4px 10px;color:var(--dim);margin-top:18px}
+@media(max-width:900px){.side,.split{grid-template-columns:minmax(0,1fr)}.drawer{position:static}}
+</style>
+</head>
+<body>
+<div class="mock">
+  <div class="g"><b>Mockup, fake data</b> <span style="color:#cbb46a">Click a result row to open its breakdown.</span></div>
+  <div class="g"><span>Page:</span><button data-k="page" data-v="list">All analyses</button><button data-k="page" data-v="one">One analysis</button></div>
+  <div class="g"><span>Layout:</span><button data-k="lay" data-v="a">A Sections above results</button><button data-k="lay" data-v="b">B Settings beside results</button><button data-k="lay" data-v="c">C Two tabs</button></div>
+  <div class="g"><span>Breakdown:</span><button data-k="brk" data-v="row">Opens under the row</button><button data-k="brk" data-v="side">Panel at the right</button></div>
+  <div class="g"><span>Columns:</span><button data-k="cols" data-v="all">All agreed</button><button data-k="cols" data-v="few">Fewer, rest in breakdown</button></div>
+  <div class="g"><span>State:</span><button data-k="st" data-v="ready">Result ready</button><button data-k="st" data-v="never">Never run</button><button data-k="st" data-v="running">Running</button><button data-k="st" data-v="changed">Settings changed</button></div>
+</div>
+<nav><b>EveAssist</b><span>Plans</span><span>Projects</span><span class="on">Analysis</span><span>Facilities</span><span>Inventory</span><span>Blueprints</span></nav>
+<main id="m"></main>
+<script>
+const S={page:"one",lay:"a",brk:"row",cols:"all",st:"ready",tab:"results",sel:null,shown:false,open:{groups:false,costing:false,t2:false}};
+new URLSearchParams(location.hash.slice(1)).forEach((v,k)=>{if(k==="sel")S.sel=+v;else if(k in S)S[k]=v});
+// name, margin %, profit/unit, cost/unit, units/day, ISK/day, days, build time, tags
+const R=[
+ ["Compact Sample Nullifier",41.2,"530k","756k","353","454M",15,"2h 40m",[]],
+ ["Example Radiation Sink I",36.8,"340k","584k","322","298M",15,"1h 12m",[]],
+ ["Sample Ancillary Repairer",33.5,"1.21M","2.40M","41","148M",14,"3h 05m",["contract BPC"]],
+ ["Fake Tracking Computer II",28.9,"412k","1.01M","188","267M",15,"4h 30m",["rough T2"]],
+ ["Example Frigate",24.1,"2.9M","9.1M","62","744M",15,"5h 20m",["price 1.4x traded"]],
+ ["Sample Launcher I",19.7,"21k","86k","95","10.2M",11,"38m",[]],
+ ["Fake Drone I",8.4,"310","3.4k","4,120","15.2M",15,"6m",[]],
+ ["Sample Cruiser",-3.2,"-390k","12.6M","38","464M",15,"9h 10m",[]],
+ ["Fake Shield Booster II",null,"—","—","74","61M",13,"4h 02m",["no T2 cost typed"]],
+ ["Example Module I",null,"—","—","12","14M",10,"22m",["no price: Fake Alloy"]]];
+const HIDDEN=["Sample Event Ship",97.4,"44M","1.2M","90","4.1B",15,"2h 00m",["blueprint not obtainable"]];
+const tag=t=>`<span class="tag ${t.startsWith("no price")||t.startsWith("price")?"red":t.startsWith("blueprint")?"grey":""}">${t}</span>`;
+const sec=(id,title,sum,body)=>`<details data-sec="${id}" ${S.open[id]?"open":""}><summary><i>▶</i>${title} <em>${sum}</em></summary>${body}</details>`;
+const groups=()=>`<div class="tree">
+ <div><label><input type="checkbox"> ▸ Ammunition &amp; Charges</label></div><div><label><input type="checkbox"> ▸ Drones</label></div>
+ <div><label><input type="checkbox"> ▾ Ships</label></div>
+ <div class="l1"><label><input type="checkbox" checked> ▾ Frigates</label></div>
+ <div class="l2"><label><input type="checkbox" checked disabled> Standard Frigates</label></div><div class="l2"><label><input type="checkbox" checked disabled> Advanced Frigates</label></div>
+ <div class="l1"><label><input type="checkbox" checked> ▸ Cruisers</label></div>
+ <div><label><input type="checkbox"> ▾ Ship Equipment</label></div><div class="l1"><label><input type="checkbox" checked> ▸ Turrets &amp; Launchers</label></div></div>
+ <div class="dim" style="margin-top:6px">412 items in 3 branches. A ticked branch includes everything below it.</div>`;
+const costing=()=>`<div class="grid">
+ <div class="field"><label>Facility</label><select><option>Sample Raitaru (project default)</option></select></div>
+ <div class="field"><label>Builder skills</label><button class="b">From project defaults · change</button></div>
+ <div class="field"><label>Hauling, ISK per m³</label><input class="num" value="800"></div>
+ <div class="field"><label>Materials priced at</label><select><option>Jita split</option><option>Jita sell</option><option>Jita buy</option></select></div>
+ <div class="field"><label>Parts</label><select><option>Cheapest</option><option>Buy</option><option>Build</option></select></div>
+ <div class="field"><label>Sell by</label><select><option>Sell order</option><option>Sell to buy orders</option><option>Contract</option></select></div>
+ <div class="field"><label>Broker fee %</label><input class="num" value="1.5"></div>
+ <div class="field"><label>Sales tax %</label><input class="num" value="3.4"></div></div>
+ <div class="dim" style="margin-top:8px">ME / TE: Tech I 10/20 · Tech II 2/4 · capital ships 8/8 · capital parts 10/10. A blueprint priced from contracts uses the copy's own.</div>`;
+const t2=()=>`<table><tr><th>Branch</th><th class="n">Blueprint cost per run, ISK</th><th class="n">Tech II items</th></tr>
+ <tr><td>Frigates</td><td class="n"><input class="num" value="450,000"></td><td class="n">41</td></tr>
+ <tr><td style="padding-left:24px">↳ Advanced Frigates <span class="dim">(own value)</span></td><td class="n"><input class="num" value="900,000"></td><td class="n">22</td></tr>
+ <tr><td>Cruisers</td><td class="n"><input class="num" value="1,800,000"></td><td class="n">30</td></tr>
+ <tr><td>Turrets &amp; Launchers <span class="tag">not typed</span></td><td class="n"><input class="num" placeholder="—"></td><td class="n">96</td></tr></table>
+ <button class="b" style="margin-top:8px">+ Different cost for a sub-group</button>`;
+const settings=()=>sec("groups","Groups","Frigates, Cruisers, Turrets & Launchers · 412 items",groups())
+ +sec("costing","Costing and selling","Sample Raitaru · cheapest parts · sell order",costing())
+ +sec("t2",`Tech II blueprint cost <span class="tag">96 items untyped</span>`,"",t2());
+const filters=()=>`<div class="card row"><span class="dim">Show items with</span>
+ <label>≥ <input class="num" style="width:50px" value="10"> of 15 days traded</label><label>≥ <input class="num" style="width:64px" value="10M"> ISK a day</label>
+ <label><input type="checkbox" data-hidden ${S.shown?"checked":""}> Also unobtainable blueprints</label></div>`;
+function breakdown(i){const r=i<0?HIDDEN:R[i];return `<h2>${r[0]}</h2>
+ <div class="row" style="margin-bottom:8px">${r[8].map(tag).join("")}</div>
+ <div class="wide"><table><tr><th>Per unit</th><th class="n">ISK</th></tr>
+ <tr><td>Materials <span class="dim">(Jita split)</span></td><td class="n">612,400</td></tr><tr><td>Job install, with parts</td><td class="n">38,900</td></tr>
+ <tr><td>Blueprint</td><td class="n">${r[8].includes("contract BPC")?"96,000":"not counted"}</td></tr><tr><td>Hauling</td><td class="n">8,700</td></tr>
+ <tr><td><b>Cost</b></td><td class="n"><b>756,000</b></td></tr><tr><td>Sells at <span class="dim">(Jita sell)</span></td><td class="n">1,355,000</td></tr>
+ <tr><td>Broker fee and sales tax</td><td class="n">−66,400</td></tr><tr><td>Traded average, 15 days</td><td class="n">1,298,000</td></tr></table></div>
+ <div class="wide" style="margin-top:8px"><table><tr><th>Material</th><th class="n">Qty</th><th>Build / buy</th><th class="n">ISK</th></tr>
+ <tr><td>Fake Mineral</td><td class="n">32,000</td><td>buy</td><td class="n">121,600</td></tr><tr><td>Sample Component</td><td class="n">14</td><td>build</td><td class="n">402,300</td></tr><tr><td>Example Alloy</td><td class="n">60</td><td>buy</td><td class="n">88,500</td></tr></table></div>
+ ${S.cols==="few"?`<div class="dim" style="margin-top:8px">${r[3]} cost · ${r[6]} of 15 days traded · build ${r[7]}</div>`:""}
+ <div class="row" style="margin-top:10px"><button class="b p">Start a project</button></div>`}
+function table(){
+ const few=S.cols==="few"||(S.brk==="side"&&S.sel!==null);
+ const head=few?["Item","Margin","Profit / unit","Units / day","ISK / day","Warnings"]:["Item","Margin","Profit / unit","Cost / unit","Units / day","ISK / day","Days","Build time","Warnings"];
+ const list=R.map((r,i)=>[r,i]);if(S.shown)list.unshift([HIDDEN,-1]);
+ return `<div class="wide"><table><tr>${head.map((h,i)=>`<th class="${i&&h!=="Warnings"?"n":""} ${h==="Margin"?"sort":""}">${h}${h==="Margin"?" ▼":""}</th>`).join("")}</tr>
+ ${list.map(([r,i])=>{const m=r[1]===null?`<span class="dim">no margin</span>`:`<b class="${r[1]<0?"bad":"good"}">${r[1]}%</b>`;
+  const c=few?[m,r[2],r[4],r[5]]:[m,r[2],r[3],r[4],r[5],r[6],r[7]];
+  return `<tr class="item ${S.sel===i?"sel":""}" data-row="${i}"><td>${S.brk==="row"?(S.sel===i?"▾ ":"▸ "):""}${r[0]}</td>${c.map(x=>`<td class="n">${x}</td>`).join("")}<td>${r[8].map(tag).join(" ")}</td></tr>`
+  +(S.brk==="row"&&S.sel===i?`<tr><td class="brk" colspan="${head.length}"><div style="max-width:620px">${breakdown(i)}</div></td></tr>`:"")}).join("")}</table></div>`}
+function results(){
+ if(S.st==="never") return `<div class="card" style="text-align:center;padding:34px"><p>This analysis has not been run.</p><button class="b p">Run analysis</button><p class="dim">412 items will be costed.</p></div>`;
+ const busy=S.st==="running";
+ const head=busy?`<div class="banner">Costing 412 items… the previous result stays until this one is ready.</div>`
+  :S.st==="changed"?`<div class="banner row"><span class="grow">Settings or groups changed since this result. Run again to apply them.</span><button class="b p">Run again</button></div>`:"";
+ const body=filters()+`<div class="row" style="margin-bottom:6px"><span>188 of 412 items shown</span><span class="dim">· 201 below the volume minimum · 23 hidden blueprints</span><span class="grow"></span><button class="b">Export CSV</button></div>`+table()
+  +`<div class="dim" style="margin-top:8px">Blueprints sold on the market are not counted in the cost. Items without a margin are listed last.</div>`;
+ return head+(S.brk==="side"&&S.sel!==null?`<div class="split"><div>${body}</div><div class="card drawer"><div class="row"><span class="grow"></span><button class="b" data-close>Close</button></div>${breakdown(S.sel)}</div></div>`:body)}
+const header=()=>`<div class="row" style="margin-bottom:10px"><h1>Frigates and cruisers</h1><span class="grow"></span>
+ <span class="dim">${S.st==="never"?"Not run yet":"Result of 26 Nov 19:40 · prices 12 min old · history to 25 Nov"}</span>
+ <button class="b p" ${S.st==="running"?"disabled":""}>${S.st==="running"?"Running…":S.st==="never"?"Run analysis":"Run again"}</button><button class="b">Rename</button><button class="b">Delete</button></div>`;
+const NOTES={a:"A. The same collapsible sections as a project. Results get the full width. Changing a setting means scrolling up and opening a section.",
+ b:"B. Settings stay in view while reading results, which suits trying things out. The table loses about 300px, so some columns need sideways scrolling.",
+ c:"C. Results and settings never compete for room. You cannot see both at once, and a new analysis starts on Settings."};
+function one(){
+ let h=header();
+ if(S.lay==="a") h+=settings()+results();
+ else if(S.lay==="b") h+=`<div class="side"><div>${settings()}</div><div style="min-width:0">${results()}</div></div>`;
+ else h+=`<div class="tabs"><button data-k="tab" data-v="results" class="${S.tab==="results"?"on":""}">Results</button><button data-k="tab" data-v="settings" class="${S.tab==="settings"?"on":""}">Groups and settings</button></div>`+(S.tab==="results"?results():settings());
+ return h+`<div class="note">${NOTES[S.lay]} Volume filters and the blueprint switch change the shown list at once; groups and settings need a new run.</div>`}
+const list=()=>`<div class="row" style="margin-bottom:10px"><h1>Market analysis</h1><span class="grow"></span><input placeholder="Name"><button class="b p">New analysis</button></div>
+ <div class="wide"><table><tr><th>Name</th><th>Groups</th><th class="n">Items</th><th>Last result</th><th class="n">Best margin shown</th></tr>
+ <tr class="item" data-open1><td><b>Frigates and cruisers</b></td><td>Frigates, Cruisers, Turrets &amp; Launchers</td><td class="n">412</td><td>26 Nov 19:40</td><td class="n good">41.2%</td></tr>
+ <tr class="item" data-open1><td><b>Ammunition</b></td><td>Ammunition &amp; Charges</td><td class="n">690</td><td>22 Nov 08:15 <span class="tag">4 days old</span></td><td class="n good">52.0%</td></tr>
+ <tr class="item" data-open1><td><b>Capitals</b></td><td>Capital Ships</td><td class="n">34</td><td class="dim">not run</td><td class="n dim">—</td></tr></table></div>`;
+function draw(){
+ document.getElementById("m").innerHTML=S.page==="list"?list():one();
+ document.querySelectorAll(".mock button").forEach(b=>b.classList.toggle("on",S[b.dataset.k]===b.dataset.v));
+}
+document.addEventListener("click",e=>{
+ const t=e.target, k=t.closest("[data-k]"), row=t.closest("[data-row]"), s=t.closest("summary");
+ if(s){e.preventDefault();const id=s.parentElement.dataset.sec;S.open[id]=!S.open[id]}
+ else if(k){S[k.dataset.k]=k.dataset.v}
+ else if(row){const i=+row.dataset.row;S.sel=S.sel===i?null:i}
+ else if(t.closest("[data-close]"))S.sel=null;
+ else if(t.matches("[data-hidden]"))S.shown=t.checked;
+ else if(t.closest("[data-open1]"))S.page="one";
+ else return;
+ draw()});
+draw();
+</script>
+</body>
+</html>

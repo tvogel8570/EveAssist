@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Market analysis page</title>
+<style>
+:root{--bg:#1d232a;--nav:#191e24;--panel:#232a33;--panel2:#2a323d;--line:#38424f;--text:#e6ebf2;--dim:#9aa7b8;--pri:#605dff;--area:#fb923c;--acc:#00d3bb;--warn:#f3c969;--good:#35c28d;--bad:#ff7a85;--panelw:360px}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,sans-serif}
+.mock{display:flex;flex-direction:column;gap:5px;padding:7px 16px;background:#3a2f12;border-bottom:1px solid #6b5518;color:#f3d98a}
+.mock .g{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.mock .g>span{min-width:150px}
+.mock button{background:#2a2410;color:#f3d98a;border:1px solid #6b5518;border-radius:6px;padding:2px 9px;cursor:pointer}
+.mock button.on{background:#f3d98a;color:#2a2410}
+nav{display:flex;gap:18px;background:var(--nav);padding:12px 16px;flex-wrap:wrap}nav b{font-size:17px}
+nav a{color:var(--text);text-decoration:none;cursor:pointer}nav a.on{color:var(--area);font-weight:700;border-bottom:3px solid var(--area)}
+main{max-width:1180px;margin:0 auto;padding:10px 16px 50vh}
+main.widen{max-width:1620px}
+.crumbs{display:flex;gap:8px;align-items:center;margin-bottom:8px;color:var(--dim);flex-wrap:wrap}
+.crumbs a{color:var(--area);text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+h1{font-size:21px;margin:0;border-left:4px solid var(--area);padding-left:10px}
+h2{font-size:15px;margin:0 0 8px}
+.dim{color:var(--dim)}.warn{color:var(--warn)}.bad{color:var(--bad)}.good{color:var(--good)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.grow{flex:1;min-width:0}
+.card,details{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-bottom:8px}
+summary{cursor:pointer;font-weight:600;list-style:none;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+summary i,.go{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--acc);color:#05231f;font-style:normal;font-size:10px;flex:none}
+details[open]>summary i{transform:rotate(90deg)}details[open]>summary{margin-bottom:10px}
+summary em{font-weight:400;font-style:normal;color:var(--dim)}
+input,select{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:4px 8px;font:inherit;max-width:100%}
+input.num{width:80px;text-align:right}
+button.b{background:transparent;border:1px solid var(--line);color:var(--text);border-radius:6px;padding:4px 11px;cursor:pointer;font:inherit}
+button.p{background:var(--pri);border-color:var(--pri);color:#fff}
+.tag{border:1px solid var(--warn);color:var(--warn);border-radius:99px;padding:0 7px;font-size:11px;white-space:nowrap}
+.tag.red{border-color:var(--bad);color:var(--bad)}.tag.grey{border-color:var(--dim);color:var(--dim)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+.field label{display:block;color:var(--dim);font-size:12px}.field select,.field input:not(.num){width:100%}
+/* results */
+.split{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;align-items:start}
+.split.beside{grid-template-columns:minmax(0,1fr) var(--panelw)}
+.tablebox{min-width:0}.tablebox.scroll{overflow-x:auto}
+table{width:100%;border-collapse:separate;border-spacing:0}
+th,td{padding:6px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.results th{position:sticky;top:0;background:var(--bg);z-index:5;padding:0;border-bottom:2px solid var(--line);vertical-align:bottom}
+.scroll .results th{position:static}
+th button{all:unset;display:block;width:100%;box-sizing:border-box;padding:6px 6px;cursor:pointer;color:var(--dim);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.02em;white-space:nowrap}
+th.n button{text-align:right}
+th button:hover{color:var(--text);background:var(--panel2)}th button:focus-visible{outline:2px solid var(--acc);outline-offset:-2px}
+th button s{text-decoration:none;opacity:.35;margin-left:3px}
+th[aria-sort] button{color:var(--text)}th[aria-sort] button s{opacity:1;color:var(--acc)}
+.plain th{color:var(--dim);font-size:11px;text-transform:uppercase;border-bottom:2px solid var(--line)}
+.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+tr.item{cursor:pointer}tr.item:hover td{background:var(--panel2)}
+tr.item:hover .go{outline:3px solid #00d3bb55}
+tr.sel td{background:#123b39}tr.sel td:first-child{box-shadow:inset 4px 0 0 var(--acc)}
+.name{all:unset;cursor:pointer}.name:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.link .name{color:#7cc4ff;text-decoration:underline;text-underline-offset:3px;text-decoration-color:#7cc4ff77}
+td.first{min-width:170px}
+td.first>div{display:flex;gap:8px;align-items:flex-start}
+td.go-cell{width:30px;text-align:right}
+/* panel */
+.drawer{position:sticky;top:8px;max-height:calc(100vh - 16px);overflow-y:auto;margin:0}
+.drawer.over{position:fixed;right:0;top:0;bottom:0;max-height:none;width:min(var(--panelw),100%);z-index:30;border-radius:0;box-shadow:-12px 0 30px #000a;border-width:0 0 0 2px;border-color:var(--acc)}
+.note{border-left:3px solid var(--acc);padding:4px 10px;color:var(--dim);margin-top:18px}
+</style>
+</head>
+<body>
+<div class="mock">
+  <div class="g"><b>Mockup, fake data</b> <span style="color:#cbb46a">Chosen: sections above, panel at the right, all columns, circle at the start; the page widens from 1440px, and below that the panel lies over the table. Click a row, a column heading, or the breadcrumb.</span></div>
+  <div class="g"><span>Clickable sign:</span><button data-k="sign" data-v="circle">A Circle at the start</button><button data-k="sign" data-v="link">B Name as a link</button><button data-k="sign" data-v="end">C Circle at the end</button></div>
+  <div class="g"><span>Making room for panel:</span><button data-k="room" data-v="widen">1 Page widens</button><button data-k="room" data-v="over">2 Panel over the table</button></div>
+  <div class="g"><span id="size"></span></div>
+</div>
+<nav><b>EveAssist</b><a>Plans</a><a>Projects</a><a class="on" data-list>Analysis</a><a>Facilities</a><a>Inventory</a><a>Blueprints</a></nav>
+<main id="m"></main>
+<script>
+const S={page:"one",sign:"circle",room:"widen",sel:null,key:"margin",dir:-1,shown:false,open:{}};
+new URLSearchParams(location.hash.slice(1)).forEach((v,k)=>{if(k==="sel"||k==="dir")S[k]=+v;else if(k in S)S[k]=v});
+const NAMES=["Compact Sample Nullifier","Example Radiation Sink I","Sample Ancillary Repairer","Fake Tracking Computer II","Example Frigate","Sample Launcher I","Fake Drone I","Sample Cruiser","Fake Shield Booster II","Example Module I","Sample Afterburner I","Fake Armor Plate II","Example Salvager I","Sample Interceptor","Fake Web Drone"];
+const ROWS=Array.from({length:45},(_,i)=>{
+ const name=NAMES[i%15]+(i>=15?" · Mk "+(1+Math.floor(i/15)):"");
+ const noMargin=i===8||i===9||i===23, cost=Math.round(3000*Math.pow(1.23,(i*17)%41)), margin=noMargin?null:Math.round((((i*29+37)%47)-5+((i*7)%10)/10)*10)/10;
+ const units=12+((i*811)%4100), price=noMargin?cost:cost/(1-.049-margin/100);
+ const tags=i===2?["contract BPC"]:i===3?["rough T2"]:i===4?["price 1.4x traded"]:i===8?["no T2 cost typed"]:i===9?["no price: Fake Alloy"]:i===23?["no price: Fake Alloy"]:i===18?["rough T2","price 1.6x traded"]:[];
+ return {id:i,name,margin,profit:noMargin?null:price*(1-.049)-cost,cost:noMargin?null:cost,units,isk:units*price,days:10+(i*3)%6,time:6+(i*53)%560,tags,warn:tags.length||null}});
+const HIDDEN={id:99,name:"Sample Event Ship",margin:97.4,profit:44e6,cost:1.2e6,units:90,isk:4.1e9,days:15,time:120,tags:["blueprint not obtainable"],warn:1};
+const COLS=[["name","Item"],["margin","Margin"],["profit","Profit / unit"],["cost","Cost / unit"],["units","Units / day"],["isk","ISK / day"],["days","Days"],["time","Build time"],["warn","Warnings"]];
+const isk=v=>v===null?"—":(v<0?"-":"")+(a=>a>=1e9?(a/1e9).toFixed(1)+"B":a>=1e6?(a/1e6).toFixed(a>=1e8?0:1)+"M":a>=1e3?(a/1e3).toFixed(a>=1e5?0:1)+"k":Math.round(a))(Math.abs(v));
+const mins=v=>v>=60?Math.floor(v/60)+"h "+String(v%60).padStart(2,"0")+"m":v+"m";
+const full=v=>v===null?"—":Math.round(v).toLocaleString("en-US");
+const tag=t=>`<span class="tag ${t.startsWith("no price")||t.startsWith("price")?"red":t.startsWith("blueprint")?"grey":""}">${t}</span>`;
+function sorted(){
+ const list=S.shown?[HIDDEN,...ROWS]:[...ROWS];
+ return list.sort((a,b)=>{const x=a[S.key],y=b[S.key];
+  if(x===null||y===null) return (x===null)-(y===null)||a.name.localeCompare(b.name);  // no value: last, whichever direction
+  return (typeof x==="string"?x.localeCompare(y):x-y)*S.dir||a.name.localeCompare(b.name)});
+}
+const sec=(id,title,sum,body)=>`<details data-sec="${id}" ${S.open[id]?"open":""}><summary><i>▶</i>${title} <em>${sum}</em></summary>${body}</details>`;
+const settings=()=>sec("groups","Groups","Frigates, Cruisers, Turrets & Launchers · 412 items",`<div><label><input type="checkbox" checked> Ships › Frigates</label></div><div><label><input type="checkbox" checked> Ships › Cruisers</label></div><div><label><input type="checkbox" checked> Ship Equipment › Turrets &amp; Launchers</label></div><div class="dim">The market tree, as in the first mockup.</div>`)
+ +sec("costing","Costing and selling","Sample Raitaru · cheapest parts · sell order",`<div class="grid"><div class="field"><label>Facility</label><select><option>Sample Raitaru (project default)</option></select></div><div class="field"><label>Hauling, ISK per m³</label><input class="num" value="800"></div><div class="field"><label>Materials priced at</label><select><option>Jita split</option></select></div><div class="field"><label>Parts</label><select><option>Cheapest</option></select></div><div class="field"><label>Sell by</label><select><option>Sell order</option></select></div></div>`)
+ +sec("t2",`Tech II blueprint cost <span class="tag">96 items untyped</span>`,"",`<div class="row"><span>Frigates</span><input class="num" value="450,000"><span class="dim">ISK a run</span></div>`);
+function panel(over){
+ const r=S.sel===99?HIDDEN:ROWS[S.sel], c=r.cost, price=c===null?null:(c+r.profit)/(1-.049);
+ const line=(a,v,b)=>`<tr><td>${b?"<b>"+a+"</b>":a}</td><td class="n">${b?"<b>"+v+"</b>":v}</td></tr>`;
+ return `<div class="card drawer ${over?"over":""}" id="panel"><div class="row" style="flex-wrap:nowrap;align-items:flex-start"><h2 class="grow">${r.name}</h2><button class="b" data-close title="Close (Esc)">✕</button></div>
+ <div class="row" style="margin-bottom:8px">${r.tags.map(tag).join("")}</div>
+ <table class="plain"><tr><th>Per unit</th><th class="n">ISK</th></tr>
+ ${line("Materials <span class='dim'>(Jita split)</span>",full(c&&c*.81))}${line("Job install, with parts",full(c&&c*.06))}${line("Blueprint",r.tags.includes("contract BPC")?full(c*.12):"not counted")}${line("Hauling",full(c&&c*.01))}${line("Cost",full(c),1)}
+ ${line("Sells at <span class='dim'>(Jita sell)</span>",full(price))}${line("Broker fee and sales tax",price===null?"—":"−"+full(price*.049))}${line("Traded average, 15 days",full(price&&price*.96))}</table>
+ <table class="plain" style="margin-top:8px"><tr><th>Material</th><th class="n">Qty</th><th></th><th class="n">ISK</th></tr>
+ <tr><td>Fake Mineral</td><td class="n">32,000</td><td>buy</td><td class="n">${full(c&&c*.18)}</td></tr><tr><td>Sample Component</td><td class="n">14</td><td>build</td><td class="n">${full(c&&c*.5)}</td></tr><tr><td>Example Alloy</td><td class="n">60</td><td>buy</td><td class="n">${full(c&&c*.13)}</td></tr></table>
+ <div class="row" style="margin-top:10px"><button class="b p">Start a project</button></div></div>`;
+}
+function table(){
+ const circ=`<span class="go" aria-hidden="true">▶</span>`;
+ const head=COLS.map(([k,t])=>`<th class="${k==="name"||k==="warn"?"":"n"}" ${S.key===k?`aria-sort="${S.dir>0?"ascending":"descending"}"`:""}><button data-sort="${k}" title="Sort by ${t}">${t}<s>${S.key===k?(S.dir>0?"▲":"▼"):"⇅"}</s></button></th>`).join("")+(S.sign==="end"?"<th></th>":"");
+ return `<table class="results ${S.sign==="link"?"link":""}"><thead><tr>${head}</tr></thead><tbody>${sorted().map(r=>`<tr class="item ${S.sel===r.id?"sel":""}" data-row="${r.id}">
+ <td class="first"><div>${S.sign==="circle"?circ:""}<button class="name" aria-expanded="${S.sel===r.id}">${r.name}</button></div></td>
+ <td class="n">${r.margin===null?`<span class="dim">no margin</span>`:`<b class="${r.margin<0?"bad":"good"}">${r.margin.toFixed(1)}%</b>`}</td>
+ <td class="n">${isk(r.profit)}</td><td class="n">${isk(r.cost)}</td><td class="n">${r.units.toLocaleString("en-US")}</td><td class="n">${isk(r.isk)}</td><td class="n">${r.days}</td><td class="n">${mins(r.time)}</td>
+ <td>${r.tags.map(tag).join(" ")}</td>${S.sign==="end"?`<td class="go-cell">${circ}</td>`:""}</tr>`).join("")}</tbody></table>`;
+}
+function one(){
+ const open=S.sel!==null, over=S.room==="over";
+ return `<div class="crumbs"><a data-list>← Market analysis</a><span>›</span><span aria-current="page">Frigates and cruisers</span></div>
+ <div class="row" style="margin-bottom:10px"><h1>Frigates and cruisers</h1><span class="grow"></span><span class="dim">Result of 27 Nov 09:40 · prices 12 min old</span><button class="b p">Run again</button><button class="b">Rename</button><button class="b">Delete</button></div>
+ ${settings()}
+ <div class="card row"><span class="dim">Show items with</span><label>≥ <input class="num" style="width:50px" value="10"> of 15 days traded</label><label>≥ <input class="num" style="width:64px" value="10M"> ISK a day</label><label><input type="checkbox" data-hidden ${S.shown?"checked":""}> Also unobtainable blueprints</label></div>
+ <div class="row" style="margin-bottom:6px"><span>188 of 412 items shown</span><span class="dim">· 201 below the volume minimum · 23 hidden blueprints</span><span class="grow"></span><button class="b">Export CSV</button></div>
+ <div class="split ${open&&!over?"beside":""}"><div class="tablebox">${table()}</div>${open?panel(over):""}</div>
+ <div class="note">Click a heading to sort and again to reverse. Items with no value in that column stay at the end either way. Esc or ✕ closes the panel; clicking another row changes it.</div>`;
+}
+const list=()=>`<div class="row" style="margin-bottom:10px"><h1>Market analysis</h1><span class="grow"></span><input placeholder="Name"><button class="b p">New analysis</button></div>
+ <table class="plain ${S.sign==="link"?"results link":""}"><tr><th>Name</th><th>Groups</th><th class="n">Items</th><th>Last result</th></tr>
+ ${[["Frigates and cruisers","Frigates, Cruisers, Turrets & Launchers",412,"27 Nov 09:40"],["Ammunition","Ammunition & Charges",690,"22 Nov 08:15"],["Capitals","Capital Ships",34,"not run"]].map(r=>`<tr class="item" data-open1><td><div class="row">${S.sign==="circle"?`<span class="go">▶</span>`:""}<button class="name"><b>${r[0]}</b></button></div></td><td>${r[1]}</td><td class="n">${r[2]}</td><td>${r[3]}</td></tr>`).join("")}</table>`;
+// The table scrolls sideways only when it does not fit, so that its headings can otherwise stay in view.
+function fit(){
+ const box=document.querySelector(".tablebox"); if(!box)return;
+ box.classList.remove("scroll"); const t=box.querySelector("table");
+ const scrolls=t.scrollWidth>box.clientWidth+1; box.classList.toggle("scroll",scrolls);
+ document.getElementById("size").textContent=`This window is ${innerWidth}px wide: the table ${scrolls?"scrolls sideways":"fits, and its headings stay in view"}${S.sel!==null&&S.room==="over"?", partly under the panel":""}.`;
+}
+function draw(){
+ const m=document.getElementById("m");
+ m.className=S.page==="one"&&S.sel!==null&&S.room==="widen"?"widen":"";
+ m.innerHTML=S.page==="list"?list():one();
+ document.querySelectorAll(".mock button").forEach(b=>b.classList.toggle("on",S[b.dataset.k]===b.dataset.v));
+ fit();
+}
+// below this width there is no room beside the table, so the panel lies over it
+const narrow=matchMedia("(max-width:1439px)"); const asked=S.room;
+function room(){if(narrow.matches)S.room="over"} narrow.addEventListener("change",()=>{S.room=narrow.matches?"over":asked;draw()}); room();
+document.addEventListener("click",e=>{
+ const t=e.target,k=t.closest("[data-k]"),sort=t.closest("[data-sort]"),row=t.closest("[data-row]"),s=t.closest("summary");
+ if(s){e.preventDefault();const id=s.parentElement.dataset.sec;S.open[id]=!S.open[id]}
+ else if(k){S[k.dataset.k]=k.dataset.v;room()}
+ else if(sort){const key=sort.dataset.sort;if(S.key===key)S.dir=-S.dir;else{S.key=key;S.dir=["name","cost","time"].includes(key)?1:-1}}
+ else if(row){const i=+row.dataset.row;S.sel=S.sel===i?null:i}
+ else if(t.closest("[data-close]"))S.sel=null;
+ else if(t.matches("[data-hidden]")){S.shown=t.checked;if(!S.shown&&S.sel===99)S.sel=null}
+ else if(t.closest("[data-list]")){S.page="list";S.sel=null}
+ else if(t.closest("[data-open1]"))S.page="one";
+ else return;
+ draw();
+ if(sort)document.querySelector(`[data-sort="${sort.dataset.sort}"]`).focus({preventScroll:true});
+ if(row)document.querySelector(`[data-row="${row.dataset.row}"] .name`)?.focus({preventScroll:true});
+});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&S.sel!==null){const id=S.sel;S.sel=null;draw();document.querySelector(`[data-row="${id}"] .name`)?.focus({preventScroll:true})}});
+addEventListener("resize",fit);
+draw();
+</script>
+</body>
+</html>

@@ -1,6 +1,6 @@
 # Market analysis
 
-Status: draft, interview in progress (first seven rounds done 2026-11-26).
+Status: draft, interview in progress (first eight rounds done 2026-11-26).
 
 **Market analysis** ranks items by how profitable they would be to build, so that the user can decide what to make. It
 evaluates many items at once, where a [plan](manufacturing-invention.md#plans) or a [project](projects.md) costs work
@@ -32,7 +32,9 @@ Decided with the developer on 2026-11-26.
   | Tech I | 10 | 20 |
   | Tech II (an invented copy's base) | 2 | 4 |
   | Capital ships, **including freighters, jump freighters and industrial capitals** | 8 | 8 |
-  | Capital parts | 10 | 10 |
+  | Capital parts: capital construction components, **Tech II ones included** | 10 | 10 |
+
+  Faction and storyline items use the Tech I values, unless their blueprint is priced from contracts (below).
 - **Parts: a switch** per analysis between **buy**, **build** and **cheapest** (for each part, whichever costs less).
   **Cheapest is the default.** It compares **materials and job fees** only, **not hauling or time value**.
 - **An item's cost includes hauling, not time value.** The breakdown shows hauling, so the user can see where leaving it
@@ -74,7 +76,11 @@ typed is shown without a margin**.
   as one that cannot be bought only if it **has no market group and no public contract offers it**
   ([checked](#checking-the-blueprint-rule)). The rule does not apply to Tech II.
 - **A Tech I blueprint with no market group that contracts do offer** is charged at its
-  [contract price per run](market-logistics.md#contract-prices), and the result is **marked as rough**.
+  [contract price per run](market-logistics.md#contract-prices), and the result is **marked as rough**. The item is
+  **costed at the ME and TE of the copies that were priced**, not at the default for its kind, because the copies offered
+  are [nearly all ME 0](#checking-the-blueprint-rule). Faction and storyline items follow the same rule.
+- **A blueprint sold on the market has no cost counted**, and **the page says so**.
+- **No further protection against odd prices** for now. The breakdown shows the prices used.
 - **No cap by share of volume.** The earlier 10% share is dropped for now.
 
 ### Columns
@@ -95,6 +101,19 @@ day, ISK traded a day, days traded, build time and warnings.
 - **Export CSV** of the whole ranking.
 
 Adding an item to a plan from the result was not asked for.
+
+## The page
+
+Chosen by the developer on 2026-11-27 from [the first mockup](../mockups/market-analysis.html), and shown in
+[the second](../mockups/market-analysis-page.html).
+
+- **Settings in collapsible sections above the results**, as on a project.
+- **The breakdown opens in a panel at the right.** A row that opens it **looks clickable**, with an **accent circle at
+  its start**, as on a collapsible section.
+- **Room for the panel:** on a window **1440 px wide or more, the page widens** and the panel sits beside the table.
+  **Below that the panel lies over the table.**
+- **All the agreed columns**, and **every column sorts**.
+- **A breadcrumb leads back to the list of analyses.**
 
 ## Later
 
@@ -201,11 +220,4 @@ not yet cover projects either ([#70](https://github.com/tvogel8570/EveAssist/iss
 
 ## Open questions
 
-1. **ME and TE of a contract blueprint:** the Tech I default of 10 / 20 finds almost no price
-   ([measured](#checking-the-blueprint-rule)). Suggested: cost the item at the ME and TE of the copies that were priced.
-2. **Kinds of item for ME and TE:** which groups are *capital parts* (capital construction components, and also the
-   Tech II capital components)? Do faction, storyline and structure items use the Tech I values?
-3. **Misleading prices:** is anything needed beyond the volume filters and the warning, for example for joke buy orders
-   when selling to buy orders, or for material prices?
-4. **Size:** how many items may one analysis hold? To be decided after measuring how long costing takes.
-5. **Blueprints sold on the market** also cost something, which is not counted. Does it stay ignored?
+1. **Size:** how many items may one analysis hold? To be decided after measuring how long costing takes.
